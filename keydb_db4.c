@@ -1,5 +1,5 @@
 /*
- * keydb_db4.c - Routines to store and fetch keys in a DB3 database.
+ * keydb_db4.c - Routines to store and fetch keys in a DB4 database.
  *
  * Jonathan McDowell <noodles@earth.li>
  *
@@ -108,14 +108,15 @@ void initdb(bool readonly)
 	if (dbconns == NULL) {
 		logthing(LOGTHING_CRITICAL,
 				"Couldn't allocate memory for dbconns");
-		exit(1);
+		ret = 1;
 	}
 
-	ret = db_env_create(&dbenv, 0);
-	if (ret != 0) {
-		logthing(LOGTHING_CRITICAL,
-			"db_env_create: %s", db_strerror(ret));
-		exit(1);
+	if (ret == 0) {
+		ret = db_env_create(&dbenv, 0);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL,
+				"db_env_create: %s", db_strerror(ret));
+		}
 	}
 
 	/*
@@ -123,93 +124,121 @@ void initdb(bool readonly)
 	 * anything. What we really want is simple 2 state locks, but I'm not
 	 * sure how to make the standard DB functions do that yet.
 	 */
-	ret = dbenv->set_lk_detect(dbenv, DB_LOCK_DEFAULT);
-	if (ret != 0) {
-		logthing(LOGTHING_CRITICAL,
-			"db_env_create: %s", db_strerror(ret));
-		exit(1);
-	}
-
-	ret = dbenv->open(dbenv, config.db_dir,
-			DB_INIT_LOG | DB_INIT_MPOOL | DB_INIT_LOCK |
-			DB_INIT_TXN |
-			DB_CREATE,
-			0);
-	if (ret != 0) {
-		logthing(LOGTHING_CRITICAL,
-				"Error opening db environment: %s (%s)",
-				config.db_dir,
-				db_strerror(ret));
-		exit(1);
-	}
-
-	starttrans();
-
-	for (i = 0; i < numdbs; i++) {
-		ret = db_create(&dbconns[i], dbenv, 0);
+	if (ret == 0) {
+		ret = dbenv->set_lk_detect(dbenv, DB_LOCK_DEFAULT);
 		if (ret != 0) {
 			logthing(LOGTHING_CRITICAL,
-				"db_create: %s", db_strerror(ret));
-			exit(1);
+				"db_env_create: %s", db_strerror(ret));
+		}
+	}
+
+	if (ret == 0) {
+		ret = dbenv->open(dbenv, config.db_dir,
+				DB_INIT_LOG | DB_INIT_MPOOL | DB_INIT_LOCK |
+				DB_INIT_TXN |
+				DB_CREATE,
+				0);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL,
+					"Error opening db environment: %s (%s)",
+					config.db_dir,
+					db_strerror(ret));
+		}
+	}
+
+	if (ret == 0) {
+		starttrans();
+
+		for (i = 0; !ret && i < numdbs; i++) {
+			ret = db_create(&dbconns[i], dbenv, 0);
+			if (ret != 0) {
+				logthing(LOGTHING_CRITICAL,
+					"db_create: %s", db_strerror(ret));
+			}
+
+			if (ret == 0) {
+				snprintf(buf, 1023, "keydb.%d.db", i);
+				flags = DB_CREATE;
+				if (readonly) {
+					flags = DB_RDONLY;
+				}
+				ret = dbconns[i]->open(dbconns[i],
+						txn,
+						buf,
+						"keydb",
+						DB_HASH,
+						flags,
+						0664);
+				if (ret != 0) {
+					logthing(LOGTHING_CRITICAL,
+						"Error opening key database:"
+						" %s (%s)",
+						buf,
+						db_strerror(ret));
+				}
+			}
 		}
 
-		snprintf(buf, 1023, "keydb.%d.db", i);
-		flags = DB_CREATE;
-		if (readonly) {
-			flags = DB_RDONLY;
+	}
+
+	if (ret == 0) {
+		ret = db_create(&worddb, dbenv, 0);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL, "db_create: %s",
+					db_strerror(ret));
 		}
-		ret = dbconns[i]->open(dbconns[i],
-				txn,
-				buf,
-				"keydb",
-				DB_HASH,
+	}
+
+	if (ret == 0) {
+		ret = worddb->set_flags(worddb, DB_DUP);
+	}
+
+	if (ret == 0) {
+		ret = worddb->open(worddb, txn, "worddb", "worddb", DB_BTREE,
 				flags,
 				0664);
 		if (ret != 0) {
 			logthing(LOGTHING_CRITICAL,
-				"Error opening key database: %s (%s)",
-				buf,
-				db_strerror(ret));
-			exit(1);
+					"Error opening word database: %s (%s)",
+					"worddb",
+					db_strerror(ret));
 		}
 	}
 
-	ret = db_create(&worddb, dbenv, 0);
-	if (ret != 0) {
-		logthing(LOGTHING_CRITICAL, "db_create: %s", db_strerror(ret));
-		exit(1);
+	if (ret == 0) {
+		ret = db_create(&id32db, dbenv, 0);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL, "db_create: %s",
+					db_strerror(ret));
+		}
 	}
-	ret = worddb->set_flags(worddb, DB_DUP);
 
-	ret = worddb->open(worddb, txn, "worddb", "worddb", DB_BTREE,
-			flags,
-			0664);
+	if (ret == 0) {
+		ret = id32db->set_flags(id32db, DB_DUP);
+	}
+
+	if (ret == 0) {
+		ret = id32db->open(id32db, txn, "id32db", "id32db", DB_HASH,
+				flags,
+				0664);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL,
+					"Error opening id32 database: %s (%s)",
+					"id32db",
+					db_strerror(ret));
+		}
+	}
+
+	if (txn != NULL) {
+		endtrans();
+	}
+
 	if (ret != 0) {
+		cleanupdb();
 		logthing(LOGTHING_CRITICAL,
-				"Error opening word database: %s (%s)",
-				"worddb",
-				db_strerror(ret));
-		exit(1);
+				"Error opening database; exiting");
+		exit(EXIT_FAILURE);
 	}
-
-	ret = db_create(&id32db, dbenv, 0);
-	if (ret != 0) {
-		logthing(LOGTHING_CRITICAL, "db_create: %s", db_strerror(ret));
-		exit(1);
-	}
-	ret = id32db->set_flags(id32db, DB_DUP);
-
-	ret = id32db->open(id32db, txn, "id32db", "id32db", DB_HASH,
-			flags,
-			0664);
-	if (ret != 0) {
-		logthing(LOGTHING_CRITICAL,
-				"Error opening id32 database: %s (%s)",
-				"id32db",
-				db_strerror(ret));
-		exit(1);
-	}
-	endtrans();
 	
 	return;
 }
