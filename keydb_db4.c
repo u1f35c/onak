@@ -638,10 +638,6 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 		uids = NULL;
 	}
 
-	if (!intrans) {
-		endtrans();
-	}
-
 	/*
 	 * Write the truncated 32 bit keyid so we can lookup the full id for
 	 * queries.
@@ -702,6 +698,10 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 			free(subkeyids);
 			subkeyids = NULL;
 		}
+	}
+
+	if (!intrans) {
+		endtrans();
 	}
 
 	return deadlock ? -1 : 0 ;
