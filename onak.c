@@ -74,7 +74,8 @@ void usage(void) {
 	puts("Usage:\n");
 	puts("\tonak [options] <command> <parameters>\n");
 	puts("\tCommands:\n");
-	puts("\tadd    - read armored OpenPGP keys from stdin and add to the keyserver");
+	puts("\tadd    - read armored OpenPGP keys from stdin and add to the"
+		" keyserver");
 	puts("\tdelete - delete a given key from the keyserver");
 	puts("\tget    - retrieves the key requested from the keyserver");
 	puts("\tindex  - search for a key and list it");
@@ -87,6 +88,7 @@ int main(int argc, char *argv[])
 	struct openpgp_packet_list	*list_end = NULL;
 	struct openpgp_publickey	*keys = NULL;
 	int				 rc = EXIT_SUCCESS;
+	int				 result = 0;
 	char				*search = NULL;
 	char				*end = NULL;
 	uint64_t			 keyid = 0;
@@ -95,7 +97,6 @@ int main(int argc, char *argv[])
 	bool				 update = false;
 	bool				 binary = false;
 	int				 optchar;
-
 
 	while ((optchar = getopt(argc, argv, "buv")) != -1 ) {
 		switch (optchar) {
@@ -117,18 +118,24 @@ int main(int argc, char *argv[])
 		usage();
 	} else if (!strcmp("add", argv[optind])) {
 		if (binary) {
-			read_openpgp_stream(stdin_getchar, NULL, &packets);
+			result = read_openpgp_stream(stdin_getchar, NULL,
+				 &packets);
+			if (verbose) {
+				fprintf(stderr,
+					"read_openpgp_stream: %d\n", result);
+			}
 		} else {
 			dearmor_openpgp_stream(stdin_getchar, NULL, &packets);
 		}
 		if (packets != NULL) {
-			parse_keys(packets, &keys);
+			result = parse_keys(packets, &keys);
 			free_packet_list(packets);
 			packets = NULL;
 			if (verbose) {
-				fprintf(stderr, "Finished reading keys.\n");
+				fprintf(stderr, "Finished reading %d keys.\n",
+					result);
 			}
-	
+
 			initdb();
 			fprintf(stderr, "Got %d new keys.\n",
 					update_keys(&keys, verbose));
