@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: parsekey.c,v 1.18 2004/01/04 18:47:35 noodles Exp $
+ * $Id: parsekey.c,v 1.19 2004/05/27 18:42:22 noodles Exp $
  */
 
 #include <assert.h>
@@ -225,13 +225,13 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 					curpacket->packet->length = curchar;
 					curpacket->packet->length <<= 8;
 					rc = getchar_func(ctx, 1, &curchar);
-					curpacket->packet->length = curchar;
+					curpacket->packet->length += curchar;
 					curpacket->packet->length <<= 8;
 					rc = getchar_func(ctx, 1, &curchar);
-					curpacket->packet->length = curchar;
+					curpacket->packet->length += curchar;
 					curpacket->packet->length <<= 8;
 					rc = getchar_func(ctx, 1, &curchar);
-					curpacket->packet->length = curchar;
+					curpacket->packet->length += curchar;
 				}
 			} else {
 				curpacket->packet->tag = (curchar & 0x3C) >> 2;
