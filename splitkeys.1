@@ -1,0 +1,24 @@
+.TH SPLITKEYS 1
+.SH NAME
+splitkeys \- split an OpenPGP keyring
+.SH SYNOPSIS
+.PP
+.B splitkeys
+[
+.B maxkeys
+]
+.SH DESCRIPTION
+.PP
+Splits an OpenPGP keyring into a bunch of keyrings of the format
+splitfile-%d.pgp, all of which contain no more than \fImaxkeys\fR keys
+(or 10000 if not specified).
+.SH EXAMPLES
+.TP
+.B splitkeys 1000 < keyring.gpg
+Split keyring.gpg into a collection of keyrings all containing 1000 keys at
+most.
+.SH AUTHOR
+splitkeys was written by Jonathan McDowell <noodles@earth.li>. It can be
+found as part of onak at http://www.earth.li/projectpurple/progs/onak.html
+.SH "SEE ALSO"
+.BR onak (1)

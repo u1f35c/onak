@@ -1,0 +1,79 @@
+.TH ONAK 1
+.SH NAME
+onak \- an OpenPGP compatible keyserver
+.SH SYNOPSIS
+.PP
+.B onak
+[
+.B options
+]
+.I command
+[
+.I parameters
+]
+.SH DESCRIPTION
+.PP
+Perform various keyserver actions.
+.SS "Options"
+.TP
+\fB\-b\fR
+Treat keys on stdin as binary rather than ASCII armoured.
+.TP
+\fB\-c \fIFILE\fR\fR
+Use \fIFILE\fR as the config file instead of the default.
+.TP
+\fB\-f\fR
+Display fingerprints when listing keys.
+.TP
+\fB\-u\fR
+Update keys - output changes on stdout.
+.TP
+\fB\-v\fR
+Verbose; increase loglevel.
+.SS "Commands"
+.TP
+.B add
+Read OpenPGP keys from stdin and add them to the keyserver database.
+.TP
+.B clean
+Read OpenPGP keys from stdin, run the key cleaning routines against them and
+dump to stdout.
+.TP
+.B delete
+Delete a given key from the keyserver.
+.TP
+.B dump
+Dump all the keys from the keyserver.
+.TP
+.B get
+Retrieves the requested key from the keyserver.
+.TP
+.B getphoto
+Retrieves the first photoid on the requested key and dumps to stdout.
+.TP
+.B index
+Search for a key and list it.
+.TP
+.B vindex
+Search for a key and list it and its signatures.
+.SH EXAMPLES
+.TP
+.B onak index noodles
+List all keys in the keyserver that contain the word \fInoodles\fR.
+.TP
+.B onak clean < dirty.key > clean.key
+Clean up one or more PGP keys. Currently this will just dedupe UIDs.
+.TP
+.B gpg --export | onak -b add
+Export all keys on your gnupg keyring and import them into the keyserver.
+.SH FILES
+.br
+.nf
+.\" set tabstop to longest possible filename, plus a wee bit
+.ta \w'/usr/lib/perl/getopts.pl   'u
+\fI/etc/onak.conf\fR	default configuration file
+.SH NOTES
+This man page could probably do with some more details.
+.SH AUTHOR
+onak was written by Jonathan McDowell <noodles@earth.li>. It can be found at
+http://www.earth.li/projectpurple/progs/onak.html
