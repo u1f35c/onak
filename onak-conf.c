@@ -60,9 +60,11 @@ void readconfig(const char *configfile) {
 		fgets(curline, 1023, conffile);
 
 		while (!feof(conffile)) {
-		for (i = strlen(curline) - 1; isspace(curline[i]); i--) {
-			curline[i] = 0;
-		}
+			for (i = strlen(curline) - 1;
+					i >= 0 && isspace(curline[i]);
+					i--) {
+				curline[i] = 0;
+			}
 
 		if (curline[0] == '#' || curline[0] == 0) {
 			/*
