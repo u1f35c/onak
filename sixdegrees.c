@@ -13,6 +13,7 @@
 #include "keydb.h"
 #include "keystructs.h"
 #include "ll.h"
+#include "log.h"
 #include "onak-conf.h"
 #include "stats.h"
 
@@ -125,6 +126,7 @@ int main(int argc, char *argv[])
 	}
 
 	readconfig(NULL);
+	initlogthing("sixdegrees", config.logfile);
 	initdb(true);
 	inithash();
 	sixdegrees(getfullkeyid(keyid));
