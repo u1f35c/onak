@@ -1,9 +1,9 @@
 /*
- * keydb_db3.c - Routines to store and fetch keys in a DB3 database.
+ * keydb_db4.c - Routines to store and fetch keys in a DB3 database.
  *
  * Jonathan McDowell <noodles@earth.li>
  *
- * Copyright 2002 Project Purple
+ * Copyright 2002-2004 Project Purple
  */
 
 #include <assert.h>
@@ -144,6 +144,8 @@ void initdb(bool readonly)
 		exit(1);
 	}
 
+	starttrans();
+
 	for (i = 0; i < numdbs; i++) {
 		ret = db_create(&dbconns[i], dbenv, 0);
 		if (ret != 0) {
@@ -157,11 +159,13 @@ void initdb(bool readonly)
 		if (readonly) {
 			flags = DB_RDONLY;
 		}
-		ret = dbconns[i]->open(dbconns[i], buf,
-			NULL,
-			DB_HASH,
-			flags,
-			0664);
+		ret = dbconns[i]->open(dbconns[i],
+				txn,
+				buf,
+				"keydb",
+				DB_HASH,
+				flags,
+				0664);
 		if (ret != 0) {
 			logthing(LOGTHING_CRITICAL,
 				"Error opening key database: %s (%s)",
@@ -178,7 +182,7 @@ void initdb(bool readonly)
 	}
 	ret = worddb->set_flags(worddb, DB_DUP);
 
-	ret = worddb->open(worddb, "worddb", NULL, DB_BTREE,
+	ret = worddb->open(worddb, txn, "worddb", "worddb", DB_BTREE,
 			flags,
 			0664);
 	if (ret != 0) {
@@ -196,7 +200,7 @@ void initdb(bool readonly)
 	}
 	ret = id32db->set_flags(id32db, DB_DUP);
 
-	ret = id32db->open(id32db, "id32db", NULL, DB_HASH,
+	ret = id32db->open(id32db, txn, "id32db", "id32db", DB_HASH,
 			flags,
 			0664);
 	if (ret != 0) {
@@ -206,6 +210,7 @@ void initdb(bool readonly)
 				db_strerror(ret));
 		exit(1);
 	}
+	endtrans();
 	
 	return;
 }
@@ -220,7 +225,7 @@ void cleanupdb(void)
 {
 	int i = 0;
 
-	txn_checkpoint(dbenv, 0, 0, 0);
+	dbenv->txn_checkpoint(dbenv, 0, 0, 0);
 	id32db->close(id32db, 0);
 	id32db = NULL;
 	worddb->close(worddb, 0);
@@ -247,7 +252,7 @@ bool starttrans(void)
 	assert(dbenv != NULL);
 	assert(txn == NULL);
 
-	ret = txn_begin(dbenv,
+	ret = dbenv->txn_begin(dbenv,
 		NULL, /* No parent transaction */
 		&txn,
 		0);
@@ -273,7 +278,7 @@ void endtrans(void)
 	assert(dbenv != NULL);
 	assert(txn != NULL);
 
-	ret = txn_commit(txn,
+	ret = txn->commit(txn,
 		0);
 	if (ret != 0) {
 		logthing(LOGTHING_CRITICAL,
