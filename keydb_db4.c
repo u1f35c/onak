@@ -19,6 +19,7 @@
 #include <db.h>
 
 #include "charfuncs.h"
+#include "keyarray.h"
 #include "keydb.h"
 #include "keyid.h"
 #include "decodekey.h"
@@ -418,21 +419,21 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
 	char *searchtext = NULL;
 	struct ll *wordlist = NULL;
 	struct ll *curword = NULL;
-	struct ll *keylist = NULL;
-	struct ll *newkeylist = NULL;
+	struct keyarray keylist = { NULL, 0, 0 };
+	struct keyarray newkeylist = { NULL, 0, 0 };
 
 	numkeys = 0;
 	searchtext = strdup(search);
 	wordlist = makewordlist(wordlist, searchtext);
 
-	starttrans();
-
-	ret = worddb->cursor(worddb,
-			txn,
-			&cursor,
-			0);   /* flags */
-
 	for (curword = wordlist; curword != NULL; curword = curword->next) {
+		starttrans();
+
+		ret = worddb->cursor(worddb,
+				txn,
+				&cursor,
+				0);   /* flags */
+
 		memset(&key, 0, sizeof(key));
 		memset(&data, 0, sizeof(data));
 		key.data = curword->object;
@@ -452,53 +453,43 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
 						data.data)[i];
 			}
 
-			if (keylist == NULL ||
-					llfind(keylist, data.data,
-						worddb_cmp) != NULL) {
-				newkeylist = lladd(newkeylist, data.data);
-				data.data = NULL;
-			} else {
-				free(data.data);
-				data.data = NULL;
+			if (keylist.count == 0 ||
+					array_find(&keylist, keyid)) {
+				array_add(&newkeylist, keyid);
 			}
+
+			free(data.data);
+			data.data = NULL;
+
 			ret = cursor->c_get(cursor,
 					&key,
 					&data,
 					DB_NEXT);
 		}
-		llfree(keylist, free);
+		array_free(&keylist);
 		keylist = newkeylist;
-		newkeylist = NULL;
+		newkeylist.keys = NULL;
+		newkeylist.count = newkeylist.size = 0;
 		if (data.data != NULL) {
 			free(data.data);
 			data.data = NULL;
 		}
+		ret = cursor->c_close(cursor);
+		cursor = NULL;
+		endtrans();
 	}
 	llfree(wordlist, NULL);
 	wordlist = NULL;
 	
-	for (newkeylist = keylist;
-			newkeylist != NULL && numkeys < config.maxkeys;
-			newkeylist = newkeylist->next) {
-
-			keyid = 0;
-			for (i = 4; i < 12; i++) {
-				keyid <<= 8;
-				keyid += ((unsigned char *)
-						newkeylist->object)[i];
-			}
-
-			numkeys += fetch_key(keyid,
-					publickey,
-					true);
+	starttrans();
+	for (i = 0; i < keylist.count; i++) {
+		numkeys += fetch_key(keylist.keys[i],
+			publickey,
+			true);
 	}
-	llfree(keylist, free);
-	keylist = NULL;
+	array_free(&keylist);
 	free(searchtext);
 	searchtext = NULL;
-
-	ret = cursor->c_close(cursor);
-	cursor = NULL;
 
 	endtrans();
 	
