@@ -394,9 +394,9 @@ int update_keys(struct openpgp_publickey **keys, bool verbose)
 					*keys = curkey->next;
 				} else {
 					prev->next = curkey->next;
-					prev = curkey->next;
 					curkey->next = NULL;
 					free_publickey(curkey);
+					curkey = prev;
 				}
 			} else {
 				prev = curkey;
