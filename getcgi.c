@@ -128,25 +128,26 @@ char **getcgivars(int argc, char *argv[])
 	int i;
 	char *request_method;
 	int content_length, paircount;
-	char *cgiinput;
-	char **cgivars;
-	char **pairlist;
+	char *cgiinput = NULL;
+	char **cgivars = NULL;
+	char **pairlist = NULL;
 	char *nvpair,*eqpos;
 
 	/* Depending on the request method, read all CGI input into cgiinput */
 	/* (really should produce HTML error messages, instead of exit()ing) */
 
-	request_method=getenv("REQUEST_METHOD");
+	request_method = getenv("REQUEST_METHOD");
 	
 	if (request_method == NULL) {
 		if (argc > 1) {
-			cgiinput = argv[1];
+			cgiinput = strdup(argv[1]);
 		} else {
 			return NULL;
 		}
 	} else if (strlen(request_method)==0) {
 		return NULL;
-	} else if (!strcmp(request_method, "GET") || !strcmp(request_method, "HEAD")) {
+	} else if (!strcmp(request_method, "GET") ||
+			!strcmp(request_method, "HEAD")) {
 		cgiinput=strdup(getenv("QUERY_STRING"));
 	} else if (!strcmp(request_method, "POST")) {
 		if (getenv("CONTENT_TYPE") != NULL &&
@@ -157,12 +158,14 @@ char **getcgivars(int argc, char *argv[])
 		}
 		
 		if (!(content_length = atoi(getenv("CONTENT_LENGTH")))) {
-			printf("getcgivars(): No Content-Length was sent with the POST request.\n");
+			printf("getcgivars(): No Content-Length was sent with"
+					" the POST request.\n");
 			exit(1);
 		}
 		
 		if (!(cgiinput= (char *) malloc(content_length+1))) {
-			printf("getcgivars(): Could not malloc for cgiinput.\n");
+			printf("getcgivars(): Could not malloc for "
+					"cgiinput.\n");
 			exit(1);
 		}
 		
@@ -188,7 +191,10 @@ char **getcgivars(int argc, char *argv[])
 	nvpair=strtok(cgiinput, "&");
 	while (nvpair) {
 		pairlist[paircount++]= strdup(nvpair) ;
-		if (!(paircount%256)) pairlist=(char **) realloc(pairlist,(paircount+256)*sizeof(char **));
+		if (!(paircount%256)) {
+			pairlist=(char **) realloc(pairlist,
+					(paircount+256)*sizeof(char **));
+		}
 		nvpair=strtok(NULL, "&") ;
 	}
 
@@ -217,4 +223,28 @@ char **getcgivars(int argc, char *argv[])
 
 	/* Return the list of name-value strings */
 	return cgivars;
+}
+
+
+/**
+ *	cleanupcgi - free the memory allocated for our CGI parameters.
+ *	@cgivars: The CGI parameter list to free.
+ *
+ *	Frees up the elements of the CGI parameter array and then frees the
+ *	array.
+ */
+void cleanupcgi(char **cgivars)
+{
+	int i;
+
+	if (cgivars != NULL) {
+		for (i = 0; cgivars[i] != NULL; i++) {
+			free(cgivars[i]);
+			cgivars[i] = NULL;
+		}
+		free(cgivars);
+		cgivars = NULL;
+	}
+
+	return;
 }

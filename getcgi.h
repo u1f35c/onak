@@ -29,4 +29,13 @@ char x2c(const char *what);
 void unescape_url(char *url); 
 char **getcgivars(int argc, char *argv[]);
 
+/**
+ *	cleanupcgi - free the memory allocated for our CGI parameters.
+ *	@cgivars: The CGI parameter list to free.
+ *
+ *	Frees up the elements of the CGI parameter array and then frees the
+ *	array.
+ */
+void cleanupcgi(char **cgivars);
+
 #endif /* __GETCGI_H_ */ 
