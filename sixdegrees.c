@@ -99,10 +99,16 @@ void sixdegrees(uint64_t keyid)
 
 int main(int argc, char *argv[])
 {
+	uint64_t keyid = 0x5B430367;
+
+	if (argc == 2) {
+		keyid = strtoll(argv[1], NULL, 16);
+	}
+
 	readconfig();
 	initdb();
 	inithash();
-	sixdegrees(0x5B430367);
+	sixdegrees(keyid);
 	destroyhash();
 	cleanupdb();
 	cleanupconfig();
