@@ -37,4 +37,15 @@ int key_index(struct openpgp_publickey *keys, bool verbose,
 struct ll *keysigs(struct ll *curll,
 		struct openpgp_packet_list *sigs);
 
+/**
+ *	keyuids - Takes a key and returns an array of its UIDs
+ *	@key: The key to get the uids of.
+ *	@primary: A pointer to store the primary UID in.
+ *
+ *	keyuids takes a public key structure and builds an array of the UIDs 
+ *	on the key. It also attempts to work out the primary UID and returns a
+ *	separate pointer to that particular element of the array.
+ */
+char **keyuids(struct openpgp_publickey *key, char **primary);
+
 #endif

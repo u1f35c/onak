@@ -23,6 +23,7 @@
 #include "mem.h"
 #include "parsekey.h"
 
+#ifdef NEED_KEYID2UID
 /**
  *	keyid2uid - Takes a keyid and returns the primary UID for it.
  *	@keyid: The keyid to lookup.
@@ -53,7 +54,9 @@ char *keyid2uid(uint64_t keyid)
 		return buf;
 	}
 }
+#endif
 
+#ifdef NEED_GETKEYSIGS
 /**
  *	getkeysigs - Gets a linked list of the signatures on a key.
  *	@keyid: The keyid to get the sigs for.
@@ -75,6 +78,7 @@ struct ll *getkeysigs(uint64_t keyid)
 		}
 		free_publickey(publickey);
 	}
-	
+
 	return sigs;
 }
+#endif

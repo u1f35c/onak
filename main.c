@@ -29,26 +29,26 @@ int main(int argc, char *argv[])
 	struct openpgp_publickey *newkeys = NULL;
 	void *ctx = NULL;
 
-	fputs("Doing read_openpgp_stream():\n", stderr);
-	read_openpgp_stream(getnextchar, ctx, &packets);
+//	fputs("Doing read_openpgp_stream():\n", stderr);
+//	read_openpgp_stream(getnextchar, ctx, &packets);
 
-//	fputs("Doing dearmor_openpgp_stream():\n", stderr);
-//	dearmor_openpgp_stream(getnextchar, NULL, &packets);
-//	fputs("Doing armor_openpgp_stream():\n", stderr);
-//	armor_openpgp_stream(putnextchar, NULL, packets);
+	fputs("Doing dearmor_openpgp_stream():\n", stderr);
+	dearmor_openpgp_stream(getnextchar, NULL, &packets);
+	fputs("Doing armor_openpgp_stream():\n", stderr);
+	armor_openpgp_stream(putnextchar, NULL, packets);
 
-	fputs("Doing parse_keys():\n", stderr);
-	parse_keys(packets, &keys);
+//	fputs("Doing parse_keys():\n", stderr);
+//	parse_keys(packets, &keys);
 
-	printf("Key id is 0x%llX\n", get_keyid(keys));
+//	printf("Key id is 0x%llX\n", get_keyid(keys));
 
 //	key_index(keys, true, false, false);
 
-	initdb();
-	fetch_key(get_keyid(keys), &newkeys);
-	cleanupdb();
+//	initdb();
+//	fetch_key(get_keyid(keys), &newkeys);
+//	cleanupdb();
 
-	printf("New key id is 0x%llX\n", get_keyid(newkeys));
+//	printf("New key id is 0x%llX\n", get_keyid(newkeys));
 
 //	fputs("Doing flatten_publickey():\n", stderr);
 //	flatten_publickey(keys, &newpackets, &list_end);

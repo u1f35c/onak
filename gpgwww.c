@@ -14,6 +14,7 @@
 #include "getcgi.h"
 #include "hash.h"
 #include "keydb.h"
+#include "onak_conf.h"
 #include "stats.h"
 
 void dofindpath(uint64_t have, uint64_t want, bool html)
@@ -137,7 +138,7 @@ int main(int argc, char *argv[])
 	puts("</PRE>");
 
 	puts("<HR>");
-	puts("Produced by gpgwww 0.0.1, part of onak. <A HREF=\"mailto:noodles-onak@earth.li\">Jonathan McDowell</A>");
+	puts("Produced by gpgwww " VERSION ", part of onak. <A HREF=\"mailto:noodles-onak@earth.li\">Jonathan McDowell</A>");
 	puts("</HTML>");
 
 	return EXIT_SUCCESS;

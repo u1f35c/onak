@@ -20,9 +20,8 @@
 #include "keystructs.h"
 #include "ll.h"
 #include "mem.h"
+#include "onak_conf.h"
 #include "parsekey.h"
-
-#define DBDIR "/home/noodles/onak-0.0.1/db"
 
 /**
  *	keydb_fetchchar - Fetches a char from a file.
@@ -75,7 +74,8 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey)
 	char keyfile[1024];
 	int fd = -1;
 
-	snprintf(keyfile, 1023, "%s/0x%llX", DBDIR, keyid & 0xFFFFFFFF);
+	snprintf(keyfile, 1023, "%s/0x%llX", config.file_dbpath,
+			keyid & 0xFFFFFFFF);
 	fd = open(keyfile, O_RDONLY); // | O_SHLOCK);
 
 	if (fd > -1) {
@@ -104,7 +104,7 @@ int store_key(struct openpgp_publickey *publickey)
 	char keyfile[1024];
 	int fd = -1;
 
-	snprintf(keyfile, 1023, "%s/0x%llX", DBDIR,
+	snprintf(keyfile, 1023, "%s/0x%llX", config.file_dbpath,
 			get_keyid(publickey) & 0xFFFFFFFF);
 	fd = open(keyfile, O_WRONLY | O_CREAT, 0664); // | O_EXLOCK);
 
@@ -132,7 +132,7 @@ int delete_key(uint64_t keyid)
 {
 	char keyfile[1024];
 
-	snprintf(keyfile, 1023, "%s/0x%llX", DBDIR,
+	snprintf(keyfile, 1023, "%s/0x%llX", config.file_dbpath,
 			keyid & 0xFFFFFFFF);
 
 	return unlink(keyfile);
@@ -141,4 +141,6 @@ int delete_key(uint64_t keyid)
 /*
  * Include the basic keydb routines.
  */
+#define NEED_KEYID2UID 1
+#define NEED_GETKEYSIGS 1
 #include "keydb.c"

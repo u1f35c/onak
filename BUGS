@@ -1,11 +1,1 @@
-gpgwww:
-
-> Sometimes I just get:
-> Looking for path from 0xDF5CE2B4 to 0xB2713C8
-> Does that mean there is no path?
-
-Failing assert. Need to investigate.
-
-> And it takes forever (well it's not returned yet and I'm not really
-> expecting it to) on DF5CE2B4 to ED9547ED
-
+Nothing that isn't on the TODO list at present.

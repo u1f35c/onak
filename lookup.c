@@ -18,6 +18,7 @@
 #include "keydb.h"
 #include "keyindex.h"
 #include "mem.h"
+#include "onak_conf.h"
 #include "parsekey.h"
 
 #define OP_UNKNOWN 0
@@ -34,20 +35,23 @@ void find_keys(char *search, uint64_t keyid, bool ishex,
 		bool fingerprint, bool exact, bool verbose)
 {
 	struct openpgp_publickey *publickey = NULL;
-	bool found = false;
+	int count = 0;
 
 	if (ishex) {
-		if (fetch_key(keyid, &publickey)) {
-			if (publickey != NULL) {
-				key_index(publickey, verbose, fingerprint,
-						true);
-				free_publickey(publickey);
-				found = true;
-			}
-		}
+		count = fetch_key(keyid, &publickey);
+	} else {
+		count = fetch_key_text(search, &publickey);
 	}
-	if (!found) {
+	if (publickey != NULL) {
+		key_index(publickey, verbose, fingerprint, true);
+		free_publickey(publickey);
+	} else if (count == 0) {
 		puts("Key not found.");
+	} else {
+		printf("Found %d keys, but maximum number to return is %d.\n",
+				count,
+				config.maxkeys);
+		puts("Try again with a more specific search.");
 	}
 }
 
@@ -138,7 +142,7 @@ int main(int argc, char *argv[])
 		cleanupdb();
 	}
 	puts("<hr>");
-	puts("Produced by onak 0.0.1 by Jonathan McDowell");
+	puts("Produced by onak " VERSION " by Jonathan McDowell");
 	puts("</body>\n</html>");
 	return (EXIT_SUCCESS);
 }

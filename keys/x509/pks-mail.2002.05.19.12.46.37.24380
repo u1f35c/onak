@@ -1,0 +1,69 @@
+From admin-pgp-public-keys@es.net Sun May 19 12:46:37 2002
+Received: from postal2.es.net ([198.128.3.206])
+	by the.earth.li with esmtp (Exim 3.12 #1 (Debian))
+	id 179P92-0006LB-00
+	for <pgp-public-keys@the.earth.li>; Sun, 19 May 2002 12:46:36 +0100
+Received: from ([198.128.3.122])
+        by postal2.es.net (Postal Node 2) with SMTP id GQF37091;
+        Sun, 19 May 2002 04:46:29 -0700
+Received: by dir2.es.net (LBNLMWH19/LBNLMWH11/ESOCF2) id EAA08197;
+	Sun, 19 May 2002 04:01:03 -0700 (PDT)
+Date: Sun, 19 May 2002 04:01:03 -0700 (PDT)
+Message-Id: <200205191101.EAA08197@dir2.es.net>
+X-Authentication-Warning: dir2.es.net: nispgp set sender to admin-pgp-public-keys@es.net using -f
+X-Authentication-Warning: dir2.es.net: Processed from queue /var/spool/mqueuepgp
+X-Authentication-Warning: dir2.es.net: Processed by nispgp with -C /etc/mail/sendmail.q.cf
+To: pgp-inc@dir2.es.net, pgp-public-keys@keyserver.ch,
+        pgp-public-keys@kjsl.com, pgp-public-keys@pgp.loxinfo.co.th,
+        pgp-public-keys@nicpgp1.nic.ad.jp, pgp-public-keys@pgp.rediris.es,
+        pgp-public-keys@pgp.uk.demon.net, pgp-public-keys@sunsite.icm.edu.pl,
+        pgp-public-keys@the.earth.li
+From: PGP Key Server Administrator <admin-pgp-public-keys@es.net>
+Subject: incremental
+X-KeyServer-Sent: pgp-public-keys@pgp.mit.edu
+X-KeyServer-Sent: pgp-public-keys@pgp.dtype.org
+X-KeyServer-Sent: pgp-public-keys@keys.nl.pgp.net
+X-KeyServer-Sent: pgp-public-keys@pgp.es.net
+Precedence: list
+MIME-Version: 1.0
+Content-type: application/pgp-keys
+Reply-To: keymaster@es.net
+X-Keyserver-Admin: keymaster@es.net
+Errors-To: admin-pgp-public-keys@es.net
+Sender: admin-pgp-public-keys@es.net
+
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: 5.0
+Comment: PGP Key Server 0.9.4+patch2
+
+mQCPAzzPtoAAAAEEAL+/LN5t4U3d+8p5IfjYGpLI+7U4lFNynD+lISB6vgoQRv3/
+VbdafDAoJH7Bq8imILMJD8JyY720uc/cH/rRO0idpYqtgD1JPdxHevwdxMRqaTmB
+wsnBk7oKRjSetdLM+FB8FxudQt0t/5bjky53RFfeL3oBN57O2eO8UnJMCAdbABEB
+AAG0KkNsZW1lbnMgR3VldHRsZXIgPGNsZW1lbnMuZ3VldHRsZXJAd2ViLmRlPokE
+IQQQZAEEFAUCPM+2gAUDAeEzgMNGZAEBBDCCA/4wggLmoAMCAQICBACkpSYwDQYJ
+KoZIhvcNAQEEBQAwgaExCzAJBgNVBAYTAkRFMRowGAYDVQQHExFELTc2MjI3IEth
+cmxzcnVoZTESMBAGA1UEChMJV0VCLkRFIEFHMRcwFQYDVQQLEw5UcnVzdENlbnRl
+ciBDQTEsMCoGA1UEAxMjV0VCLkRFIFRydXN0Q2VudGVyIFZvbGwtWmVydGlmaWth
+dGUxGzAZBgkqhkiG9w0BCQEWDHRydXN0QHdlYi5kZTAeFw0wMjA1MDEwOTMzNTJa
+Fw0wMzA1MDEwOTMzNTJaMIGAMQswCQYDVQQGEwJERTEUMBIGA1UECBMLRGV1dHNj
+aGxhbmQxGDAWBgNVBAcTDzYxNDQ5IFN0ZWluYmFjaDEZMBcGA1UEAxMQQ2xlbWVu
+cyBHdWV0dGxlcjEmMCQGCSqGSIb3DQEJARYXY2xlbWVucy5ndWV0dGxlckB3ZWIu
+ZGUwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAL+/LN5t4U3d+8p5IfjYGpLI
++7U4lFNynD+lISB6vgoQRv3/VbdafDAoJH7Bq8imILMJD8JyY720uc/cH/rRO0id
+pYqtgD1JPdxHevwdxMRqaTmBwsnBk7oKRjSetdLM+FB8FxudQt0t/5bjky53RFfe
+L3oBN57O2eO8UnJMCAdbAgMBAAGjgeAwgd0wLAYJYIZIAYb4QgEEBB8WHWh0dHBz
+Oi8vdHJ1c3Qud2ViLmRlL3J2Q0EvP3M9MCMGCWCGSAGG+EIBAgQWFhRodHRwczov
+L3RydXN0LndlYi5kZTAWBglghkgBhvhCAQMECRYHL3J2Lz9zPTAWBglghkgBhvhC
+AQcECRYHL3JuLz9zPTAaBglghkgBhvhCAQgEDRYLL0hpbGZlL0FHQi8wKQYJYIZI
+AYb4QgENBBwWGkZyZWVtYWlsIEVtYWlsIGNlcnRpZmljYXRlMBEGCWCGSAGG+EIB
+AQQEAwIAsDANBgkqhkiG9w0BAQQFAAOCAQEAmlk1K+zdUKwE5KezT0uPZiFkLG23
+LGd49/A+Q3aRWXCuupP6EL7KzvwUyxz3HAIzMyQO4QWvzGeH3wawQwsRfWj8Wq8d
+J9V8zwsPNkL/jcjbWwi6qeoZueiBBCSc9MiO+OOpknzyH3K+C6FnOoxjANnP10ry
+WJFQf0BudmsoWWLPWOXct6A7ILYNiFbruTTI7Hk3ZkqjWvDb43RvWhLMprYcod6M
+wPgDh4t3rXyFdRz5ktBUNxVj5qnOHSYcvfgswDztv8IvUXm9aWqApvszATS+aX+Q
+mKhuT1oSvHfzXhJX0bAJZmoL65PzE87dahu6Ln0VBHzdZItzFtJtN3N7RwAAAAAA
+AQE=
+=yP81
+-----END PGP PUBLIC KEY BLOCK-----
+
+

@@ -34,7 +34,8 @@ int armor_openpgp_stream(int (*putchar_func)(void *ctx, unsigned char c),
  *	armored OpenPGP stream and outputs the data as a linked list of
  *	packets.
  */
-int dearmor_openpgp_stream(int (*getchar_func)(void *ctx, unsigned char *c),
+int dearmor_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
+					unsigned char *c),
 				void *ctx,
 				struct openpgp_packet_list **packets);
 

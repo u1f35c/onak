@@ -81,7 +81,8 @@ uint64_t get_keyid(struct openpgp_publickey *publickey)
 
 		break;
 	default:
-		printf("Unknown key type: %d\n", publickey->publickey->data[0]);
+		fprintf(stderr, "Unknown key type: %d\n",
+				publickey->publickey->data[0]);
 	}
 
 	return keyid;

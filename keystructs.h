@@ -10,6 +10,7 @@
 #define __KEYSTRUCTS_H__
 
 #include <stdbool.h>
+#include <stdlib.h>
 
 /**
  *	struct openpgp_packet - Stores an OpenPGP packet.

@@ -1,0 +1,52 @@
+From pgp-keyserver-admin@prato.linux.it Sun May 19 05:04:41 2002
+Received: from lorien.prato.linux.it ([193.70.7.140] ident=postfix)
+	by the.earth.li with esmtp (Exim 3.12 #1 (Debian))
+	id 179Hw0-0002Ei-00
+	for <pgp-public-keys@the.earth.li>; Sun, 19 May 2002 05:04:41 +0100
+Received: by lorien.prato.linux.it (Postfix, from userid 1000)
+	id 2F95D33804; Sun, 19 May 2002 06:04:39 +0200 (CEST)
+To: pgp-public-keys@pgp.dtype.org, pgp-public-keys@the.earth.li
+From: PGP Key Server Administrator <pgp-keyserver-admin@keyserver.linux.it>
+Subject: incremental
+X-KeyServer-Sent: cserv@pgp.surfnet.nl
+X-KeyServer-Sent: pgp-public-keys@keys.nl.pgp.net
+X-KeyServer-Sent: pgp-public-keys@keyserver.linux.it
+Precedence: list
+MIME-Version: 1.0
+Content-type: application/pgp-keys
+Message-Id: <20020519040439.2F95D33804@lorien.prato.linux.it>
+Date: Sun, 19 May 2002 06:04:39 +0200 (CEST)
+
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: 5.0
+Comment: PGP Key Server 0.9.4+patch2
+
+mQCPAzyDd3gAAAEEAMISSUJKIz2LH3fxgvIN+9TEdpAWj5Ep5ZyruXPit/4Bxa8D
+JjifTyNN4iz88qZoR7niN1CZu8GukZ+FG0FnOWXLQMDUVjw+M34fwtE7s0kPzjb8
+NURbJWgRIA26P0wHia1qrsDgtsY2m/nYR4jjqe6rnuqegJ3IjDE+NvygTEKRABEB
+AAG0SU5PTUJSRSBSRVZJUklFR08gSEVSTkFOREVaIFJBRkFFTCAtIE5JRiAwNzg3
+NTQ3MkwgPHJhZmFlbEByZXZpcmllZ28ubmFtZT6JA/8EEGQCA/IFAjyDd3gFAwPD
+v4gCGwHDIWQBAQQwggPZMIIDQqADAgECAgQ8XE0mMA0GCSqGSIb3DQEBBQUAMDYx
+CzAJBgNVBAYTAkVTMQ0wCwYDVQQKEwRGTk1UMRgwFgYDVQQLEw9GTk1UIENsYXNl
+IDIgQ0EwHhcNMDIwMzA0MTMzMjQwWhcNMDQwMzA0MTQwMjQwWjCBhjELMAkGA1UE
+BhMCRVMxDTALBgNVBAoTBEZOTVQxGDAWBgNVBAsTD0ZOTVQgQ2xhc2UgMiBDQTES
+MBAGA1UECxMJNTAwMDUwODk2MTowOAYDVQQDEzFOT01CUkUgUkVWSVJJRUdPIEhF
+Uk5BTkRFWiBSQUZBRUwgLSBOSUYgMDc4NzU0NzJMMIGfMA0GCSqGSIb3DQEBAQUA
+A4GNADCBiQKBgQDCEklCSiM9ix938YLyDfvUxHaQFo+RKeWcq7lz4rf+AcWvAyY4
+n08jTeIs/PKmaEe54jdQmbvBrpGfhRtBZzlly0DA1FY8PjN+H8LRO7NJD842/DVE
+WyVoESANuj9MB4mtaq7A4LbGNpv52EeI46nuq57qnoCdyIwxPjb8oExCkQIDAQAB
+o4IBoTCCAZ0wKwYDVR0QBCQwIoAPMjAwMjAzMDQxMzMyNDBagQ8yMDA0MDMwNDE0
+MDI0MFowCwYDVR0PBAQDAgWgMBEGCWCGSAGG+EIBAQQEAwIFoDCBiwYDVR0RBIGD
+MIGAgRVyYWZhZWxAcmV2aXJpZWdvLm5hbWWkZzBlMRgwFgYJKwYBBAGsZgEEEwkw
+Nzg3NTQ3MmwxGDAWBgkrBgEEAaxmAQMTCWhlcm5hbmRlejEYMBYGCSsGAQQBrGYB
+AhMJcmV2aXJpZWdvMRUwEwYJKwYBBAGsZgEBEwZyYWZhZWwwWgYDVR0fBFMwUTBP
+oE2gS6RJMEcxCzAJBgNVBAYTAkVTMQ0wCwYDVQQKEwRGTk1UMRgwFgYDVQQLEw9G
+Tk1UIENsYXNlIDIgQ0ExDzANBgNVBAMTBkNSTDQyODAfBgNVHSMEGDAWgBRAmnZE
+l3QHxKwUyx6NTzpFfDDXYTAdBgNVHQ4EFgQUSy8+H3UaIcnluds8sInbPRAiriYw
+CQYDVR0TBAIwADAZBgkqhkiG9n0HQQAEDDAKGwRWNS4wAwIDqDANBgkqhkiG9w0B
+AQUFAAOBgQBHEfi+9z0G12Jn6eqY96/w4Hq0CmAcf9aZ2rKzH/KGvEoswSsp74DA
+iTYs5uBtXwkarjcB69InxtBycVhYuQkIaiQuMmlgNRWMf03mFvE685MDjnxhjRoE
+KSFLnlLsRy//M6KoLv1cflcQHrJIsf6zcewgrAeV0dMUdilsZh+COQAAAAAAAQE=
+=lBJh
+-----END PGP PUBLIC KEY BLOCK-----
+

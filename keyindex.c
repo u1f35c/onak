@@ -55,12 +55,17 @@ int parse_subpackets(unsigned char *data, bool html)
 			 */
 			break;
 		case 16:
-			uid = keyid2uid((data[offset+packetlen - 4] << 24) +
-	                                (data[offset+packetlen - 3] << 16) +
-	                                (data[offset+packetlen - 2] << 8) +
-	                                data[offset+packetlen - 1]);
+			uid = keyid2uid(
+				((uint64_t) data[offset+packetlen - 8] << 56) +
+				((uint64_t) data[offset+packetlen - 7] << 48) +
+				((uint64_t) data[offset+packetlen - 6] << 40) +
+				((uint64_t) data[offset+packetlen - 5] << 32) +
+				((uint64_t) data[offset+packetlen - 4] << 24) +
+				((uint64_t) data[offset+packetlen - 3] << 16) +
+				((uint64_t) data[offset+packetlen - 2] << 8) +
+				data[offset+packetlen - 1]);
 			if (html && uid != NULL) {
-				printf("sig        <a href=\"lookup?op=get&"
+				printf("sig         <a href=\"lookup?op=get&"
 					"search=%02X%02X%02X%02X\">"
 					"%02X%02X%02X%02X</a>             "
 					"<a href=\"lookup?op=vindex&"
@@ -81,7 +86,7 @@ int parse_subpackets(unsigned char *data, bool html)
 					data[offset+packetlen - 1],
 					txt2html(uid));
 			} else if (html && uid == NULL) {
-				printf("sig        "
+				printf("sig         "
 					"%02X%02X%02X%02X             "
 					"[User id not found]\n",
 					data[offset+packetlen - 4],
@@ -89,7 +94,7 @@ int parse_subpackets(unsigned char *data, bool html)
 					data[offset+packetlen - 2],
 					data[offset+packetlen - 1]);
 			} else {
-				printf("sig        %02X%02X%02X%02X"
+				printf("sig         %02X%02X%02X%02X"
 						"             %s\n",
 					data[offset+packetlen - 4],
 					data[offset+packetlen - 3],
@@ -122,12 +127,17 @@ int list_sigs(struct openpgp_packet_list *sigs, bool html)
 		switch (sigs->packet->data[0]) {
 		case 2:
 		case 3:
-			uid = keyid2uid((sigs->packet->data[11] << 24) +
-	                                (sigs->packet->data[12] << 16) +
-	                                (sigs->packet->data[13] << 8) +
-	                                sigs->packet->data[14]);
+			uid = keyid2uid(
+				((uint64_t) sigs->packet->data[7] << 56) +
+				((uint64_t) sigs->packet->data[8] << 48) +
+				((uint64_t) sigs->packet->data[9] << 40) +
+				((uint64_t) sigs->packet->data[10] << 32) +
+				((uint64_t) sigs->packet->data[11] << 24) +
+				((uint64_t) sigs->packet->data[12] << 16) +
+				((uint64_t) sigs->packet->data[13] << 8) +
+				sigs->packet->data[14]);
 			if (html && uid != NULL) {
-				printf("sig        <a href=\"lookup?op=get&"
+				printf("sig         <a href=\"lookup?op=get&"
 					"search=%02X%02X%02X%02X\">"
 					"%02X%02X%02X%02X</a>             "
 					"<a href=\"lookup?op=vindex&"
@@ -148,7 +158,7 @@ int list_sigs(struct openpgp_packet_list *sigs, bool html)
 					sigs->packet->data[14],
 					txt2html(uid));
 			} else if (html && uid == NULL) {
-				printf("sig        %02X%02X%02X%02X"
+				printf("sig         %02X%02X%02X%02X"
 					"             "
 					"[User id not found]\n",
 					sigs->packet->data[11],
@@ -156,7 +166,7 @@ int list_sigs(struct openpgp_packet_list *sigs, bool html)
 					sigs->packet->data[13],
 					sigs->packet->data[14]);
 			} else {
-				printf("sig        %02X%02X%02X%02X"
+				printf("sig         %02X%02X%02X%02X"
 						"             %s\n",
 					sigs->packet->data[11],
 					sigs->packet->data[12],
@@ -189,10 +199,10 @@ int list_uids(struct openpgp_signedpacket_list *uids, bool verbose, bool html)
 			snprintf(buf, 1023, "%.*s",
 				(int) uids->packet->length,
 				uids->packet->data);
-			printf("uid                            %s\n",
+			printf("uid                             %s\n",
 				(html) ? txt2html(buf) : buf);
 		} else if (uids->packet->tag == 17) {
-			printf("uid                            "
+			printf("uid                             "
 				"[photo id]\n");
 		}
 		if (verbose) {
@@ -252,7 +262,7 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 				keys->publickey->data[0]);
 		}
 		
-		printf("pub  %4d%c/%08X %04d/%02d/%02d ",
+		printf("pub  %5d%c/%08X %04d/%02d/%02d ",
 			length,
 			(type == 1) ? 'R' : ((type == 17) ? 'D' : '?'),
 			(uint32_t) (get_keyid(keys) & 0xFFFFFFFF),
@@ -267,7 +277,6 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 				curuid->packet->data);
 			printf("%s\n", (html) ? txt2html(buf) : buf);
 			if (verbose) {
-
 				list_sigs(curuid->sigs, html);
 			}
 			curuid = curuid->next;
@@ -321,12 +330,27 @@ int get_subpackets_keyid(unsigned char *data, uint64_t *keyid)
 			 * Signature creation time. Might want to output this?
 			 */
 			break;
+		case 0x83:
+			/*
+			 * Signature expiration time. Might want to output this?
+			 */
+			break;
 		case 16:
-			*keyid = (data[offset+packetlen - 4] << 24) +
-				(data[offset+packetlen - 3] << 16) +
-				(data[offset+packetlen - 2] << 8) +
-				data[offset+packetlen - 1];
-			*keyid &= 0xFFFFFFFF;
+			*keyid = data[offset+packetlen - 8];
+			*keyid <<= 8;
+			*keyid += data[offset+packetlen - 7];
+			*keyid <<= 8;
+			*keyid += data[offset+packetlen - 6];
+			*keyid <<= 8;
+			*keyid += data[offset+packetlen - 5];
+			*keyid <<= 8;
+			*keyid += data[offset+packetlen - 4];
+			*keyid <<= 8;
+			*keyid += data[offset+packetlen - 3];
+			*keyid <<= 8;
+			*keyid += data[offset+packetlen - 2];
+			*keyid <<= 8;
+			*keyid += data[offset+packetlen - 1];
 			break;
 		default:
 			/*
@@ -362,11 +386,21 @@ struct ll *keysigs(struct ll *curll,
 		switch (sigs->packet->data[0]) {
 		case 2:
 		case 3:
-			keyid = sigs->packet->data[11] << 24;
-			keyid += (sigs->packet->data[12] << 16);
-			keyid += (sigs->packet->data[13] << 8);
+			keyid = sigs->packet->data[7];
+			keyid <<= 8;
+			keyid += sigs->packet->data[8];
+			keyid <<= 8;
+			keyid += sigs->packet->data[9];
+			keyid <<= 8;
+			keyid += sigs->packet->data[10];
+			keyid <<= 8;
+			keyid += sigs->packet->data[11];
+			keyid <<= 8;
+			keyid += sigs->packet->data[12];
+			keyid <<= 8;
+			keyid += sigs->packet->data[13];
+			keyid <<= 8;
 			keyid += sigs->packet->data[14];
-			keyid &= 0xFFFFFFFF;
 			break;
 		case 4:
 			length = get_subpackets_keyid(&sigs->packet->data[4],
@@ -385,4 +419,60 @@ struct ll *keysigs(struct ll *curll,
 	}
 
 	return curll;
+}
+
+/*
+ * TODO: Abstract out; all our linked lists should be generic and then we can
+ * llsize them.
+ */
+int spsize(struct openpgp_signedpacket_list *list)
+{
+	int size = 0;
+	struct openpgp_signedpacket_list *cur;
+
+	for (cur = list; cur != NULL; cur = cur->next, size++) ;
+
+	return size;
+}
+
+/**
+ *	keyuids - Takes a key and returns an array of its UIDs
+ *	@key: The key to get the uids of.
+ *	@primary: A pointer to store the primary UID in.
+ *
+ *	keyuids takes a public key structure and builds an array of the UIDs 
+ *	on the key. It also attempts to work out the primary UID and returns a
+ *	separate pointer to that particular element of the array.
+ */
+char **keyuids(struct openpgp_publickey *key, char **primary)
+{
+	struct openpgp_signedpacket_list *curuid = NULL;
+	char buf[1024];
+	char **uids = NULL;
+	int count = 0;
+
+	if (key != NULL && key->uids != NULL) {
+		uids = malloc((spsize(key->uids) + 1) * sizeof (char *));
+	
+		curuid = key->uids;
+		while (curuid != NULL) {
+			buf[0] = 0;
+			if (curuid->packet->tag == 13) {
+				snprintf(buf, 1023, "%.*s",
+						(int) curuid->packet->length,
+						curuid->packet->data);
+				uids[count++] = strdup(buf);
+			}
+			curuid = curuid -> next;
+		}
+		uids[count] = NULL;
+	}
+	/*
+	 * TODO: Parse subpackets for real primary ID (v4 keys)
+	 */
+	if (primary != NULL) {
+		*primary = uids[0];
+	}
+
+	return uids;
 }

@@ -45,6 +45,13 @@ int parse_keys(struct openpgp_packet_list *packets,
 {
 	struct openpgp_publickey *curkey = NULL;
 
+	/*
+	 * If keys already has some keys in it then set curkey to the last one
+	 * so we add to the end of the list.
+	 */
+	for (curkey = *keys; curkey != NULL && curkey->next != NULL;
+			curkey = curkey->next) ;
+
 	while (packets != NULL) {
 		switch (packets->packet->tag) {
 		case 2:
@@ -103,8 +110,17 @@ int parse_keys(struct openpgp_packet_list *packets,
 				subkey,
 				packet_dup(packets->packet));
 			break;
+		case 12:
+		case 61:
+			/*
+			 * One of:
+			 *
+			 * Trust packet. Ignore.
+			 * Comment packet. Ignore.
+			 */
+			break;
 		default:
-			printf("Unsupported packet type: %d\n",
+			fprintf(stderr, "Unsupported packet type: %d\n",
 					packets->packet->tag);
 		}
 		packets = packets->next;
@@ -192,7 +208,7 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 				} else if (curpacket->packet->length > 223 &&
 					curpacket->packet->length < 255) {
 					printf("Partial length; not supported.\n");
-				} else {
+				} else if (curpacket->packet->length == 255) {
 					/*
 					 * 5 byte length; ie 255 followed by 3
 					 * bytes of MSB length.
@@ -209,7 +225,6 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 					rc = getchar_func(ctx, 1, &curchar);
 					curpacket->packet->length = curchar;
 				}
-
 			} else {
 				curpacket->packet->tag = (curchar & 0x3C) >> 2;
 				switch (curchar & 3) {
@@ -225,10 +240,20 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 					curpacket->packet->length += curchar;
 					break;
 				case 2:
-					printf("Unsupported length type 2.\n");
+					rc = getchar_func(ctx, 1, &curchar);
+					curpacket->packet->length = 
+						(curchar << 24);
+					rc = getchar_func(ctx, 1, &curchar);
+					curpacket->packet->length +=
+						(curchar << 16);
+					rc = getchar_func(ctx, 1, &curchar);
+					curpacket->packet->length +=
+						(curchar << 8);
+					rc = getchar_func(ctx, 1, &curchar);
+					curpacket->packet->length += curchar;
 					break;
 				case 3:
-					printf("Unsupported length type 3.\n");
+					fprintf(stderr, "Unsupported length type 3.\n");
 					break;
 				}
 			}

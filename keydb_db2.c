@@ -21,9 +21,9 @@
 #include "keyindex.h"
 #include "keystructs.h"
 #include "mem.h"
+#include "onak_conf.h"
 #include "parsekey.h"
 
-#define DBDIR "/community/pgp-keyserver/db-copy"
 #define KEYDB_KEYID_BYTES 4
 
 /**
@@ -111,7 +111,8 @@ void initdb(void)
 	 */
 	db2_env.mp_size = 20 * 1024 * 1024;
 
-	ret = db_appinit(DBDIR, NULL, &db2_env, DB_INIT_MPOOL|DB_INIT_LOCK);
+	ret = db_appinit(config.db2_dbpath, NULL,
+			&db2_env, DB_INIT_MPOOL|DB_INIT_LOCK);
 	if (!ret) {
 		db2_keydbfiles = (DB **) malloc(sizeof (DB *) * db2_numdb);
 		memset(&keydbinfo, 0, sizeof(keydbinfo));
@@ -226,4 +227,6 @@ int delete_key(uint64_t keyid)
 /*
  * Include the basic keydb routines.
  */
+#define NEED_KEYID2UID 1
+#define NEED_GETKEYSIGS 1
 #include "keydb.c"

@@ -2,3 +2,22 @@
 
 * First release.
 * Merges gpgstats 0.0.2 (never released).
+
+0.0.2 - 28th May 2002.
+
+* Added support for subpacket type 0x83 (critical key expiration)
+* Fixed bug in parsing of one byte new format packet length.
+* Added support for 4 byte old format packet lengths.
+* Changed various error statements to output to stderr instead of stdout.
+* Fixed bug in deleting keys in Postgres backend.
+* Moved code to merge a list of keys to merge.c and changed add.c to use it
+  rather than just replacing existing keys.
+* Added comment & trust packets as known but ignored types.
+* Added storage of uids to Postgres backend; this speeds up verbose indexing
+  and will also allow searching on UIDs.
+* Fixed bug in armor handling (didn't like 2 newlines before the armor header).
+* Made dearmor gracefully handle non armored input.
+* Added support for incoming incremental update mails.
+* Added searching on uids to lookup & keydb_pg.
+* Changed Postgres backend to use 64 bit keyids instead of 32 bit.
+* Made dearmor ignore CRs when looking for 2 blank lines.

@@ -1,0 +1,59 @@
+From pks-admin@horowitz.surfnet.nl Sun May 19 05:04:46 2002
+Received: from horowitz.surfnet.nl ([194.171.167.2])
+	by the.earth.li with esmtp (Exim 3.12 #1 (Debian))
+	id 179Hw6-0002F8-00
+	for <pgp-public-keys@the.earth.li>; Sun, 19 May 2002 05:04:46 +0100
+Received: (from pks@localhost)
+	by horowitz.surfnet.nl (8.12.2/8.12.2) id g4J44URU012044;
+	Sun, 19 May 2002 06:04:30 +0200 (MET DST)
+Date: Sun, 19 May 2002 06:04:30 +0200 (MET DST)
+Message-Id: <200205190404.g4J44URU012044@horowitz.surfnet.nl>
+To: pgp-keys@keyserver.net, pgp-keys@szefler.com,
+   pgp-public-keys-pksd@math.uni-paderborn.de,
+   pgp-public-keys@blackhole.pca.dfn.de, pgp-public-keys@keys.cz.pgp.net,
+   pgp-public-keys@keyserver.ch, pgp-public-keys@lorien.prato.linux.it,
+   pgp-public-keys@korell.cc.gatech.edu, pgp-public-keys@pgp.dtype.org,
+   pgp-public-keys@dir2.es.net, pgp-public-keys@pgp.lsi.upc.es,
+   pgp-public-keys@nicpgp1.nic.ad.jp, pgp-public-keys@pgp.rediris.es,
+   pgp-public-keys@pgp.zdv.uni-mainz.de, pgp-public-keys@the.earth.li
+From: Server Administrator <pks-admin@keys.nl.pgp.net>
+Subject: incremental
+X-KeyServer-Sent: cserv@pgp.surfnet.nl
+X-KeyServer-Sent: pgp-public-keys@keys.nl.pgp.net
+Precedence: list
+MIME-Version: 1.0
+Content-type: application/pgp-keys
+
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: 5.0
+Comment: PGP Key Server 0.9.4+patch2
+
+mQCPAzyDd3gAAAEEAMISSUJKIz2LH3fxgvIN+9TEdpAWj5Ep5ZyruXPit/4Bxa8D
+JjifTyNN4iz88qZoR7niN1CZu8GukZ+FG0FnOWXLQMDUVjw+M34fwtE7s0kPzjb8
+NURbJWgRIA26P0wHia1qrsDgtsY2m/nYR4jjqe6rnuqegJ3IjDE+NvygTEKRABEB
+AAG0SU5PTUJSRSBSRVZJUklFR08gSEVSTkFOREVaIFJBRkFFTCAtIE5JRiAwNzg3
+NTQ3MkwgPHJhZmFlbEByZXZpcmllZ28ubmFtZT6JA/8EEGQCA/IFAjyDd3gFAwPD
+v4gCGwHDIWQBAQQwggPZMIIDQqADAgECAgQ8XE0mMA0GCSqGSIb3DQEBBQUAMDYx
+CzAJBgNVBAYTAkVTMQ0wCwYDVQQKEwRGTk1UMRgwFgYDVQQLEw9GTk1UIENsYXNl
+IDIgQ0EwHhcNMDIwMzA0MTMzMjQwWhcNMDQwMzA0MTQwMjQwWjCBhjELMAkGA1UE
+BhMCRVMxDTALBgNVBAoTBEZOTVQxGDAWBgNVBAsTD0ZOTVQgQ2xhc2UgMiBDQTES
+MBAGA1UECxMJNTAwMDUwODk2MTowOAYDVQQDEzFOT01CUkUgUkVWSVJJRUdPIEhF
+Uk5BTkRFWiBSQUZBRUwgLSBOSUYgMDc4NzU0NzJMMIGfMA0GCSqGSIb3DQEBAQUA
+A4GNADCBiQKBgQDCEklCSiM9ix938YLyDfvUxHaQFo+RKeWcq7lz4rf+AcWvAyY4
+n08jTeIs/PKmaEe54jdQmbvBrpGfhRtBZzlly0DA1FY8PjN+H8LRO7NJD842/DVE
+WyVoESANuj9MB4mtaq7A4LbGNpv52EeI46nuq57qnoCdyIwxPjb8oExCkQIDAQAB
+o4IBoTCCAZ0wKwYDVR0QBCQwIoAPMjAwMjAzMDQxMzMyNDBagQ8yMDA0MDMwNDE0
+MDI0MFowCwYDVR0PBAQDAgWgMBEGCWCGSAGG+EIBAQQEAwIFoDCBiwYDVR0RBIGD
+MIGAgRVyYWZhZWxAcmV2aXJpZWdvLm5hbWWkZzBlMRgwFgYJKwYBBAGsZgEEEwkw
+Nzg3NTQ3MmwxGDAWBgkrBgEEAaxmAQMTCWhlcm5hbmRlejEYMBYGCSsGAQQBrGYB
+AhMJcmV2aXJpZWdvMRUwEwYJKwYBBAGsZgEBEwZyYWZhZWwwWgYDVR0fBFMwUTBP
+oE2gS6RJMEcxCzAJBgNVBAYTAkVTMQ0wCwYDVQQKEwRGTk1UMRgwFgYDVQQLEw9G
+Tk1UIENsYXNlIDIgQ0ExDzANBgNVBAMTBkNSTDQyODAfBgNVHSMEGDAWgBRAmnZE
+l3QHxKwUyx6NTzpFfDDXYTAdBgNVHQ4EFgQUSy8+H3UaIcnluds8sInbPRAiriYw
+CQYDVR0TBAIwADAZBgkqhkiG9n0HQQAEDDAKGwRWNS4wAwIDqDANBgkqhkiG9w0B
+AQUFAAOBgQBHEfi+9z0G12Jn6eqY96/w4Hq0CmAcf9aZ2rKzH/KGvEoswSsp74DA
+iTYs5uBtXwkarjcB69InxtBycVhYuQkIaiQuMmlgNRWMf03mFvE685MDjnxhjRoE
+KSFLnlLsRy//M6KoLv1cflcQHrJIsf6zcewgrAeV0dMUdilsZh+COQAAAAAAAQE=
+=lBJh
+-----END PGP PUBLIC KEY BLOCK-----
+

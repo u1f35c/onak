@@ -1,5 +1,7 @@
 /*
- * keymerge.c - Takes a key on stdin, merges it and outputs the difference.
+ * onak.c - An OpenPGP keyserver.
+ *
+ * This is the main swiss army knife binary.
  *
  * Jonathan McDowell <noodles@earth.li>
  * 
@@ -42,7 +44,7 @@ int main(int argc, char *argv[])
 	struct openpgp_publickey	*keys = NULL;
 	int				 rc = EXIT_SUCCESS;
 
-	dearmor_openpgp_stream(stdin_getchar, NULL, &packets);
+	read_openpgp_stream(stdin_getchar, NULL, &packets);
 	if (packets != NULL) {
 		parse_keys(packets, &keys);
 		free_packet_list(packets);
@@ -58,13 +60,8 @@ int main(int argc, char *argv[])
 	}
 
 	if (keys != NULL) {
-		flatten_publickey(keys, &packets, &list_end);
 		free_publickey(keys);
 		keys = NULL;
-
-		armor_openpgp_stream(stdout_putchar, NULL, packets);
-		free_packet_list(packets);
-		packets = NULL;
 	} else {
 		rc = 1;
 		fprintf(stderr, "No changes.\n");

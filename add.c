@@ -16,6 +16,7 @@
 #include "keydb.h"
 #include "keystructs.h"
 #include "parsekey.h"
+#include "merge.h"
 
 struct cgi_get_ctx {
 	char *buffer;
@@ -23,13 +24,15 @@ struct cgi_get_ctx {
 };
 
 
-int cgi_getchar(void *ctx, unsigned char *c)
+int cgi_getchar(void *ctx, size_t count, unsigned char *c)
 {
 	struct cgi_get_ctx *buf = NULL;
 
 	buf = (struct cgi_get_ctx *) ctx;
 
-	*c = buf->buffer[buf->offset++];
+	while (count-- > 0 && *c != 0) {
+		*c = buf->buffer[buf->offset++];
+	}
 
 	return (*c == 0);
 }
@@ -38,7 +41,6 @@ int main(int argc, char *argv[])
 {
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_publickey *keys = NULL;
-	struct openpgp_publickey *curkey = NULL;
 	char **params = NULL;
 	struct cgi_get_ctx ctx;
 	int i;
@@ -52,8 +54,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-//	puts("HTTP/1.0 200 OK");
-//	puts("Server: onak 0.0.1");
 	puts("Content-Type: text/html\n");
 	puts("<html><title>onak : Add</title><body>");
 	if (ctx.buffer == NULL) {
@@ -64,18 +64,10 @@ int main(int argc, char *argv[])
 					&packets);
 		if (packets != NULL) {
 			parse_keys(packets, &keys);
-			curkey = keys;
 			initdb();
-			while (curkey != NULL) {
-				if (store_key(curkey)) {
-//					puts("Key added successfully.");
-				} else {
-					printf("Problem adding key '%s'.\n", strerror(errno));
-				}
-				curkey = curkey->next;
-			}
+			printf("Got %d new keys.\n",
+					update_keys(&keys));
 			cleanupdb();
-			puts("Keys added.");
 		} else {
 			puts("No OpenPGP packets found in input.");
 		}

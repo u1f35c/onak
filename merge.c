@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "keydb.h"
 #include "keyid.h"
 #include "keystructs.h"
 #include "ll.h"
@@ -295,4 +296,56 @@ int merge_keys(struct openpgp_publickey *a, struct openpgp_publickey *b)
 	}
 
 	return rc;
+}
+
+/**
+ *	update_keys - Takes a list of public keys and updates them in the DB.
+ *	@keys: The keys to update in the DB.
+ *
+ *	Takes a list of keys and adds them to the database, merging them with
+ *	the key in the database if it's already present there. The key list is
+ *	update to contain the minimum set of updates required to get from what
+ *	we had before to what we have now (ie the set of data that was added to
+ *	the DB). Returns the number of entirely new keys added.
+ */
+int update_keys(struct openpgp_publickey **keys)
+{
+	struct openpgp_publickey *curkey = NULL;
+	struct openpgp_publickey *oldkey = NULL;
+	struct	openpgp_publickey *prev = NULL;
+	int newkeys = 0;
+
+	for (curkey = *keys; curkey != NULL; curkey = curkey->next) {
+		fetch_key(get_keyid(curkey), &oldkey);
+
+		/*
+		 * If we already have the key stored in the DB then merge it
+		 * with the new one that's been supplied. Otherwise the key
+		 * we've just got is the one that goes in the DB and also the
+		 * one that we send out.
+		 */
+		if (oldkey != NULL) {
+			merge_keys(oldkey, curkey);
+			if (curkey->revocations == NULL &&
+					curkey->uids == NULL &&
+					curkey->subkeys == NULL) {
+				if (prev == NULL) {
+					*keys = curkey->next;
+				} else {
+					prev->next = curkey->next;
+					prev = curkey->next;
+				}
+			} else {
+				prev = curkey;
+				store_key(oldkey);
+			}
+			free_publickey(oldkey);
+			oldkey = NULL;
+		} else {
+			store_key(curkey);
+			newkeys++;
+		}
+	}
+
+	return newkeys;
 }

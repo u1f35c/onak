@@ -1,10 +1,10 @@
-* Search on key text.
 * Revoked keys on index.
 * Check keys on import?
 * Test library?
 * Better signature subpacket parsing (primary UID for example).
 * Better txt2html routine.
 * Remove bithelp.h (i386 only at present & inlined).
+  - Build and test on non-i386.
 * BSD license? (Needs md5 & sha routines rewritten/replaced then)
 * Pathfinder - graphical as well? Multiple paths?
 * Do pathlengths for similar email addresses to help aide keysigning.
@@ -14,15 +14,16 @@
 * DB access modules as a library to allow runtime configuration of it?
 * Clean up gcc warnings (`ll' length modifier especially! Also inline & wrong
   signedness for lo_read/write)
-* Webpages should bt UTF-8?
+* Webpages should be UTF-8?
 * autoconf
 * config file
-
-Must do before initial release:
-
-* Key deletion (needed for updating keys).
-* Fix output to make GPG happy with --keyserver.
+* Get all keys link for pathfinder? Or even just gpg command line to C&P.
+* logging framework so we can log debug/warning messages and so on. syslog?
+* Change over to PQescapeString in PostgreSQL backend once Woody releases.
 * Check freeing.
 * More comments.
 * Sort out merging (use keymerge + some Perl to answer incoming email. Not
   sure about keys via hkp yet though).
+* Look at db2 backend - is it db2's fault? (Well, deadlock in that the library
+  probably is...). Is there an alternative library that would provide us with
+  similar features but be more reliable? gdbm?

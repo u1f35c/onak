@@ -187,7 +187,7 @@ struct dearmor_context {
 	int curoctet;
 	int count;
 	long crc24;
-	int (*getchar_func)(void *ctx, unsigned char *c);
+	int (*getchar_func)(void *ctx, size_t count, unsigned char *c);
 	void *ctx;
 };
 
@@ -226,7 +226,7 @@ static int dearmor_getchar(void *ctx, unsigned char *c)
 	
 	tmpc = 65;
 	while (tmpc == 65) {
-		state->getchar_func(state->ctx, &tmpc);
+		state->getchar_func(state->ctx, 1, &tmpc);
 		tmpc = decode64(tmpc);
 	}
 
@@ -236,7 +236,7 @@ static int dearmor_getchar(void *ctx, unsigned char *c)
 			state->lastoctet = tmpc;
 			tmpc = 65;
 			while (tmpc == 65) {
-				state->getchar_func(state->ctx, &tmpc);
+				state->getchar_func(state->ctx, 1, &tmpc);
 				tmpc = decode64(tmpc);
 			}
 			*c = (state->lastoctet << 2) + (tmpc >> 4);
@@ -322,7 +322,8 @@ int armor_openpgp_stream(int (*putchar_func)(void *ctx, unsigned char c),
  *	armored OpenPGP stream and outputs the data as a linked list of
  *	packets.
  */
-int dearmor_openpgp_stream(int (*getchar_func)(void *ctx, unsigned char *c),
+int dearmor_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
+						unsigned char *c),
 				void *ctx,
 				struct openpgp_packet_list **packets)
 {
@@ -336,7 +337,7 @@ int dearmor_openpgp_stream(int (*getchar_func)(void *ctx, unsigned char *c),
 	 * with :s in them, then a blank line, then the data.
 	 */
 	state = 1;
-	while (state != 4 && !getchar_func(ctx, &curchar)) {
+	while (state != 4 && !getchar_func(ctx, 1, &curchar)) {
 		switch (state) {
 			case 0:
 				if (curchar == '\n') {
@@ -350,7 +351,7 @@ int dearmor_openpgp_stream(int (*getchar_func)(void *ctx, unsigned char *c),
 					if (count == 5) {
 						state = 2;
 					}
-				} else {
+				} else if (curchar != '\n') {
 					state = 0;
 				}
 				break;
@@ -368,19 +369,21 @@ int dearmor_openpgp_stream(int (*getchar_func)(void *ctx, unsigned char *c),
 					if (count == 2) {
 						state = 4;
 					}
-				} else {
+				} else if (curchar != '\r') {
 					count = 0;
 				}
 				break;
 		}
 	}
 
-	dearmor_init(&dearmor_ctx);
-	dearmor_ctx.getchar_func = getchar_func;
-	dearmor_ctx.ctx = ctx;
-	read_openpgp_stream(dearmor_getchar_c, &dearmor_ctx, packets);
-	dearmor_finish(&dearmor_ctx);
-	// TODO: Look for armor footer
+	if (state == 4) {
+		dearmor_init(&dearmor_ctx);
+		dearmor_ctx.getchar_func = getchar_func;
+		dearmor_ctx.ctx = ctx;
+		read_openpgp_stream(dearmor_getchar_c, &dearmor_ctx, packets);
+		dearmor_finish(&dearmor_ctx);
+		// TODO: Look for armor footer
+	}
 
 	return 0;
 }

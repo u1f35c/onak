@@ -1,0 +1,53 @@
+From pgp-keyserver-admin@prato.linux.it Sun May 19 11:34:50 2002
+Received: from lorien.prato.linux.it ([193.70.7.140] ident=postfix)
+	by the.earth.li with esmtp (Exim 3.12 #1 (Debian))
+	id 179O1a-0004BH-00
+	for <pgp-public-keys@the.earth.li>; Sun, 19 May 2002 11:34:50 +0100
+Received: by lorien.prato.linux.it (Postfix, from userid 1000)
+	id AB4AC336CC; Sun, 19 May 2002 12:34:49 +0200 (CEST)
+To: pgp-public-keys@keys.nl.pgp.net, pgp-public-keys@the.earth.li
+From: PGP Key Server Administrator <pgp-keyserver-admin@keyserver.linux.it>
+Subject: incremental
+X-KeyServer-Sent: pgp-public-keys@pgp.mit.edu
+X-KeyServer-Sent: pgp-public-keys@pgp.dtype.org
+X-KeyServer-Sent: pgp-public-keys@keyserver.linux.it
+Precedence: list
+MIME-Version: 1.0
+Content-type: application/pgp-keys
+Message-Id: <20020519103449.AB4AC336CC@lorien.prato.linux.it>
+Date: Sun, 19 May 2002 12:34:49 +0200 (CEST)
+
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: 5.0
+Comment: PGP Key Server 0.9.4+patch2
+
+mQCPAzzPtoAAAAEEAL+/LN5t4U3d+8p5IfjYGpLI+7U4lFNynD+lISB6vgoQRv3/
+VbdafDAoJH7Bq8imILMJD8JyY720uc/cH/rRO0idpYqtgD1JPdxHevwdxMRqaTmB
+wsnBk7oKRjSetdLM+FB8FxudQt0t/5bjky53RFfeL3oBN57O2eO8UnJMCAdbABEB
+AAG0KkNsZW1lbnMgR3VldHRsZXIgPGNsZW1lbnMuZ3VldHRsZXJAd2ViLmRlPokE
+IQQQZAEEFAUCPM+2gAUDAeEzgMNGZAEBBDCCA/4wggLmoAMCAQICBACkpSYwDQYJ
+KoZIhvcNAQEEBQAwgaExCzAJBgNVBAYTAkRFMRowGAYDVQQHExFELTc2MjI3IEth
+cmxzcnVoZTESMBAGA1UEChMJV0VCLkRFIEFHMRcwFQYDVQQLEw5UcnVzdENlbnRl
+ciBDQTEsMCoGA1UEAxMjV0VCLkRFIFRydXN0Q2VudGVyIFZvbGwtWmVydGlmaWth
+dGUxGzAZBgkqhkiG9w0BCQEWDHRydXN0QHdlYi5kZTAeFw0wMjA1MDEwOTMzNTJa
+Fw0wMzA1MDEwOTMzNTJaMIGAMQswCQYDVQQGEwJERTEUMBIGA1UECBMLRGV1dHNj
+aGxhbmQxGDAWBgNVBAcTDzYxNDQ5IFN0ZWluYmFjaDEZMBcGA1UEAxMQQ2xlbWVu
+cyBHdWV0dGxlcjEmMCQGCSqGSIb3DQEJARYXY2xlbWVucy5ndWV0dGxlckB3ZWIu
+ZGUwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAL+/LN5t4U3d+8p5IfjYGpLI
++7U4lFNynD+lISB6vgoQRv3/VbdafDAoJH7Bq8imILMJD8JyY720uc/cH/rRO0id
+pYqtgD1JPdxHevwdxMRqaTmBwsnBk7oKRjSetdLM+FB8FxudQt0t/5bjky53RFfe
+L3oBN57O2eO8UnJMCAdbAgMBAAGjgeAwgd0wLAYJYIZIAYb4QgEEBB8WHWh0dHBz
+Oi8vdHJ1c3Qud2ViLmRlL3J2Q0EvP3M9MCMGCWCGSAGG+EIBAgQWFhRodHRwczov
+L3RydXN0LndlYi5kZTAWBglghkgBhvhCAQMECRYHL3J2Lz9zPTAWBglghkgBhvhC
+AQcECRYHL3JuLz9zPTAaBglghkgBhvhCAQgEDRYLL0hpbGZlL0FHQi8wKQYJYIZI
+AYb4QgENBBwWGkZyZWVtYWlsIEVtYWlsIGNlcnRpZmljYXRlMBEGCWCGSAGG+EIB
+AQQEAwIAsDANBgkqhkiG9w0BAQQFAAOCAQEAmlk1K+zdUKwE5KezT0uPZiFkLG23
+LGd49/A+Q3aRWXCuupP6EL7KzvwUyxz3HAIzMyQO4QWvzGeH3wawQwsRfWj8Wq8d
+J9V8zwsPNkL/jcjbWwi6qeoZueiBBCSc9MiO+OOpknzyH3K+C6FnOoxjANnP10ry
+WJFQf0BudmsoWWLPWOXct6A7ILYNiFbruTTI7Hk3ZkqjWvDb43RvWhLMprYcod6M
+wPgDh4t3rXyFdRz5ktBUNxVj5qnOHSYcvfgswDztv8IvUXm9aWqApvszATS+aX+Q
+mKhuT1oSvHfzXhJX0bAJZmoL65PzE87dahu6Ln0VBHzdZItzFtJtN3N7RwAAAAAA
+AQE=
+=yP81
+-----END PGP PUBLIC KEY BLOCK-----
+

@@ -25,6 +25,7 @@
 #include "keyindex.h"
 #include "keystructs.h"
 #include "mem.h"
+#include "onak_conf.h"
 #include "parsekey.h"
 
 /**
@@ -57,13 +58,13 @@ static int keydb_putchar(void *fd, unsigned char c)
  */
 void initdb(void)
 {
-	dbconn = PQsetdbLogin(NULL, // host
+	dbconn = PQsetdbLogin(config.pg_dbhost, // host
 			NULL, // port
 			NULL, // options
 			NULL, // tty
-			"noodles", // database
-			NULL,  //login
-			NULL); // password
+			config.pg_dbname, // database
+			config.pg_dbuser,  //login
+			config.pg_dbpass); // password
 
 	if (PQstatus(dbconn) == CONNECTION_BAD) {
 		fprintf(stderr, "Connection to database failed.\n");
@@ -104,39 +105,124 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey)
 	char *oids = NULL;
 	char statement[1024];
 	int fd = -1;
+	int i = 0;
+	int numkeys = 0;
 	Oid key_oid;
 
 	result = PQexec(dbconn, "BEGIN");
 	PQclear(result);
 	
-	snprintf(statement, 1023,
+	if (keyid > 0xFFFFFFFF) {
+		snprintf(statement, 1023,
 			"SELECT keydata FROM onak_keys WHERE keyid = '%llX'",
-			keyid & 0xFFFFFFFF);
+			keyid);
+	} else {
+		snprintf(statement, 1023,
+			"SELECT keydata FROM onak_keys WHERE keyid "
+			"LIKE '%%%llX'",
+			keyid);
+	}
 	result = PQexec(dbconn, statement);
 
-	if (PQresultStatus(result) == PGRES_TUPLES_OK &&
-			PQntuples(result) == 1) {
-		oids = PQgetvalue(result, 0, 0);
-		key_oid = (Oid) atoi(oids);
+	if (PQresultStatus(result) == PGRES_TUPLES_OK) {
+		numkeys = PQntuples(result);
+		for (i = 0; i < numkeys && numkeys <= config.maxkeys; i++) {
+			oids = PQgetvalue(result, i, 0);
+			key_oid = (Oid) atoi(oids);
 
-		fd = lo_open(dbconn, key_oid, INV_READ);
-		if (fd < 0) {
-			fprintf(stderr, "Can't open large object.\n");
-		} else {
-			read_openpgp_stream(keydb_fetchchar, &fd, &packets);
-			parse_keys(packets, publickey);
-			lo_close(dbconn, fd);
+			fd = lo_open(dbconn, key_oid, INV_READ);
+			if (fd < 0) {
+				fprintf(stderr, "Can't open large object.\n");
+			} else {
+				read_openpgp_stream(keydb_fetchchar, &fd,
+						&packets);
+				parse_keys(packets, publickey);
+				lo_close(dbconn, fd);
+			}
 		}
 	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-		fprintf(stderr, "Problem retrieving key (%llX) from DB.\n",
-				keyid);
+		fprintf(stderr, "Problem retrieving key from DB.\n");
 	}
 
 	PQclear(result);
 
 	result = PQexec(dbconn, "COMMIT");
 	PQclear(result);
-	return (fd > -1);
+	return (numkeys);
+}
+
+/**
+ *	fetch_key_text - Trys to find the keys that contain the supplied text.
+ *	@search: The text to search for.
+ *	@publickey: A pointer to a structure to return the key in.
+ *
+ *	This function searches for the supplied text and returns the keys that
+ *	contain it.
+ */
+int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
+{
+	struct openpgp_packet_list *packets = NULL;
+	PGresult *result = NULL;
+	char *oids = NULL;
+	char statement[1024];
+	int fd = -1;
+	int i = 0;
+	int numkeys = 0;
+	Oid key_oid;
+	char *dodgychar = NULL;
+
+	result = PQexec(dbconn, "BEGIN");
+	PQclear(result);
+
+	/*
+	 * TODO: We really want to use PQescapeString, but this isn't supported
+	 * by the version of Postgresql in Debian Stable. Roll on Woody and for
+	 * now kludge it.
+	 */
+	dodgychar = strchr(search, '\'');
+	while (dodgychar != NULL) {
+		*dodgychar = ' ';
+		dodgychar = strchr(search, '\'');
+	}
+	dodgychar = strchr(search, '\\');
+	while (dodgychar != NULL) {
+		*dodgychar = ' ';
+		dodgychar = strchr(search, '\\');
+	}
+
+	
+	snprintf(statement, 1023,
+			"SELECT DISTINCT onak_keys.keydata FROM onak_keys, "
+			"onak_uids WHERE onak_keys.keyid = onak_uids.keyid "
+			"AND onak_uids.uid LIKE '%%%s%%'",
+			search);
+	result = PQexec(dbconn, statement);
+
+	if (PQresultStatus(result) == PGRES_TUPLES_OK) {
+		numkeys = PQntuples(result);
+		for (i = 0; i < numkeys && numkeys <= config.maxkeys; i++) {
+			oids = PQgetvalue(result, i, 0);
+			key_oid = (Oid) atoi(oids);
+
+			fd = lo_open(dbconn, key_oid, INV_READ);
+			if (fd < 0) {
+				fprintf(stderr, "Can't open large object.\n");
+			} else {
+				read_openpgp_stream(keydb_fetchchar, &fd,
+						&packets);
+				parse_keys(packets, publickey);
+				lo_close(dbconn, fd);
+			}
+		}
+	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+		fprintf(stderr, "Problem retrieving key from DB.\n");
+	}
+
+	PQclear(result);
+
+	result = PQexec(dbconn, "COMMIT");
+	PQclear(result);
+	return (numkeys);
 }
 
 /**
@@ -157,6 +243,10 @@ int store_key(struct openpgp_publickey *publickey)
 	char statement[1024];
 	Oid key_oid;
 	int fd;
+	char **uids = NULL;
+	char *primary = NULL;
+	char *dodgychar = NULL;
+	int i;
 
 
 	/*
@@ -189,7 +279,7 @@ int store_key(struct openpgp_publickey *publickey)
 	snprintf(statement, 1023, 
 			"INSERT INTO onak_keys (keyid, keydata) VALUES "
 			"('%llX', '%d')", 
-			get_keyid(publickey) & 0xFFFFFFFF,
+			get_keyid(publickey),
 			key_oid);
 	result = PQexec(dbconn, statement);
 
@@ -198,6 +288,45 @@ int store_key(struct openpgp_publickey *publickey)
 		fprintf(stderr, "%s\n", PQresultErrorMessage(result));
 	}
 	PQclear(result);
+
+	uids = keyuids(publickey, &primary);
+	if (uids != NULL) {
+		for (i = 0; uids[i] != NULL; i++) {
+			/*
+			 * TODO: We really want to use PQescapeString, but this
+			 * isn't supported by the version of Postgresql in
+			 * Debian Stable. Roll on Woody and for now kludge it.
+			 */
+			dodgychar = strchr(uids[i], '\'');
+			while (dodgychar != NULL) {
+				*dodgychar = ' ';
+				dodgychar = strchr(uids[i], '\'');
+			}
+			dodgychar = strchr(uids[i], '\\');
+				while (dodgychar != NULL) {
+				*dodgychar = ' ';
+				dodgychar = strchr(uids[i], '\\');
+			}
+
+			snprintf(statement, 1023,
+				"INSERT INTO onak_uids (keyid, uid, pri) "
+				"VALUES	('%llX', '%s', '%c')",
+				get_keyid(publickey),
+				uids[i],
+				(uids[i] == primary) ? 't' : 'f');
+			result = PQexec(dbconn, statement);
+
+			if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+				fprintf(stderr, "Problem storing key in DB.\n");
+				fprintf(stderr, "%s\n",
+						PQresultErrorMessage(result));
+			}
+			/*
+			 * TODO: Check result.
+			 */
+			PQclear(result);
+		}
+	}
 
 	result = PQexec(dbconn, "COMMIT");
 	PQclear(result);
@@ -218,6 +347,7 @@ int delete_key(uint64_t keyid)
 	char *oids = NULL;
 	char statement[1024];
 	int found = 1;
+	int i;
 	Oid key_oid;
 
 	result = PQexec(dbconn, "BEGIN");
@@ -225,19 +355,29 @@ int delete_key(uint64_t keyid)
 	
 	snprintf(statement, 1023,
 			"SELECT keydata FROM onak_keys WHERE keyid = '%llX'",
-			keyid & 0xFFFFFFFF);
+			keyid);
 	result = PQexec(dbconn, statement);
 
-	if (PQresultStatus(result) == PGRES_TUPLES_OK &&
-			PQntuples(result) == 1) {
+	if (PQresultStatus(result) == PGRES_TUPLES_OK) {
 		found = 0;
-		oids = PQgetvalue(result, 0, 0);
-		key_oid = (Oid) atoi(oids);
-		lo_unlink(dbconn, key_oid);
+		i = PQntuples(result);
+		while (i > 0) {
+			oids = PQgetvalue(result, i-1, 0);
+			key_oid = (Oid) atoi(oids);
+			lo_unlink(dbconn, key_oid);
+			i--;
+		}
 		PQclear(result);
+
 		snprintf(statement, 1023,
-			"DELETE * FROM onak_keys WHERE keyid = '%llX'",
-			keyid & 0xFFFFFFFF);
+			"DELETE FROM onak_keys WHERE keyid = '%llX'",
+			keyid);
+		result = PQexec(dbconn, statement);
+		PQclear(result);
+
+		snprintf(statement, 1023,
+			"DELETE FROM onak_uids WHERE keyid = '%llX'",
+			keyid);
 		result = PQexec(dbconn, statement);
 	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
 		fprintf(stderr, "Problem retrieving key (%llX) from DB.\n",
@@ -251,7 +391,43 @@ int delete_key(uint64_t keyid)
 	return (found);
 }
 
+/**
+ *	keyid2uid - Takes a keyid and returns the primary UID for it.
+ *	@keyid: The keyid to lookup.
+ */
+char *keyid2uid(uint64_t keyid)
+{
+	PGresult *result = NULL;
+	char statement[1024];
+	char *uid = NULL;
+
+	snprintf(statement, 1023,
+		"SELECT uid FROM onak_uids WHERE keyid = '%llX' AND pri = 't'",
+		keyid);
+	result = PQexec(dbconn, statement);
+
+	/*
+	 * Technically we only expect one response to the query; a key only has
+	 * one primary ID. Better to return something than nothing though.
+	 *
+	 * TODO: Log if we get more than one response? Needs logging framework
+	 * first though.
+	 */
+	if (PQresultStatus(result) == PGRES_TUPLES_OK &&
+			PQntuples(result) >= 1) {
+		uid = strdup(PQgetvalue(result, 0, 0));
+	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+		fprintf(stderr, "Problem retrieving key (%llX) from DB.\n",
+				keyid);
+	}
+
+	PQclear(result);
+
+	return uid;
+}
+
 /*
  * Include the basic keydb routines.
  */
+#define NEED_GETKEYSIGS 1
 #include "keydb.c"

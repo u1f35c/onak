@@ -66,6 +66,16 @@ int store_key(struct openpgp_publickey *publickey);
 int delete_key(uint64_t keyid);
 
 /**
+ *	fetch_key_text - Trys to find the keys that contain the supplied text.
+ *	@search: The text to search for.
+ *	@publickey: A pointer to a structure to return the key in.
+ *
+ *	This function searches for the supplied text and returns the keys that
+ *	contain it.
+ */
+int fetch_key_text(const char *search, struct openpgp_publickey **publickey);
+
+/**
  *	keyid2uid - Takes a keyid and returns the primary UID for it.
  *	@keyid: The keyid to lookup.
  *
