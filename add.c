@@ -63,8 +63,10 @@ int main(int argc, char *argv[])
 					&ctx,
 					&packets);
 		if (packets != NULL) {
-			printf("Storing %d keys.\n",
-				parse_keys(packets, &keys));
+			count = parse_keys(packets, &keys);
+			logthing(LOGTHING_NOTICE, "Received %d keys.",
+				count);
+			printf("Storing %d keys.\n", count);
 			end_html();
 			fclose(stdout);
 			fclose(stderr);
