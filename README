@@ -19,7 +19,7 @@ Installation:
 
 onak has been mainly developed under Linux with a bit of work on FreeBSD
 at times also. It should run on all architectures, but has only been
-tested on i386 and PowerPC so far.
+tested on i386, AMD64 and PowerPC so far.
 
 Typing "./configure && make" should produce a version of onak with
 support for the DB4 backend. If you want to choose a different backend
@@ -37,7 +37,7 @@ Once make has completed you'll end up with various binaries:
   The mail processor. Takes incoming mail (usually to
   pgp-public-keys@host) and calls onak to do the necessary work.
   Currently only supports INCREMENTAL mails for syncing with other
-  keyservers.
+  keyservers and INDEX mails from users.
 
 * add, lookup & gpgwww
   The CGI programs. add & lookup are common to all PGP keyservers while
@@ -47,21 +47,22 @@ Once make has completed you'll end up with various binaries:
   mathopd.conf file provided that I used for testing, but I'm now using
   Apache for the public test rig as it's already present on the host
   running it.
+ 
+* splitkeys
+  Utility to take a keyring and split it up into a bunch of smaller ones.
 
 
 Config:
 
 I've finally added config file support. onak.conf is an example config;
 the main thing to change is the db_dir to whereever you want to put your
-database files. You can change CONFIGFILE in onak-conf.h to specify
-where onak should look for this file. By default it's
-"/home/noodles/projects/onak/onak.conf" as this suits my development. No
-doubt it'll become a compile option at some point.
+database files. The configure script allows you to specific where it
+should live; by default it'll be PREFIX/etc/onak.conf.
 
 
 Backends:
 
-Currently there is support for 4 different database backends:
+Currently there is support for 5 different database backends:
 
 * file
   The original backend. Very simple and ideal for testing. Stores each
@@ -100,12 +101,11 @@ please let me know and I'll add them.
 
 * pks
   http://sf.net/projects/pks/
-  The prodominant keyserver I believe; certainly what I run on
-  wwwkeys.uk.pgp.net. Recently development restarted on this (when I
-  started writing onak it had been dormant for some time) so it should
-  hopefully get its problems sorted out soon. The main issue with pks is
-  that it lacks support for keys with multiple subkeys bound to them and
-  unfortunately mangles them.
+  The prodominant keyserver I believe; what I used to run on
+  wwwkeys.uk.pgp.net. Had a spurt of activity a year or two ago, but
+  seems to have died off again. The main issue with pks is that it lacks
+  support for keys with multiple subkeys bound to them and older
+  versions unfortunately mangle them.
 
 * CryptNET Keyserver
   http://www.cryptnet.net/fsp/cks/
@@ -121,7 +121,7 @@ please let me know and I'll add them.
 * SKS
   http://sks.sourceforge.net/
   A reasonably new keyserver concentrating more on the whole issue of
-  syncronization between keyservers.
+  syncronization between keyservers. Seems to be gaining in popularity.
 
 
 Contacting the author:
@@ -130,6 +130,20 @@ I can be reached via email as noodles@earth.li. I'm usually on IRC on
 OFTC (irc.oftc.net) as Noodles.
 
 All constructive criticism, bugs reports, patches and ideas are welcome.
+
+
+Obtaining later versions:
+
+onak lives at:
+
+http://www.earth.li/projectpurple/progs/onak.html
+
+Development is carried out using arch; you can access the repository
+with something like:
+
+tla register-archive noodles@earth.li--2004-laptop \
+	http://www.earth.li/~noodles/arch/
+tla get -A noodles@earth.li--2004-laptop onak--mainline--0.3
 
 
 License:
