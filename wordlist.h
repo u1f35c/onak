@@ -4,8 +4,6 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2004 Project Purple
- *
- * $Id: wordlist.h,v 1.1 2004/05/27 03:34:35 noodles Exp $
  */
 
 #ifndef __WORDLIST_H__

@@ -4,8 +4,6 @@
  * Daniel Silverstone <dsilvers@digital-scurf.org>
  *
  * Copyright 2004 Daniel Silverstone and Project Purple
- *
- * $Id: keydb_fs.c,v 1.3 2004/05/28 03:23:04 noodles Exp $
  */
 
 #include <sys/types.h>

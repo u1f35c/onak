@@ -4,8 +4,6 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2002 Project Purple
- *
- * $Id: onak-conf.h,v 1.12 2003/10/15 21:15:21 noodles Exp $
  */
 
 #ifndef __ONAK_CONF_H_

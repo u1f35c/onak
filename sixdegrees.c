@@ -4,8 +4,6 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2001-2002 Project Purple.
- *
- * $Id: sixdegrees.c,v 1.6 2004/03/23 12:33:47 noodles Exp $
  */
 
 #include <stdio.h>

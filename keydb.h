@@ -4,8 +4,6 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2002 Project Purple
- *
- * $Id: keydb.h,v 1.10 2004/03/23 12:33:46 noodles Exp $
  */
 
 #ifndef __KEYDB_H__

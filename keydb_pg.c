@@ -4,8 +4,6 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2002 Project Purple
- *
- * $Id: keydb_pg.c,v 1.14 2004/03/23 12:33:47 noodles Exp $
  */
 
 #include <postgresql/libpq-fe.h>

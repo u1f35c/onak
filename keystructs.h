@@ -4,8 +4,6 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2002 Project Purple
- *
- * $Id: keystructs.h,v 1.7 2003/06/08 21:11:01 noodles Exp $
  */
 
 #ifndef __KEYSTRUCTS_H__

@@ -4,8 +4,6 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2004 Project Purple
- *
- * $Id: photoid.c,v 1.2 2004/05/27 21:58:18 noodles Exp $
  */
 
 #include <assert.h>

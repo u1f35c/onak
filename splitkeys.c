@@ -4,8 +4,6 @@
  * Jonathan McDowell <noodles@earth.li>
  * 
  * Copyright 2003 Project Purple
- *
- * $Id: splitkeys.c,v 1.4 2003/10/15 21:15:21 noodles Exp $
  */
 
 #include <fcntl.h>

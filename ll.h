@@ -4,8 +4,6 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2002 Project Purple
- *
- * $Id: ll.h,v 1.4 2003/10/04 10:21:41 noodles Exp $
  */
 
 #ifndef __LL_H__

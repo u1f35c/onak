@@ -4,8 +4,6 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2002 Project Purple
- *
- * $Id: keyindex.h,v 1.6 2003/06/08 19:04:32 noodles Exp $
  */
 
 #ifndef __KEYINDEX_H__

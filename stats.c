@@ -4,8 +4,6 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2000-2002 Project Purple
- *
- * $Id: stats.c,v 1.13 2003/10/11 21:52:18 noodles Exp $
  */
 
 #include <stdio.h>

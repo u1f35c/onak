@@ -4,8 +4,6 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2002 Project Purple
- *
- * $Id: parsekey.c,v 1.20 2004/05/27 21:55:38 noodles Exp $
  */
 
 #include <assert.h>

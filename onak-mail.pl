@@ -6,8 +6,6 @@
 # Copyright 2002 Project Purple
 # Released under the GPL.
 #
-# $Id: onak-mail.pl,v 1.9 2004/01/04 18:48:37 noodles Exp $
-#
 
 use strict;
 use Fcntl ':flock';

@@ -4,8 +4,6 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2002 Project Purple
- *
- * $Id: stats.h,v 1.5 2003/06/04 20:57:13 noodles Exp $
  */
 
 /* MOSTSIGNED
