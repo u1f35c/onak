@@ -107,7 +107,6 @@ struct ll *makewordlist(struct ll *wordlist, char *word)
  */
 void initdb(void)
 {
-	char buf[1024];
 	int ret = 0;
 
 	ret = db_env_create(&dbenv, 0);
@@ -198,6 +197,7 @@ bool starttrans(void)
 {
 	int ret;
 
+	assert(dbenv != NULL);
 	assert(txn == NULL);
 
 	ret = txn_begin(dbenv,
@@ -221,6 +221,7 @@ void endtrans(void)
 {
 	int ret;
 
+	assert(dbenv != NULL);
 	assert(txn != NULL);
 
 	ret = txn_commit(txn,
@@ -697,6 +698,52 @@ int delete_key(uint64_t keyid, bool intrans)
 	}
 
 	return deadlock ? (-1) : (ret == DB_NOTFOUND);
+}
+
+/**
+ *	dumpdb - dump the key database
+ *	@filenamebase: The base filename to use for the dump.
+ *
+ *	Dumps the database into one or more files, which contain pure OpenPGP
+ *	that can be reimported into onak or gpg. filenamebase provides a base
+ *	file name for the dump; several files may be created, all of which will
+ *	begin with this string and then have a unique number and a .pgp
+ *	extension.
+ */
+int dumpdb(char *filenamebase)
+{
+	DBT key, data;
+	DBC *cursor = NULL;
+	int ret = 0;
+	int fd = -1;
+
+	starttrans();
+	
+	ret = dbconn->cursor(dbconn,
+		txn,
+		&cursor,
+		0);   /* flags */
+
+	fd = open(filenamebase, O_CREAT | O_WRONLY | O_TRUNC, 0640);
+	memset(&key, 0, sizeof(key));
+	memset(&data, 0, sizeof(data));
+	ret = cursor->c_get(cursor, &key, &data, DB_NEXT);
+	while (ret == 0) {
+		write(fd, data.data, data.size);
+		memset(&key, 0, sizeof(key));
+		memset(&data, 0, sizeof(data));
+		ret = cursor->c_get(cursor, &key, &data, DB_NEXT);
+	}
+	dbconn->err(dbconn, ret, "Problem reading key");
+
+	close(fd);
+
+	ret = cursor->c_close(cursor);
+	cursor = NULL;
+	
+	endtrans();
+	
+	return 0;
 }
 
 /*

@@ -120,6 +120,10 @@ int main(int argc, char *argv[])
 
 	if ((argc - optind) < 1) {
 		usage();
+	} else if (!strcmp("dump", argv[optind])) {
+		initdb();
+		dumpdb("keydump");
+		cleanupdb();
 	} else if (!strcmp("add", argv[optind])) {
 		if (binary) {
 			result = read_openpgp_stream(stdin_getchar, NULL,
