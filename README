@@ -1,26 +1,131 @@
-onak 0.0.1
+onak 0.1.1
+Copyright 2002 Project Purple. Written by Jonathan McDowell
+http://www.earth.li/projectpurple/progs/onak.html
 
-First release. You're mostly on your own folks.
 
-Developed under Linux & FreeBSD. Not currently autoconfed, so might need some
-tweaking to compile under anything else (or indeed either of those with header
-files in different places).
+Introduction:
 
-The DB2 support for pksd databases is read only at present. It was knocked up
-in an hour to get the pathfinder working with the wwwkeys.uk.pgp.net DB.
+onak is an OpenPGP compatible keyserver. It's primary purpose is the
+storage and retrieval of OpenPGP keys but it also has features that make
+use of the stored keys for various other purposes. The most useful of
+these is probably the pathfinder. This takes two keys, a & b, and
+attempts to find a path of trust from a to b in the key database. I
+started work on it because at the time there was no DFSG compliant
+server that supported multiple subkeys and could act as a drop in
+replacement for pksd, which I was running (and still am).
 
-File database backend support is good for testing.
 
-It's running on hell.on.earth.li; currently with just under 400 keys in the
-database (Postgres backend). This isn't merging with anything at present
-though; that's the next step which is sort of there.
+Installation:
 
-You want to put add & lookup in a /pks directory under a web server running on
-port 11371 to make gpg happy. There's a mathopd.conf file that I used for
-testing, however I'm now running it under Apache for the public test rig as
-that host already runs it.
+onak has been mainly developed under Linux with a bit of work on FreeBSD
+at times also. It's i386 specific at present thanks to the bit of
+assembly in bithelp.h. Feel free to submit a patch for your arch. :)
 
-Really needs a config file so all the hardcoded stuff isn't any more.
+Typing "make" should produce a version of onak with support for the DB3
+backend. If you want to choose a different backend (see below for a
+discussion about the options) you'll need to edit the Makefile first.
 
-Patches to do stuff welcome. Bug reports welcome. Don't expect quick responses
-though. ;)
+Once make has completed you'll end up with various binaries:
+
+* onak
+  This is the main program. It's intended to be run from the command
+  line and allows the addition, deletion and searching of keys in the
+  database.
+
+* onak-mail.pl
+  The mail processor. Takes incoming mail (usually to
+  pgp-public-keys@host) and calls onak to do the necessary work.
+  Currently only supports INCREMENTAL mails for syncing with other
+  keyservers.
+
+* add, lookup & gpgwww
+  The CGI programs. add & lookup are common to all PGP keyservers while
+  gpgwww is the pathfinder component of onak. To get a keyserver that
+  clients such as GPG can sync with you'll need to put these in a /pks
+  directory on a web server running on port 11371. There's an example
+  mathopd.conf file provided that I used for testing, but I'm now using
+  Apache for the public test rig as it's already present on the host
+  running it.
+
+
+Config:
+
+I've finally added config file support. onak.conf is an example config;
+the main thing to change is the db_dir to whereever you want to put your
+database files. You can change CONFIGFILE in onak-conf.h to specify
+where onak should look for this file. By default it's
+"/home/noodles/projects/onak/onak.conf" as this suits my development. No
+doubt it'll become a compile option at some point.
+
+
+Backends:
+
+Currently there is support for 4 different database backends:
+
+* file
+  The original backend. Very simple and ideal for testing. Stores each
+  key as a separate file. Doesn't support searching based on key text.
+
+* pg (PostgreSQL)
+  Once the preferred backend. Use onak.sql to create the tables
+  necessary to run with this. Unfortunately although suitable for the
+  keyserver side it was found to be too slow for running the pathfinder
+  with a large number of keys. This may well be due to my use of it - if
+  you can help speed it up info would be appreciated.
+
+* db2 (Berkeley libdb2)
+  Only added to provide the ability to run the pathfinder with a key
+  database produced by pksd. Currently only supports pulling keys out by
+  keyid - no key updating or searching by key test. Found to be
+  tempramental and prone to deadlock in the db2 library.
+
+* db3 (Berkeley libdb3)
+  The currently preferred backend. Supports the full range of functions
+  like the pg backend but is considerably faster. Also easier to setup
+  assuming you have libdb3 installed; there's no need to have an SQL
+  database running and configured.
+
+
+Other keyservers:
+
+I'm aware of the following other keyservers. If you know of any more
+please let me know and I'll add them.
+
+* pks
+  http://sf.net/projects/pks/
+  The prodominant keyserver I believe; certainly what I run on
+  wwwkeys.uk.pgp.net. Recently development restarted on this (when I
+  started writing onak it had been dormant for some time) so it should
+  hopefully get its problems sorted out soon. The main issue with pks is
+  that it lacks support for keys with multiple subkeys bound to them and
+  unfortunately mangles them.
+
+* CryptNET Keyserver
+  http://www.cryptnet.net/fsp/cks/
+  A GPLed server with support for multiple subkeys, but unfortunately
+  when I looked at it there was no support for syncing via email which
+  means it can't replace a pks server to act as part of pgp.net.
+
+* OpenPKSD
+  http://openpksd.org/
+  Don't really know a lot about this. Primarily Japanese development
+  AFAICT.
+
+* SKS
+  http://sks.sourceforge.net/
+  A reasonably new keyserver concentrating more on the whole issue of
+  syncronization between keyservers.
+
+
+Contacting the author:
+
+I can be reached via email as noodles@earth.li. I'm usually on IRC on
+OFTC (irc.oftc.net) as Noodles.
+
+All constructive criticism, bugs reports, patches and ideas are welcome.
+
+
+License:
+
+onak is distributed under the GNU Public License, a copy of which should
+have been provided with this archive as LICENSE.
