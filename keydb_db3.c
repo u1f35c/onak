@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb_db3.c,v 1.21 2003/10/03 23:02:04 noodles Exp $
+ * $Id: keydb_db3.c,v 1.22 2003/10/10 16:57:27 noodles Exp $
  */
 
 #include <assert.h>
@@ -139,6 +139,15 @@ void initdb(void)
 	} else {
 		logthing(LOGTHING_ERROR, "Couldn't open num_keydb: %s",
 				strerror(errno));
+		numdb = fopen(buf, "w");
+		if (numdb != NULL) {
+			fprintf(numdb, "%d", numdbs);
+			fclose(numdb);
+		} else {
+			logthing(LOGTHING_ERROR,
+				"Couldn't write num_keydb: %s",
+				strerror(errno));
+		}
 	}
 
 	dbconns = malloc(sizeof (DB *) * numdbs);
