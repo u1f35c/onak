@@ -44,4 +44,13 @@ uint64_t sig_keyid(struct openpgp_packet *packet);
  */
 char **keyuids(struct openpgp_publickey *key, char **primary);
 
+/**
+ *	keysubkeys - Takes a key and returns an array of its subkey keyids.
+ *	@key: The key to get the subkeys of.
+ *
+ *	keysubkeys takes a public key structure and returns an array of the
+ *	subkey keyids for that key.
+ */
+uint64_t *keysubkeys(struct openpgp_publickey *key);
+
 #endif

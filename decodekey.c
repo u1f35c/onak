@@ -249,3 +249,30 @@ char **keyuids(struct openpgp_publickey *key, char **primary)
 
 	return uids;
 }
+
+/**
+ *	keysubkeys - Takes a key and returns an array of its subkey keyids.
+ *	@key: The key to get the subkeys of.
+ *
+ *	keysubkeys takes a public key structure and returns an array of the
+ *	subkey keyids for that key.
+ */
+uint64_t *keysubkeys(struct openpgp_publickey *key)
+{
+	struct openpgp_signedpacket_list *cursubkey = NULL;
+	uint64_t                         *subkeys = NULL;
+	int                               count = 0;
+        
+	if (key != NULL && key->subkeys != NULL) {
+		subkeys = malloc((spsize(key->subkeys) + 1) *
+				sizeof (uint64_t));
+		cursubkey = key->subkeys;
+		while (cursubkey != NULL) {
+			subkeys[count++] = get_packetid(cursubkey->packet);
+			cursubkey = cursubkey -> next;
+		}
+		subkeys[count] = NULL;
+	}
+
+	return subkeys;
+}

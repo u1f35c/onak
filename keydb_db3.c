@@ -490,6 +490,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 	DBT        data;
 	uint64_t   keyid = 0;
 	uint32_t   shortkeyid = 0;
+	uint64_t  *subkeyids = NULL;
 	char     **uids = NULL;
 	char      *primary = NULL;
 	unsigned char worddb_data[12];
@@ -660,6 +661,39 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 		}
 	}
 
+	if (!deadlock) {
+		subkeyids = keysubkeys(publickey);
+		i = 0;
+		while (subkeyids != NULL && subkeyids[i] != 0) {
+			shortkeyid = subkeyids[i++] & 0xFFFFFFFF;
+
+			memset(&key, 0, sizeof(key));
+			memset(&data, 0, sizeof(data));
+			key.data = &shortkeyid;
+			key.size = sizeof(shortkeyid);
+			data.data = &keyid;
+			data.size = sizeof(keyid);
+
+			ret = id32db->put(id32db,
+				txn,
+				&key,
+				&data,
+				0);
+			if (ret != 0) {
+				logthing(LOGTHING_ERROR,
+					"Problem storing short keyid: %s",
+					db_strerror(ret));
+				if (ret == DB_LOCK_DEADLOCK) {
+					deadlock = true;
+				}
+			}
+		}
+		if (subkeyids != NULL) {
+			free(subkeyids);
+			subkeyids = NULL;
+		}
+	}
+
 	return deadlock ? -1 : 0 ;
 }
 
@@ -677,6 +711,7 @@ int delete_key(uint64_t keyid, bool intrans)
 	DBT key, data;
 	DBC *cursor = NULL;
 	uint32_t   shortkeyid = 0;
+	uint64_t  *subkeyids = NULL;
 	int ret = 0;
 	int i;
 	char **uids = NULL;
@@ -811,6 +846,48 @@ int delete_key(uint64_t keyid, bool intrans)
 				deadlock = true;
 			}
 		}
+
+		subkeyids = keysubkeys(publickey);
+		i = 0;
+		while (subkeyids != NULL && subkeyids[i] != 0) {
+			shortkeyid = subkeyids[i++] & 0xFFFFFFFF;
+
+			memset(&key, 0, sizeof(key));
+			memset(&data, 0, sizeof(data));
+			key.data = &shortkeyid;
+			key.size = sizeof(shortkeyid);
+			data.data = &keyid;
+			data.size = sizeof(keyid);
+
+			ret = cursor->c_get(cursor,
+				&key,
+				&data,
+				DB_GET_BOTH);
+
+			if (ret == 0) {
+				ret = cursor->c_del(cursor, 0);
+				if (ret != 0) {
+					logthing(LOGTHING_ERROR,
+						"Problem deleting short"
+						" keyid: %s",
+						db_strerror(ret));
+				}
+			}
+
+			if (ret != 0) {
+				logthing(LOGTHING_ERROR,
+					"Problem deleting short keyid: %s",
+					db_strerror(ret));
+				if (ret == DB_LOCK_DEADLOCK) {
+					deadlock = true;
+				}
+			}
+		}
+		if (subkeyids != NULL) {
+			free(subkeyids);
+			subkeyids = NULL;
+		}
+
 		ret = cursor->c_close(cursor);
 		cursor = NULL;
 	}
