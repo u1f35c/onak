@@ -9,7 +9,23 @@
  */
 char *txt2html(const char *string);
 
-char x2c(char *what); 
+/*
+ *	start_html - Start HTML output.
+ *	@title: The title for the HTML.
+ *
+ *	Takes a title string and starts HTML output, including the
+ *	Content-Type header all the way up to <BODY>.
+ */
+void start_html(const char *title);
+
+/*
+ *	end_html - End HTML output.
+ *
+ *	Ends HTML output - closes the BODY and HTML tags.
+ */
+void end_html(void);
+
+char x2c(const char *what); 
 void unescape_url(char *url); 
 char **getcgivars(int argc, char *argv[]);
 

@@ -25,7 +25,7 @@ char *txt2html(const char *string)
 	char *ptr = NULL;
 	char *nextptr = NULL;
 
-	buf[0] = 0;
+	memset(buf, 0, 1024);
 
 	ptr = strchr(string, '<');
 	if (ptr != NULL) {
@@ -57,8 +57,42 @@ char *txt2html(const char *string)
 	return buf;
 }
 
+/*
+ *	start_html - Start HTML output.
+ *	@title: The title for the HTML.
+ *
+ *	Takes a title string and starts HTML output, including the
+ *	Content-Type header all the way up to <BODY>.
+ */
+void start_html(const char *title)
+{
+	puts("Content-Type: text/html; charset=utf8\n");
+	puts("<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 3.2 Final//EN'>");
+	puts("<HTML>");
+	puts("<HEAD>");
+	printf("<TITLE>%s</TITLE>\n", title);
+	puts("</HEAD>");
+	puts("<BODY>");
+
+	return;
+}
+
+/*
+ *	end_html - End HTML output.
+ *
+ *	Ends HTML output - closes the BODY and HTML tags.
+ */
+void end_html(void)
+{
+	puts("</BODY>");
+	puts("</HTML>");
+
+	return;
+}
+
+
 /* Convert a two-char hex string into the char it represents */
-char x2c(char *what) 
+char x2c(const char *what) 
 {
 	register char digit;
 

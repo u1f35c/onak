@@ -28,7 +28,7 @@
 
 int putnextchar(void *ctx, size_t count, unsigned char *c)
 {
-	return printf("%.*s", count, c);
+	return printf("%.*s", (int) count, c);
 }
 
 void find_keys(char *search, uint64_t keyid, bool ishex,
@@ -82,6 +82,7 @@ int main(int argc, char *argv[])
 			}
 		} else if (!strcmp(params[i], "search")) {
 			search = params[i+1];
+			params[i+1] = NULL;
 			if (search != NULL) {
 				keyid = strtoul(search, &end, 16);
 				if (*search != 0 &&
@@ -99,13 +100,19 @@ int main(int argc, char *argv[])
 				exact = true;
 			}
 		}
+		free(params[i]);
+		params[i] = NULL;
+		if (params[i+1] != NULL) {
+			free(params[i+1]);
+			params[i+1] = NULL;
+		}
+	}
+	if (params != NULL) {
+		free(params);
+		params = NULL;
 	}
 
-//	puts("HTTP/1.0 200 OK");
-//	puts("Server: onak 0.0.1");
-	puts("Content-Type: text/html\n");
-	puts("<html>\n<title>Lookup of key</title>");
-	puts("<body>");
+	start_html("Lookup of key");
 
 	if (op == OP_UNKNOWN) {
 		puts("Error: No operation supplied.");
@@ -143,6 +150,12 @@ int main(int argc, char *argv[])
 	}
 	puts("<hr>");
 	puts("Produced by onak " VERSION " by Jonathan McDowell");
-	puts("</body>\n</html>");
+	end_html();
+
+	if (search != NULL) {
+		free(search);
+		search = NULL;
+	}
+	
 	return (EXIT_SUCCESS);
 }

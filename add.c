@@ -51,11 +51,19 @@ int main(int argc, char *argv[])
 	for (i = 0; params != NULL && params[i] != NULL; i += 2) {
 		if (!strcmp(params[i], "keytext")) {
 			ctx.buffer = params[i+1];
+		} else {
+			free(params[i+1]);
 		}
+		params[i+1] = NULL;
+		free(params[i]);
+		params[i] = NULL;
+	}
+	if (params != NULL) {
+		free(params);
+		params = NULL;
 	}
 
-	puts("Content-Type: text/html\n");
-	puts("<html><title>onak : Add</title><body>");
+	start_html("onak : Add");
 	if (ctx.buffer == NULL) {
 		puts("Error: No keytext to add supplied.");
 	} else {
@@ -72,6 +80,6 @@ int main(int argc, char *argv[])
 			puts("No OpenPGP packets found in input.");
 		}
 	}
-	puts("</body></html>");
+	end_html();
 	return (EXIT_SUCCESS);
 }
