@@ -70,3 +70,19 @@
 * Added config file.
 * Fixed ASCII armor bug (we'd output NULLs in the headers/footer).
 * Added bidirectional syncing (previously we could receive but wouldn't send).
+
+0.1.1 - 2nd December 2002
+
+* Fixed utf8 content type - should be UTF-8. (Thanks to Simon Huggins)
+* Made getfullkeyid not assert if the key isn't found. (Thanks to Simon 
+  Huggins for reporting this.)
+* Fixed onak-mail.pl to check the stdout of onak before stderr to prevent
+  blocking when reading the output update.
+* Used ccmalloc to find various memory leaks and fixed them.
+* Added display of key subkeys.
+* Tightened up table creation SQL a bit.
+* Fixed bug with merging keys that have no new content (we'd sometimes stop
+  processing the incoming stream of keys).
+* Updated README to be a bit more useful.
+* Code cleanup; removed circular dependencies.
+* Added sixdegrees.

@@ -11,7 +11,7 @@
 * Do pathlengths for similar email addresses to help aide keysigning.
   (ie "Find me the keys furthest from mine that end ox.ac.uk'")
   Suggested by Jochen Voss <voss@mathematik.uni-kl.de>.
-* Other stats. sixdegrees? with piccy? most signed? signs most?
+* Other stats. with piccy? most signed? signs most?
 * DB access modules as a library to allow runtime configuration of it?
 * Clean up gcc warnings (`ll' length modifier especially! Also inline & wrong
   signedness for lo_read/write)
@@ -19,7 +19,6 @@
 * autoconf
 * logging framework so we can log debug/warning messages and so on. syslog?
 * Full email interface support (ADD, INDEX etc)
-* Check freeing.
 * More comments.
 * Look at db2 backend - is it db2's fault? (Well, deadlock in that the library
   probably is...). Pull some of the DB3 stuff across for completeness.
