@@ -1,0 +1,25 @@
+.TH ONAK-MAIL.PL 8
+.SH NAME
+onak-mail.pl \- Process OpenPGP keyserver emails.
+.SH SYNOPSIS
+.PP
+.B onak-mail.pl
+.SH DESCRIPTION
+.PP
+onak-mail.pl is the mail processing component of the \fBonak\fR OpenPGP
+keyserver. It processing incoming mails from other keyservers and users
+using the email interface to the keyserver. It should be run from an
+aliases file, a .forward or via procmail and takes no options.
+.SH FILES
+.br
+.nf
+.\" set tabstop to longest possible filename, plus a wee bit
+.ta \w'/usr/lib/perl/getopts.pl   'u
+\fI/etc/onak.conf\fR	default configuration file
+.SH NOTES
+This man page could probably do with some more details.
+.SH "SEE ALSO"
+.BR onak (1)
+.SH AUTHOR
+onak was written by Jonathan McDowell <noodles@earth.li>. It can be found at
+http://www.earth.li/projectpurple/progs/onak.html
