@@ -13,6 +13,7 @@
 
 #include "armor.h"
 #include "charfuncs.h"
+#include "cleanup.h"
 #include "getcgi.h"
 #include "hash.h"
 #include "keydb.h"
@@ -75,7 +76,7 @@ int getkeyspath(uint64_t have, uint64_t want, int count)
 		return 1;
 	}
 	
-	while (pathlen < count) {
+	while ((!cleanup()) && (pathlen < count)) {
 		/*
 		 * Fill the tree info up.
 		 */
@@ -165,6 +166,7 @@ int main(int argc, char *argv[])
 
 	readconfig(NULL);
 	initlogthing("gpgwww", config.logfile);
+	catchsignals();
 	initdb(true);
 	inithash();
 	logthing(LOGTHING_NOTICE, "Looking for path from 0x%llX to 0x%llX.",

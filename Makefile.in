@@ -15,12 +15,12 @@ prefix ?= @prefix@
 PROGS = add lookup gpgwww onak splitkeys onak-mail.pl
 CORE_OBJS = armor.o charfuncs.o decodekey.o getcgi.o hash.o keydb_$(DBTYPE).o \
 	keyid.o keyindex.o ll.o mem.o onak-conf.o parsekey.o sha1.o md5.o \
-	log.o photoid.o wordlist.o
+	log.o photoid.o wordlist.o cleanup.o
 OBJS = merge.o stats.o sendsync.o cleankey.o $(CORE_OBJS)
 SRCS = armor.c parsekey.c merge.c keyid.c md5.c sha1.c main.c getcgi.c mem.c \
 	keyindex.c stats.c lookup.c add.c keydb_$(DBTYPE).c ll.c hash.c \
 	gpgwww.c onak-conf.c charfuncs.c sendsync.c log.c photoid.c \
-	wordlist.c cleankey.c
+	wordlist.c cleankey.c cleanup.c
 
 all: .depend $(PROGS) testparse maxpath sixdegrees splitkeys
 

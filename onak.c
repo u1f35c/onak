@@ -17,6 +17,7 @@
 #include "armor.h"
 #include "charfuncs.h"
 #include "cleankey.h"
+#include "cleanup.h"
 #include "keydb.h"
 #include "keyid.h"
 #include "keyindex.h"
@@ -113,6 +114,7 @@ int main(int argc, char *argv[])
 
 	readconfig(configfile);
 	initlogthing("onak", config.logfile);
+	catchsignals();
 
 	if ((argc - optind) < 1) {
 		usage();

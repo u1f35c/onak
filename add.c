@@ -13,6 +13,7 @@
 
 #include "armor.h"
 #include "cleankey.h"
+#include "cleanup.h"
 #include "charfuncs.h"
 #include "getcgi.h"
 #include "keydb.h"
@@ -70,6 +71,7 @@ int main(int argc, char *argv[])
 			end_html();
 			fclose(stdout);
 			fclose(stderr);
+			catchsignals();
 			initdb(false);
 			
 			count = cleankeys(keys);
@@ -77,7 +79,6 @@ int main(int argc, char *argv[])
 					count);
 
 			count = update_keys(&keys);
-			printf("Got %d new keys.\n", count);
 			logthing(LOGTHING_NOTICE, "Got %d new keys.",
 				count);
 			if (keys != NULL) {

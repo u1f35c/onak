@@ -16,6 +16,7 @@
 #include "armor.h"
 #include "charfuncs.h"
 #include "cleankey.h"
+#include "cleanup.h"
 #include "getcgi.h"
 #include "keydb.h"
 #include "keyindex.h"
@@ -156,6 +157,7 @@ int main(int argc, char *argv[])
 	} else {
 		readconfig(NULL);
 		initlogthing("lookup", config.logfile);
+		catchsignals();
 		initdb(true);
 		switch (op) {
 		case OP_GET:

@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "cleanup.h"
 #include "getcgi.h"
 #include "hash.h"
 #include "keydb.h"
@@ -66,10 +67,10 @@ unsigned long findpath(struct stats_key *have, struct stats_key *want)
 	keys = lladd(NULL, want);
 	oldkeys = keys;
 
-	while (keys != NULL && have->colour == 0) {
+	while ((!cleanup()) && keys != NULL && have->colour == 0) {
 		sigs = cached_getkeysigs(((struct stats_key *)
 					keys->object)->keyid);
-		while (sigs != NULL && have->colour == 0) {
+		while ((!cleanup()) && sigs != NULL && have->colour == 0) {
 			/*
 			 * Check if we've seen this key before and if not mark
 			 * it and add its sigs to the list we want to look at.
@@ -147,7 +148,7 @@ void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 
 	pathnum = 0;
 	
-	while (pathnum < count) {
+	while ((!cleanup()) && (pathnum < count)) {
 		/*
 		 * Fill the tree info up.
 		 */
