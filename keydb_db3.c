@@ -135,7 +135,10 @@ void initdb(void)
 			DB_CREATE,
 			0);
 	if (ret != 0) {
-		dbenv->err(dbenv, ret, "%s", config.db_dir);
+		logthing(LOGTHING_CRITICAL,
+				"Erroring opening db environment: %s (%s)",
+				config.db_dir,
+				db_strerror(ret));
 		exit(1);
 	}
 
@@ -152,7 +155,10 @@ void initdb(void)
 			DB_CREATE,
 			0664);
 	if (ret != 0) {
-		dbconn->err(dbconn, ret, "keydb.db");
+		logthing(LOGTHING_CRITICAL,
+				"Error opening key database: %s (%s)",
+				"keydb.db",
+				db_strerror(ret));
 		exit(1);
 	}
 
@@ -167,7 +173,10 @@ void initdb(void)
 			DB_CREATE,
 			0664);
 	if (ret != 0) {
-		worddb->err(worddb, ret, "worddb");
+		logthing(LOGTHING_CRITICAL,
+				"Error opening word database: %s (%s)",
+				"worddb",
+				db_strerror(ret));
 		exit(1);
 	}
 	
@@ -209,7 +218,9 @@ bool starttrans(void)
 		&txn,
 		0);
 	if (ret != 0) {
-		dbenv->err(dbenv, ret, "starttrans():");
+		logthing(LOGTHING_CRITICAL,
+				"Error starting transaction: %s",
+				db_strerror(ret));
 		exit(1);
 	}
 
@@ -231,7 +242,9 @@ void endtrans(void)
 	ret = txn_commit(txn,
 		0);
 	if (ret != 0) {
-		dbenv->err(dbenv, ret, "endtrans():");
+		logthing(LOGTHING_CRITICAL,
+				"Error ending transaction: %s",
+				db_strerror(ret));
 		exit(1);
 	}
 	txn = NULL;
@@ -291,7 +304,9 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 		packets = NULL;
 		numkeys++;
 	} else if (ret != DB_NOTFOUND) {
-		dbconn->err(dbconn, ret, "Problem retrieving key");
+		logthing(LOGTHING_ERROR,
+				"Problem retrieving key: %s",
+				db_strerror(ret));
 	}
 
 	if (!intrans) {
@@ -493,7 +508,9 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 				&data,
 				0); /* flags*/
 		if (ret != 0) {
-			dbconn->err(dbconn, ret, "Problem storing key");
+			logthing(LOGTHING_ERROR,
+					"Problem storing key: %s",
+					db_strerror(ret));
 			if (ret == DB_LOCK_DEADLOCK) {
 				deadlock = true;
 			}
@@ -550,8 +567,9 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 				&data,
 				0);
 			if (ret != 0) {
-				worddb->err(worddb, ret,
-					"Problem storing key");
+				logthing(LOGTHING_ERROR,
+					"Problem storing word: %s",
+					db_strerror(ret));
 				if (ret == DB_LOCK_DEADLOCK) {
 					deadlock = true;
 				}
@@ -657,14 +675,16 @@ int delete_key(uint64_t keyid, bool intrans)
 			if (ret == 0) {
 				ret = cursor->c_del(cursor, 0);
 				if (ret != 0) {
-					worddb->err(worddb, ret,
-						"Problem deleting word.");
+					logthing(LOGTHING_ERROR,
+						"Problem deleting word: %s",
+						db_strerror(ret));
 				}
 			}
 
 			if (ret != 0) {
-				worddb->err(worddb, ret,
-					"Problem deleting word.");
+				logthing(LOGTHING_ERROR,
+					"Problem deleting word: %s",
+					db_strerror(ret));
 				if (ret == DB_LOCK_DEADLOCK) {
 					deadlock = true;
 				}
@@ -738,7 +758,7 @@ int dumpdb(char *filenamebase)
 		memset(&data, 0, sizeof(data));
 		ret = cursor->c_get(cursor, &key, &data, DB_NEXT);
 	}
-	dbconn->err(dbconn, ret, "Problem reading key");
+	logthing(LOGTHING_ERROR, "Problem reading key: %s", db_strerror(ret));
 
 	close(fd);
 
