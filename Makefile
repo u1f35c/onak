@@ -1,7 +1,7 @@
 #
 # Makefile for onak.
 #
-# $Id: Makefile,v 1.16 2003/06/06 14:02:39 noodles Exp $
+# $Id: Makefile,v 1.17 2003/09/30 21:16:14 noodles Exp $
 #
 
 CC = gcc
@@ -23,7 +23,10 @@ SRCS = armor.c parsekey.c merge.c keyid.c md5.c sha.c main.c getcgi.c stats.c \
 	keyindex.c mem.c lookup.c add.c keydb_$(DBTYPE).c ll.c hash.c \
 	gpgwww.c onak-conf.c charfuncs.c sendsync.c log.c
 
-all: .depend $(PROGS) testparse maxpath sixdegrees
+all: .depend $(PROGS) testparse maxpath sixdegrees splitkeys
+
+splitkeys: splitkeys.o $(CORE_OBJS)
+	$(LINK) -o splitkeys splitkeys.o $(CORE_OBJS) $(LIBS)
 
 testparse: main.o $(OBJS)
 	$(LINK) -o testparse main.o $(OBJS) $(LIBS)
