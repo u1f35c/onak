@@ -12,7 +12,7 @@ DBTYPE = @DBTYPE@
 LIBS = @LIBS@
 prefix ?= @prefix@
 
-PROGS = add lookup gpgwww onak splitkeys onak-mail.pl
+PROGS = add lookup gpgwww onak splitkeys onak-mail.pl stripkey
 CORE_OBJS = armor.o charfuncs.o decodekey.o getcgi.o hash.o keydb_$(DBTYPE).o \
 	keyid.o keyindex.o ll.o mem.o onak-conf.o parsekey.o sha1.o md5.o \
 	log.o photoid.o wordlist.o cleanup.o
@@ -35,6 +35,9 @@ maxpath: maxpath.o $(OBJS)
 
 sixdegrees: sixdegrees.o $(OBJS)
 	$(CC) $(LDFLAGS) -o sixdegrees sixdegrees.o $(OBJS) $(LIBS)
+
+stripkey: stripkey.o $(OBJS)
+	$(CC) $(LDFLAGS) -o stripkey stripkey.o $(OBJS) $(LIBS)
 
 gpgwww: gpgwww.o $(OBJS)
 	$(CC) $(LDFLAGS) -o gpgwww gpgwww.o $(OBJS) $(LIBS)
@@ -61,7 +64,7 @@ onak-mail.pl: onak-mail.pl.in
 clean:
 	$(RM) -f $(PROGS) $(OBJS) Makefile.bak testparse maxpath *.core core \
 		gpgwww.o add.o lookup.o main.o maxpath.o onak.o sixdegrees \
-		sixdegrees.o splitkeys.o
+		sixdegrees.o splitkeys.o stripkey.o
 
 distclean: clean
 	$(RM) -f Makefile .depend config.{log,status,h}
