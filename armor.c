@@ -188,6 +188,8 @@ static int armor_putchar(void *ctx, size_t count, unsigned char *c)
 {
 	int i;
 
+	log_assert(c != NULL);
+
 	for (i = 0; i < count; i++) {
 		armor_putchar_int(ctx, c[i]);
 	}
