@@ -129,3 +129,38 @@
 * Add splitkeys for spliting up keyrings.
 * Various code cleanups to help reduce warnings under C99.
 * Add (verbose) index support to onak-mail.pl
+
+0.3.0 - 14th September 2004
+
+* Add the ability to choose a config file at runtime.
+* Fix extra LF when the last line of the key is a full line.
+* Relax restriction on Type 2/3 keys being RSA - log the fact, but don't error.
+* Stop trying to parse a key if we get an unexpected character.
+* Make onak-mail.pl only run a single copy of onak at a time.
+* Add photoid support; lookup and onak both use this.
+* Move db3 backend to db4.
+* Move db4 backend to 64bit keyids.
+* Add keyfs backend. (Daniel Silverstone)
+* Pull MD5/SHA1 implementations from sigcheck as they're more portable.
+* Add readonly open mode for DB backends if we're not going to add keys.
+* Log assertions before exiting.
+* Add man pages for onak and splitkeys.
+* autoconf; very basic at present - endianness and file paths.
+* Clean up various compiler and preprocessor warnings. With --std=c99 and
+  -D_BSD_SOURCE=1 we should be almost warning free.
+* Fix gpg --search support (it doesn't like uid/sub at the start of the index
+  lines).
+* Let gpgwww return all the key data for the keys listed in the paths. Thanks
+  to Ian Haywood <ihaywood@gnu.org>.
+* Add support for searching on subkeys.
+* Fix writing packets that are larger than 8k.
+* Fix bug with reading new format packet lengths.
+* Relax some assertions in mem.c as we can hit them legitimately.
+* Initial key cleaning routines; de-dupe key uids.
+* Add loglevel setting in the configuration file.
+* Add logging for the various CGI interfaces.
+* Add stripkey from Daniel Silverstone.
+* Add signal catching infrastructure; this is primarily due to db4's fragile
+  behaviour in the face of abnormal termination.
+* Add Apache2 example config info.
+* Update mathopd example config to newer version.
