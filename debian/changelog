@@ -1,3 +1,9 @@
+onak (0.3.2+arch-1) unstable; urgency=low
+
+  * arch build.
+ 
+ -- Jonathan McDowell <noodles@earth.li>  Fri, 25 Mar 2005 15:03:17 +0000
+
 onak (0.3.2-1) unstable; urgency=low
 
   * New upstream release.
