@@ -7,7 +7,7 @@
 # Copyright 2002 Project Purple
 # Released under the GPL.
 #
-# $Id: onak-mail.pl,v 1.6 2003/06/04 20:57:11 noodles Exp $
+# $Id: onak-mail.pl,v 1.7 2003/09/28 17:25:40 noodles Exp $
 #
 
 use strict;
@@ -31,10 +31,14 @@ sub readconfig {
 			# Ignore; comment line.
 		} elsif (/^this_site (.*)/) {
 			$config{'thissite'} = $1;
+		} elsif (/^logfile (.*)/) {
+			$config{'logfile'} = $1;
 		} elsif (/^maintainer_email (.*)/) {
 			$config{'adminemail'} = $1;
 		} elsif (/^mail_delivery_client (.*)/) {
 			$config{'mta'} = $1;
+		} elsif (/^pks_bin_dir (.*)/) {
+			$config{'pks_bin_dir'} = $1;
 		} elsif (/^syncsite (.*)/) {
 			push @{$config{'syncsites'}}, $1;
 		}
@@ -57,16 +61,12 @@ sub submitupdate {
 	my (@errors, @mergedata);
 
 	open3(\*MERGEIN, \*MERGEOUT, \*MERGEERR,
-		"/home/noodles/onak-0.0.3/onak", "-u", "add");
+		$config{'pks_bin_dir'}."/onak", "-u", "add");
 
 	print MERGEIN @data;
 	close MERGEIN;
 	@mergedata = <MERGEOUT>;
 	@errors = <MERGEERR>;
-
-	open (LOG, ">>/home/noodles/onak-0.0.3/keyadd.log");
-	print LOG "[".localtime(time)."] ", @errors;
-	close LOG;
 
 	return @mergedata;
 }
@@ -104,6 +104,7 @@ if ($subject =~ /^INCREMENTAL$/i) {
 	my $count;
 	my $i;
 	my @newupdate = submitupdate(@body);
+	my @time;
 
 	$count = 0;
 	foreach $i (@{$config{'syncsites'}}) {
@@ -112,13 +113,22 @@ if ($subject =~ /^INCREMENTAL$/i) {
 		}
 	}
 
-	open (LOG, ">>/home/noodles/logs/keyadd.log");
-	print LOG "[".localtime(time)."] Syncing with $count sites.\n";
+	open (LOG, ">>$config{'logfile'}");
+	@time = localtime(time);
+	print LOG "[";
+	print LOG sprintf "%02d/%02d/%04d %02d:%02d:%02d",
+		$time[3], $time[4] + 1, $time[5] + 1900,
+		$time[2], $time[1], $time[0];
+	print LOG "] onak-mail[$$]: Syncing with $count sites.\n";
 	close LOG;
 
-	if ($newupdate[0] eq '') {
-		open (LOG, ">>/home/noodles/logs/keyadd.log");
-		print LOG "[".localtime(time)."] Nothing to sync.\n";
+	if ((! defined($newupdate[0])) || $newupdate[0] eq '') {
+		open (LOG, ">>$config{'logfile'}");
+		print LOG "[";
+		print LOG sprintf "%02d/%02d/%04d %02d:%02d:%02d",
+			$time[3], $time[4] + 1, $time[5] + 1900,
+			$time[2], $time[1], $time[0];
+		print LOG "] onak-mail[$$]: Nothing to sync.\n";
 		close LOG;
 		$count = 0;
 	}
