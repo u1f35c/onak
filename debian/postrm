@@ -4,6 +4,8 @@ set -e
 
 if [ "$1" = "purge" ]; then
     if dpkg-statoverride --list /usr/lib/cgi-bin/pks/\* >/dev/null; then
-        dpkg-statoverride --remove 
+        for i in $(dpkg-statoverride --list /usr/lib/cgi-bin/pks/\* | cut -d " " -f 4); do
+            dpkg-statoverride --remove $i
+	done
     fi
 fi
