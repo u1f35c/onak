@@ -3,7 +3,7 @@
  *
  * Jonathan McDowell <noodles@earth.li>
  *
- * Copyright 2002-2004 Project Purple
+ * Copyright 2002-2005 Project Purple
  */
 
 #include <stdio.h>
@@ -43,7 +43,16 @@ bool compare_packets(struct openpgp_packet *a, struct openpgp_packet *b)
  */
 bool compare_signatures(struct openpgp_packet *a, struct openpgp_packet *b)
 {
-	return (sig_keyid(a) == sig_keyid(b));
+	if (a->data[0] != b->data[0]) {
+		/* Different signature versions, so not the same */
+		return false;
+	} else if (a->data[0] == 4 && a->data[1] != b->data[1]) {
+		/* Type 4 signature, but different types */
+		return false;
+	/* TODO: Check signature time? */
+	} else {
+		return (sig_keyid(a) == sig_keyid(b));
+	}
 }
 
 /**

@@ -3,7 +3,7 @@
  *
  * Jonathan McDowell <noodles@earth.li>
  *
- * Copyright 2002 Project Purple
+ * Copyright 2002-2005 Project Purple
  */
 
 #include <inttypes.h>
@@ -26,26 +26,37 @@ int list_sigs(struct openpgp_packet_list *sigs, bool html)
 {
 	char *uid = NULL;
 	uint64_t sigid = 0;
+	char *sig = NULL;
 
 	while (sigs != NULL) {
 		sigid = sig_keyid(sigs->packet);
 		uid = keyid2uid(sigid);
+		if (sigs->packet->data[0] == 4 &&
+				sigs->packet->data[1] == 0x30) {
+			/* It's a Type 4 sig revocation */
+			sig = "rev";
+		} else {
+			sig = "sig";
+		}
 		if (html && uid != NULL) {
-			printf("sig         <a href=\"lookup?op=get&"
+			printf("%s         <a href=\"lookup?op=get&"
 				"search=%08llX\">%08llX</a>             "
 				"<a href=\"lookup?op=vindex&search=0x%08llX\">"
 				"%s</a>\n",
+				sig,
 				sigid & 0xFFFFFFFF,
 				sigid & 0xFFFFFFFF,
 				sigid & 0xFFFFFFFF,
 				txt2html(uid));
 		} else if (html && uid == NULL) {
-			printf("sig         %08llX             "
+			printf("%s         %08llX             "
 				"[User id not found]\n",
+				sig,
 				sigid & 0xFFFFFFFF);
 		} else {
-			printf("sig         %08llX"
+			printf("%s         %08llX"
 				"             %s\n",
+				sig,
 				sigid & 0xFFFFFFFF,
 				(uid != NULL) ? uid :
 				"[User id not found]");
