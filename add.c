@@ -16,6 +16,7 @@
 #include "getcgi.h"
 #include "keydb.h"
 #include "keystructs.h"
+#include "onak-conf.h"
 #include "parsekey.h"
 #include "merge.h"
 
@@ -55,6 +56,7 @@ int main(int argc, char *argv[])
 					&packets);
 		if (packets != NULL) {
 			parse_keys(packets, &keys);
+			readconfig();
 			initdb();
 			printf("Got %d new keys.\n",
 					update_keys(&keys, false));

@@ -78,7 +78,7 @@ void initdb(void)
 	 */
 	db2_env.mp_size = 20 * 1024 * 1024;
 
-	ret = db_appinit(config.db2_dbpath, NULL,
+	ret = db_appinit(config.db_dir, NULL,
 			&db2_env, DB_INIT_MPOOL|DB_INIT_LOCK);
 	if (!ret) {
 		db2_keydbfiles = (DB **) malloc(sizeof (DB *) * db2_numdb);

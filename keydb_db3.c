@@ -99,7 +99,7 @@ void initdb(void)
 	char buf[1024];
 	int ret = 0;
 
-	strcpy(buf, config.db2_dbpath);
+	strcpy(buf, config.db_dir);
 	strcat(buf, "/keydb.db");
 	
 	ret = db_create(&dbconn, NULL, 0);
@@ -116,7 +116,7 @@ void initdb(void)
 		exit(1);
 	}
 
-	strcpy(buf, config.db2_dbpath);
+	strcpy(buf, config.db_dir);
 	strcat(buf, "/worddb");
 	
 	ret = db_create(&worddb, NULL, 0);

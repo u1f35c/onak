@@ -107,6 +107,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	readconfig();
+
 	if ((argc - optind) < 1) {
 		usage();
 	} else if (!strcmp("add", argv[optind])) {

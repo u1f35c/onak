@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
 	}
 
 	printf("<P>Looking for path from 0x%llX to 0x%llX</P>\n", from, to);
+	readconfig();
 	initdb();
 	inithash();
 	dofindpath(from, to, true);

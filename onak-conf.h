@@ -10,15 +10,18 @@
 #define __ONAK_CONF_H_
 
 #define VERSION "0.0.4"
+#define CONFIGFILE "/home/noodles/projects/onak/onak.conf"
 
 /*
  *	struct onak_config - Runtime configuration for onak.
  *	@maxkeys: The maximum number of keys a query should return.
+ *	@thissite: Our email address that servers sync with.
+ *	@adminemail: The email address of the server admin.
+ *	@mta: The mta to invoke to send sync mails.
+ *	@syncsites: A linked list of sites we sync with.
  *
- * 	@db2_dbpath: The path to the directory containing the db2 files.
+ * 	@db_dir: The path to the directory containing the database files.
  * 
- *	@file_dbpath: The path to the flat file DB directory.
- *
  *	@pg_dbhost: The host that Postgres is running on.
  *	@pg_dbname: The database name.
  *	@pg_dbuser: The user we should connect as.
@@ -28,17 +31,20 @@
  *	will eventually be populated from the config file.
  */
 struct onak_config {
+	/*
+	 * Generic options.
+	 */
 	int maxkeys;
+	char *thissite;
+	char *adminemail;
+	char *mta;
+	struct ll *syncsites;
 
 	/*
-	 * Options for the db2 file backend.
+	 * Options for any database backend that needs a directory, be it the
+	 * file, db2 or db3 options.
 	 */
-	char *db2_dbpath;
-
-	/*
-	 * Options for the file backend.
-	 */
-	char *file_dbpath;
+	char *db_dir;
 	
 	/*
 	 * Options for the Postgres backend.
@@ -53,5 +59,10 @@ struct onak_config {
  *	config - The variable containing our runtime config.
  */
 extern struct onak_config config;
+
+/*
+ *	readconfig - read the onak config.
+ */
+void readconfig(void);
 
 #endif /* __ONAK_CONF_H_ */

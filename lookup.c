@@ -119,6 +119,7 @@ int main(int argc, char *argv[])
 	} else if (search == NULL) {
 		puts("Error: No key to search for supplied.");
 	} else {
+		readconfig();
 		initdb();
 		switch (op) {
 		case OP_GET:

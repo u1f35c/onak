@@ -11,6 +11,38 @@
 use strict;
 use IPC::Open3;
 
+my %config;
+
+#
+# readconfig
+#
+# Reads in our config file. Ignores any command it doesn't understand rather
+# than having to list all the ones that are of no interest to us.
+#
+sub readconfig {
+
+	open(CONFIG, "/home/noodles/projects/onak/onak.conf") or
+		die "Can't read config file: $!";
+	
+	while (<CONFIG>) {
+		if (/^#/ or /^$/) {
+			# Ignore; comment line.
+		} elsif (/^this_site (.*)/) {
+			$config{'thissite'} = $1;
+		} elsif (/^maintainer_email (.*)/) {
+			$config{'adminemail'} = $1;
+		} elsif (/^mail_delivery_client (.*)/) {
+			$config{'mta'} = $1;
+		} elsif (/^syncsite (.*)/) {
+			push @{$config{'syncsites'}}, $1;
+		}
+	}
+
+	close(CONFIG);
+
+	return;
+}
+
 #
 # submitupdate
 #
@@ -22,7 +54,8 @@ sub submitupdate {
 	my @data = @_;
 	my (@errors, @mergedata);
 
-	open3(\*MERGEIN, \*MERGEOUT, \*MERGEERR, "/home/noodles/onak-0.0.3/onak", "add");
+	open3(\*MERGEIN, \*MERGEOUT, \*MERGEERR,
+		"/home/noodles/onak-0.0.3/onak", "add");
 
 	print MERGEIN @data;
 	close MERGEIN;
@@ -40,6 +73,7 @@ my ($inheader, %syncsites, $subject, $from, $replyto, @body, @syncmail);
 
 $inheader = 1;
 $subject = "";
+&readconfig;
 
 while (<>) {
 	if ($inheader) {

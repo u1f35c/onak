@@ -13,6 +13,7 @@
 #include "hash.h"
 #include "keydb.h"
 #include "ll.h"
+#include "onak-conf.h"
 #include "stats.h"
 
 void findmaxpath(unsigned long max)
@@ -55,6 +56,7 @@ void findmaxpath(unsigned long max)
 
 int main(int argc, char *argv[])
 {
+	readconfig();
 	initdb();
 	inithash();
 	findmaxpath(30);
