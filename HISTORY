@@ -181,3 +181,12 @@
 * Fix transaction around id32 updating in DB4 backend.
 * Compile warning cleanup; add missed include file.
 * Hard error when db version is < 4.
+
+0.3.2 - 25th March 2005
+
+* Change word split routine to split on punctuation/spaces. (Jason Harris)
+* Fix problem parsing empty config lines. (Thanks to Fred Strauss)
+* Do some checking before closing stderr in add.c. Fixes an issue seen in
+  RH by Fred Strauss.
+* Make sure we use the configured path to the MTA in sendsync.c
+* Support UID revokations. Thanks to Hanna Wallach for reporting this.

@@ -1,5 +1,5 @@
-onak 0.3.1
-Copyright 2003-2004 Project Purple. Written by Jonathan McDowell
+onak 0.3.2
+Copyright 2003-2005 Project Purple. Written by Jonathan McDowell
 http://www.earth.li/projectpurple/progs/onak.html
 
 
@@ -12,7 +12,7 @@ these is probably the pathfinder. This takes two keys, a & b, and
 attempts to find a path of trust from a to b in the key database. I
 started work on it because at the time there was no DFSG compliant
 server that supported multiple subkeys and could act as a drop in
-replacement for pksd, which I was running (and still am).
+replacement for pksd, which I was running at the time.
 
 
 Installation:
