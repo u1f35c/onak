@@ -12,7 +12,7 @@ DBTYPE = @DBTYPE@
 LIBS = @LIBS@
 prefix ?= @prefix@
 
-PROGS = add lookup gpgwww onak splitkeys
+PROGS = add lookup gpgwww onak splitkeys onak-mail.pl
 CORE_OBJS = armor.o charfuncs.o decodekey.o getcgi.o hash.o keydb_$(DBTYPE).o \
 	keyid.o keyindex.o ll.o mem.o onak-conf.o parsekey.o sha1.o md5.o \
 	log.o photoid.o wordlist.o
@@ -53,6 +53,10 @@ onak: onak.o merge.o cleankey.o $(CORE_OBJS)
 
 onak-conf.o: onak-conf.c onak-conf.h
 	$(CC) $(CFLAGS) -DCONFIGFILE=\"@sysconfdir@/onak.conf\" -c onak-conf.c
+
+onak-mail.pl: onak-mail.pl.in
+	sed 's:@CONFIG@:@sysconfdir@/onak.conf:g' < onak-mail.pl.in > onak-mail.pl
+	chmod +x onak-mail.pl
 
 clean:
 	$(RM) -f $(PROGS) $(OBJS) Makefile.bak testparse maxpath *.core core \

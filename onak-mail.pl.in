@@ -21,7 +21,7 @@ my %config;
 #
 sub readconfig {
 
-	open(CONFIG, "/home/noodles/projects/onak/onak.conf") or
+	open(CONFIG, "@CONFIG@") or
 		die "Can't read config file: $!";
 	
 	while (<CONFIG>) {
