@@ -309,7 +309,8 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
 	llfree(wordlist, NULL);
 	wordlist = NULL;
 	
-	for (newkeylist = keylist; newkeylist != NULL;
+	for (newkeylist = keylist;
+			newkeylist != NULL && numkeys < config.maxkeys;
 			newkeylist = newkeylist->next) {
 
 			keyid = 0;
