@@ -21,7 +21,7 @@ then
 	set `eval $ac_cpp conftest.c | egrep '^ *[[0-9]] *'`; v="$1"; vv="$2"
 	AC_MSG_RESULT($v.$vv)
 	if test "$v" -ne 4; then
-		AC_MSG_RESULT([   * onak requires libdb version 4])
+		AC_MSG_ERROR([   * onak requires libdb version 4])
 	fi
 	for db in "db-$v.$vv" "db$v.$vv" "db-$v" "db$v" "db"; do
 		AC_MSG_CHECKING(for db_create in lib$db)
