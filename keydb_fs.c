@@ -346,10 +346,10 @@ int delete_key(uint64_t keyid, bool intrans)
 	ret = fetch_key(keyid, &pk, true);
 
 	if (ret) {
-		logthing(LOGTHING_CRITICAL, "Wordlist for key %016llX",
+		logthing(LOGTHING_DEBUG, "Wordlist for key %016llX",
 			 keyid);
 		wl = wordlist = makewordlistfromkey(wordlist, pk);
-		logthing(LOGTHING_CRITICAL,
+		logthing(LOGTHING_DEBUG,
 			 "Wordlist for key %016llX done", keyid);
 		while (wl) {
 			uint32_t hash = calchash((uint8_t *) (wl->object));
@@ -396,7 +396,7 @@ static struct ll *internal_get_key_by_word(char *word, struct ll *mct)
 
 	worddir(buffer, word, hash);
 	d = opendir(buffer);
-	logthing(LOGTHING_CRITICAL, "Scanning for word %s in dir %s", word,
+	logthing(LOGTHING_DEBUG, "Scanning for word %s in dir %s", word,
 		 buffer);
 	if (d)
 		do {
@@ -407,7 +407,7 @@ static struct ll *internal_get_key_by_word(char *word, struct ll *mct)
 					(int (*)(const void *, const void *))
 						    strcmp) !=
 					NULL)) {
-					logthing(LOGTHING_CRITICAL,
+					logthing(LOGTHING_DEBUG,
 						 "Found %s // %s", word,
 						 de->d_name);
 					keys =
@@ -434,7 +434,7 @@ int fetch_key_text(const char *search,
 	char      *searchtext = NULL;
 	int addedkeys = 0;
 
-	logthing(LOGTHING_CRITICAL, "Search was '%s'", search);
+	logthing(LOGTHING_DEBUG, "Search was '%s'", search);
 
 	searchtext = strdup(search);
 	wl = wordlist = makewordlist(wordlist, searchtext);
@@ -469,7 +469,7 @@ int fetch_key_text(const char *search,
 	/* Now add the keys... */
 	wl = keylist;
 	while (wl) {
-		logthing(LOGTHING_CRITICAL, "Adding key: %s", wl->object);
+		logthing(LOGTHING_DEBUG, "Adding key: %s", wl->object);
 		addedkeys +=
 		    fetch_key(strtoull(wl->object, NULL, 16), publickey,
 			      false);
