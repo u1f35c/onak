@@ -38,6 +38,14 @@ struct ll *keysigs(struct ll *curll,
 		struct openpgp_packet_list *sigs);
 
 /**
+ *	sig_keyid - Return the keyid for a given OpenPGP signature packet.
+ *	@packet: The signature packet.
+ *
+ *	Returns the keyid for the supplied signature packet.
+ */
+uint64_t sig_keyid(struct openpgp_packet *packet);
+
+/**
  *	keyuids - Takes a key and returns an array of its UIDs
  *	@key: The key to get the uids of.
  *	@primary: A pointer to store the primary UID in.

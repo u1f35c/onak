@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -22,167 +23,38 @@
 #include "ll.h"
 #include "stats.h"
 
-int parse_subpackets(unsigned char *data, bool html)
-{
-	int offset = 0;
-	int length = 0;
-	int packetlen = 0;
-	char *uid;
-
-	assert(data != NULL);
-
-	length = (data[0] << 8) + data[1] + 2;
-
-	offset = 2;
-	while (offset < length) {
-		packetlen = data[offset++];
-		if (packetlen > 191 && packetlen < 255) {
-			packetlen = ((packetlen - 192) << 8) +
-					data[offset++] + 192;
-		} else if (packetlen == 255) {
-			packetlen = data[offset++];
-			packetlen <<= 8;
-			packetlen = data[offset++];
-			packetlen <<= 8;
-			packetlen = data[offset++];
-			packetlen <<= 8;
-			packetlen = data[offset++];
-		}
-		switch (data[offset]) {
-		case 2:
-			/*
-			 * Signature creation time. Might want to output this?
-			 */
-			break;
-		case 16:
-			uid = keyid2uid(
-				((uint64_t) data[offset+packetlen - 8] << 56) +
-				((uint64_t) data[offset+packetlen - 7] << 48) +
-				((uint64_t) data[offset+packetlen - 6] << 40) +
-				((uint64_t) data[offset+packetlen - 5] << 32) +
-				((uint64_t) data[offset+packetlen - 4] << 24) +
-				((uint64_t) data[offset+packetlen - 3] << 16) +
-				((uint64_t) data[offset+packetlen - 2] << 8) +
-				data[offset+packetlen - 1]);
-			if (html && uid != NULL) {
-				printf("sig         <a href=\"lookup?op=get&"
-					"search=%02X%02X%02X%02X\">"
-					"%02X%02X%02X%02X</a>             "
-					"<a href=\"lookup?op=vindex&"
-					"search=0x%02X%02X%02X%02X\">"
-					"%s</a>\n",
-					data[offset+packetlen - 4],
-					data[offset+packetlen - 3],
-					data[offset+packetlen - 2],
-					data[offset+packetlen - 1],
-					data[offset+packetlen - 4],
-					data[offset+packetlen - 3],
-					data[offset+packetlen - 2],
-					data[offset+packetlen - 1],
-
-					data[offset+packetlen - 4],
-					data[offset+packetlen - 3],
-					data[offset+packetlen - 2],
-					data[offset+packetlen - 1],
-					txt2html(uid));
-			} else if (html && uid == NULL) {
-				printf("sig         "
-					"%02X%02X%02X%02X             "
-					"[User id not found]\n",
-					data[offset+packetlen - 4],
-					data[offset+packetlen - 3],
-					data[offset+packetlen - 2],
-					data[offset+packetlen - 1]);
-			} else {
-				printf("sig         %02X%02X%02X%02X"
-						"             %s\n",
-					data[offset+packetlen - 4],
-					data[offset+packetlen - 3],
-					data[offset+packetlen - 2],
-					data[offset+packetlen - 1],
-					(uid != NULL) ? uid :
-					"[User id not found]");
-			}
-			break;
-		default:
-			/*
-			 * We don't care about unrecognized packets unless bit
-			 * 7 is set in which case we prefer an error than
-			 * ignoring it.
-			 */
-			assert(!(data[offset] & 0x80));
-		}
-		offset += packetlen;
-	}
-
-	return length;
-}
-
 int list_sigs(struct openpgp_packet_list *sigs, bool html)
 {
 	int length = 0;
-	char *uid;
+	char *uid = NULL;
+	uint64_t sigid = 0;
 
 	while (sigs != NULL) {
-		switch (sigs->packet->data[0]) {
-		case 2:
-		case 3:
-			uid = keyid2uid(
-				((uint64_t) sigs->packet->data[7] << 56) +
-				((uint64_t) sigs->packet->data[8] << 48) +
-				((uint64_t) sigs->packet->data[9] << 40) +
-				((uint64_t) sigs->packet->data[10] << 32) +
-				((uint64_t) sigs->packet->data[11] << 24) +
-				((uint64_t) sigs->packet->data[12] << 16) +
-				((uint64_t) sigs->packet->data[13] << 8) +
-				sigs->packet->data[14]);
-			if (html && uid != NULL) {
-				printf("sig         <a href=\"lookup?op=get&"
-					"search=%02X%02X%02X%02X\">"
-					"%02X%02X%02X%02X</a>             "
-					"<a href=\"lookup?op=vindex&"
-					"search=0x%02X%02X%02X%02X\">"
-					"%s</a>\n",
-					sigs->packet->data[11],
-					sigs->packet->data[12],
-					sigs->packet->data[13],
-					sigs->packet->data[14],
-					sigs->packet->data[11],
-					sigs->packet->data[12],
-					sigs->packet->data[13],
-					sigs->packet->data[14],
-
-					sigs->packet->data[11],
-					sigs->packet->data[12],
-					sigs->packet->data[13],
-					sigs->packet->data[14],
-					txt2html(uid));
-			} else if (html && uid == NULL) {
-				printf("sig         %02X%02X%02X%02X"
-					"             "
-					"[User id not found]\n",
-					sigs->packet->data[11],
-					sigs->packet->data[12],
-					sigs->packet->data[13],
-					sigs->packet->data[14]);
-			} else {
-				printf("sig         %02X%02X%02X%02X"
-						"             %s\n",
-					sigs->packet->data[11],
-					sigs->packet->data[12],
-					sigs->packet->data[13],
-					sigs->packet->data[14],
-					(uid != NULL) ? uid :
-					"[User id not found]");
-			}
-			break;
-		case 4:
-			length = parse_subpackets(&sigs->packet->data[4], html);
-			parse_subpackets(&sigs->packet->data[length + 4], html);
-			break;
-		default:
-			printf("sig        [Unknown packet version %d]",
-					sigs->packet->data[0]);
+		sigid = sig_keyid(sigs->packet);
+		uid = keyid2uid(sigid);
+		if (html && uid != NULL) {
+			printf("sig         <a href=\"lookup?op=get&"
+				"search=%08llX\">%08llX</a>             "
+				"<a href=\"lookup?op=vindex&search=0x%08llX\">"
+				"%s</a>\n",
+				sigid & 0xFFFFFFFF,
+				sigid & 0xFFFFFFFF,
+				sigid & 0xFFFFFFFF,
+				txt2html(uid));
+		} else if (html && uid == NULL) {
+			printf("sig         %08llX             "
+				"[User id not found]\n",
+				sigid & 0xFFFFFFFF);
+		} else {
+			printf("sig         %08llX"
+				"             %s\n",
+				sigid & 0xFFFFFFFF,
+				(uid != NULL) ? uid :
+				"[User id not found]");
+		}
+		if (uid != NULL) {
+			free(uid);
+			uid = NULL;
 		}
 		sigs = sigs->next;
 	}
@@ -298,8 +170,16 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 	return 0;
 }
 
-
-int get_subpackets_keyid(unsigned char *data, uint64_t *keyid)
+/*
+ *	parse_subpackets - Parse the subpackets of a Type 4 signature.
+ *	@data: The subpacket data.
+ *      @keyid: A pointer to where we should return the keyid.
+ *
+ *	This function parses the subkey data of a Type 4 signature and fills
+ *	in the supplied variables. It also returns the length of the data
+ *	processed.
+ */
+int parse_subpackets(unsigned char *data, uint64_t *keyid)
 {
 	int offset = 0;
 	int length = 0;
@@ -352,6 +232,16 @@ int get_subpackets_keyid(unsigned char *data, uint64_t *keyid)
 			*keyid <<= 8;
 			*keyid += data[offset+packetlen - 1];
 			break;
+		case 23:
+			/*
+			 * Key server preferences. Including no-modify.
+			 */
+			break;
+		case 25:
+			/*
+			 * Primary UID.
+			 */
+			break;
 		default:
 			/*
 			 * We don't care about unrecognized packets unless bit
@@ -366,7 +256,6 @@ int get_subpackets_keyid(unsigned char *data, uint64_t *keyid)
 	return length;
 }
 
-
 /**
  *	keysigs - Return the sigs on a given OpenPGP signature list.
  *	@curll: The current linked list. Can be NULL to create a new list.
@@ -378,34 +267,53 @@ int get_subpackets_keyid(unsigned char *data, uint64_t *keyid)
 struct ll *keysigs(struct ll *curll,
 		struct openpgp_packet_list *sigs)
 {
-	int length = 0;
 	uint64_t keyid = 0;
 	
 	while (sigs != NULL) {
+		keyid = sig_keyid(sigs->packet);
+		sigs = sigs->next;
+		curll = lladd(curll, createandaddtohash(keyid));
+	}
+
+	return curll;
+}
+
+/**
+ *	sig_keyid - Return the keyid for a given OpenPGP signature packet.
+ *	@packet: The signature packet.
+ *
+ *	Returns the keyid for the supplied signature packet.
+ */
+uint64_t sig_keyid(struct openpgp_packet *packet)
+{
+	int length = 0;
+	uint64_t keyid = 0;
+	
+	if (packet != NULL) {
 		keyid = 0;
-		switch (sigs->packet->data[0]) {
+		switch (packet->data[0]) {
 		case 2:
 		case 3:
-			keyid = sigs->packet->data[7];
+			keyid = packet->data[7];
 			keyid <<= 8;
-			keyid += sigs->packet->data[8];
+			keyid += packet->data[8];
 			keyid <<= 8;
-			keyid += sigs->packet->data[9];
+			keyid += packet->data[9];
 			keyid <<= 8;
-			keyid += sigs->packet->data[10];
+			keyid += packet->data[10];
 			keyid <<= 8;
-			keyid += sigs->packet->data[11];
+			keyid += packet->data[11];
 			keyid <<= 8;
-			keyid += sigs->packet->data[12];
+			keyid += packet->data[12];
 			keyid <<= 8;
-			keyid += sigs->packet->data[13];
+			keyid += packet->data[13];
 			keyid <<= 8;
-			keyid += sigs->packet->data[14];
+			keyid += packet->data[14];
 			break;
 		case 4:
-			length = get_subpackets_keyid(&sigs->packet->data[4],
+			length = parse_subpackets(&packet->data[4],
 					&keyid);
-			get_subpackets_keyid(&sigs->packet->data[length + 4],
+			parse_subpackets(&packet->data[length + 4],
 					&keyid);
 			/*
 			 * Don't bother to look at the unsigned packets.
@@ -414,11 +322,9 @@ struct ll *keysigs(struct ll *curll,
 		default:
 			break;
 		}
-		sigs = sigs->next;
-		curll = lladd(curll, createandaddtohash(keyid));
 	}
 
-	return curll;
+	return keyid;
 }
 
 /*
