@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: add.c,v 1.13 2004/05/26 18:53:14 noodles Exp $
+ * $Id: add.c,v 1.14 2004/05/26 21:20:05 noodles Exp $
  */
 
 #include <errno.h>
@@ -56,6 +56,7 @@ int main(int argc, char *argv[])
 	start_html("onak : Add");
 	if (ctx.buffer == NULL) {
 		puts("Error: No keytext to add supplied.");
+		end_html();
 	} else {
 		readconfig(NULL);
 		initlogthing("add", config.logfile);
@@ -63,7 +64,11 @@ int main(int argc, char *argv[])
 					&ctx,
 					&packets);
 		if (packets != NULL) {
-			parse_keys(packets, &keys);
+			printf("Storing %d keys.\n",
+				parse_keys(packets, &keys));
+			end_html();
+			fclose(stdout);
+			fclose(stderr);
 			initdb(false);
 			count = update_keys(&keys);
 			printf("Got %d new keys.\n", count);
@@ -77,10 +82,10 @@ int main(int argc, char *argv[])
 			cleanupdb();
 		} else {
 			puts("No OpenPGP packets found in input.");
+			end_html();
 		}
 		cleanuplogthing();
 		cleanupconfig();
 	}
-	end_html();
 	return (EXIT_SUCCESS);
 }
