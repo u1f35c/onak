@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: lookup.c,v 1.15 2004/05/27 01:25:37 noodles Exp $
+ * $Id: lookup.c,v 1.16 2004/05/27 21:58:18 noodles Exp $
  */
 
 #include <inttypes.h>
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
 		initdb(true);
 		switch (op) {
 		case OP_GET:
-			logthing(LOGTHING_NOTICE, "Getting keyid %llX",
+			logthing(LOGTHING_NOTICE, "Getting keyid 0x%llX",
 					keyid);
 			if (fetch_key(keyid, &publickey, false)) {
 				puts("<pre>");
@@ -172,6 +172,8 @@ int main(int argc, char *argv[])
 						packets);
 				puts("</pre>");
 			} else {
+				logthing(LOGTHING_NOTICE,
+					"Failed to fetch key.");
 				puts("Key not found");
 			}
 			break;
@@ -185,12 +187,13 @@ int main(int argc, char *argv[])
 			break;
 		case OP_PHOTO:
 			if (fetch_key(keyid, &publickey, false)) {
-				struct openpgp_packet *photo = NULL;
-				photo = getphoto(publickey, 0);
-				if (photo != NULL) {
-					fwrite(photo->data+19,
+				unsigned char *photo = NULL;
+				size_t         length = 0;
+
+				if (getphoto(publickey, 0, &photo, &length)) {
+					fwrite(photo,
 							1,
-							(photo->length - 19),
+							length,
 							stdout);
 				}
 				free_publickey(publickey);

@@ -7,7 +7,7 @@
  * 
  * Copyright 2002 Project Purple
  *
- * $Id: onak.c,v 1.20 2004/05/27 01:25:37 noodles Exp $
+ * $Id: onak.c,v 1.21 2004/05/27 21:58:18 noodles Exp $
  */
 
 #include <stdio.h>
@@ -179,16 +179,14 @@ int main(int argc, char *argv[])
 				puts("Can't get a key on uid text."
 					" You must supply a keyid.");
 			} else if (fetch_key(keyid, &keys, false)) {
-				struct openpgp_packet *photo = NULL;
-				FILE *photof = NULL;
-				photo = getphoto(keys, 0);
-				if (photo != NULL) {
-					photof = fopen("keyphoto.jpg", "w");
-					fwrite(photo->data+19,
-							1,
-							(photo->length - 19),
-							photof);
-					fclose(photof);
+				unsigned char *photo = NULL;
+				size_t         length = 0;
+
+				if (getphoto(keys, 0, &photo, &length)) {
+					fwrite(photo,
+						1,
+						length,
+						stdout);
 				}
 				free_publickey(keys);
 				keys = NULL;

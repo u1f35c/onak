@@ -5,7 +5,7 @@
  *
  * Copyright 2004 Project Purple
  *
- * $Id: photoid.h,v 1.1 2004/05/27 01:25:37 noodles Exp $
+ * $Id: photoid.h,v 1.2 2004/05/27 21:58:18 noodles Exp $
  */
 
 #ifndef __PHOTOID_H__
@@ -17,11 +17,15 @@
  * 	getphoto - returns an OpenPGP packet containing a photo id.
  * 	@key: The key to return the photo id from.
  * 	@index: The index of the photo to return.
+ * 	@photo: The photo data.
+ * 	@length: The length of the photo data.
  *
- * 	This function returns the OpenPGP packet containing a photo id from a
- * 	supplied key. index specifies which photo id should be returned. If
- * 	there's no such photo id NULL is returned.
+ * 	This function returns the photo data contained in a supplied key.
+ * 	index specifies which photo id should be returned. If there's no such
+ * 	photo id NULL is returned. The returned data pointer refers to the key
+ * 	data supplied rather than a copy of it.
  */
-struct openpgp_packet *getphoto(struct openpgp_publickey *key, int index);
+int getphoto(struct openpgp_publickey *key, int index, unsigned char **photo,
+		size_t *length);
 
 #endif /* __PHOTOID_H__ */
