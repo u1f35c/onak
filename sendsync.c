@@ -43,7 +43,7 @@ int sendkeysync(struct openpgp_publickey *keys)
 	struct openpgp_packet_list *list_end = NULL;
 
 	if (config.syncsites != NULL &&
-			(fd=popen("sendmail -t", "w")) != NULL) {
+			(fd=popen(config.mta, "w")) != NULL) {
 		fprintf(fd, "From: %s\n", config.adminemail);
 
 		fprintf(fd, "To: ");
