@@ -10,6 +10,10 @@ if [ "$1" = "configure" ]; then
     # Take ownership of the database directory
     chown -R onak /var/lib/onak
 
+    # Create our logfile
+    touch /var/log/onak.log
+    chown onak /var/log/onak.log
+
     # Make the CGI tools setuid onak
     for i in /usr/lib/cgi-bin/pks/*
     do
