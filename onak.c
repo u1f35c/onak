@@ -7,7 +7,7 @@
  * 
  * Copyright 2002 Project Purple
  *
- * $Id: onak.c,v 1.21 2004/05/27 21:58:18 noodles Exp $
+ * $Id: onak.c,v 1.22 2004/05/31 14:16:49 noodles Exp $
  */
 
 #include <stdio.h>
@@ -17,6 +17,7 @@
 
 #include "armor.h"
 #include "charfuncs.h"
+#include "cleankey.h"
 #include "keydb.h"
 #include "keyid.h"
 #include "keyindex.h"
@@ -57,14 +58,19 @@ void usage(void) {
 	puts("Usage:\n");
 	puts("\tonak [options] <command> <parameters>\n");
 	puts("\tCommands:\n");
-	puts("\tadd    - read armored OpenPGP keys from stdin and add to the"
+	puts("\tadd      - read armored OpenPGP keys from stdin and add to the"
 		" keyserver");
-	puts("\tdelete - delete a given key from the keyserver");
-	puts("\tdump   - dump all the keys from the keyserver to a file or"
-		" files\n\t         starting keydump*");
-	puts("\tget    - retrieves the key requested from the keyserver");
-	puts("\tindex  - search for a key and list it");
-	puts("\tvindex - search for a key and list it and its signatures");
+	puts("\tclean    - read armored OpenPGP keys from stdin, run the "
+		" cleaning\n\t       	   routines against them and dump to"
+		" stdout");
+	puts("\tdelete   - delete a given key from the keyserver");
+	puts("\tdump     - dump all the keys from the keyserver to a file or"
+		" files\n\t           starting keydump*");
+	puts("\tget      - retrieves the key requested from the keyserver");
+	puts("\tgetphoto - retrieves the first photoid on the given key and"
+		" dumps to\n\t           stdout");
+	puts("\tindex    - search for a key and list it");
+	puts("\tvindex   - search for a key and list it and its signatures");
 }
 
 int main(int argc, char *argv[])
@@ -131,6 +137,10 @@ int main(int argc, char *argv[])
 			logthing(LOGTHING_INFO, "Finished reading %d keys.",
 					result);
 
+			result = cleankeys(keys);
+			logthing(LOGTHING_INFO, "%d keys cleaned.",
+					result);
+
 			initdb(false);
 			logthing(LOGTHING_NOTICE, "Got %d new keys.",
 					update_keys(&keys));
@@ -138,9 +148,15 @@ int main(int argc, char *argv[])
 				flatten_publickey(keys,
 					&packets,
 					&list_end);
-				armor_openpgp_stream(stdout_putchar,
-					NULL,
-					packets);
+				if (binary) {
+					write_openpgp_stream(stdout_putchar,
+							NULL,
+						 	packets);
+				} else {
+					armor_openpgp_stream(stdout_putchar,
+						NULL,
+						packets);
+				}
 				free_packet_list(packets);
 				packets = NULL;
 			}
@@ -156,6 +172,53 @@ int main(int argc, char *argv[])
 		} else {
 			rc = 1;
 			logthing(LOGTHING_NOTICE, "No changes.");
+		}
+	} else if (!strcmp("clean", argv[optind])) {
+		if (binary) {
+			result = read_openpgp_stream(stdin_getchar, NULL,
+				 &packets, 0);
+			logthing(LOGTHING_INFO,
+					"read_openpgp_stream: %d", result);
+		} else {
+			dearmor_openpgp_stream(stdin_getchar, NULL, &packets);
+		}
+
+		if (packets != NULL) {
+			result = parse_keys(packets, &keys);
+			free_packet_list(packets);
+			packets = NULL;
+			logthing(LOGTHING_INFO, "Finished reading %d keys.",
+					result);
+
+			if (keys != NULL) {
+				result = cleankeys(keys);
+				logthing(LOGTHING_INFO, "%d keys cleaned.",
+						result);
+
+				flatten_publickey(keys,
+					&packets,
+					&list_end);
+
+				if (binary) {
+					write_openpgp_stream(stdout_putchar,
+							NULL,
+						 	packets);
+				} else {
+					armor_openpgp_stream(stdout_putchar,
+						NULL,
+						packets);
+				}
+				free_packet_list(packets);
+				packets = NULL;
+			}
+		} else {
+			rc = 1;
+			logthing(LOGTHING_NOTICE, "No keys read.");
+		}
+		
+		if (keys != NULL) {
+			free_publickey(keys);
+			keys = NULL;
 		}
 	} else if ((argc - optind) == 2) {
 		search = argv[optind+1];

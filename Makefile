@@ -1,7 +1,7 @@
 #
 # Makefile for onak.
 #
-# $Id: Makefile,v 1.21 2004/05/27 22:02:05 noodles Exp $
+# $Id: Makefile,v 1.22 2004/05/31 14:16:49 noodles Exp $
 #
 
 CC = gcc
@@ -19,10 +19,11 @@ PROGS = add lookup gpgwww onak splitkeys
 CORE_OBJS = armor.o charfuncs.o decodekey.o getcgi.o hash.o keydb_$(DBTYPE).o \
 	keyid.o keyindex.o ll.o mem.o onak-conf.o parsekey.o sha.o md5.o \
 	log.o photoid.o wordlist.o
-OBJS = merge.o stats.o sendsync.o $(CORE_OBJS)
+OBJS = merge.o stats.o sendsync.o cleankey.o $(CORE_OBJS)
 SRCS = armor.c parsekey.c merge.c keyid.c md5.c sha.c main.c getcgi.c stats.c \
 	keyindex.c mem.c lookup.c add.c keydb_$(DBTYPE).c ll.c hash.c \
-	gpgwww.c onak-conf.c charfuncs.c sendsync.c log.c photoid.c wordlist.c
+	gpgwww.c onak-conf.c charfuncs.c sendsync.c log.c photoid.c \
+	wordlist.c cleankey.c
 
 all: .depend $(PROGS) testparse maxpath sixdegrees splitkeys
 
@@ -41,14 +42,15 @@ sixdegrees: sixdegrees.o $(OBJS)
 gpgwww: gpgwww.o $(OBJS)
 	$(LINK) -o gpgwww gpgwww.o $(OBJS) $(LIBS)
 
-lookup: lookup.o $(CORE_OBJS)
-	$(LINK) -o lookup lookup.o $(CORE_OBJS) $(LIBS)
+lookup: lookup.o cleankey.o merge.o $(CORE_OBJS)
+	$(LINK) -o lookup lookup.o cleankey.o merge.o $(CORE_OBJS) $(LIBS)
 
-add: add.o merge.o sendsync.o $(CORE_OBJS)
-	$(LINK) -o add add.o merge.o sendsync.o $(CORE_OBJS) $(LIBS)
+add: add.o cleankey.o merge.o sendsync.o $(CORE_OBJS)
+	$(LINK) -o add add.o cleankey.o merge.o sendsync.o $(CORE_OBJS) $(LIBS)
 
-onak: onak.o merge.o $(CORE_OBJS)
-	$(LINK) $(LDFLAGS) -o onak onak.o merge.o $(CORE_OBJS) $(LIBS)
+onak: onak.o merge.o cleankey.o $(CORE_OBJS)
+	$(LINK) $(LDFLAGS) -o onak onak.o merge.o cleankey.o $(CORE_OBJS) \
+		$(LIBS)
 
 clean:
 	rm -f $(PROGS) $(OBJS) Makefile.bak testparse maxpath *.core core \

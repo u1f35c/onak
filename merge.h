@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: merge.h,v 1.5 2003/06/04 20:57:11 noodles Exp $
+ * $Id: merge.h,v 1.6 2004/05/31 14:16:49 noodles Exp $
  */
 
 #ifndef __MERGE_H__
@@ -38,5 +38,30 @@ int merge_keys(struct openpgp_publickey *a, struct openpgp_publickey *b);
  *	the DB). Returns the number of entirely new keys added.
  */
 int update_keys(struct openpgp_publickey **keys);
+
+/**
+ *	get_signed_packet - Gets a signed packet from a list.
+ *	@packet_list: The list of packets to look in.
+ *	@packet: The packet to look for.
+ *
+ *	Walks through the signedpacket_list looking for the supplied packet and
+ *	returns it if found. Otherwise returns NULL.
+ */
+struct openpgp_signedpacket_list *find_signed_packet(
+		struct openpgp_signedpacket_list *packet_list,
+		struct openpgp_packet *packet);
+
+/**
+ *	merge_packet_sigs - Takes 2 signed packets and merges their sigs.
+ *	@old: The old signed packet.
+ *	@new: The new signed packet.
+ *
+ *	Takes 2 signed packet list structures and the sigs of the packets on
+ *	the head of these structures. These packets must both be the same and
+ *	the fully merged structure is returned in old and the minimal
+ *	difference to get from old to new in new.
+ */
+int merge_packet_sigs(struct openpgp_signedpacket_list *old,
+			struct openpgp_signedpacket_list *new);
 
 #endif

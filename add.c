@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: add.c,v 1.14 2004/05/26 21:20:05 noodles Exp $
+ * $Id: add.c,v 1.15 2004/05/31 14:16:49 noodles Exp $
  */
 
 #include <errno.h>
@@ -14,6 +14,7 @@
 #include <string.h>
 
 #include "armor.h"
+#include "cleankey.h"
 #include "charfuncs.h"
 #include "getcgi.h"
 #include "keydb.h"
@@ -70,6 +71,11 @@ int main(int argc, char *argv[])
 			fclose(stdout);
 			fclose(stderr);
 			initdb(false);
+			
+			count = cleankeys(keys);
+			logthing(LOGTHING_INFO, "%d keys cleaned.",
+					count);
+
 			count = update_keys(&keys);
 			printf("Got %d new keys.\n", count);
 			logthing(LOGTHING_NOTICE, "Got %d new keys.",

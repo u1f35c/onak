@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: lookup.c,v 1.16 2004/05/27 21:58:18 noodles Exp $
+ * $Id: lookup.c,v 1.17 2004/05/31 14:16:49 noodles Exp $
  */
 
 #include <inttypes.h>
@@ -17,6 +17,7 @@
 
 #include "armor.h"
 #include "charfuncs.h"
+#include "cleankey.h"
 #include "getcgi.h"
 #include "keydb.h"
 #include "keyindex.h"
@@ -164,6 +165,7 @@ int main(int argc, char *argv[])
 					keyid);
 			if (fetch_key(keyid, &publickey, false)) {
 				puts("<pre>");
+				cleankeys(publickey);
 				flatten_publickey(publickey,
 							&packets,
 							&list_end);
