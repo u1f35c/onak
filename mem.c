@@ -13,6 +13,7 @@
 #include "keystructs.h"
 #include "ll.h"
 #include "mem.h"
+#include "stats.h"
 
 /**
  *	packet_dup - duplicate an OpenPGP packet.
@@ -169,5 +170,24 @@ void free_publickey(struct openpgp_publickey *key) {
 		}
 		free(key);
 		key = nextkey;
+	}
+}
+
+/**
+ *	free_statskey - free an stats key structure.
+ *	@key: The key to free.
+ *
+ *	Takes a stats key and frees the memory used by it and the linked list
+ *	of sigs under it. Doesn't recurse into the list as it's assumed all the
+ *	objects referenced also exist in the hash.
+ */
+void free_statskey(struct stats_key *key)
+{
+	if (key != NULL) {
+		if (key->sigs != NULL) {
+			llfree(key->sigs, NULL);
+			key->sigs = NULL;
+		}
+		free(key);
 	}
 }

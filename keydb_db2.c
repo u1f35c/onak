@@ -183,6 +183,8 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 		fetchbuf.size = data.size;
 		read_openpgp_stream(buffer_fetchchar, &fetchbuf, &packets);
 		parse_keys(packets, publickey);
+		free_packet_list(packets);
+		packets = NULL;
 	}
 
 	return (!ret);

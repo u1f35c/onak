@@ -64,6 +64,7 @@ int main(int argc, char *argv[])
 	findmaxpath(30);
 	destroyhash();
 	cleanupdb();
+	cleanupconfig();
 	
 	return EXIT_SUCCESS;
 }

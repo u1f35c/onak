@@ -132,7 +132,8 @@ void endtrans(void)
  *	in and then parse_keys() to parse the packets into a publickey
  *	structure.
  */
-int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey, bool intrans)
+int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
+		bool intrans)
 {
 	struct openpgp_packet_list *packets = NULL;
 	PGresult *result = NULL;
@@ -174,6 +175,8 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey, bool intrans
 						&packets);
 				parse_keys(packets, publickey);
 				lo_close(dbconn, fd);
+				free_packet_list(packets);
+				packets = NULL;
 			}
 		}
 	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -238,6 +241,8 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
 						&packets);
 				parse_keys(packets, publickey);
 				lo_close(dbconn, fd);
+				free_packet_list(packets);
+				packets = NULL;
 			}
 		}
 	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
@@ -308,6 +313,8 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 		write_openpgp_stream(keydb_putchar, &fd, packets);
 		lo_close(dbconn, fd);
 	}
+	free_packet_list(packets);
+	packets = NULL;
 
 	snprintf(statement, 1023, 
 			"INSERT INTO onak_keys (keyid, keydata) VALUES "

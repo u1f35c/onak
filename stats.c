@@ -56,6 +56,7 @@ void initcolour(bool parent)
 unsigned long findpath(struct stats_key *have, struct stats_key *want)
 {
 	struct ll *keys = NULL;
+	struct ll *oldkeys = NULL;
 	struct ll *sigs = NULL;
 	struct ll *nextkeys = NULL;
 	long curdegree = 0;
@@ -63,6 +64,7 @@ unsigned long findpath(struct stats_key *have, struct stats_key *want)
 	
 	curdegree = 1;
 	keys = lladd(NULL, want);
+	oldkeys = keys;
 
 	while (keys != NULL && have->colour == 0) {
 		sigs = hash_getkeysigs(((struct stats_key *)
@@ -86,9 +88,19 @@ unsigned long findpath(struct stats_key *have, struct stats_key *want)
 		keys = keys->next;
 		if (keys == NULL) {
 			keys = nextkeys;
+			llfree(oldkeys, NULL);
+			oldkeys = keys;
 			nextkeys = NULL;
 			curdegree++;
 		}
+	}
+	if (oldkeys != NULL) {
+		llfree(oldkeys, NULL);
+		oldkeys = NULL;
+	}
+	if (nextkeys != NULL) {
+		llfree(nextkeys, NULL);
+		nextkeys = NULL;
 	}
 
 	return count;
@@ -107,23 +119,24 @@ unsigned long findpath(struct stats_key *have, struct stats_key *want)
 void dofindpath(uint64_t have, uint64_t want, bool html)
 {
 	struct stats_key *keyinfoa, *keyinfob, *curkey;
+	uint64_t fullhave, fullwant;
 	int rec;
 	char *uid;
 
-	have = getfullkeyid(have);
-	want = getfullkeyid(want);
+	fullhave = getfullkeyid(have);
+	fullwant = getfullkeyid(want);
 
 	/*
 	 * Make sure the keys we have and want are in the cache.
 	 */
-	hash_getkeysigs(have);
-	hash_getkeysigs(want);
+	hash_getkeysigs(fullhave);
+	hash_getkeysigs(fullwant);
 
-	if ((keyinfoa = findinhash(have)) == NULL) {
+	if ((keyinfoa = findinhash(fullhave)) == NULL) {
 		printf("Couldn't find key 0x%llX.\n", have);
 		return;
 	}
-	if ((keyinfob = findinhash(want)) == NULL) {
+	if ((keyinfob = findinhash(fullwant)) == NULL) {
 		printf("Couldn't find key 0x%llX.\n", want);
 		return;
 	}
@@ -161,12 +174,13 @@ void dofindpath(uint64_t have, uint64_t want, bool html)
 					 " signs");
 			} else if (html && uid != NULL) {
 				printf("<a href=\"lookup?op=get&search=%llX\">"
-					"0x%08llX</a> (<a href=\"lookup?op=vindex"
+					"0x%08llX</a>"
+					" (<a href=\"lookup?op=vindex"
 					"&search=0x%llX\">%s</a>)%s<BR>\n",
 					curkey->keyid & 0xFFFFFFFF,
 					curkey->keyid & 0xFFFFFFFF,
 					curkey->keyid & 0xFFFFFFFF,
-					txt2html(keyid2uid(curkey->keyid)),
+					txt2html(uid),
 					(curkey->keyid == want) ? "" :
 					 " signs");
 			} else {
@@ -176,6 +190,10 @@ void dofindpath(uint64_t have, uint64_t want, bool html)
 						uid,
 					(curkey->keyid == want) ? "" :
 					 " signs");
+			}
+			if (uid != NULL) {
+				free(uid);
+				uid = NULL;
 			}
 			curkey = findinhash(curkey->parent);
 		}

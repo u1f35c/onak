@@ -217,6 +217,8 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 		read_openpgp_stream(buffer_fetchchar, &fetchbuf,
 				&packets);
 		parse_keys(packets, publickey);
+		free_packet_list(packets);
+		packets = NULL;
 		numkeys++;
 	} else if (ret != DB_NOTFOUND) {
 		dbconn->err(dbconn, ret, "Problem retrieving key");
@@ -286,6 +288,7 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
 					llfind(keylist, data.data,
 						worddb_cmp) != NULL) {
 				newkeylist = lladd(newkeylist, data.data);
+				data.data = NULL;
 			} else {
 				free(data.data);
 				data.data = NULL;
@@ -298,7 +301,13 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
 		llfree(keylist, free);
 		keylist = newkeylist;
 		newkeylist = NULL;
+		if (data.data != NULL) {
+			free(data.data);
+			data.data = NULL;
+		}
 	}
+	llfree(wordlist, NULL);
+	wordlist = NULL;
 	
 	for (newkeylist = keylist; newkeylist != NULL;
 			newkeylist = newkeylist->next) {
@@ -401,6 +410,14 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 	if (ret != 0) {
 		dbconn->err(dbconn, ret, "Problem storing key");
 	}
+
+	free(storebuf.buffer);
+	storebuf.buffer = NULL;
+	storebuf.size = 0;
+	storebuf.offset = 0; 
+
+	free_packet_list(packets);
+	packets = NULL;
 
 	/*
 	 * Walk through our uids storing the words into the db with the keyid.

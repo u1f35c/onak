@@ -65,4 +65,9 @@ extern struct onak_config config;
  */
 void readconfig(void);
 
+/*
+ *	cleanupconfig - clean up the config when we're shutting down.
+ */
+void cleanupconfig(void);
+
 #endif /* __ONAK_CONF_H_ */

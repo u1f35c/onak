@@ -13,6 +13,7 @@
 #include "keydb.h"
 #include "keyid.h"
 #include "ll.h"
+#include "mem.h"
 #include "stats.h"
 
 /**
@@ -55,7 +56,7 @@ void destroyhash(void)
 		 * TODO: The problem is the object has pointers that
 		 * need freed too.
 		 */
-		llfree(curll, free);
+		llfree(curll, free_statskey);
 		hashtable[i] = NULL;
 	}
 	elements = 0;
@@ -137,6 +138,10 @@ struct ll *gethashtableentry(int entry)
 struct ll *hash_getkeysigs(uint64_t keyid)
 {
 	struct stats_key *key = NULL;
+
+	if (keyid == 0)  {
+		return NULL;
+	}
 
 	key = findinhash(keyid);
 	if (key == NULL) {

@@ -68,6 +68,7 @@ int main(int argc, char *argv[])
 				keys = NULL;
 			}
 			cleanupdb();
+			cleanupconfig();
 		} else {
 			puts("No OpenPGP packets found in input.");
 		}

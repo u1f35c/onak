@@ -60,10 +60,16 @@ int main(int argc, char *argv[])
 	dofindpath(from, to, true);
 	destroyhash();
 	cleanupdb();
+	cleanupconfig();
 
 	puts("<HR>");
-	puts("Produced by gpgwww " VERSION ", part of onak. <A HREF=\"mailto:noodles-onak@earth.li\">Jonathan McDowell</A>");
+	puts("Produced by gpgwww " VERSION ", part of onak. "
+		"<A HREF=\"mailto:noodles-onak@earth.li\">"
+		"Jonathan McDowell</A>");
 	end_html();
+
+	cleanupcgi(cgiparams);
+	cgiparams = NULL;
 
 	return EXIT_SUCCESS;
 }

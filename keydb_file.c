@@ -88,6 +88,8 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 	if (fd > -1) {
 		read_openpgp_stream(file_fetchchar, &fd, &packets);
 		parse_keys(packets, publickey);
+		free_packet_list(packets);
+		packets = NULL;
 		close(fd);
 	}
 
@@ -125,6 +127,8 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 		
 		write_openpgp_stream(file_putchar, &fd, packets);
 		close(fd);
+		free_packet_list(packets);
+		packets = NULL;
 	}
 
 	return (fd > -1);

@@ -30,13 +30,13 @@ struct onak_config config = {
 	/*
 	 * Options for directory backends.
 	 */
-	"/home/noodles/onak-db",	/* db_dir */
+	NULL,			/* db_dir */
 
 	/*
 	 * Options for the Postgres backend.
 	 */
 	NULL,			/* pg_dbhost */
-	"noodles",		/* pg_dbname */
+	NULL,			/* pg_dbname */
 	NULL,			/* pg_dbuser */
 	NULL,			/* pg_dbpass */
 };
@@ -122,5 +122,44 @@ void readconfig(void) {
 		fclose(conffile);
 	} else {
 		fprintf(stderr, "Couldn't open config file; using defaults.\n");
+	}
+}
+
+void cleanupconfig(void) {
+	if (config.thissite != NULL) {
+		free(config.thissite);
+		config.thissite = NULL;
+	}
+	if (config.adminemail != NULL) {
+		free(config.adminemail);
+		config.adminemail = NULL;
+	}
+	if (config.mta != NULL) {
+		free(config.mta);
+		config.mta = NULL;
+	}
+	if (config.db_dir != NULL) {
+		free(config.db_dir);
+		config.db_dir = NULL;
+	}
+	if (config.pg_dbhost != NULL) {
+		free(config.pg_dbhost);
+		config.pg_dbhost = NULL;
+	}
+	if (config.pg_dbname != NULL) {
+		free(config.pg_dbname);
+		config.pg_dbname = NULL;
+	}
+	if (config.pg_dbuser != NULL) {
+		free(config.pg_dbuser);
+		config.pg_dbuser = NULL;
+	}
+	if (config.pg_dbpass != NULL) {
+		free(config.pg_dbpass);
+		config.pg_dbpass = NULL;
+	}
+	if (config.syncsites != NULL) {
+		llfree(config.syncsites, free);
+		config.syncsites = NULL;
 	}
 }

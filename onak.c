@@ -194,5 +194,7 @@ int main(int argc, char *argv[])
 		usage();
 	}
 
+	cleanupconfig();
+
 	return rc;
 }

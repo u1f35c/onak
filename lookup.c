@@ -148,6 +148,7 @@ int main(int argc, char *argv[])
 			puts("Unknown operation!");
 		}
 		cleanupdb();
+		cleanupconfig();
 	}
 	puts("<hr>");
 	puts("Produced by onak " VERSION " by Jonathan McDowell");
