@@ -260,14 +260,21 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 					break;
 				case 3:
 					fprintf(stderr, "Unsupported length type 3.\n");
+					curpacket->packet->length = 0;
+					curpacket->packet->data = NULL;
+					rc = -1;
 					break;
 				}
 			}
-			curpacket->packet->data =
-				malloc(curpacket->packet->length *
+
+			if (rc == 0) {
+				curpacket->packet->data =
+					malloc(curpacket->packet->length *
 					sizeof(unsigned char));
-			rc = getchar_func(ctx, curpacket->packet->length,
+				rc = getchar_func(ctx,
+					curpacket->packet->length,
 					curpacket->packet->data);
+			}
 			inpacket = false;
 		} else {
 			fprintf(stderr, "Unexpected character: 0x%X\n",
