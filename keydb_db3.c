@@ -191,6 +191,7 @@ void initdb(void)
  */
 void cleanupdb(void)
 {
+	txn_checkpoint(dbenv, 0, 0, 0);
 	worddb->close(worddb, 0);
 	worddb = NULL;
 	dbconn->close(dbconn, 0);
