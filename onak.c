@@ -7,7 +7,7 @@
  * 
  * Copyright 2002 Project Purple
  *
- * $Id: onak.c,v 1.16 2003/09/30 17:15:39 noodles Exp $
+ * $Id: onak.c,v 1.17 2003/09/30 20:40:11 noodles Exp $
  */
 
 #include <stdio.h>
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 	} else if (!strcmp("add", argv[optind])) {
 		if (binary) {
 			result = read_openpgp_stream(stdin_getchar, NULL,
-				 &packets);
+				 &packets, 0);
 			logthing(LOGTHING_INFO,
 					"read_openpgp_stream: %d", result);
 		} else {

@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb_db2.c,v 1.9 2003/06/04 20:57:08 noodles Exp $
+ * $Id: keydb_db2.c,v 1.10 2003/09/30 20:40:10 noodles Exp $
  */
 
 #include <sys/types.h>
@@ -200,7 +200,7 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 		fetchbuf.buffer = data.data;
 		fetchbuf.offset = 0;
 		fetchbuf.size = data.size;
-		read_openpgp_stream(buffer_fetchchar, &fetchbuf, &packets);
+		read_openpgp_stream(buffer_fetchchar, &fetchbuf, &packets, 0);
 		parse_keys(packets, publickey);
 		free_packet_list(packets);
 		packets = NULL;

@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb_pg.c,v 1.12 2003/06/08 21:11:01 noodles Exp $
+ * $Id: keydb_pg.c,v 1.13 2003/09/30 20:40:11 noodles Exp $
  */
 
 #include <postgresql/libpq-fe.h>
@@ -176,7 +176,7 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 						"Can't open large object.");
 			} else {
 				read_openpgp_stream(keydb_fetchchar, &fd,
-						&packets);
+						&packets, 0);
 				parse_keys(packets, publickey);
 				lo_close(dbconn, fd);
 				free_packet_list(packets);

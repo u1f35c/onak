@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 	void *ctx = NULL;
 
 	fputs("Doing read_openpgp_stream():\n", stderr);
-	read_openpgp_stream(getnextchar, ctx, &packets);
+	read_openpgp_stream(getnextchar, ctx, &packets, 0);
 */
 	fputs("Doing dearmor_openpgp_stream():\n", stderr);
 	dearmor_openpgp_stream(getnextchar, NULL, &packets);

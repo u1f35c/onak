@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: armor.c,v 1.6 2003/06/07 13:45:34 noodles Exp $
+ * $Id: armor.c,v 1.7 2003/09/30 20:40:10 noodles Exp $
  */
 
 #include <assert.h>
@@ -396,7 +396,8 @@ int dearmor_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 		dearmor_init(&dearmor_ctx);
 		dearmor_ctx.getchar_func = getchar_func;
 		dearmor_ctx.ctx = ctx;
-		read_openpgp_stream(dearmor_getchar_c, &dearmor_ctx, packets);
+		read_openpgp_stream(dearmor_getchar_c, &dearmor_ctx,
+			packets, 0);
 		dearmor_finish(&dearmor_ctx);
 		/*
 		 * TODO: Look for armor footer

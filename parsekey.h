@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: parsekey.h,v 1.4 2003/06/04 20:57:12 noodles Exp $
+ * $Id: parsekey.h,v 1.5 2003/09/30 20:40:11 noodles Exp $
  */
 
 #ifndef __PARSEKEY_H__
@@ -53,15 +53,20 @@ int debug_packet(struct openpgp_packet *packet);
  *	@getchar_func: The function to get the next character from the stream.
  *	@ctx: A pointer to the context structure for getchar_func.
  *	@packets: The outputted list of packets.
+ *	@maxnum: The maximum number of keys to read. 0 means unlimited.
  *
  *	This function uses getchar_func to read characters from an OpenPGP
  *	packet stream and reads the packets into a linked list of packets
- *	ready for parsing as a public key or whatever.
+ *	ready for parsing as a public key or whatever. maxnum allows you to
+ *	specify the maximum number of keys to read. Note that if this is used
+ *	then only the public key component of the last key will be returned,
+ *	none of the other packets of the key will be read.
  */
 int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 				unsigned char *c),
 				void *ctx,
-				struct openpgp_packet_list **packets);
+				struct openpgp_packet_list **packets,
+				int maxnum);
 
 /**
  *	write_openpgp_stream - Reads a stream of OpenPGP packets.

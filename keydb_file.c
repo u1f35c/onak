@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb_file.c,v 1.9 2003/06/05 07:31:59 noodles Exp $
+ * $Id: keydb_file.c,v 1.10 2003/09/30 20:40:10 noodles Exp $
  */
 
 #include <sys/types.h>
@@ -88,7 +88,7 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 	fd = open(keyfile, O_RDONLY); // | O_SHLOCK);
 
 	if (fd > -1) {
-		read_openpgp_stream(file_fetchchar, &fd, &packets);
+		read_openpgp_stream(file_fetchchar, &fd, &packets, 0);
 		parse_keys(packets, publickey);
 		free_packet_list(packets);
 		packets = NULL;

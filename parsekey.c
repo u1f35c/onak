@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: parsekey.c,v 1.12 2003/09/30 17:40:41 noodles Exp $
+ * $Id: parsekey.c,v 1.13 2003/09/30 20:40:11 noodles Exp $
  */
 
 #include <assert.h>
@@ -162,6 +162,7 @@ int debug_packet(struct openpgp_packet *packet)
  *	@getchar_func: The function to get the next character from the stream.
  *	@ctx: A pointer to the context structure for getchar_func.
  *	@packets: The outputted list of packets.
+ *	@maxnum: The maximum number of keys to read. 0 means unlimited.
  *
  *	This function uses getchar_func to read characters from an OpenPGP
  *	packet stream and reads the packets into a linked list of packets
@@ -170,12 +171,14 @@ int debug_packet(struct openpgp_packet *packet)
 int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 				unsigned char *c),
 				void *ctx,
-				struct openpgp_packet_list **packets)
+				struct openpgp_packet_list **packets,
+				int maxnum)
 {
 	unsigned char			 curchar = 0;
 	unsigned long			 count = 0;
 	struct openpgp_packet_list	*curpacket = NULL;
 	int				 rc = 0;
+	int				 keys = 0;
 	bool				 inpacket = false;
 
 	assert(packets != NULL);
@@ -186,7 +189,8 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 		}
 	}
 
-	while (!rc && !getchar_func(ctx, 1, &curchar)) {
+	while (!rc && !getchar_func(ctx, 1, &curchar) &&
+			(maxnum == 0 || keys < maxnum)) {
 		if (!inpacket && (curchar & 0x80)) {
 			/*
 			 * New packet. Record the fact we're in a packet and
@@ -283,6 +287,9 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 			}
 
 			if (rc == 0) {
+				if (curpacket->packet->tag == 6) {
+					keys++;
+				}
 				curpacket->packet->data =
 					malloc(curpacket->packet->length *
 					sizeof(unsigned char));
