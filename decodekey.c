@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: decodekey.c,v 1.5 2004/03/23 12:35:11 noodles Exp $
+ * $Id: decodekey.c,v 1.6 2004/05/27 03:24:01 noodles Exp $
  */
 
 #include <assert.h>
@@ -218,8 +218,11 @@ char **keyuids(struct openpgp_publickey *key, char **primary)
 	char buf[1024];
 	char **uids = NULL;
 	int count = 0;
+        
+        if (primary != NULL) {
+        	*primary = NULL;
+	}
 
-	*primary = NULL;
 	if (key != NULL && key->uids != NULL) {
 		uids = malloc((spsize(key->uids) + 1) * sizeof (char *));
 	
