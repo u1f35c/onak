@@ -303,9 +303,9 @@ int armor_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
 	/*
 	 * Print armor header
 	 */
-	putchar_func(ctx, sizeof("-----BEGIN PGP PUBLIC KEY BLOCK-----\n"),
+	putchar_func(ctx, sizeof("-----BEGIN PGP PUBLIC KEY BLOCK-----\n") - 1,
 		(unsigned char *) "-----BEGIN PGP PUBLIC KEY BLOCK-----\n");
-	putchar_func(ctx, sizeof("Version: onak " VERSION "\n\n"),
+	putchar_func(ctx, sizeof("Version: onak " VERSION "\n\n") - 1,
 		(unsigned char *) "Version: onak " VERSION "\n\n");
 	
 	armor_init(&armor_ctx);
@@ -317,7 +317,7 @@ int armor_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
 	/*
 	 * Print armor footer
 	 */
-	putchar_func(ctx, sizeof("-----END PGP PUBLIC KEY BLOCK-----\n"),
+	putchar_func(ctx, sizeof("-----END PGP PUBLIC KEY BLOCK-----\n") - 1,
 		(unsigned char *) "-----END PGP PUBLIC KEY BLOCK-----\n");
 
 	return 0;
