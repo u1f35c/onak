@@ -26,8 +26,7 @@
  *	@x: The integer to rotate.
  *	@n: The number of bytes to rotate it by.
  */
-static inline unsigned int
-rol(int x, int n)
+static inline unsigned int rol(int x, int n)
 {
 	__asm__("roll %%cl,%0"
 		:"=r" (x)
