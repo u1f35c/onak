@@ -2,9 +2,9 @@
 # onak configuration file. Taken from pksd.conf as a starting point.
 #
 
-pks_bin_dir /home/noodles/projects/onak/
-db_dir /home/noodles/pgp/db/
-logfile /home/noodles/pgp/onak.log
+pks_bin_dir @BINDIR@
+db_dir @STATEDIR@/lib/onak
+logfile @STATEDIR@/log/onak.log
 # Loglevel : 0 is highest debug, default is 3, nothing is 7+
 loglevel 0
 

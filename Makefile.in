@@ -11,6 +11,7 @@ DBTYPE = @DBTYPE@
 #
 LIBS = @LIBS@
 prefix ?= @prefix@
+exec_prefix ?= @exec_prefix@
 
 PROGS = add lookup gpgwww onak splitkeys onak-mail.pl stripkey
 CORE_OBJS = armor.o charfuncs.o decodekey.o getcgi.o hash.o keydb_$(DBTYPE).o \
@@ -22,7 +23,7 @@ SRCS = armor.c parsekey.c merge.c keyid.c md5.c sha1.c main.c getcgi.c mem.c \
 	gpgwww.c onak-conf.c charfuncs.c sendsync.c log.c photoid.c \
 	wordlist.c cleankey.c cleanup.c
 
-all: .depend $(PROGS) testparse maxpath sixdegrees splitkeys
+all: .depend $(PROGS) testparse maxpath sixdegrees splitkeys onak.conf
 
 splitkeys: splitkeys.o $(CORE_OBJS)
 	$(CC) $(LDFLAGS) -o splitkeys splitkeys.o $(CORE_OBJS) $(LIBS)
@@ -61,10 +62,15 @@ onak-mail.pl: onak-mail.pl.in
 	sed 's:@CONFIG@:@sysconfdir@/onak.conf:g' < onak-mail.pl.in > onak-mail.pl
 	chmod +x onak-mail.pl
 
+onak.conf: onak.conf.in
+	sed -e 's:@BINDIR@:@bindir@:g' \
+		-e 's:@STATEDIR@:@localstatedir@:g' \
+		< onak.conf.in > onak.conf
+
 clean:
 	$(RM) -f $(PROGS) $(OBJS) Makefile.bak testparse maxpath *.core core \
 		gpgwww.o add.o lookup.o main.o maxpath.o onak.o sixdegrees \
-		sixdegrees.o splitkeys.o stripkey.o
+		sixdegrees.o splitkeys.o stripkey.o onak.conf
 
 distclean: clean
 	$(RM) -f Makefile .depend config.{log,status,h}
