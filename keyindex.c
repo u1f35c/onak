@@ -220,7 +220,7 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 				keys->publickey->data[0]);
 		}
 		
-		keyid = (get_keyid(keys) & 0xFFFFFFFF),
+		keyid = (get_keyid(keys) & 0xFFFFFFFF);
 		printf("pub  %5d%c/%08X %04d/%02d/%02d ",
 			length,
 			(type == 1) ? 'R' : ((type == 16) ? 'g' : 
