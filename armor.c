@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: armor.c,v 1.7 2003/09/30 20:40:10 noodles Exp $
+ * $Id: armor.c,v 1.8 2003/11/01 19:23:38 noodles Exp $
  */
 
 #include <assert.h>
@@ -102,16 +102,28 @@ static void armor_finish(struct armor_context *state)
 		state->putchar_func(state->ctx, 1, &c);
 		state->putchar_func(state->ctx, 1, (unsigned char *) "=");
 		state->putchar_func(state->ctx, 1, (unsigned char *) "=");
+		state->count += 3;
+		if ((state->count % ARMOR_WIDTH) == 0) {
+			state->putchar_func(state->ctx, 1,
+				 (unsigned char *) "\n");
+		}
 		break;
 	case 2:
 		c = encode64((state->lastoctet & 0xF) << 2);
 		state->putchar_func(state->ctx, 1, &c);
 		state->putchar_func(state->ctx, 1, (unsigned char *) "=");
+		state->count += 2;
+		if ((state->count % ARMOR_WIDTH) == 0) {
+			state->putchar_func(state->ctx, 1,
+				 (unsigned char *) "\n");
+		}
 		break;
 	}
 
 	state->crc24 &= 0xffffffL;
-	state->putchar_func(state->ctx, 1, (unsigned char *) "\n");
+	if ((state->count % ARMOR_WIDTH) != 0) {
+		state->putchar_func(state->ctx, 1, (unsigned char *) "\n");
+	}
 	state->putchar_func(state->ctx, 1, (unsigned char *) "=");
 	c = encode64(state->crc24 >> 18);
 	state->putchar_func(state->ctx, 1, &c);
