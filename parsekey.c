@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: parsekey.c,v 1.13 2003/09/30 20:40:11 noodles Exp $
+ * $Id: parsekey.c,v 1.14 2003/09/30 21:59:33 noodles Exp $
  */
 
 #include <assert.h>
@@ -231,7 +231,7 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 					curpacket->packet->length < 255) {
 					logthing(LOGTHING_NOTICE,
 						"Partial length;"
-						" not supported.\n");
+						" not supported.");
 				} else if (curpacket->packet->length == 255) {
 					/*
 					 * 5 byte length; ie 255 followed by 3
