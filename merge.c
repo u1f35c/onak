@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: merge.c,v 1.10 2003/06/04 20:57:11 noodles Exp $
+ * $Id: merge.c,v 1.11 2003/06/07 13:45:35 noodles Exp $
  */
 
 #include <assert.h>
@@ -149,7 +149,9 @@ bool remove_signed_packet(struct openpgp_signedpacket_list **packet_list,
 			if (cur->next == NULL) {
 				*list_end = prev;
 			}
-			// TODO: Free the removed signed packet...
+			/*
+			 * TODO: Free the removed signed packet...
+			 */
 		}
 		prev = cur;
 	}

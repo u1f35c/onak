@@ -5,12 +5,13 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: mem.c,v 1.5 2003/06/04 20:57:10 noodles Exp $
+ * $Id: mem.c,v 1.6 2003/06/07 13:45:35 noodles Exp $
  */
 
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "keystructs.h"
 #include "ll.h"

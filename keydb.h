@@ -5,13 +5,12 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb.h,v 1.7 2003/06/04 20:57:08 noodles Exp $
+ * $Id: keydb.h,v 1.8 2003/06/07 13:45:34 noodles Exp $
  */
 
 #ifndef __KEYDB_H__
 #define __KEYDB_H__
 
-// #include <stdint.h>
 #include <inttypes.h>
 
 #include "keystructs.h"

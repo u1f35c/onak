@@ -5,13 +5,12 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keyid.h,v 1.4 2003/06/04 20:57:09 noodles Exp $
+ * $Id: keyid.h,v 1.5 2003/06/07 13:45:34 noodles Exp $
  */
 
 #ifndef __KEYID_H__
 #define __KEYID_H__
 
-// #include <stdint.h>
 #include <inttypes.h>
 
 #include "keystructs.h"

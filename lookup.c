@@ -5,14 +5,14 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: lookup.c,v 1.9 2003/06/04 22:11:41 noodles Exp $
+ * $Id: lookup.c,v 1.10 2003/06/07 13:45:34 noodles Exp $
  */
 
-//#include <stdint.h>
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "armor.h"

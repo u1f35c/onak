@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-// #include <stdint.h>
 #include <inttypes.h>
 
 #include "bithelp.h"

@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: armor.c,v 1.5 2003/06/04 20:57:06 noodles Exp $
+ * $Id: armor.c,v 1.6 2003/06/07 13:45:34 noodles Exp $
  */
 
 #include <assert.h>
@@ -211,16 +211,19 @@ static void dearmor_init(struct dearmor_context *ctx)
 
 static void dearmor_finish(struct dearmor_context *state)
 {
-	// Check the checksum,
+	/*
+	 * Check the checksum
+	 */
 
 	state->crc24 &= 0xffffffL;
-//	state->putchar_func(state->ctx, '\n');
-//	state->putchar_func(state->ctx, '=');
-//	state->putchar_func(state->ctx, encode64(state->crc24 >> 18));
-//	state->putchar_func(state->ctx, encode64((state->crc24 >> 12) & 0x3F));
-//	state->putchar_func(state->ctx, encode64((state->crc24 >> 6) & 0x3F));
-//	state->putchar_func(state->ctx, encode64(state->crc24 & 0x3F));
-
+	/*
+	state->putchar_func(state->ctx, '\n');
+	state->putchar_func(state->ctx, '=');
+	state->putchar_func(state->ctx, encode64(state->crc24 >> 18));
+	state->putchar_func(state->ctx, encode64((state->crc24 >> 12) & 0x3F));
+	state->putchar_func(state->ctx, encode64((state->crc24 >> 6) & 0x3F));
+	state->putchar_func(state->ctx, encode64(state->crc24 & 0x3F));
+	*/
 }
 
 
@@ -395,7 +398,9 @@ int dearmor_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 		dearmor_ctx.ctx = ctx;
 		read_openpgp_stream(dearmor_getchar_c, &dearmor_ctx, packets);
 		dearmor_finish(&dearmor_ctx);
-		// TODO: Look for armor footer
+		/*
+		 * TODO: Look for armor footer
+		 */
 	}
 
 	return 0;
