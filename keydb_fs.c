@@ -5,7 +5,7 @@
  *
  * Copyright 2004 Daniel Silverstone and Project Purple
  *
- * $Id: keydb_fs.c,v 1.2 2004/05/28 02:55:49 noodles Exp $
+ * $Id: keydb_fs.c,v 1.3 2004/05/28 03:23:04 noodles Exp $
  */
 
 #include <sys/types.h>
@@ -279,7 +279,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans,
 			wl = wl->next;
 		}
 
-		llfree(wordlist, NULL);
+		llfree(wordlist, free);
 	}
 
 	if (!intrans)

@@ -5,7 +5,7 @@
  *
  * Copyright 2004 Project Purple
  *
- * $Id: wordlist.c,v 1.2 2004/05/28 02:55:49 noodles Exp $
+ * $Id: wordlist.c,v 1.3 2004/05/28 03:23:04 noodles Exp $
  */
 
 #include <ctype.h>
@@ -87,8 +87,8 @@ struct ll *makewordlistfromkey(struct ll *wordlist,
 
 	uids = keyuids(key, NULL);
 	for (i = 0; uids[i] != NULL; ++i) {
-		words = makewordlist(wordlist, uids[i]);
-		for (wl = words; wl->next; wl = wl->next) {
+		words = makewordlist(NULL, uids[i]);
+		for (wl = words; wl != NULL; wl = wl->next) {
 			if (llfind(wordlist, wl->object, strcmp) == NULL) {
 				wordlist = lladd(wordlist, strdup(wl->object));
 			}
