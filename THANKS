@@ -1,0 +1,16 @@
+Thanks go out to the following people for help and/or comments they've given
+during the development of onak. I've probably missed some people off; if this
+is you please prod me!
+
+Moray Allan
+  Helped with porting to non x86 archs and tracking down key parsing oddities.
+Ross Burton
+  Provided the Debian packaging.
+Jason Harris
+  Several fixes and comments.
+Simon Huggins
+  Various fixes and idea bouncing.
+Daniel Silverstone
+  Convinced me about arch, wrote the keyfs backend and provided a very useful
+  sounding board for ideas at DebConf.
+Everyone at DebConf4 who fed me odd keys.
