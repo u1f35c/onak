@@ -7,7 +7,7 @@
 * Better txt2html routine.
 * Remove bithelp.h (i386 only at present & inlined).
   - Build and test on non-i386.
-* Pathfinder - graphical as well? Multiple paths?
+* Pathfinder - graphical as well?
 * Do pathlengths for similar email addresses to help aide keysigning.
   (ie "Find me the keys furthest from mine that end ox.ac.uk'")
   Suggested by Jochen Voss <voss@mathematik.uni-kl.de>.
@@ -17,7 +17,6 @@
   signedness for lo_read/write)
 * Test library?
 * autoconf
-* logging framework so we can log debug/warning messages and so on. syslog?
 * Full email interface support (ADD, INDEX etc)
 * More comments.
 * Look at db2 backend - is it db2's fault? (Well, deadlock in that the library

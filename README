@@ -1,4 +1,4 @@
-onak 0.1.2
+onak 0.2.0
 Copyright 2003 Project Purple. Written by Jonathan McDowell
 http://www.earth.li/projectpurple/progs/onak.html
 
@@ -130,4 +130,4 @@ License:
 onak is distributed under the GNU Public License, a copy of which should
 have been provided with this archive as LICENSE.
 
-$Id: README,v 1.4 2003/06/04 20:57:06 noodles Exp $
+$Id: README,v 1.5 2003/06/08 21:18:43 noodles Exp $

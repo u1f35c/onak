@@ -94,3 +94,22 @@
 * Introduced transaction support to DB3 backend, along with deadlock detection.
 * Added keydb dumping ability.
 * Added logging infrastructure to help more easily track down problems.
+
+0.2.0 - 8th June 2003
+
+* Output multiple paths in gpgwww (thanks to Simon Huggins).
+* Allow a keyid on the command line for sixdegrees (Simon Huggins).
+* Make db2 backend check for a num_keydb file to know how many db files to use.
+* Add 0x to generated URLs as pks needs these.
+* Add "Find Reverse Path" link to gpgwww output.
+* Checkpoint the db3 database upon clean exit.
+* Fix bug with logging where the month was one less than it should have been.
+* Fall back to stderr if we can't open the logfile.
+* Move dependancy list from Makefile to separate file.
+* Checkpoint the DB on clean shutdown.
+* First cut at MRHKP support.
+* Clean up various compile warnings under gcc 3.3
+* Log a critical error when we can't handle a critical subpacket rather than
+  asserting.
+* Make the Postgres backend compile again.
+* First attempt at supporting revoked keys.

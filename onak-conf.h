@@ -5,13 +5,13 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: onak-conf.h,v 1.9 2003/06/04 20:57:11 noodles Exp $
+ * $Id: onak-conf.h,v 1.10 2003/06/08 21:18:43 noodles Exp $
  */
 
 #ifndef __ONAK_CONF_H_
 #define __ONAK_CONF_H_
 
-#define VERSION "0.1.2"
+#define VERSION "0.2.0"
 #define CONFIGFILE "/home/noodles/projects/onak/onak.conf"
 
 /*
