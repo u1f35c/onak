@@ -170,25 +170,25 @@ void dofindpath(uint64_t have, uint64_t want, bool html)
 					" not found])%s<BR>\n",
 					curkey->keyid & 0xFFFFFFFF,
 					curkey->keyid & 0xFFFFFFFF,
-					(curkey->keyid == want) ? "" :
+					(curkey->keyid == fullwant) ? "" :
 					 " signs");
 			} else if (html && uid != NULL) {
 				printf("<a href=\"lookup?op=get&search="
 					"0x%08llX\">0x%08llX</a>"
 					" (<a href=\"lookup?op=vindex"
-					"&search=0x0x%08llX\">%s</a>)%s<BR>\n",
+					"&search=0x%08llX\">%s</a>)%s<BR>\n",
 					curkey->keyid & 0xFFFFFFFF,
 					curkey->keyid & 0xFFFFFFFF,
 					curkey->keyid & 0xFFFFFFFF,
 					txt2html(uid),
-					(curkey->keyid == want) ? "" :
+					(curkey->keyid == fullwant) ? "" :
 					 " signs");
 			} else {
 				printf("0x%08llX (%s)%s\n",
 					curkey->keyid & 0xFFFFFFFF,
 					(uid == NULL) ? "[User id not found]" :
 						uid,
-					(curkey->keyid == want) ? "" :
+					(curkey->keyid == fullwant) ? "" :
 					 " signs");
 			}
 			if (uid != NULL) {
@@ -208,6 +208,13 @@ void dofindpath(uint64_t have, uint64_t want, bool html)
 			curkey = findinhash(curkey->parent);
 		}
 		putchar('\n');
+		if (html) {
+			printf("<BR>"
+				"<A HREF=\"gpgwww?from=0x%08llX&to=0x%08llX\">"
+					"Find reverse path</A>\n",
+					want,
+					have);
+		}
 	}
 }
 
