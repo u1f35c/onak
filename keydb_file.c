@@ -3,11 +3,12 @@
  *
  * Jonathan McDowell <noodles@earth.li>
  *
- * Copyright 2002 Project Purple
+ * Copyright 2002-2004 Project Purple
  */
 
 #include <sys/types.h>
 #include <sys/uio.h>
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -20,6 +21,7 @@
 #include "keyid.h"
 #include "keystructs.h"
 #include "ll.h"
+#include "log.h"
 #include "mem.h"
 #include "onak-conf.h"
 #include "parsekey.h"
@@ -166,6 +168,66 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
 {
 	return 0;
 }
+
+/**
+ *	iterate_keys - call a function once for each key in the db.
+ *	@iterfunc: The function to call.
+ *	@ctx: A context pointer
+ *
+ *	Calls iterfunc once for each key in the database. ctx is passed
+ *	unaltered to iterfunc. This function is intended to aid database dumps
+ *	and statistic calculations.
+ *
+ *	Returns the number of keys we iterated over.
+ */
+int iterate_keys(void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
+		void *ctx)
+{
+	int                         numkeys = 0;
+	struct openpgp_packet_list *packets = NULL;
+	struct openpgp_publickey   *key = NULL;
+	DIR                        *dir;
+	char                        keyfile[1024];
+	int                         fd = -1;
+	struct dirent              *curfile = NULL;
+
+	dir = opendir(config.db_dir);
+
+	if (dir != NULL) {
+		while ((curfile = readdir(dir)) != NULL) {
+			if (curfile->d_name[0] == '0' &&
+					curfile->d_name[1] == 'x') {
+				snprintf(keyfile, 1023, "%s/%s",
+						config.db_dir,
+						curfile->d_name);
+				fd = open(keyfile, O_RDONLY);
+
+				if (fd > -1) {
+					read_openpgp_stream(file_fetchchar,
+							&fd,
+							&packets,
+							0);
+					parse_keys(packets, &key);
+
+					iterfunc(ctx, key);
+
+					free_publickey(key);
+					key = NULL;
+					free_packet_list(packets);
+					packets = NULL;
+					close(fd);
+				}
+				numkeys++;
+			}
+		}
+		
+		closedir(dir);
+		dir = NULL;
+	}
+
+	return numkeys;
+}
+
 
 /**
  *	dumpdb - dump the key database

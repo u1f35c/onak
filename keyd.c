@@ -19,11 +19,55 @@
 #include "cleanup.h"
 #include "keyd.h"
 #include "keydb.h"
+#include "keyid.h"
 #include "keystructs.h"
 #include "log.h"
 #include "mem.h"
 #include "onak-conf.h"
 #include "parsekey.h"
+
+void iteratefunc(void *ctx, struct openpgp_publickey *key)
+{
+	struct openpgp_packet_list *packets = NULL;
+	struct openpgp_packet_list *list_end = NULL;
+	struct buffer_ctx           storebuf;
+	int                         ret = 0;
+	int                         fd = (int) ctx;
+
+	if (key != NULL) {
+		storebuf.offset = 0;
+		storebuf.size = 8192;
+		storebuf.buffer = malloc(8192);
+
+		logthing(LOGTHING_TRACE,
+				"Iterating over 0x%016llX.",
+				get_keyid(key));
+
+		flatten_publickey(key,
+				&packets,
+				&list_end);
+		write_openpgp_stream(buffer_putchar,
+				&storebuf,
+				packets);
+		logthing(LOGTHING_TRACE,
+				"Sending %d bytes.",
+				storebuf.offset);
+		ret = write(fd, &storebuf.offset,
+			sizeof(storebuf.offset));
+		if (ret != 0) {
+			write(fd, storebuf.buffer,
+				storebuf.offset);
+		}
+
+		free(storebuf.buffer);
+		storebuf.buffer = NULL;
+		storebuf.size = storebuf.offset = 0;
+		free_packet_list(packets);
+		packets = list_end = NULL;
+	}
+
+	return;
+}
 
 int sock_init(const char *sockname)
 {
@@ -235,6 +279,13 @@ int sock_do(int fd)
 				keyid = getfullkeyid(keyid);
 				write(fd, &keyid, sizeof(keyid));
 			}
+			break;
+		case KEYD_CMD_KEYITER:
+			cmd = KEYD_REPLY_OK;
+			write(fd, &cmd, sizeof(cmd));
+			iterate_keys(iteratefunc, (void *) fd);
+			bytes = 0;
+			write(fd, &bytes, sizeof(bytes));
 			break;
 		case KEYD_CMD_CLOSE:
 			ret = 1;

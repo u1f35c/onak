@@ -532,6 +532,23 @@ uint64_t getfullkeyid(uint64_t keyid)
 	return ret;
 }
 
+/**
+ *	iterate_keys - call a function once for each key in the db.
+ *	@iterfunc: The function to call.
+ *	@ctx: A context pointer
+ *
+ *	Calls iterfunc once for each key in the database. ctx is passed
+ *	unaltered to iterfunc. This function is intended to aid database dumps
+ *	and statistic calculations.
+ *
+ *	Returns the number of keys we iterated over.
+ */
+int iterate_keys(void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
+		void *ctx)
+{
+	return 0;
+}
+
 /*
  * Include the basic keydb routines.
  */

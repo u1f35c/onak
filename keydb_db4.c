@@ -979,6 +979,72 @@ int dumpdb(char *filenamebase)
 }
 
 /**
+ *	iterate_keys - call a function once for each key in the db.
+ *	@iterfunc: The function to call.
+ *	@ctx: A context pointer
+ *
+ *	Calls iterfunc once for each key in the database. ctx is passed
+ *	unaltered to iterfunc. This function is intended to aid database dumps
+ *	and statistic calculations.
+ *
+ *	Returns the number of keys we iterated over.
+ */
+int iterate_keys(void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
+		void *ctx)
+{
+	DBT                         dbkey, data;
+	DBC                        *cursor = NULL;
+	int                         ret = 0;
+	int                         i = 0;
+	int                         numkeys = 0;
+	struct buffer_ctx           fetchbuf;
+	struct openpgp_packet_list *packets = NULL;
+	struct openpgp_publickey   *key = NULL;
+
+	for (i = 0; i < numdbs; i++) {
+		ret = dbconns[i]->cursor(dbconns[i],
+			NULL,
+			&cursor,
+			0);   /* flags */
+
+		memset(&dbkey, 0, sizeof(dbkey));
+		memset(&data, 0, sizeof(data));
+		ret = cursor->c_get(cursor, &dbkey, &data, DB_NEXT);
+		while (ret == 0) {
+			fetchbuf.buffer = data.data;
+			fetchbuf.offset = 0;
+			fetchbuf.size = data.size;
+			read_openpgp_stream(buffer_fetchchar, &fetchbuf,
+				&packets, 0);
+			parse_keys(packets, &key);
+
+			iterfunc(ctx, key);
+			
+			free_publickey(key);
+			key = NULL;
+			free_packet_list(packets);
+			packets = NULL;
+			
+			memset(&dbkey, 0, sizeof(dbkey));
+			memset(&data, 0, sizeof(data));
+			ret = cursor->c_get(cursor, &dbkey, &data,
+					DB_NEXT);
+			numkeys++;
+		}
+		if (ret != DB_NOTFOUND) {
+			logthing(LOGTHING_ERROR,
+				"Problem reading key: %s",
+				db_strerror(ret));
+		}
+
+		ret = cursor->c_close(cursor);
+		cursor = NULL;
+	}
+	
+	return numkeys;
+}
+
+/**
  *	getfullkeyid - Maps a 32bit key id to a 64bit one.
  *	@keyid: The 32bit keyid.
  *

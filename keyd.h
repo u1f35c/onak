@@ -19,6 +19,7 @@ enum keyd_ops {
 	KEYD_CMD_DELETE,
 	KEYD_CMD_GETTEXT,
 	KEYD_CMD_GETFULLKEYID,
+	KEYD_CMD_KEYITER,
 	KEYD_CMD_CLOSE,
 	KEYD_CMD_QUIT
 };
@@ -28,6 +29,6 @@ enum keyd_reply {
 	KEYD_REPLY_UNKNOWN_CMD = 1
 };
 
-static int keyd_version = 1;
+static int keyd_version = 2;
 
 #endif /* __KEYD_H__ */

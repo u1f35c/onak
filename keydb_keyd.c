@@ -356,6 +356,71 @@ int dumpdb(char *filenamebase)
 	return 0;
 }
 
+/**
+ *	iterate_keys - call a function once for each key in the db.
+ *	@iterfunc: The function to call.
+ *	@ctx: A context pointer
+ *
+ *	Calls iterfunc once for each key in the database. ctx is passed
+ *	unaltered to iterfunc. This function is intended to aid database dumps
+ *	and statistic calculations.
+ *
+ *	Returns the number of keys we iterated over.
+ */
+int iterate_keys(void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
+		void *ctx)
+{
+	struct buffer_ctx           keybuf;
+	struct openpgp_packet_list *packets = NULL;
+	struct openpgp_publickey   *key = NULL;
+	int                         cmd = KEYD_CMD_KEYITER;
+	ssize_t                     bytes = 0;
+	ssize_t                     count = 0;
+	int                         numkeys = 0;
+
+	write(keyd_fd, &cmd, sizeof(cmd));
+	read(keyd_fd, &cmd, sizeof(cmd));
+	if (cmd == KEYD_REPLY_OK) {
+		keybuf.offset = 0;
+		read(keyd_fd, &keybuf.size, sizeof(keybuf.size));
+		while (keybuf.size > 0) {
+			keybuf.buffer = malloc(keybuf.size);
+			bytes = count = 0;
+			logthing(LOGTHING_TRACE,
+					"Getting %d bytes of key data.",
+					keybuf.size);
+			while (bytes >= 0 && count < keybuf.size) {
+				bytes = read(keyd_fd, &keybuf.buffer[count],
+						keybuf.size - count);
+				logthing(LOGTHING_TRACE,
+						"Read %d bytes.", bytes);
+				count += bytes;
+			}
+			read_openpgp_stream(buffer_fetchchar, &keybuf,
+					&packets, 0);
+			parse_keys(packets, &key);
+
+			if (iterfunc != NULL && key != NULL) {
+				iterfunc(ctx, key);
+			}
+
+			free_publickey(key);
+			key = NULL;
+			free_packet_list(packets);
+			packets = NULL;
+			free(keybuf.buffer);
+			keybuf.buffer = NULL;
+			keybuf.size = keybuf.offset = 0;
+
+			numkeys++;
+
+			read(keyd_fd, &keybuf.size, sizeof(keybuf.size));
+		}
+	}
+	
+	return numkeys;
+}
+
 #define NEED_KEYID2UID 1
 #define NEED_GETKEYSIGS 1
 #define NEED_UPDATEKEYS 1

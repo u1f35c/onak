@@ -3,7 +3,7 @@
  *
  * Jonathan McDowell <noodles@earth.li>
  *
- * Copyright 2002 Project Purple
+ * Copyright 2002-2004 Project Purple
  */
 
 #include <postgresql/libpq-fe.h>
@@ -580,6 +580,65 @@ struct ll *getkeysigs(uint64_t keyid, bool *revoked)
 int dumpdb(char *filenamebase)
 {
 	return 0;
+}
+
+/**
+ *	iterate_keys - call a function once for each key in the db.
+ *	@iterfunc: The function to call.
+ *	@ctx: A context pointer
+ *
+ *	Calls iterfunc once for each key in the database. ctx is passed
+ *	unaltered to iterfunc. This function is intended to aid database dumps
+ *	and statistic calculations.
+ *
+ *	Returns the number of keys we iterated over.
+ */
+int iterate_keys(void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
+		void *ctx)
+{
+	struct openpgp_packet_list *packets = NULL;
+	struct openpgp_publickey *key = NULL;
+	PGresult *result = NULL;
+	char *oids = NULL;
+	char statement[1024];
+	int fd = -1;
+	int i = 0;
+	int numkeys = 0;
+	Oid key_oid;
+
+	result = PQexec(dbconn, "SELECT keydata FROM onak_keys;");
+
+	if (PQresultStatus(result) == PGRES_TUPLES_OK) {
+		numkeys = PQntuples(result);
+		for (i = 0; i < numkeys; i++) {
+			oids = PQgetvalue(result, i, 0);
+			key_oid = (Oid) atoi(oids);
+
+			fd = lo_open(dbconn, key_oid, INV_READ);
+			if (fd < 0) {
+				logthing(LOGTHING_ERROR,
+						"Can't open large object.");
+			} else {
+				read_openpgp_stream(keydb_fetchchar, &fd,
+						&packets, 0);
+				parse_keys(packets, key);
+				lo_close(dbconn, fd);
+
+				iterfunc(ctx, key);
+					
+				free_publickey(key);
+				key = NULL;
+				free_packet_list(packets);
+				packets = NULL;
+			}
+		}
+	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+		logthing(LOGTHING_ERROR, "Problem retrieving key from DB.");
+	}
+
+	PQclear(result);
+
+	return (numkeys);
 }
 
 /*
