@@ -76,6 +76,7 @@ void usage(void) {
 	puts("\tCommands:\n");
 	puts("\tadd    - read armored OpenPGP keys from stdin and add to the keyserver");
 	puts("\tdelete - delete a given key from the keyserver");
+	puts("\tget    - retrieves the key requested from the keyserver");
 	puts("\tindex  - search for a key and list it");
 	puts("\tvindex - search for a key and list it and its signatures");
 }
