@@ -94,7 +94,7 @@ int getkeyspath(uint64_t have, uint64_t want, int count)
 			curkey = findinhash(keyinfoa->parent);
 			while (curkey != NULL && curkey->keyid != 0) {
 	    			if (curkey->keyid != fullwant && fetch_key(
-						curkey->keyid & 0xFFFFFFFF,
+						curkey->keyid,
 							&publickey, false)) {
 	      				flatten_publickey(publickey,
 							&packets,
@@ -114,7 +114,7 @@ int getkeyspath(uint64_t have, uint64_t want, int count)
 	/*
 	 * Add the destination key to the list of returned keys.
 	 */
-	if (fetch_key(fullwant & 0xFFFFFFFF, &publickey, false)) {
+	if (fetch_key(fullwant, &publickey, false)) {
 		flatten_publickey(publickey,
 				&packets,
 				&list_end);
