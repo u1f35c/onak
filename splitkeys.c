@@ -5,7 +5,7 @@
  * 
  * Copyright 2003 Project Purple
  *
- * $Id: splitkeys.c,v 1.2 2003/10/03 23:03:02 noodles Exp $
+ * $Id: splitkeys.c,v 1.3 2003/10/03 23:34:06 noodles Exp $
  */
 
 #include <fcntl.h>
@@ -57,6 +57,9 @@ int main(int argc, char *argv[])
 					list_end->packet->tag == 6) {
 					tmp->next = NULL;
 				}
+			}
+			if (tmp->next != NULL) {
+				list_end = NULL;
 			}
 
 			snprintf(splitfile, 1023, "splitfile-%d.pgp", count);
