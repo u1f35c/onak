@@ -221,22 +221,42 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 		}
 		
 		keyid = (get_keyid(keys) & 0xFFFFFFFF);
-		printf("pub  %5d%c/%08X %04d/%02d/%02d ",
-			length,
-			(type == 1) ? 'R' : ((type == 16) ? 'g' : 
-				((type == 17) ? 'D' : '?')),
-			(uint32_t) keyid,
-			created->tm_year + 1900,
-			created->tm_mon + 1,
-			created->tm_mday);
+
+		if (html) {
+			printf("pub  %5d%c/<a href=\"lookup?op=get&"
+				"search=%08X\">%08X</a> %04d/%02d/%02d ",
+				length,
+				(type == 1) ? 'R' : ((type == 16) ? 'g' : 
+					((type == 17) ? 'D' : '?')),
+				(uint32_t) keyid,
+				(uint32_t) keyid,
+				created->tm_year + 1900,
+				created->tm_mon + 1,
+				created->tm_mday);
+		} else {
+			printf("pub  %5d%c/%08X %04d/%02d/%02d ",
+				length,
+				(type == 1) ? 'R' : ((type == 16) ? 'g' : 
+					((type == 17) ? 'D' : '?')),
+				(uint32_t) keyid,
+				created->tm_year + 1900,
+				created->tm_mon + 1,
+				created->tm_mday);
+		}
 
 		curuid = keys->uids;
 		if (curuid != NULL && curuid->packet->tag == 13) {
 			snprintf(buf, 1023, "%.*s",
 				(int) curuid->packet->length,
 				curuid->packet->data);
-			printf("%s%s\n", 
+			if (html) {
+				printf("<a href=\"lookup?op=vindex&"
+					"search=0x%08X\">",
+					(uint32_t) keyid);
+			}
+			printf("%s%s%s\n", 
 				(html) ? txt2html(buf) : buf,
+				(html) ? "</a>" : "",
 				(keys->revocations == NULL) ? "" :
 					" *** REVOKED ***");
 			if (fingerprint) {
