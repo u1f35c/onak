@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keyindex.c,v 1.10 2003/06/04 22:11:40 noodles Exp $
+ * $Id: keyindex.c,v 1.11 2003/06/08 19:04:32 noodles Exp $
  */
 
 #include <assert.h>
@@ -306,7 +306,7 @@ int mrkey_index(struct openpgp_publickey *keys)
 				keys->publickey->data[0]);
 		}
 
-		printf(":%d:%d:%d::\n",
+		printf(":%d:%d:%ld::\n",
 			type,
 			length,
 			created_time);

@@ -5,13 +5,13 @@
  *
  * Copyright 2001-2002 Project Purple.
  *
- * $Id: gpgwww.c,v 1.10 2003/06/04 20:57:08 noodles Exp $
+ * $Id: gpgwww.c,v 1.11 2003/06/08 19:04:31 noodles Exp $
  */
 
-// #include <stdint.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "getcgi.h"
 #include "hash.h"

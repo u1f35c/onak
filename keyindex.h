@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keyindex.h,v 1.5 2003/06/04 20:57:09 noodles Exp $
+ * $Id: keyindex.h,v 1.6 2003/06/08 19:04:32 noodles Exp $
  */
 
 #ifndef __KEYINDEX_H__
@@ -28,4 +28,12 @@
 int key_index(struct openpgp_publickey *keys, bool verbose,
 		bool fingerprint, bool html);
 
+/**
+ *	mrkey_index - List a set of OpenPGP keys in the MRHKP format.
+ *	@keys: The keys to display.
+ *
+ *	This function takes a list of OpenPGP public keys and displays a
+ *	machine readable list of them.
+ */
+int mrkey_index(struct openpgp_publickey *keys);
 #endif
