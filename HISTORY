@@ -41,7 +41,7 @@
   merging.
 * Fixed stupid typo bug in merging keys.
 
-0.0.4
+0.0.4 - 10th November 2002
 
 * Made keydb_file backend compile again.
 * Changed merging to compare signature keyids rather than packet contents
@@ -56,3 +56,9 @@
 * Some cleanup in getting signature keyids.
 * Made sure we freed more things after we've finished with them.
 * Changed maxpath to display the path found.
+* Added use of onak_sigs to keydb_pg to speed up retrieval of key sigs. Should
+  speed up the pathfinder a lot.
+* Added llfree for freeing up linked lists.
+* Wrote DB3 backend; although much work is still needed it vastly outperforms
+  the PostgreSQL backend and should hopefully not suffer from the problems of
+  the DB2 implementation.
