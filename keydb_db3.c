@@ -118,15 +118,16 @@ void initdb(void)
 	}
 
 	/*
-	 * This is a bit of a kludge. Either we run a separate process for
-	 * deadlock detection or we do this every time we run. What we really
-	 * want to do is specify that our locks are exclusive locks when we
-	 * start to do an update.
+	 * Enable deadlock detection so that we don't block indefinitely on
+	 * anything. What we really want is simple 2 state locks, but I'm not
+	 * sure how to make the standard DB functions do that yet.
 	 */
-	ret = lock_detect(dbenv,
-			0, /* flags */
-			DB_LOCK_RANDOM,
-			NULL); /* If non null int* for number broken */
+	ret = dbenv->set_lk_detect(dbenv, DB_LOCK_DEFAULT);
+	if (ret != 0) {
+		logthing(LOGTHING_CRITICAL,
+			"db_env_create: %s", db_strerror(ret));
+		exit(1);
+	}
 
 	ret = dbenv->open(dbenv, config.db_dir,
 			DB_INIT_LOG | DB_INIT_MPOOL | DB_INIT_LOCK |
