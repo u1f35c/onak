@@ -53,6 +53,11 @@ static DB **dbconns = NULL;
 static DB *worddb = NULL;
 
 /**
+ *	id32db - our connection to the 32bit ID database.
+ */
+static DB *id32db = NULL;
+
+/**
  *	txn - our current transaction id.
  */
 static DB_TXN *txn = NULL;
@@ -185,6 +190,24 @@ void initdb(bool readonly)
 				db_strerror(ret));
 		exit(1);
 	}
+
+	ret = db_create(&id32db, dbenv, 0);
+	if (ret != 0) {
+		logthing(LOGTHING_CRITICAL, "db_create: %s", db_strerror(ret));
+		exit(1);
+	}
+	ret = id32db->set_flags(id32db, DB_DUP);
+
+	ret = id32db->open(id32db, "id32db", NULL, DB_HASH,
+			flags,
+			0664);
+	if (ret != 0) {
+		logthing(LOGTHING_CRITICAL,
+				"Error opening id32 database: %s (%s)",
+				"id32db",
+				db_strerror(ret));
+		exit(1);
+	}
 	
 	return;
 }
@@ -200,6 +223,8 @@ void cleanupdb(void)
 	int i = 0;
 
 	txn_checkpoint(dbenv, 0, 0, 0);
+	id32db->close(id32db, 0);
+	id32db = NULL;
 	worddb->close(worddb, 0);
 	worddb = NULL;
 	for (i = 0; i < numdbs; i++) {
@@ -284,6 +309,10 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 	int numkeys = 0;
 	struct buffer_ctx fetchbuf;
 
+	if (keyid < 0x100000000LL) {
+		keyid = getfullkeyid(keyid);
+	}
+
 	memset(&key, 0, sizeof(key));
 	memset(&data, 0, sizeof(data));
 
@@ -292,7 +321,6 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 
 	key.size = sizeof(keyid);
 	key.data = &keyid;
-	keyid &= 0xFFFFFFFF;
 
 	if (!intrans) {
 		starttrans();
@@ -461,6 +489,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 	DBT        key;
 	DBT        data;
 	uint64_t   keyid = 0;
+	uint32_t   shortkeyid = 0;
 	char     **uids = NULL;
 	char      *primary = NULL;
 	unsigned char worddb_data[12];
@@ -509,7 +538,6 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 		memset(&data, 0, sizeof(data));
 		key.data = &keyid;
 		key.size = sizeof(keyid);
-		keyid &= 0xFFFFFFFF;
 		data.size = storebuf.offset;
 		data.data = storebuf.buffer;
 
@@ -603,6 +631,35 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 		endtrans();
 	}
 
+	/*
+	 * Write the truncated 32 bit keyid so we can lookup the full id for
+	 * queries.
+	 */
+	if (!deadlock) {
+		shortkeyid = keyid & 0xFFFFFFFF;
+
+		memset(&key, 0, sizeof(key));
+		memset(&data, 0, sizeof(data));
+		key.data = &shortkeyid;
+		key.size = sizeof(shortkeyid);
+		data.data = &keyid;
+		data.size = sizeof(keyid);
+
+		ret = id32db->put(id32db,
+			txn,
+			&key,
+			&data,
+			0);
+		if (ret != 0) {
+			logthing(LOGTHING_ERROR,
+				"Problem storing short keyid: %s",
+				db_strerror(ret));
+			if (ret == DB_LOCK_DEADLOCK) {
+				deadlock = true;
+			}
+		}
+	}
+
 	return deadlock ? -1 : 0 ;
 }
 
@@ -619,6 +676,7 @@ int delete_key(uint64_t keyid, bool intrans)
 	struct openpgp_publickey *publickey = NULL;
 	DBT key, data;
 	DBC *cursor = NULL;
+	uint32_t   shortkeyid = 0;
 	int ret = 0;
 	int i;
 	char **uids = NULL;
@@ -627,8 +685,6 @@ int delete_key(uint64_t keyid, bool intrans)
 	struct ll *wordlist = NULL;
 	struct ll *curword  = NULL;
 	bool deadlock = false;
-
-	keyid &= 0xFFFFFFFF;
 
 	if (!intrans) {
 		starttrans();
@@ -719,6 +775,47 @@ int delete_key(uint64_t keyid, bool intrans)
 	}
 
 	if (!deadlock) {
+		ret = id32db->cursor(id32db,
+			txn,
+			&cursor,
+			0);   /* flags */
+
+		shortkeyid = keyid & 0xFFFFFFFF;
+
+		memset(&key, 0, sizeof(key));
+		memset(&data, 0, sizeof(data));
+		key.data = &shortkeyid;
+		key.size = sizeof(shortkeyid);
+		data.data = &keyid;
+		data.size = sizeof(keyid);
+
+		ret = cursor->c_get(cursor,
+			&key,
+			&data,
+			DB_GET_BOTH);
+
+		if (ret == 0) {
+			ret = cursor->c_del(cursor, 0);
+			if (ret != 0) {
+				logthing(LOGTHING_ERROR,
+					"Problem deleting short keyid: %s",
+					db_strerror(ret));
+			}
+		}
+
+		if (ret != 0) {
+			logthing(LOGTHING_ERROR,
+				"Problem deleting short keyid: %s",
+				db_strerror(ret));
+			if (ret == DB_LOCK_DEADLOCK) {
+				deadlock = true;
+			}
+		}
+		ret = cursor->c_close(cursor);
+		cursor = NULL;
+	}
+
+	if (!deadlock) {
 		key.data = &keyid;
 		key.size = sizeof(keyid);
 
@@ -794,10 +891,58 @@ int dumpdb(char *filenamebase)
 	return 0;
 }
 
+/**
+ *	getfullkeyid - Maps a 32bit key id to a 64bit one.
+ *	@keyid: The 32bit keyid.
+ *
+ *	This function maps a 32bit key id to the full 64bit one. It returns the
+ *	full keyid. If the key isn't found a keyid of 0 is returned.
+ */
+uint64_t getfullkeyid(uint64_t keyid)
+{
+	DBT       key, data;
+	DBC      *cursor = NULL;
+	uint32_t  shortkeyid = 0;
+	int       ret = 0;
+
+	if (keyid < 0x100000000LL) {
+		ret = id32db->cursor(id32db,
+				txn,
+				&cursor,
+				0);   /* flags */
+
+		shortkeyid = keyid & 0xFFFFFFFF;
+
+		memset(&key, 0, sizeof(key));
+		memset(&data, 0, sizeof(data));
+		key.data = &shortkeyid;
+		key.size = sizeof(shortkeyid);
+		data.flags = DB_DBT_MALLOC;
+
+		ret = cursor->c_get(cursor,
+			&key,
+			&data,
+			DB_SET);
+
+		if (ret == 0) {
+			keyid = *(uint64_t *) data.data;
+
+			if (data.data != NULL) {
+				free(data.data);
+				data.data = NULL;
+			}
+		}
+
+		ret = cursor->c_close(cursor);
+		cursor = NULL;
+	}
+	
+	return keyid;
+}
+
 /*
  * Include the basic keydb routines.
  */
-#define NEED_GETFULLKEYID 1
 #define NEED_GETKEYSIGS 1
 #define NEED_KEYID2UID 1
 #include "keydb.c"
