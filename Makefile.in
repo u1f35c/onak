@@ -49,7 +49,7 @@ add: add.o cleankey.o merge.o sendsync.o $(CORE_OBJS)
 		$(CORE_OBJS) $(LIBS)
 
 onak: onak.o merge.o cleankey.o $(CORE_OBJS)
-	$(CC) $(LDFLAGS) $(LDFLAGS) -o onak onak.o merge.o cleankey.o \
+	$(CC) $(LDFLAGS) -o onak onak.o merge.o cleankey.o \
 		$(CORE_OBJS) $(LIBS)
 
 clean:
