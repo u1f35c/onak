@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: onak-conf.c,v 1.8 2003/10/15 21:15:21 noodles Exp $
+ * $Id: onak-conf.c,v 1.9 2004/05/27 01:34:18 noodles Exp $
  */
 
 #include <ctype.h>
@@ -114,6 +114,8 @@ void readconfig(const char *configfile) {
 				lladd(config.syncsites, strdup(&curline[9]));
 		} else if (!strncmp("logfile ", curline, 8)) {
 			config.logfile = strdup(&curline[8]);
+		} else if (!strncmp("loglevel ", curline, 9)) {
+			setlogthreshold(atoi(&curline[9]));
 		} else if (!strncmp("this_site ", curline, 10)) {
 			config.thissite = strdup(&curline[10]);
 		} else if (!strncmp("socket_name ", curline, 12) ||
