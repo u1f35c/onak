@@ -116,10 +116,21 @@ void initdb(void)
 		exit(1);
 	}
 
+	/*
+	 * This is a bit of a kludge. Either we run a separate process for
+	 * deadlock detection or we do this every time we run. What we really
+	 * want to do is specify that our locks are exclusive locks when we
+	 * start to do an update.
+	 */
+	ret = lock_detect(dbenv,
+			0, /* flags */
+			DB_LOCK_RANDOM,
+			NULL); /* If non null int* for number broken */
+
 	ret = dbenv->open(dbenv, config.db_dir,
 			DB_INIT_LOG | DB_INIT_MPOOL | DB_INIT_LOCK |
 			DB_INIT_TXN |
-			DB_RECOVER | DB_CREATE,
+			DB_CREATE,
 			0);
 	if (ret != 0) {
 		dbenv->err(dbenv, ret, "%s", config.db_dir);
@@ -424,6 +435,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 	unsigned char worddb_data[12];
 	struct ll *wordlist = NULL;
 	struct ll *curword  = NULL;
+	bool       deadlock = false;
 
 	keyid = get_keyid(publickey);
 
@@ -440,61 +452,69 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 	 * it definitely needs updated.
 	 */
 	if (update) {
-		delete_key(keyid, true);
+		deadlock = (delete_key(keyid, true) == -1);
 	}
 
 	/*
 	 * Convert the key to a flat set of binary data.
 	 */
-	next = publickey->next;
-	publickey->next = NULL;
-	flatten_publickey(publickey, &packets, &list_end);
-	publickey->next = next;
+	if (!deadlock) {
+		next = publickey->next;
+		publickey->next = NULL;
+		flatten_publickey(publickey, &packets, &list_end);
+		publickey->next = next;
 
-	storebuf.offset = 0; 
-	storebuf.size = 8192;
-	storebuf.buffer = malloc(8192);
+		storebuf.offset = 0; 
+		storebuf.size = 8192;
+		storebuf.buffer = malloc(8192);
 	
-	write_openpgp_stream(buffer_putchar, &storebuf, packets);
+		write_openpgp_stream(buffer_putchar, &storebuf, packets);
 
-	/*
-	 * Now we have the key data store it in the DB; the keyid is the key.
-	 */
-	memset(&key, 0, sizeof(key));
-	memset(&data, 0, sizeof(data));
-	key.data = &keyid;
-	key.size = sizeof(keyid);
-	keyid &= 0xFFFFFFFF;
-	data.size = storebuf.offset;
-	data.data = storebuf.buffer;
+		/*
+		 * Now we have the key data store it in the DB; the keyid is
+		 * the key.
+		 */
+		memset(&key, 0, sizeof(key));
+		memset(&data, 0, sizeof(data));
+		key.data = &keyid;
+		key.size = sizeof(keyid);
+		keyid &= 0xFFFFFFFF;
+		data.size = storebuf.offset;
+		data.data = storebuf.buffer;
 
-	ret = dbconn->put(dbconn,
-			txn,
-			&key,
-			&data,
-			0); /* flags*/
-	if (ret != 0) {
-		dbconn->err(dbconn, ret, "Problem storing key");
+		ret = dbconn->put(dbconn,
+				txn,
+				&key,
+				&data,
+				0); /* flags*/
+		if (ret != 0) {
+			dbconn->err(dbconn, ret, "Problem storing key");
+			if (ret == DB_LOCK_DEADLOCK) {
+				deadlock = true;
+			}
+		}
+
+		free(storebuf.buffer);
+		storebuf.buffer = NULL;
+		storebuf.size = 0;
+		storebuf.offset = 0; 
+	
+		free_packet_list(packets);
+		packets = NULL;
 	}
-
-	free(storebuf.buffer);
-	storebuf.buffer = NULL;
-	storebuf.size = 0;
-	storebuf.offset = 0; 
-
-	free_packet_list(packets);
-	packets = NULL;
 
 	/*
 	 * Walk through our uids storing the words into the db with the keyid.
 	 */
-	uids = keyuids(publickey, &primary);
+	if (!deadlock) {
+		uids = keyuids(publickey, &primary);
+	}
 	if (uids != NULL) {
 		for (i = 0; ret == 0 && uids[i] != NULL; i++) {
 			wordlist = makewordlist(wordlist, uids[i]);
 		}
 
-		for (curword = wordlist; curword != NULL;
+		for (curword = wordlist; curword != NULL && !deadlock;
 				curword = curword->next) {
 			memset(&key, 0, sizeof(key));
 			memset(&data, 0, sizeof(data));
@@ -527,6 +547,9 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 			if (ret != 0) {
 				worddb->err(worddb, ret,
 					"Problem storing key");
+				if (ret == DB_LOCK_DEADLOCK) {
+					deadlock = true;
+				}
 			}
 		}
 
@@ -546,7 +569,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 		endtrans();
 	}
 
-	return 0;
+	return deadlock ? -1 : 0 ;
 }
 
 /**
@@ -569,6 +592,7 @@ int delete_key(uint64_t keyid, bool intrans)
 	unsigned char worddb_data[12];
 	struct ll *wordlist = NULL;
 	struct ll *curword  = NULL;
+	bool deadlock = false;
 
 	keyid &= 0xFFFFFFFF;
 
@@ -594,7 +618,7 @@ int delete_key(uint64_t keyid, bool intrans)
 			&cursor,
 			0);   /* flags */
 
-		for (curword = wordlist; curword != NULL;
+		for (curword = wordlist; curword != NULL && !deadlock;
 				curword = curword->next) {
 			memset(&key, 0, sizeof(key));
 			memset(&data, 0, sizeof(data));
@@ -636,6 +660,9 @@ int delete_key(uint64_t keyid, bool intrans)
 			if (ret != 0) {
 				worddb->err(worddb, ret,
 					"Problem deleting word.");
+				if (ret == DB_LOCK_DEADLOCK) {
+					deadlock = true;
+				}
 			}
 		}
 		ret = cursor->c_close(cursor);
@@ -655,19 +682,21 @@ int delete_key(uint64_t keyid, bool intrans)
 		publickey = NULL;
 	}
 
-	key.data = &keyid;
-	key.size = sizeof(keyid);
+	if (!deadlock) {
+		key.data = &keyid;
+		key.size = sizeof(keyid);
 
-	dbconn->del(dbconn,
-			txn,
-			&key,
-			0); /* flags */
+		dbconn->del(dbconn,
+				txn,
+				&key,
+				0); /* flags */
+	}
 
 	if (!intrans) {
 		endtrans();
 	}
 
-	return (ret == DB_NOTFOUND);
+	return deadlock ? (-1) : (ret == DB_NOTFOUND);
 }
 
 /*
