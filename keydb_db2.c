@@ -69,6 +69,20 @@ void initdb(void)
 	int i;
 	int ret;
 	char keydbname[20];
+	char buf[1024];
+	FILE *numdb = NULL;
+
+	snprintf(buf, sizeof(buf) - 1, "%s/num_keydb", config.db_dir);
+	numdb = fopen(buf, "r");
+	if (numdb != NULL) {
+		if (fgets(buf, sizeof(buf), numdb) != NULL) {
+			db2_numdb = atoi(buf);
+		}
+		fclose(numdb);
+	} else {
+		logthing(LOGTHING_ERROR, "Couldn't open num_keydb: %s",
+				strerror(errno));
+	}
 
 	memset(&db2_env, 0, sizeof(db2_env));
 
@@ -234,6 +248,22 @@ int delete_key(uint64_t keyid, bool intrans)
 {
 	return (1);
 }
+
+/**
+ *	dumpdb - dump the key database
+ *	@filenamebase: The base filename to use for the dump.
+ *
+ *	Dumps the database into one or more files, which contain pure OpenPGP
+ *	that can be reimported into onak or gpg. filenamebase provides a base
+ *	file name for the dump; several files may be created, all of which will
+ *	begin with this string and then have a unique number and a .pgp
+ *	extension.
+ *          */
+int dumpdb(char *filenamebase)
+{
+	return 0;
+}
+
 
 /*
  * Include the basic keydb routines.
