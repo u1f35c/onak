@@ -1,0 +1,6 @@
+onak (0.3.0-1) unstable; urgency=low
+
+  * Initial Release. (closes: #254425)
+
+ -- Ross Burton <ross@debian.org>  Thu, 17 Jun 2004 11:59:00 +0100
+

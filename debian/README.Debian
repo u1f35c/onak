@@ -1,0 +1,12 @@
+onak for Debian
+---------------
+
+Before using onak you will want to edit /etc/onak.conf and set 'this_site' as
+appropriate.
+
+The OpenPGP Key Server specification uses host:11371/pks/lookup etc as the URLs,
+so you will need to configure your web server as relevant.
+/usr/share/doc/onak/examples contains some sample configuration files for
+various web servers.
+
+ -- Ross Burton <ross@burtonini.com>, Fri Jun 18 12:00:57 2004

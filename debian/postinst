@@ -1,0 +1,21 @@
+#! /bin/sh
+
+set -e
+
+if [ "$1" = "configure" ]; then
+
+    # Add the onak user
+    adduser --system --home /var/lib/onak --no-create-home --disabled-login onak
+
+    # Take ownership of the database directory
+    chown -R onak /var/lib/onak
+
+    # Make the CGI tools setuid onak
+    for i in /usr/lib/cgi-bin/pks/*
+    do
+        if ! dpkg-statoverride --list $i >/dev/null
+        then
+            dpkg-statoverride --update --add onak root 4755 $i
+        fi
+    done
+fi

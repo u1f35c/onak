@@ -1,0 +1,4 @@
+onak.conf             etc
+onak splitkeys        usr/bin
+onak-mail.pl          usr/lib/onak
+add lookup gpgwww     usr/lib/cgi-bin/pks

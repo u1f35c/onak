@@ -1,0 +1,17 @@
+Source: onak
+Section: net
+Priority: optional
+Maintainer: Jonathan McDowell <noodles@earth.li>
+Uploaders: Ross Burton <ross@debian.org>
+Build-Depends: debhelper (>= 4.1.0), cdbs, libdb4.2-dev
+Standards-Version: 3.6.1
+
+Package: onak
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: apache | httpd
+Description: OpenPGP Key Server
+ onak is an OpenPGP compatible keyserver which supports multiple subkeys,
+ photo ids and path finding between keys. It can provide an HKP
+ compatible interface for use with the --keyserver option of gnupg as
+ well as including a command line tool for querying the key database.
