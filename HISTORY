@@ -40,3 +40,19 @@
 * Fixed bug with potentially adding an already existing uid to a key when
   merging.
 * Fixed stupid typo bug in merging keys.
+
+0.0.4
+
+* Made keydb_file backend compile again.
+* Changed merging to compare signature keyids rather than packet contents
+  so we don't add the same signature multiple times.
+* Changed keydb_pg backend over to using PQescapeString to escape SQL data.
+* Added list of keyids in a path to gpgwww output (suitable for C&P into
+  a gnupg command line for example).
+* Pulled out HTML start/end code to getcgi.c and added a DOCTYPE and charset
+  of utf8.
+* Did some work on getting onak-mail.pl to output incrementals as well as
+  receiving them.
+* Some cleanup in getting signature keyids.
+* Made sure we freed more things after we've finished with them.
+* Changed maxpath to display the path found.
