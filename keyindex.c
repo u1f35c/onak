@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keyindex.c,v 1.14 2004/05/26 17:48:02 noodles Exp $
+ * $Id: keyindex.c,v 1.15 2004/05/27 01:25:37 noodles Exp $
  */
 
 #include <assert.h>
@@ -63,9 +63,11 @@ int list_sigs(struct openpgp_packet_list *sigs, bool html)
 	return 0;
 }
 
-int list_uids(struct openpgp_signedpacket_list *uids, bool verbose, bool html)
+int list_uids(uint64_t keyid, struct openpgp_signedpacket_list *uids,
+		bool verbose, bool html)
 {
 	char buf[1024];
+	int  imgindx = 0;
 
 	while (uids != NULL) {
 		if (uids->packet->tag == 13) {
@@ -75,8 +77,15 @@ int list_uids(struct openpgp_signedpacket_list *uids, bool verbose, bool html)
 			printf("                                %s\n",
 				(html) ? txt2html(buf) : buf);
 		} else if (uids->packet->tag == 17) {
-			printf("                                "
-				"[photo id]\n");
+			printf("                                ");
+			if (html) {
+				printf("<img src=\"lookup?op=photo&search=0x%llX&idx=%d\" alt=\"[photo id]\">\n",
+						keyid,
+						imgindx);
+				imgindx++;
+			} else {
+				printf("[photo id]\n");
+			}
 		}
 		if (verbose) {
 			list_sigs(uids->sigs, html);
@@ -184,6 +193,7 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 	int					 type = 0;
 	int					 length = 0;
 	char					 buf[1024];
+	uint64_t				 keyid;
 
 	if (html) {
 		puts("<pre>");
@@ -213,11 +223,12 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 				keys->publickey->data[0]);
 		}
 		
+		keyid = (get_keyid(keys) & 0xFFFFFFFF),
 		printf("pub  %5d%c/%08X %04d/%02d/%02d ",
 			length,
 			(type == 1) ? 'R' : ((type == 16) ? 'g' : 
 				((type == 17) ? 'D' : '?')),
-			(uint32_t) (get_keyid(keys) & 0xFFFFFFFF),
+			(uint32_t) keyid,
 			created->tm_year + 1900,
 			created->tm_mon + 1,
 			created->tm_mday);
@@ -247,7 +258,7 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 			}
 		}
 
-		list_uids(curuid, verbose, html);
+		list_uids(keyid, curuid, verbose, html);
 		if (verbose) {
 			list_subkeys(keys->subkeys, verbose, html);
 		}

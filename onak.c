@@ -7,7 +7,7 @@
  * 
  * Copyright 2002 Project Purple
  *
- * $Id: onak.c,v 1.19 2004/03/23 12:33:47 noodles Exp $
+ * $Id: onak.c,v 1.20 2004/05/27 01:25:37 noodles Exp $
  */
 
 #include <stdio.h>
@@ -26,6 +26,7 @@
 #include "merge.h"
 #include "onak-conf.h"
 #include "parsekey.h"
+#include "photoid.h"
 
 void find_keys(char *search, uint64_t keyid, bool ishex,
 		bool fingerprint, bool exact, bool verbose)
@@ -173,6 +174,27 @@ int main(int argc, char *argv[])
 		} else if (!strcmp("vindex", argv[optind])) {
 			find_keys(search, keyid, ishex, fingerprint,
 					false, true);
+		} else if (!strcmp("getphoto", argv[optind])) {
+			if (!ishex) {
+				puts("Can't get a key on uid text."
+					" You must supply a keyid.");
+			} else if (fetch_key(keyid, &keys, false)) {
+				struct openpgp_packet *photo = NULL;
+				FILE *photof = NULL;
+				photo = getphoto(keys, 0);
+				if (photo != NULL) {
+					photof = fopen("keyphoto.jpg", "w");
+					fwrite(photo->data+19,
+							1,
+							(photo->length - 19),
+							photof);
+					fclose(photof);
+				}
+				free_publickey(keys);
+				keys = NULL;
+			} else {
+				puts("Key not found");
+			}
 		} else if (!strcmp("delete", argv[optind])) {
 			delete_key(getfullkeyid(keyid), false);
 		} else if (!strcmp("get", argv[optind])) {

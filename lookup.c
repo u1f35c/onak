@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: lookup.c,v 1.14 2004/05/26 18:53:14 noodles Exp $
+ * $Id: lookup.c,v 1.15 2004/05/27 01:25:37 noodles Exp $
  */
 
 #include <inttypes.h>
@@ -24,11 +24,13 @@
 #include "mem.h"
 #include "onak-conf.h"
 #include "parsekey.h"
+#include "photoid.h"
 
 #define OP_UNKNOWN 0
 #define OP_GET     1
 #define OP_INDEX   2
 #define OP_VINDEX  3
+#define OP_PHOTO   4
 
 void find_keys(char *search, uint64_t keyid, bool ishex,
 		bool fingerprint, bool exact, bool verbose, bool mrhkp)
@@ -73,6 +75,7 @@ int main(int argc, char *argv[])
 	char **params = NULL;
 	int op = OP_UNKNOWN;
 	int i;
+	int indx = 0;
 	bool fingerprint = false;
 	bool exact = false;
 	bool ishex = false;
@@ -93,6 +96,8 @@ int main(int argc, char *argv[])
 				op = OP_INDEX;
 			} else if (!strcmp(params[i+1], "vindex")) {
 				op = OP_VINDEX;
+			} else if (!strcmp(params[i+1], "photo")) {
+				op = OP_PHOTO;
 			}
 		} else if (!strcmp(params[i], "search")) {
 			search = params[i+1];
@@ -105,6 +110,8 @@ int main(int argc, char *argv[])
 					ishex = true;
 				}
 			}
+		} else if (!strcmp(params[i], "idx")) {
+			indx = atoi(params[i+1]);
 		} else if (!strcmp(params[i], "fingerprint")) {
 			if (!strcmp(params[i+1], "on")) {
 				fingerprint = true;
@@ -137,6 +144,8 @@ int main(int argc, char *argv[])
 
 	if (mrhkp) {
 		puts("Content-Type: text/plain\n");
+	} else if (op == OP_PHOTO) {
+		puts("Content-Type: image/jpeg\n");
 	} else {
 		start_html("Lookup of key");
 	}
@@ -173,6 +182,20 @@ int main(int argc, char *argv[])
 		case OP_VINDEX:
 			find_keys(search, keyid, ishex, fingerprint, exact,
 					true, mrhkp);
+			break;
+		case OP_PHOTO:
+			if (fetch_key(keyid, &publickey, false)) {
+				struct openpgp_packet *photo = NULL;
+				photo = getphoto(publickey, 0);
+				if (photo != NULL) {
+					fwrite(photo->data+19,
+							1,
+							(photo->length - 19),
+							stdout);
+				}
+				free_publickey(publickey);
+				publickey = NULL;
+			}
 			break;
 		default:
 			puts("Unknown operation!");
