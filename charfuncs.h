@@ -4,6 +4,8 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2002 Project Purple
+ *
+ * $Id: charfuncs.h,v 1.2 2003/06/04 20:57:07 noodles Exp $
  */
 
 #ifndef __CHARFUNCS_H__

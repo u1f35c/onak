@@ -6,6 +6,8 @@
  * Jonathan McDowell <noodles@earth.li>
  * 
  * Copyright 2002 Project Purple
+ *
+ * $Id: onak.c,v 1.13 2003/06/04 20:57:12 noodles Exp $
  */
 
 #include <stdio.h>

@@ -4,6 +4,8 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2003 Project Purple
+ *
+ * $Id: log.h,v 1.2 2003/06/04 20:57:10 noodles Exp $
  */
 
 #ifndef __LOG_H__

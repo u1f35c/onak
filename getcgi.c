@@ -5,6 +5,8 @@
  *
  * The x2c() and unescape_url() routines were lifted directly
  * from NCSA's sample program util.c, packaged with their HTTPD.
+ *
+ * $Id: getcgi.c,v 1.5 2003/06/04 20:57:07 noodles Exp $
  */
 
 #include <stdio.h>

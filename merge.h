@@ -4,6 +4,8 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2002 Project Purple
+ *
+ * $Id: merge.h,v 1.5 2003/06/04 20:57:11 noodles Exp $
  */
 
 #ifndef __MERGE_H__

@@ -4,7 +4,9 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 1999, 2002 Project Purple
-*/
+ *
+ * $Id: sendsync.h,v 1.2 2003/06/04 20:57:12 noodles Exp $
+ */
 
 #ifndef __SENDSYNC_H_
 #define __SENDSYNC_H_

@@ -7,6 +7,8 @@
 # Copyright 2002 Project Purple
 # Released under the GPL.
 #
+# $Id: onak-mail.pl,v 1.6 2003/06/04 20:57:11 noodles Exp $
+#
 
 use strict;
 use IPC::Open3;

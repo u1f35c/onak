@@ -1,4 +1,8 @@
+#
 # Makefile for onak.
+#
+# $Id: Makefile,v 1.15 2003/06/04 20:57:06 noodles Exp $
+#
 
 CC = gcc
 LINK = gcc

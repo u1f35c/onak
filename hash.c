@@ -4,6 +4,8 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2000-2002 Project Purple
+ *
+ * $Id: hash.c,v 1.8 2003/06/04 20:57:08 noodles Exp $
  */
 
 #include <stdio.h>

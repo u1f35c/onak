@@ -4,6 +4,8 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2002 Project Purple
+ *
+ * $Id: keyid.h,v 1.4 2003/06/04 20:57:09 noodles Exp $
  */
 
 #ifndef __KEYID_H__

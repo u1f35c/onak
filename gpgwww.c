@@ -4,6 +4,8 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2001-2002 Project Purple.
+ *
+ * $Id: gpgwww.c,v 1.10 2003/06/04 20:57:08 noodles Exp $
  */
 
 // #include <stdint.h>

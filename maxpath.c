@@ -4,6 +4,8 @@
  * Jonathan McDowell <noodles@earth.li>
  *
  * Copyright 2001-2002 Project Purple.
+ *
+ * $Id: maxpath.c,v 1.9 2003/06/04 20:57:10 noodles Exp $
  */
 
 #include <stdio.h>
