@@ -59,8 +59,8 @@ sub submitupdate {
 
 	print MERGEIN @data;
 	close MERGEIN;
-	@errors = <MERGEERR>;
 	@mergedata = <MERGEOUT>;
+	@errors = <MERGEERR>;
 
 	open (LOG, ">>/home/noodles/onak-0.0.3/keyadd.log");
 	print LOG "[".localtime(time)."] ", @errors;
