@@ -1,9 +1,10 @@
 /*
-	gpgstats.c - Program to produce stats on a GPG keyring.
-	Written by Jonathan McDowell <noodles@earth.li>.
-
-	19/02/2000 - Started writing (sort of).
-*/
+ * maxpath.c - Find the longest trust path in the key database.
+ * 
+ * Jonathan McDowell <noodles@earth.li>
+ *
+ * Copyright 2001-2002 Project Purple.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,8 +25,19 @@ void findmaxpath(unsigned long max)
 
 	distance = 0;
 	from = to = tmp = NULL;
+
+	/*
+	 * My (noodles@earth.li, DSA) key is in the strongly connected set of
+	 * keys, so we use it as a suitable starting seed.
+	 */
 	cached_getkeysigs(0xF1BD4BE45B430367);
 
+	/*
+	 * Loop through the hash examining each key present and finding the
+	 * furthest key from it. If it's further than our current max then
+	 * store it as our new max and print out the fact we've found a new
+	 * max.
+	 */
 	for (loop = 0; (loop < HASHSIZE) && (distance < max); loop++) {
 		curkey = gethashtableentry(loop);
 		while (curkey != NULL && distance < max) {
@@ -38,7 +50,8 @@ void findmaxpath(unsigned long max)
 				from = (struct stats_key *)curkey->object;
 				to = tmp;
 				distance = to->colour;
-				printf("Current max path (#%ld) is from %llX to %llX (%ld steps)\n", 
+				printf("Current max path (#%ld) is from %llX"
+						" to %llX (%ld steps)\n", 
 						loop,
 						from->keyid,
 						to->keyid,
