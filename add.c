@@ -23,7 +23,6 @@
 #include "merge.h"
 #include "onak-conf.h"
 #include "parsekey.h"
-#include "sendsync.h"
 
 int main(int argc, char *argv[])
 {

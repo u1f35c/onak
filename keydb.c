@@ -24,6 +24,7 @@
 #include "mem.h"
 #include "merge.h"
 #include "parsekey.h"
+#include "sendsync.h"
 
 #ifdef NEED_KEYID2UID
 /**
@@ -217,7 +218,7 @@ int update_keys(struct openpgp_publickey **keys, bool sendsync)
 	}
 
 	if (sendsync && keys != NULL) {
-		sendkeysync(keys);
+		sendkeysync(*keys);
 	}
 
 	return newkeys;
