@@ -22,7 +22,7 @@ struct onak_config config = {
 	/*
 	 * Options for the db2 file backend.
 	 */
-	"/community/pgp-keyserver/db-copy",	/* db2_dbpath */
+	"/home/noodles/onak-db",	/* db2_dbpath */
 
 	/*
 	 * Options for the file backend.
