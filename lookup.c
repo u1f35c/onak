@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: lookup.c,v 1.8 2003/06/04 20:57:10 noodles Exp $
+ * $Id: lookup.c,v 1.9 2003/06/04 22:11:41 noodles Exp $
  */
 
 //#include <stdint.h>
@@ -35,7 +35,7 @@ int putnextchar(void *ctx, size_t count, unsigned char *c)
 }
 
 void find_keys(char *search, uint64_t keyid, bool ishex,
-		bool fingerprint, bool exact, bool verbose)
+		bool fingerprint, bool exact, bool verbose, bool mrhkp)
 {
 	struct openpgp_publickey *publickey = NULL;
 	int count = 0;
@@ -46,15 +46,29 @@ void find_keys(char *search, uint64_t keyid, bool ishex,
 		count = fetch_key_text(search, &publickey);
 	}
 	if (publickey != NULL) {
-		key_index(publickey, verbose, fingerprint, true);
+		if (mrhkp) {
+			printf("info:1:%d\n", count);
+			mrkey_index(publickey);
+		} else {
+			key_index(publickey, verbose, fingerprint, true);
+		}
 		free_publickey(publickey);
 	} else if (count == 0) {
-		puts("Key not found.");
+		if (mrhkp) {
+			puts("info:1:0");
+		} else {
+			puts("Key not found.");
+		}
 	} else {
-		printf("Found %d keys, but maximum number to return is %d.\n",
+		if (mrhkp) {
+			puts("info:1:0");
+		} else {
+			printf("Found %d keys, but maximum number to return"
+				" is %d.\n",
 				count,
 				config.maxkeys);
-		puts("Try again with a more specific search.");
+			puts("Try again with a more specific search.");
+		}
 	}
 }
 
@@ -66,6 +80,7 @@ int main(int argc, char *argv[])
 	bool fingerprint = false;
 	bool exact = false;
 	bool ishex = false;
+	bool mrhkp = false;
 	uint64_t keyid = 0;
 	char *search = NULL;
 	char *end = NULL;
@@ -102,6 +117,15 @@ int main(int argc, char *argv[])
 			if (!strcmp(params[i+1], "on")) {
 				exact = true;
 			}
+		} else if (!strcmp(params[i], "options")) {
+			/*
+			 * TODO: We should be smarter about this; options may
+			 * have several entries. For now mr is the only valid
+			 * one though.
+			 */
+			if (!strcmp(params[i+1], "mr")) {
+				mrhkp = true;
+			}
 		}
 		free(params[i]);
 		params[i] = NULL;
@@ -115,7 +139,11 @@ int main(int argc, char *argv[])
 		params = NULL;
 	}
 
-	start_html("Lookup of key");
+	if (mrhkp) {
+		puts("Content-Type: text/plain\n");
+	} else {
+		start_html("Lookup of key");
+	}
 
 	if (op == OP_UNKNOWN) {
 		puts("Error: No operation supplied.");
@@ -142,11 +170,11 @@ int main(int argc, char *argv[])
 			break;
 		case OP_INDEX:
 			find_keys(search, keyid, ishex, fingerprint, exact,
-					false);
+					false, mrhkp);
 			break;
 		case OP_VINDEX:
 			find_keys(search, keyid, ishex, fingerprint, exact,
-					true);
+					true, mrhkp);
 			break;
 		default:
 			puts("Unknown operation!");
@@ -155,9 +183,11 @@ int main(int argc, char *argv[])
 		cleanuplogthing();
 		cleanupconfig();
 	}
-	puts("<hr>");
-	puts("Produced by onak " VERSION " by Jonathan McDowell");
-	end_html();
+	if (!mrhkp) {
+		puts("<hr>");
+		puts("Produced by onak " VERSION " by Jonathan McDowell");
+		end_html();
+	}
 
 	if (search != NULL) {
 		free(search);

@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keyindex.c,v 1.9 2003/06/04 20:57:09 noodles Exp $
+ * $Id: keyindex.c,v 1.10 2003/06/04 22:11:40 noodles Exp $
  */
 
 #include <assert.h>
@@ -252,5 +252,75 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 		puts("</pre>");
 	}
 
+	return 0;
+}
+
+/**
+ *	mrkey_index - List a set of OpenPGP keys in the MRHKP format.
+ *	@keys: The keys to display.
+ *
+ *	This function takes a list of OpenPGP public keys and displays a
+ *	machine readable list of them.
+ */
+int mrkey_index(struct openpgp_publickey *keys)
+{
+	struct openpgp_signedpacket_list	*curuid = NULL;
+	time_t					 created_time = 0;
+	int					 type = 0;
+	int					 length = 0;
+	int					 i = 0;
+	size_t					 fplength = 0;
+	unsigned char				 fp[20];
+
+
+
+	while (keys != NULL) {
+		created_time = (keys->publickey->data[1] << 24) +
+					(keys->publickey->data[2] << 16) +
+					(keys->publickey->data[3] << 8) +
+					keys->publickey->data[4];
+
+		printf("pub:");
+
+		switch (keys->publickey->data[0]) {
+		case 2:
+		case 3:
+			printf("%016llX", get_keyid(keys));
+			type = keys->publickey->data[7];
+			length = (keys->publickey->data[8] << 8) +
+					keys->publickey->data[9];
+			break;
+		case 4:
+			get_fingerprint(keys->publickey, fp, &fplength);
+
+			for (i = 0; i < fplength; i++) {
+				printf("%02X", fp[i]);
+			}
+
+			type = keys->publickey->data[5];
+			length = (keys->publickey->data[6] << 8) +
+					keys->publickey->data[7];
+			break;
+		default:
+			logthing(LOGTHING_ERROR, "Unknown key type: %d",
+				keys->publickey->data[0]);
+		}
+
+		printf(":%d:%d:%d::\n",
+			type,
+			length,
+			created_time);
+	
+		for (curuid = keys->uids; curuid != NULL;
+			 curuid = curuid->next) {
+		
+			if (curuid->packet->tag == 13) {
+				printf("uid:%.*s\n",
+					(int) curuid->packet->length,
+					curuid->packet->data);
+			}
+		}
+		keys = keys->next;
+	}
 	return 0;
 }
