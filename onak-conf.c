@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include "ll.h"
+#include "log.h"
 #include "onak-conf.h"
 
 /*
@@ -26,6 +27,7 @@ struct onak_config config = {
 	NULL,			/* adminemail */
 	NULL,			/* mta */
 	NULL,			/* syncsites */
+	NULL,			/* logfile */
 
 	/*
 	 * Options for directory backends.
@@ -104,6 +106,8 @@ void readconfig(void) {
 		} else if (!strncmp("syncsite ", curline, 9)) {
 			config.syncsites =
 				lladd(config.syncsites, strdup(&curline[9]));
+		} else if (!strncmp("logfile ", curline, 8)) {
+			config.logfile = strdup(&curline[8]);
 		} else if (!strncmp("this_site ", curline, 10)) {
 			config.thissite = strdup(&curline[10]);
 		} else if (!strncmp("socket_name ", curline, 12) ||
@@ -114,14 +118,16 @@ void readconfig(void) {
 			 * Not applicable; ignored for compatibility with pksd.
 			 */
 		} else {
-			fprintf(stderr, "Unknown config line: %s\n", curline);
+			logthing(LOGTHING_ERROR,
+				"Unknown config line: %s", curline);
 		}
 
 			fgets(curline, 1023, conffile);
 		}
 		fclose(conffile);
 	} else {
-		fprintf(stderr, "Couldn't open config file; using defaults.\n");
+		logthing(LOGTHING_NOTICE,
+				"Couldn't open config file; using defaults.");
 	}
 }
 
@@ -161,5 +167,9 @@ void cleanupconfig(void) {
 	if (config.syncsites != NULL) {
 		llfree(config.syncsites, free);
 		config.syncsites = NULL;
+	}
+	if (config.logfile != NULL) {
+		free(config.logfile);
+		config.logfile = NULL;
 	}
 }

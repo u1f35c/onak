@@ -21,6 +21,7 @@
 #include "keyid.h"
 #include "keyindex.h"
 #include "keystructs.h"
+#include "log.h"
 
 int list_sigs(struct openpgp_packet_list *sigs, bool html)
 {
@@ -114,7 +115,8 @@ int list_subkeys(struct openpgp_signedpacket_list *subkeys, bool verbose,
 					subkeys->packet->data[7];
 				break;
 			default:
-				fprintf(stderr, "Unknown key type: %d\n",
+				logthing(LOGTHING_ERROR,
+					"Unknown key type: %d",
 					subkeys->packet->data[0]);
 			}
 		
@@ -205,7 +207,7 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 					keys->publickey->data[7];
 			break;
 		default:
-			fprintf(stderr, "Unknown key type: %d\n",
+			logthing(LOGTHING_ERROR, "Unknown key type: %d",
 				keys->publickey->data[0]);
 		}
 		

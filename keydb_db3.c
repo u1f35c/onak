@@ -25,6 +25,7 @@
 #include "decodekey.h"
 #include "keystructs.h"
 #include "mem.h"
+#include "log.h"
 #include "onak-conf.h"
 #include "parsekey.h"
 
@@ -111,7 +112,8 @@ void initdb(void)
 
 	ret = db_env_create(&dbenv, 0);
 	if (ret != 0) {
-		fprintf(stderr, "db_env_create: %s\n", db_strerror(ret));
+		logthing(LOGTHING_CRITICAL,
+			"db_env_create: %s", db_strerror(ret));
 		exit(1);
 	}
 
@@ -138,7 +140,8 @@ void initdb(void)
 
 	ret = db_create(&dbconn, dbenv, 0);
 	if (ret != 0) {
-		fprintf(stderr, "db_create: %s\n", db_strerror(ret));
+		logthing(LOGTHING_CRITICAL,
+				"db_create: %s", db_strerror(ret));
 		exit(1);
 	}
 
@@ -154,7 +157,7 @@ void initdb(void)
 
 	ret = db_create(&worddb, dbenv, 0);
 	if (ret != 0) {
-		fprintf(stderr, "db_create: %s\n", db_strerror(ret));
+		logthing(LOGTHING_CRITICAL, "db_create: %s", db_strerror(ret));
 		exit(1);
 	}
 	ret = worddb->set_flags(worddb, DB_DUP);

@@ -10,6 +10,7 @@
 
 #include "keyid.h"
 #include "keystructs.h"
+#include "log.h"
 #include "md5.h"
 #include "sha.h"
 
@@ -93,7 +94,7 @@ unsigned char *get_fingerprint(struct openpgp_packet *packet,
 		memcpy(fingerprint, buff, *len);
 		break;
 	default:
-		fprintf(stderr, "Unknown key type: %d\n",
+		logthing(LOGTHING_ERROR, "Unknown key type: %d",
 				packet->data[0]);
 	}
 
@@ -135,7 +136,8 @@ uint64_t get_packetid(struct openpgp_packet *packet)
 				keyid += packet->data[offset++];
 			}
 		} else {
-			fputs("Type 2 or 3 key, but not RSA.\n", stderr);
+			logthing(LOGTHING_ERROR,
+					"Type 2 or 3 key, but not RSA.");
 		}
 		break;
 	case 4:
@@ -148,7 +150,7 @@ uint64_t get_packetid(struct openpgp_packet *packet)
 
 		break;
 	default:
-		fprintf(stderr, "Unknown key type: %d\n",
+		logthing(LOGTHING_ERROR, "Unknown key type: %d",
 				packet->data[0]);
 	}
 

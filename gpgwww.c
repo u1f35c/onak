@@ -14,6 +14,7 @@
 #include "getcgi.h"
 #include "hash.h"
 #include "keydb.h"
+#include "log.h"
 #include "onak-conf.h"
 #include "stats.h"
 
@@ -55,11 +56,13 @@ int main(int argc, char *argv[])
 
 	printf("<P>Looking for path from 0x%llX to 0x%llX</P>\n", from, to);
 	readconfig();
+	initlogthing("gpgwww", config.logfile);
 	initdb();
 	inithash();
 	dofindpath(from, to, true);
 	destroyhash();
 	cleanupdb();
+	cleanuplogthing();
 	cleanupconfig();
 
 	puts("<HR>");

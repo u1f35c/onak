@@ -21,6 +21,7 @@
 #include "keyid.h"
 #include "keyindex.h"
 #include "keystructs.h"
+#include "log.h"
 #include "mem.h"
 #include "onak-conf.h"
 #include "parsekey.h"
@@ -91,13 +92,15 @@ void initdb(void)
 					&db2_env, &keydbinfo,
 					&db2_keydbfiles[i]);
 			if (ret) {
-				fprintf(stderr, "Error opening db file %d (errno %d)\n",
+				logthing(LOGTHING_CRITICAL,
+					"Error opening db file %d (errno %d)",
 					i, ret);
 				exit(1);
 			}
 		}
 	} else {
-		fprintf(stderr, "Error initializing db (%d).\n", ret);
+		logthing(LOGTHING_CRITICAL, "Error initializing db (%d).",
+				ret);
 		exit(1);
 	}
 }

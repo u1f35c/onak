@@ -15,6 +15,7 @@
 #include "keyid.h"
 #include "keystructs.h"
 #include "ll.h"
+#include "log.h"
 #include "mem.h"
 #include "merge.h"
 
@@ -353,7 +354,6 @@ int merge_keys(struct openpgp_publickey *a, struct openpgp_publickey *b)
 /**
  *	update_keys - Takes a list of public keys and updates them in the DB.
  *	@keys: The keys to update in the DB.
- *	@verbose: Should we output more information as we add keys?
  *
  *	Takes a list of keys and adds them to the database, merging them with
  *	the key in the database if it's already present there. The key list is
@@ -361,7 +361,7 @@ int merge_keys(struct openpgp_publickey *a, struct openpgp_publickey *b)
  *	we had before to what we have now (ie the set of data that was added to
  *	the DB). Returns the number of entirely new keys added.
  */
-int update_keys(struct openpgp_publickey **keys, bool verbose)
+int update_keys(struct openpgp_publickey **keys)
 {
 	struct openpgp_publickey *curkey = NULL;
 	struct openpgp_publickey *oldkey = NULL;
@@ -371,13 +371,10 @@ int update_keys(struct openpgp_publickey **keys, bool verbose)
 
 	for (curkey = *keys; curkey != NULL; curkey = curkey->next) {
 		intrans = starttrans();
-		if (verbose) {
-			fprintf(stderr, "Fetching key 0x%llX, result: %d\n",
-				get_keyid(curkey),
-				fetch_key(get_keyid(curkey), &oldkey, intrans));
-		} else {
-			fetch_key(get_keyid(curkey), &oldkey, intrans);
-		}
+		logthing(LOGTHING_INFO,
+			"Fetching key 0x%llX, result: %d",
+			get_keyid(curkey),
+			fetch_key(get_keyid(curkey), &oldkey, intrans));
 
 		/*
 		 * If we already have the key stored in the DB then merge it
@@ -400,19 +397,15 @@ int update_keys(struct openpgp_publickey **keys, bool verbose)
 				}
 			} else {
 				prev = curkey;
-				if (verbose) {
-					fprintf(stderr,
-					"Merged key; storing updated key.\n");
-				}
+				logthing(LOGTHING_INFO,
+					"Merged key; storing updated key.");
 				store_key(oldkey, intrans, true);
 			}
 			free_publickey(oldkey);
 			oldkey = NULL;
 		} else {
-			if (verbose) {
-				fprintf(stderr,
-					"Storing completely new key.\n");
-			}
+			logthing(LOGTHING_INFO,
+				"Storing completely new key.");
 			store_key(curkey, intrans, false);
 			newkeys++;
 		}

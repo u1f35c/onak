@@ -16,6 +16,7 @@
 #include "getcgi.h"
 #include "keydb.h"
 #include "keystructs.h"
+#include "log.h"
 #include "mem.h"
 #include "merge.h"
 #include "onak-conf.h"
@@ -53,25 +54,27 @@ int main(int argc, char *argv[])
 	if (ctx.buffer == NULL) {
 		puts("Error: No keytext to add supplied.");
 	} else {
+		readconfig();
+		initlogthing("add", config.logfile);
 		dearmor_openpgp_stream(buffer_fetchchar,
 					&ctx,
 					&packets);
 		if (packets != NULL) {
 			parse_keys(packets, &keys);
-			readconfig();
 			initdb();
 			printf("Got %d new keys.\n",
-					update_keys(&keys, false));
+					update_keys(&keys));
 			if (keys != NULL) {
 				sendkeysync(keys);
 				free_publickey(keys);
 				keys = NULL;
 			}
 			cleanupdb();
-			cleanupconfig();
 		} else {
 			puts("No OpenPGP packets found in input.");
 		}
+		cleanuplogthing();
+		cleanupconfig();
 	}
 	end_html();
 	return (EXIT_SUCCESS);

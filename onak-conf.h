@@ -39,6 +39,7 @@ struct onak_config {
 	char *adminemail;
 	char *mta;
 	struct ll *syncsites;
+	char *logfile;
 
 	/*
 	 * Options for any database backend that needs a directory, be it the

@@ -15,6 +15,7 @@
 #include "keyid.h"
 #include "keystructs.h"
 #include "ll.h"
+#include "log.h"
 #include "mem.h"
 #include "parsekey.h"
 
@@ -126,7 +127,8 @@ int parse_keys(struct openpgp_packet_list *packets,
 			 */
 			break;
 		default:
-			fprintf(stderr, "Unsupported packet type: %d\n",
+			logthing(LOGTHING_ERROR,
+					"Unsupported packet type: %d",
 					packets->packet->tag);
 		}
 		packets = packets->next;
@@ -259,7 +261,8 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 					curpacket->packet->length += curchar;
 					break;
 				case 3:
-					fprintf(stderr, "Unsupported length type 3.\n");
+					logthing(LOGTHING_ERROR,
+						"Unsupported length type 3.");
 					curpacket->packet->length = 0;
 					curpacket->packet->data = NULL;
 					rc = -1;
@@ -277,7 +280,7 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 			}
 			inpacket = false;
 		} else {
-			fprintf(stderr, "Unexpected character: 0x%X\n",
+			logthing(LOGTHING_ERROR, "Unexpected character: 0x%X",
 				curchar);
 		}
 	}
@@ -321,7 +324,8 @@ int write_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
 					 0xFF;
 				putchar_func(ctx, 1, &curchar);
 			} else {
-				fputs("Unsupported new format length.\n", stderr);
+				logthing(LOGTHING_ERROR,
+					"Unsupported new format length.");
 			}
 		} else {
 			curchar |= (packets->packet->tag << 2);

@@ -25,6 +25,7 @@
 #include "keyid.h"
 #include "decodekey.h"
 #include "keystructs.h"
+#include "log.h"
 #include "mem.h"
 #include "onak-conf.h"
 #include "parsekey.h"
@@ -68,8 +69,8 @@ void initdb(void)
 			config.pg_dbpass); // password
 
 	if (PQstatus(dbconn) == CONNECTION_BAD) {
-		fprintf(stderr, "Connection to database failed.\n");
-		fprintf(stderr, "%s\n", PQerrorMessage(dbconn));
+		logthing(LOGTHING_CRITICAL, "Connection to database failed.");
+		logthing(LOGTHING_CRITICAL, "%s", PQerrorMessage(dbconn));
 		PQfinish(dbconn);
 		dbconn = NULL;
 		exit(1);
@@ -169,7 +170,8 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 
 			fd = lo_open(dbconn, key_oid, INV_READ);
 			if (fd < 0) {
-				fprintf(stderr, "Can't open large object.\n");
+				logthing(LOGTHING_ERROR,
+						"Can't open large object.");
 			} else {
 				read_openpgp_stream(keydb_fetchchar, &fd,
 						&packets);
@@ -180,7 +182,7 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 			}
 		}
 	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-		fprintf(stderr, "Problem retrieving key from DB.\n");
+		logthing(LOGTHING_ERROR, "Problem retrieving key from DB.");
 	}
 
 	PQclear(result);
@@ -235,7 +237,8 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
 
 			fd = lo_open(dbconn, key_oid, INV_READ);
 			if (fd < 0) {
-				fprintf(stderr, "Can't open large object.\n");
+				logthing(LOGTHING_ERROR,
+						"Can't open large object.");
 			} else {
 				read_openpgp_stream(keydb_fetchchar, &fd,
 						&packets);
@@ -246,7 +249,7 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
 			}
 		}
 	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-		fprintf(stderr, "Problem retrieving key from DB.\n");
+		logthing(LOGTHING_ERROR, "Problem retrieving key from DB.");
 	}
 
 	PQclear(result);
@@ -307,7 +310,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 		
 	key_oid = lo_creat(dbconn, INV_READ | INV_WRITE);
 	if (key_oid == 0) {
-		fprintf(stderr, "Can't create key OID\n");
+		logthing(LOGTHING_ERROR, "Can't create key OID");
 	} else {
 		fd = lo_open(dbconn, key_oid, INV_WRITE);
 		write_openpgp_stream(keydb_putchar, &fd, packets);
@@ -324,8 +327,8 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 	result = PQexec(dbconn, statement);
 
 	if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-		fprintf(stderr, "Problem storing key in DB.\n");
-		fprintf(stderr, "%s\n", PQresultErrorMessage(result));
+		logthing(LOGTHING_ERROR, "Problem storing key in DB.");
+		logthing(LOGTHING_ERROR, "%s", PQresultErrorMessage(result));
 	}
 	PQclear(result);
 
@@ -356,8 +359,9 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 			}
 
 			if (PQresultStatus(result) != PGRES_COMMAND_OK) {
-				fprintf(stderr, "Problem storing key in DB.\n");
-				fprintf(stderr, "%s\n",
+				logthing(LOGTHING_ERROR,
+						"Problem storing key in DB.");
+				logthing(LOGTHING_ERROR, "%s",
 						PQresultErrorMessage(result));
 			}
 			/*
@@ -445,7 +449,8 @@ int delete_key(uint64_t keyid, bool intrans)
 			keyid);
 		result = PQexec(dbconn, statement);
 	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-		fprintf(stderr, "Problem retrieving key (%llX) from DB.\n",
+		logthing(LOGTHING_ERROR,
+				"Problem retrieving key (%llX) from DB.",
 				keyid);
 	}
 
@@ -484,7 +489,8 @@ char *keyid2uid(uint64_t keyid)
 			PQntuples(result) >= 1) {
 		uid = strdup(PQgetvalue(result, 0, 0));
 	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-		fprintf(stderr, "Problem retrieving key (%llX) from DB.\n",
+		logthing(LOGTHING_ERROR,
+				"Problem retrieving key (%llX) from DB.",
 				keyid);
 	}
 
@@ -539,7 +545,7 @@ struct ll *getkeysigs(uint64_t keyid)
 			sigs = lladd(sigs, createandaddtohash(signer));
 		}
 	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-		fprintf(stderr, "Problem retrieving key from DB.\n");
+		logthing(LOGTHING_ERROR, "Problem retrieving key from DB.");
 	}
 
 	PQclear(result);

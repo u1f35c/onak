@@ -17,6 +17,7 @@
 #include "getcgi.h"
 #include "keydb.h"
 #include "keyindex.h"
+#include "log.h"
 #include "mem.h"
 #include "onak-conf.h"
 #include "parsekey.h"
@@ -120,6 +121,7 @@ int main(int argc, char *argv[])
 		puts("Error: No key to search for supplied.");
 	} else {
 		readconfig();
+		initlogthing("lookup", config.logfile);
 		initdb();
 		switch (op) {
 		case OP_GET:
@@ -148,6 +150,7 @@ int main(int argc, char *argv[])
 			puts("Unknown operation!");
 		}
 		cleanupdb();
+		cleanuplogthing();
 		cleanupconfig();
 	}
 	puts("<hr>");

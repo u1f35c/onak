@@ -18,6 +18,7 @@
 #include "keyid.h"
 #include "keyindex.h"
 #include "keystructs.h"
+#include "log.h"
 #include "mem.h"
 #include "merge.h"
 #include "onak-conf.h"
@@ -112,11 +113,13 @@ int main(int argc, char *argv[])
 			break;
 		case 'v': 
 			verbose = true;
+			setlogthreshold(LOGTHING_INFO);
 			break;
 		}
 	}
 
 	readconfig();
+	initlogthing("onak", config.logfile);
 
 	if ((argc - optind) < 1) {
 		usage();
@@ -128,10 +131,8 @@ int main(int argc, char *argv[])
 		if (binary) {
 			result = read_openpgp_stream(stdin_getchar, NULL,
 				 &packets);
-			if (verbose) {
-				fprintf(stderr,
-					"read_openpgp_stream: %d\n", result);
-			}
+			logthing(LOGTHING_INFO,
+					"read_openpgp_stream: %d", result);
 		} else {
 			dearmor_openpgp_stream(stdin_getchar, NULL, &packets);
 		}
@@ -139,14 +140,12 @@ int main(int argc, char *argv[])
 			result = parse_keys(packets, &keys);
 			free_packet_list(packets);
 			packets = NULL;
-			if (verbose) {
-				fprintf(stderr, "Finished reading %d keys.\n",
+			logthing(LOGTHING_INFO, "Finished reading %d keys.",
 					result);
-			}
 
 			initdb();
-			fprintf(stderr, "Got %d new keys.\n",
-					update_keys(&keys, verbose));
+			logthing(LOGTHING_NOTICE, "Got %d new keys.",
+					update_keys(&keys));
 			if (keys != NULL && update) {
 				flatten_publickey(keys,
 					&packets,
@@ -160,7 +159,7 @@ int main(int argc, char *argv[])
 			cleanupdb();
 		} else {
 			rc = 1;
-			fprintf(stderr, "No keys read.\n");
+			logthing(LOGTHING_NOTICE, "No keys read.");
 		}
 
 		if (keys != NULL) {
@@ -168,7 +167,7 @@ int main(int argc, char *argv[])
 			keys = NULL;
 		} else {
 			rc = 1;
-			fprintf(stderr, "No changes.\n");
+			logthing(LOGTHING_NOTICE, "No changes.");
 		}
 	} else if ((argc - optind) == 2) {
 		search = argv[optind+1];
@@ -191,9 +190,7 @@ int main(int argc, char *argv[])
 			delete_key(getfullkeyid(keyid), false);
 		} else if (!strcmp("get", argv[optind])) {
 			if (fetch_key(keyid, &keys, false)) {
-				if (verbose) {
-					fprintf(stderr, "Got key.\n");
-				}
+				logthing(LOGTHING_INFO, "Got key.");
 				flatten_publickey(keys,
 						&packets,
 						&list_end);
@@ -211,6 +208,7 @@ int main(int argc, char *argv[])
 		usage();
 	}
 
+	cleanuplogthing();
 	cleanupconfig();
 
 	return rc;
