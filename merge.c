@@ -12,6 +12,7 @@
 
 #include "keydb.h"
 #include "keyid.h"
+#include "keyindex.h"
 #include "keystructs.h"
 #include "ll.h"
 #include "mem.h"
@@ -19,15 +20,29 @@
 
 /**
  *	compare_packets - Check to see if 2 OpenPGP packets are the same.
- *	@a: The first key to compare.
- *	@b: The second key to compare.
+ *	@a: The first packet to compare.
+ *	@b: The second packet to compare.
  *
- *	Takes 2 keys and returns true if they are the same and false otherwise.
+ *	Takes 2 packets and returns true if they are the same and false
+ *	otherwise.
  */
 bool compare_packets(struct openpgp_packet *a, struct openpgp_packet *b)
 {
 	return (a->tag == b->tag && a->length == b->length &&
 		!memcmp(a->data, b->data, b->length));
+}
+
+/**
+ *	compare_signatures - Check to see if 2 OpenPGP signatures are the same.
+ *	@a: The first signature to compare.
+ *	@b: The second signature to compare.
+ *
+ *	Takes 2 signature packets and returns true if they are the same and
+ *	false otherwise.
+ */
+bool compare_signatures(struct openpgp_packet *a, struct openpgp_packet *b)
+{
+	return (sig_keyid(a) == sig_keyid(b));
 }
 
 /**
@@ -46,6 +61,31 @@ bool find_packet(struct openpgp_packet_list *packet_list,
 	while (!found && packet_list != NULL) {
 		if (compare_packets(packet_list->packet, packet)) {
 			found = true;
+		}
+		packet_list = packet_list -> next;
+	}
+
+	return found;
+}
+
+/**
+ *	find_signature - Checks to see if an OpenPGP signature exists in a list.
+ *	@packet_list: The list of packets to look in.
+ *	@packet: The signature to look for.
+ *
+ *	Walks through the packet_list checking to see if the signature given is
+ *	present in it. Returns a pointer to it if it is, NULL otherwise.
+ *
+ */
+struct openpgp_packet_list *find_signature(
+			struct openpgp_packet_list *packet_list,
+			struct openpgp_packet *packet)
+{
+	struct openpgp_packet_list *found = NULL;
+
+	while (!found && packet_list != NULL) {
+		if (compare_signatures(packet_list->packet, packet)) {
+			found = packet_list;
 		}
 		packet_list = packet_list -> next;
 	}
@@ -135,7 +175,13 @@ int merge_packet_sigs(struct openpgp_signedpacket_list *old,
 	curpacket = new->sigs;
 	while (curpacket != NULL) {
 		nextpacket = curpacket->next;
-		if (find_packet(old->sigs, curpacket->packet)) {
+		/*
+		 * TODO: We should be checking the signature and then
+		 * potentially merging/replacing it depending on the subpackets
+		 * really. For now this stops us adding the same one twice
+		 * however.
+		 */ 
+		if (find_signature(old->sigs, curpacket->packet)) {
 			/*
 			 * We already have this sig, remove it from the
 			 * difference list and free the memory allocated for
