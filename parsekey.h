@@ -30,6 +30,8 @@ int add_key(struct openpgp_publickey *key);
  *
  *	This function takes an list of OpenPGP packets and attempts to parse it
  *	into a list of public keys with signatures and subkeys.
+ *
+ *      Returns a count of how many keys we parsed.
  */
 int parse_keys(struct openpgp_packet_list *packets,
 		struct openpgp_publickey **keys);
