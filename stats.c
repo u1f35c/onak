@@ -5,7 +5,7 @@
  *
  * Copyright 2000-2002 Project Purple
  *
- * $Id: stats.c,v 1.11 2003/06/04 22:32:56 noodles Exp $
+ * $Id: stats.c,v 1.12 2003/06/08 21:11:01 noodles Exp $
  */
 
 #include <stdio.h>
@@ -77,6 +77,7 @@ unsigned long findpath(struct stats_key *have, struct stats_key *want)
 			 * it and add its sigs to the list we want to look at.
 			 */
 			if (!((struct stats_key *)sigs->object)->disabled &&
+			    !((struct stats_key *)sigs->object)->revoked &&
 			    ((struct stats_key *)sigs->object)->colour == 0) {
 				count++;
 				((struct stats_key *)sigs->object)->colour =

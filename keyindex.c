@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keyindex.c,v 1.11 2003/06/08 19:04:32 noodles Exp $
+ * $Id: keyindex.c,v 1.12 2003/06/08 21:11:01 noodles Exp $
  */
 
 #include <assert.h>
@@ -227,7 +227,10 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 			snprintf(buf, 1023, "%.*s",
 				(int) curuid->packet->length,
 				curuid->packet->data);
-			printf("%s\n", (html) ? txt2html(buf) : buf);
+			printf("%s%s\n", 
+				(html) ? txt2html(buf) : buf,
+				(keys->revocations == NULL) ? "" :
+					" *** REVOKED ***");
 			if (fingerprint) {
 				display_fingerprint(keys);
 			}
@@ -236,7 +239,9 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 			}
 			curuid = curuid->next;
 		} else {
-			putchar('\n');
+			printf("%s\n", 
+				(keys->revocations == NULL) ? "" :
+					"*** REVOKED ***");
 			if (fingerprint) {
 				display_fingerprint(keys);
 			}
@@ -272,8 +277,6 @@ int mrkey_index(struct openpgp_publickey *keys)
 	size_t					 fplength = 0;
 	unsigned char				 fp[20];
 
-
-
 	while (keys != NULL) {
 		created_time = (keys->publickey->data[1] << 24) +
 					(keys->publickey->data[2] << 16) +
@@ -306,10 +309,11 @@ int mrkey_index(struct openpgp_publickey *keys)
 				keys->publickey->data[0]);
 		}
 
-		printf(":%d:%d:%ld::\n",
+		printf(":%d:%d:%ld::%s\n",
 			type,
 			length,
-			created_time);
+			created_time,
+			(keys->revocations == NULL) ? "" : "r");
 	
 		for (curuid = keys->uids; curuid != NULL;
 			 curuid = curuid->next) {

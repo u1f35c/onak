@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb_pg.c,v 1.11 2003/06/05 07:32:00 noodles Exp $
+ * $Id: keydb_pg.c,v 1.12 2003/06/08 21:11:01 noodles Exp $
  */
 
 #include <postgresql/libpq-fe.h>
@@ -504,11 +504,12 @@ char *keyid2uid(uint64_t keyid)
 /**
  *	getkeysigs - Gets a linked list of the signatures on a key.
  *	@keyid: The keyid to get the sigs for.
+ *	@revoked: If the key is revoked.
  *
  *	This function gets the list of signatures on a key. Used for key 
  *	indexing and doing stats bits.
  */
-struct ll *getkeysigs(uint64_t keyid)
+struct ll *getkeysigs(uint64_t keyid, bool *revoked)
 {
 	struct ll *sigs = NULL;
 	PGresult *result = NULL;
@@ -556,6 +557,16 @@ struct ll *getkeysigs(uint64_t keyid)
 		result = PQexec(dbconn, "COMMIT");
 		PQclear(result);
 	}
+
+	/*
+	 * TODO: What do we do about revocations? We don't have the details
+	 * stored in a separate table, so we'd have to grab the key and decode
+	 * it, which we're trying to avoid by having a signers table.
+	 */
+	if (revoked != NULL) {
+		*revoked = false;
+	}
+	
 	return sigs;
 }
 

@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb.c,v 1.9 2003/06/04 20:57:08 noodles Exp $
+ * $Id: keydb.c,v 1.10 2003/06/08 21:11:00 noodles Exp $
  */
 
 /**
@@ -63,11 +63,13 @@ char *keyid2uid(uint64_t keyid)
 /**
  *	getkeysigs - Gets a linked list of the signatures on a key.
  *	@keyid: The keyid to get the sigs for.
+ *	@revoked: Is the key revoked?
  *
  *	This function gets the list of signatures on a key. Used for key 
- *	indexing and doing stats bits.
+ *	indexing and doing stats bits. If revoked is non-NULL then if the key
+ *	is revoked it's set to true.
  */
-struct ll *getkeysigs(uint64_t keyid)
+struct ll *getkeysigs(uint64_t keyid, bool *revoked)
 {
 	struct ll *sigs = NULL;
 	struct openpgp_signedpacket_list *uids = NULL;
@@ -78,6 +80,9 @@ struct ll *getkeysigs(uint64_t keyid)
 	if (publickey != NULL) {
 		for (uids = publickey->uids; uids != NULL; uids = uids->next) {
 			sigs = keysigs(sigs, uids->sigs);
+		}
+		if (revoked != NULL) {
+			*revoked = (publickey->revocations != NULL);
 		}
 		free_publickey(publickey);
 	}
@@ -99,6 +104,7 @@ struct ll *cached_getkeysigs(uint64_t keyid)
 	struct stats_key *key = NULL;
 	struct stats_key *signedkey = NULL;
 	struct ll        *cursig = NULL;
+	bool		  revoked = false;
 
 	if (keyid == 0)  {
 		return NULL;
@@ -107,7 +113,8 @@ struct ll *cached_getkeysigs(uint64_t keyid)
 	key = createandaddtohash(keyid);
 
 	if (key->gotsigs == false) {
-		key->sigs = getkeysigs(key->keyid);
+		key->sigs = getkeysigs(key->keyid, &revoked);
+		key->revoked = revoked;
 		for (cursig = key->sigs; cursig != NULL;
 				cursig = cursig->next) {
 			signedkey = (struct stats_key *) cursig->object;

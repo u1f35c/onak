@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keystructs.h,v 1.6 2003/06/04 20:57:09 noodles Exp $
+ * $Id: keystructs.h,v 1.7 2003/06/08 21:11:01 noodles Exp $
  */
 
 #ifndef __KEYSTRUCTS_H__
@@ -90,6 +90,8 @@ struct openpgp_publickey {
  *	@parent: The key that lead us to this one for DFS/BFS.
  *	@sigs: A linked list of the signatures on this key.
  *	@gotsigs: A bool indicating if we've initialized the sigs element yet.
+ *	@disabled: If we shouldn't consider the key in calculations.
+ *	@revoked: If the key is revoked (and shouldn't be considered).
  */
 struct stats_key {
 	uint64_t keyid;
@@ -99,6 +101,7 @@ struct stats_key {
 	struct ll *signs;
 	bool gotsigs;
 	bool disabled;
+	bool revoked;
 };
 
 #endif /* __KEYSTRUCTS_H__ */

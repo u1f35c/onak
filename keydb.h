@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb.h,v 1.8 2003/06/07 13:45:34 noodles Exp $
+ * $Id: keydb.h,v 1.9 2003/06/08 21:11:00 noodles Exp $
  */
 
 #ifndef __KEYDB_H__
@@ -110,11 +110,13 @@ char *keyid2uid(uint64_t keyid);
 /**
  *	getkeysigs - Gets a linked list of the signatures on a key.
  *	@keyid: The keyid to get the sigs for.
+ *	@revoked: Is the key revoked?
  *
  *	This function gets the list of signatures on a key. Used for key 
- *	indexing and doing stats bits.
+ *	indexing and doing stats bits. If revoked is non-NULL then if the key
+ *	is revoked it's set to true.
  */
-struct ll *getkeysigs(uint64_t keyid);
+struct ll *getkeysigs(uint64_t keyid, bool *revoked);
 
 /**
  *	cached_getkeysigs - Gets the signatures on a key.
