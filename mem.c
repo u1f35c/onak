@@ -100,8 +100,6 @@ void free_packet(struct openpgp_packet *packet) {
 void free_packet_list(struct openpgp_packet_list *packet_list) {
 	struct openpgp_packet_list *nextpacket = NULL;
 
-	log_assert(packet_list != NULL);
-
 	while (packet_list != NULL) {
 		nextpacket = packet_list->next;
 		if (packet_list->packet != NULL) {
@@ -122,8 +120,6 @@ void free_packet_list(struct openpgp_packet_list *packet_list) {
 void free_signedpacket_list(
 		struct openpgp_signedpacket_list *signedpacket_list) {
 	struct openpgp_signedpacket_list *nextpacket = NULL;
-
-	log_assert(signedpacket_list != NULL);
 
 	while (signedpacket_list != NULL) {
 		nextpacket = signedpacket_list->next;
@@ -147,8 +143,6 @@ void free_signedpacket_list(
  */
 void free_publickey(struct openpgp_publickey *key) {
 	struct openpgp_publickey *nextkey = NULL;
-
-	log_assert(key != NULL);
 
 	while (key != NULL) {
 		nextkey = key->next;
