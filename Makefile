@@ -1,12 +1,13 @@
 #
 # Makefile for onak.
 #
-# $Id: Makefile,v 1.15 2003/06/04 20:57:06 noodles Exp $
+# $Id: Makefile,v 1.16 2003/06/06 14:02:39 noodles Exp $
 #
 
 CC = gcc
 LINK = gcc
 CFLAGS += -Wall -pedantic -g -I/usr/local/include
+# Uncomment to enable profiling.
 #LDFLAGS += -pg
 # Can be "pg" for Postgresql, "file" for flat files or "db2" for pksd db2 style.
 DBTYPE = db3
