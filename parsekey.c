@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: parsekey.c,v 1.14 2003/09/30 21:59:33 noodles Exp $
+ * $Id: parsekey.c,v 1.15 2003/10/03 23:24:16 noodles Exp $
  */
 
 #include <assert.h>
@@ -189,8 +189,8 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 		}
 	}
 
-	while (!rc && !getchar_func(ctx, 1, &curchar) &&
-			(maxnum == 0 || keys < maxnum)) {
+	while (!rc && (maxnum == 0 || keys < maxnum) &&
+			!getchar_func(ctx, 1, &curchar)) {
 		if (!inpacket && (curchar & 0x80)) {
 			/*
 			 * New packet. Record the fact we're in a packet and
