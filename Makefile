@@ -1,7 +1,7 @@
 #
 # Makefile for onak.
 #
-# $Id: Makefile,v 1.17 2003/09/30 21:16:14 noodles Exp $
+# $Id: Makefile,v 1.18 2003/10/03 23:07:31 noodles Exp $
 #
 
 CC = gcc
@@ -15,7 +15,7 @@ DBTYPE = db3
 #LIBS = -L/usr/local/lib -lpq
 LIBS = -L/usr/local/lib -ldb3
 
-PROGS = add lookup gpgwww onak
+PROGS = add lookup gpgwww onak splitkeys
 CORE_OBJS = armor.o charfuncs.o decodekey.o getcgi.o hash.o keydb_$(DBTYPE).o \
 	keyid.o keyindex.o ll.o mem.o onak-conf.o parsekey.o sha.o md5.o log.o
 OBJS = merge.o stats.o sendsync.o $(CORE_OBJS)
@@ -52,7 +52,7 @@ onak: onak.o merge.o $(CORE_OBJS)
 clean:
 	rm -f $(PROGS) $(OBJS) Makefile.bak testparse maxpath *.core core \
 		gpgwww.o add.o lookup.o main.o maxpath.o onak.o sixdegrees \
-		sixdegrees.o
+		sixdegrees.o splitkeys.o
 
 .depend: $(SRCS)
 	rm .depend
