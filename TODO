@@ -1,10 +1,12 @@
 * Revoked keys on index.
 * Check keys on import?
-* Test library?
+* config file
+* Sort out merging (use onak + some Perl to answer incoming email. Not
+  sure about keys via hkp yet though - need to send updates out).
 * Better signature subpacket parsing (primary UID for example).
-* Better merging of signatures; need to decode subpackets so we can make sure
-  we don't add a signature that's already on a key but has different
-  subpackets.
+* Better merging of signatures; need to compare subpackets on Type 4 packets
+  and choose which we should use (how? most recent date?)
+* Honor no-modify keyserver flag ("Brian M. Carlson" <karlsson@hal-pc.org>)
 * Better txt2html routine.
 * Remove bithelp.h (i386 only at present & inlined).
   - Build and test on non-i386.
@@ -16,17 +18,11 @@
 * DB access modules as a library to allow runtime configuration of it?
 * Clean up gcc warnings (`ll' length modifier especially! Also inline & wrong
   signedness for lo_read/write)
-* Webpages should be UTF-8?
+* Test library?
 * autoconf
-* config file
-* Get all keys link for pathfinder? Or even just gpg command line to C&P.
 * logging framework so we can log debug/warning messages and so on. syslog?
-* Change over to PQescapeString in PostgreSQL backend once Woody releases.
 * Check freeing.
 * More comments.
-* Sort out merging (use onak + some Perl to answer incoming email. Not
-  sure about keys via hkp yet though - need to send updates out).
 * Look at db2 backend - is it db2's fault? (Well, deadlock in that the library
   probably is...). Is there an alternative library that would provide us with
-  similar features but be more reliable? gdbm?
-* Honor no-modify keyserver flag ("Brian M. Carlson" <karlsson@hal-pc.org>)
+  similar features but be more reliable? gdbm? Jason Harris suggests db3/4.
