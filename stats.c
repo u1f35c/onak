@@ -165,18 +165,18 @@ void dofindpath(uint64_t have, uint64_t want, bool html)
 		while (curkey != NULL && curkey->keyid != 0) {
 			uid = keyid2uid(curkey->keyid);
 			if (html && uid == NULL) {
-				printf("<a href=\"lookup?op=get&search=%llX\">"
-					"0x%08llX</a> ([User id not found])%s"
-					"<BR>\n",
+				printf("<a href=\"lookup?op=get&search="
+					"0x%08llX\">0x%08llX</a> ([User id"
+					" not found])%s<BR>\n",
 					curkey->keyid & 0xFFFFFFFF,
 					curkey->keyid & 0xFFFFFFFF,
 					(curkey->keyid == want) ? "" :
 					 " signs");
 			} else if (html && uid != NULL) {
-				printf("<a href=\"lookup?op=get&search=%llX\">"
-					"0x%08llX</a>"
+				printf("<a href=\"lookup?op=get&search="
+					"0x%08llX\">0x%08llX</a>"
 					" (<a href=\"lookup?op=vindex"
-					"&search=0x%llX\">%s</a>)%s<BR>\n",
+					"&search=0x0x%08llX\">%s</a>)%s<BR>\n",
 					curkey->keyid & 0xFFFFFFFF,
 					curkey->keyid & 0xFFFFFFFF,
 					curkey->keyid & 0xFFFFFFFF,
