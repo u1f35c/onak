@@ -485,15 +485,6 @@ int fetch_key_text(const char *search,
 	return addedkeys;
 }
 
-/*
- *	dumpdb - dump the key database
- *	@filenamebase: The base filename to use for the dump.
- */
-int dumpdb(char *filenamebase)
-{
-	return 0;
-}
-
 uint64_t getfullkeyid(uint64_t keyid)
 {
 	static char buffer[PATH_MAX];

@@ -8,10 +8,13 @@
  * Copyright 2002 Project Purple
  */
 
+#include <fcntl.h>
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "armor.h"
@@ -54,6 +57,41 @@ void find_keys(char *search, uint64_t keyid, bool ishex,
 	}
 }
 
+struct dump_ctx {
+	int count;
+	int maxcount;
+	int fd;
+	int filenum;
+	char *filebase;
+};
+
+void dump_func(void *ctx, struct openpgp_publickey *key)
+{
+	struct openpgp_packet_list *packets = NULL;
+	struct openpgp_packet_list *list_end = NULL;
+	struct dump_ctx *state;
+	char filename[1024];
+
+	state = (struct dump_ctx *) ctx;
+
+	if (state->fd == -1 || state->count > state->maxcount) {
+		if (state->fd != -1) {
+			close(state->fd);
+			state->fd = -1;
+		}
+		snprintf(filename, 1023, state->filebase, state->filenum);
+		state->fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0640);
+		state->filenum++;
+		state->count = 0;
+	}
+	flatten_publickey(key, &packets, &list_end);
+	write_openpgp_stream(file_putchar, &state->fd, packets);
+	free_packet_list(packets);
+	packets = list_end = NULL;
+
+	return;
+}
+
 void usage(void) {
 	puts("onak " PACKAGE_VERSION " - an OpenPGP keyserver.\n");
 	puts("Usage:\n");
@@ -91,6 +129,7 @@ int main(int argc, char *argv[])
 	bool				 binary = false;
 	bool				 fingerprint = false;
 	int				 optchar;
+	struct dump_ctx                  dumpstate;
 
 	while ((optchar = getopt(argc, argv, "bc:fuv")) != -1 ) {
 		switch (optchar) {
@@ -121,7 +160,15 @@ int main(int argc, char *argv[])
 		usage();
 	} else if (!strcmp("dump", argv[optind])) {
 		initdb(true);
-		dumpdb("keydump");
+		dumpstate.count = dumpstate.filenum = 0;
+		dumpstate.maxcount = 1000000;
+		dumpstate.fd = -1;
+		dumpstate.filebase = "keydump.%d.pgp";
+		iterate_keys(dump_func, &dumpstate);
+		if (dumpstate.fd != -1) {
+			close(dumpstate.fd);
+			dumpstate.fd = -1;
+		}
 		cleanupdb();
 	} else if (!strcmp("add", argv[optind])) {
 		if (binary) {

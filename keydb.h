@@ -152,18 +152,6 @@ struct ll *cached_getkeysigs(uint64_t keyid);
 uint64_t getfullkeyid(uint64_t keyid);
 
 /**
- *	dumpdb - dump the key database
- *	@filenamebase: The base filename to use for the dump.
- *
- *	Dumps the database into one or more files, which contain pure OpenPGP
- *	that can be reimported into onak or gpg. filenamebase provides a base
- *	file name for the dump; several files may be created, all of which will
- *	begin with this string and then have a unique number and a .pgp
- *	extension.
- */
-int dumpdb(char *filenamebase);
-
-/**
  *	iterate_keys - call a function once for each key in the db.
  *	@iterfunc: The function to call.
  *	@ctx: A context pointer

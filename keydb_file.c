@@ -228,22 +228,6 @@ int iterate_keys(void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
 	return numkeys;
 }
 
-
-/**
- *	dumpdb - dump the key database
- *	@filenamebase: The base filename to use for the dump.
- *
- *	Dumps the database into one or more files, which contain pure OpenPGP
- *	that can be reimported into onak or gpg. filenamebase provides a base
- *	file name for the dump; several files may be created, all of which will
- *	begin with this string and then have a unique number and a .pgp
- *	extension.
- *          */
-int dumpdb(char *filenamebase)
-{
-	return 0;
-}
-
 /*
  * Include the basic keydb routines.
  */
