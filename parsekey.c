@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: parsekey.c,v 1.15 2003/10/03 23:24:16 noodles Exp $
+ * $Id: parsekey.c,v 1.16 2003/10/04 10:21:40 noodles Exp $
  */
 
 #include <assert.h>
@@ -20,20 +20,6 @@
 #include "log.h"
 #include "mem.h"
 #include "parsekey.h"
-
-/**
- *	add_key - Takes a key and adds it to the keyserver.
- *	@key: The public key to add.
- *
- *	This function takes a public key and adds it to the keyserver.
- *	It first of all sees if we already have the key locally. If we do then
- *	we retrieve it and merge the two keys. We then store the resulting key
- *	(or just the original we received if we don't already have it). We then
- *	send out the appropriate updates to our keyserver peers.
- */
-int add_key(struct openpgp_publickey *key) {
-	return 0;
-}
 
 /**
  *	parse_keys - Process a stream of packets for public keys + sigs.
@@ -175,7 +161,6 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 				int maxnum)
 {
 	unsigned char			 curchar = 0;
-	unsigned long			 count = 0;
 	struct openpgp_packet_list	*curpacket = NULL;
 	int				 rc = 0;
 	int				 keys = 0;
@@ -197,7 +182,6 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 			 * allocate memory for it.
 			 */
 			inpacket = true;
-			count = 0;
 			if (curpacket != NULL) {
 				curpacket->next = malloc(sizeof (*curpacket));
 				curpacket = curpacket->next;

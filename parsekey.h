@@ -5,25 +5,13 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: parsekey.h,v 1.5 2003/09/30 20:40:11 noodles Exp $
+ * $Id: parsekey.h,v 1.6 2003/10/04 10:21:40 noodles Exp $
  */
 
 #ifndef __PARSEKEY_H__
 #define __PARSEKEY_H__
 
 #include "keystructs.h"
-
-/**
- *	add_key - Takes a key and adds it to the keyserver.
- *	@key: The public key to add.
- *
- *	This function takes a public key and adds it to the keyserver.
- *	It first of all sees if we already have the key locally. If we do then
- *	we retrieve it and merge the two keys. We then store the resulting key
- *	(or just the original we received if we don't already have it). We then
- *	send out the appropriate updates to our keyserver peers.
- */
-int add_key(struct openpgp_publickey *key);
 
 /**
  *	parse_keys - Process a stream of packets for public keys + sigs.

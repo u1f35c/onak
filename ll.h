@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: ll.h,v 1.3 2003/06/04 20:57:10 noodles Exp $
+ * $Id: ll.h,v 1.4 2003/10/04 10:21:41 noodles Exp $
  */
 
 #ifndef __LL_H__
@@ -93,7 +93,6 @@ unsigned long llsize(struct ll *curll);
  * 	objectfree then it's called for each element to free them, if it's NULL
  * 	just the list is freed.
  */
-struct ll *llfree(struct ll *curll,
-	void (*objectfree) (void *object));
+void llfree(struct ll *curll, void (*objectfree) (void *object));
 
 #endif /* __LL_H__ */

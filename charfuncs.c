@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: charfuncs.c,v 1.3 2003/09/30 17:15:39 noodles Exp $
+ * $Id: charfuncs.c,v 1.4 2003/10/04 10:21:40 noodles Exp $
  */
 
 #include <stdio.h>
@@ -24,7 +24,7 @@
 int buffer_fetchchar(void *ctx, size_t count, unsigned char *c)
 {
 	struct buffer_ctx *buf = NULL;
-	int i;
+	size_t i;
 	
 	buf = (struct buffer_ctx *) ctx;
 	for (i = 0; i < count; i++) {
@@ -48,7 +48,7 @@ int buffer_putchar(void *ctx, size_t count, unsigned char *c)
 {
 	struct buffer_ctx *buf = NULL;
 	size_t newsize = 0;
-	int i;
+	size_t i;
 	
 	buf = (struct buffer_ctx *) ctx;
 
@@ -88,16 +88,7 @@ int file_putchar(void *fd, size_t count, unsigned char *c)
  */
 int stdin_getchar(void *ctx, size_t count, unsigned char *c)
 {
-	int ic = 0;
-
-	while ((count > 0) && (ic != EOF)) {
-		ic = getchar();
-		*c = ic;
-		c++;
-		count--;
-	}
-
-	return (ic == EOF);
+	return (fread(c, 1, count, stdin) != count);
 }
 
 /**
@@ -105,10 +96,5 @@ int stdin_getchar(void *ctx, size_t count, unsigned char *c)
  */
 int stdout_putchar(void *ctx, size_t count, unsigned char *c)
 {
-	int i;
-
-	for (i = 0; i < count; i++) {
-		putchar(c[i]);
-	}
-	return 0;
+	return (fwrite(c, 1, count, stdout) != count);
 }

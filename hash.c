@@ -5,7 +5,7 @@
  *
  * Copyright 2000-2002 Project Purple
  *
- * $Id: hash.c,v 1.8 2003/06/04 20:57:08 noodles Exp $
+ * $Id: hash.c,v 1.9 2003/10/04 10:21:40 noodles Exp $
  */
 
 #include <stdio.h>
@@ -57,7 +57,7 @@ void destroyhash(void)
 		 * TODO: The problem is the object has pointers that
 		 * need freed too.
 		 */
-		llfree(curll, free_statskey);
+		llfree(curll, (void (*)(void *)) free_statskey);
 		hashtable[i] = NULL;
 	}
 	elements = 0;

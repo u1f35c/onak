@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  *
- * $Id: bithelp.h,v 1.3 2003/06/04 20:57:07 noodles Exp $
+ * $Id: bithelp.h,v 1.4 2003/10/04 10:21:40 noodles Exp $
  */
 
 #ifndef __BITHELP_H__
@@ -28,7 +28,7 @@
  *	@x: The integer to rotate.
  *	@n: The number of bytes to rotate it by.
  */
-static inline unsigned int rol(int x, int n)
+static inline unsigned int rol(unsigned int x, int n)
 {
 	__asm__("roll %%cl,%0"
 		:"=r" (x)

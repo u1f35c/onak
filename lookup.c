@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: lookup.c,v 1.10 2003/06/07 13:45:34 noodles Exp $
+ * $Id: lookup.c,v 1.11 2003/10/04 10:21:41 noodles Exp $
  */
 
 #include <inttypes.h>
@@ -16,6 +16,7 @@
 #include <unistd.h>
 
 #include "armor.h"
+#include "charfuncs.h"
 #include "getcgi.h"
 #include "keydb.h"
 #include "keyindex.h"
@@ -28,11 +29,6 @@
 #define OP_GET     1
 #define OP_INDEX   2
 #define OP_VINDEX  3
-
-int putnextchar(void *ctx, size_t count, unsigned char *c)
-{
-	return printf("%.*s", (int) count, c);
-}
 
 void find_keys(char *search, uint64_t keyid, bool ishex,
 		bool fingerprint, bool exact, bool verbose, bool mrhkp)
@@ -160,7 +156,7 @@ int main(int argc, char *argv[])
 				flatten_publickey(publickey,
 							&packets,
 							&list_end);
-				armor_openpgp_stream(putnextchar,
+				armor_openpgp_stream(stdout_putchar,
 						NULL,
 						packets);
 				puts("</pre>");

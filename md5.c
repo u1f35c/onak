@@ -18,7 +18,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: md5.c,v 1.2 2003/06/04 20:57:10 noodles Exp $
+ * $Id: md5.c,v 1.3 2003/10/04 10:21:41 noodles Exp $
  */
 /* Written by Ulrich Drepper <drepper@gnu.ai.mit.edu>, 1995.  */
 /* heavily modified for GnuPG by <werner.koch@guug.de> */
@@ -36,8 +36,8 @@
 void md5_init( MD5_CONTEXT *ctx )
 {
     ctx->A = 0x67452301;
-    ctx->B = 0xefcdab89;
-    ctx->C = 0x98badcfe;
+    ctx->B = 0xefcdab89U;
+    ctx->C = 0x98badcfeU;
     ctx->D = 0x10325476;
 
     ctx->nblocks = 0;

@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: charfuncs.h,v 1.3 2003/09/30 17:15:39 noodles Exp $
+ * $Id: charfuncs.h,v 1.4 2003/10/04 10:21:40 noodles Exp $
  */
 
 #ifndef __CHARFUNCS_H__
@@ -21,8 +21,8 @@
  */
 struct buffer_ctx {
 	char *buffer;
-	int offset;
-	int size;
+	size_t offset;
+	size_t size;
 };
 
 /**

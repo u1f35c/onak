@@ -4,22 +4,12 @@
 #include <unistd.h>
 
 #include "armor.h"
+#include "charfuncs.h"
 #include "keydb.h"
 #include "keyid.h"
 #include "keyindex.h"
 #include "keystructs.h"
 #include "parsekey.h"
-
-int getnextchar(void *ctx, size_t count, unsigned char *c)
-{
-        return (!read(0, c, count));
-}
-
-int putnextchar(void *ctx, size_t count, unsigned char *c)
-{
-        return (!write(1, c, count));
-}
-
 
 int main(int argc, char *argv[])
 {
@@ -35,9 +25,9 @@ int main(int argc, char *argv[])
 	read_openpgp_stream(getnextchar, ctx, &packets, 0);
 */
 	fputs("Doing dearmor_openpgp_stream():\n", stderr);
-	dearmor_openpgp_stream(getnextchar, NULL, &packets);
+	dearmor_openpgp_stream(stdin_getchar, NULL, &packets);
 	fputs("Doing armor_openpgp_stream():\n", stderr);
-	armor_openpgp_stream(putnextchar, NULL, packets);
+	armor_openpgp_stream(stdout_putchar, NULL, packets);
 
 /*
 	fputs("Doing parse_keys():\n", stderr);
