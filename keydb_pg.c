@@ -20,6 +20,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "hash.h"
 #include "keydb.h"
 #include "keyid.h"
 #include "keyindex.h"
@@ -259,14 +260,15 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
  *	Again we just use the hex representation of the keyid as the filename
  *	to store the key to. We flatten the public key to a list of OpenPGP
  *	packets and then use write_openpgp_stream() to write the stream out to
- *	the file. If update is true then we delete the old key first, otherwise we
- *	trust that it doesn't exist.
+ *	the file. If update is true then we delete the old key first, otherwise
+ *	we trust that it doesn't exist.
  */
 int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 {
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_packet_list *list_end = NULL;
 	struct openpgp_publickey *next = NULL;
+	struct openpgp_signedpacket_list *curuid = NULL;
 	PGresult *result = NULL;
 	char statement[1024];
 	Oid key_oid;
@@ -360,6 +362,19 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 		uids = NULL;
 	}
 
+	for (curuid = publickey->uids; curuid != NULL; curuid = curuid->next) {
+		for (packets = curuid->sigs; packets != NULL; 
+				packets = packets->next) {
+			snprintf(statement, 1023,
+				"INSERT INTO onak_sigs (signer, signee) "
+				"VALUES	('%llX', '%llX')",
+				sig_keyid(packets->packet),
+				get_keyid(publickey));
+			result = PQexec(dbconn, statement);
+			PQclear(result);
+		}
+	}
+
 	if (!intrans) {
 		result = PQexec(dbconn, "COMMIT");
 		PQclear(result);
@@ -408,6 +423,12 @@ int delete_key(uint64_t keyid, bool intrans)
 
 		snprintf(statement, 1023,
 			"DELETE FROM onak_keys WHERE keyid = '%llX'",
+			keyid);
+		result = PQexec(dbconn, statement);
+		PQclear(result);
+
+		snprintf(statement, 1023,
+			"DELETE FROM onak_sigs WHERE signee = '%llX'",
 			keyid);
 		result = PQexec(dbconn, statement);
 		PQclear(result);
@@ -465,9 +486,54 @@ char *keyid2uid(uint64_t keyid)
 	return uid;
 }
 
+/**
+ *	getkeysigs - Gets a linked list of the signatures on a key.
+ *	@keyid: The keyid to get the sigs for.
+ *
+ *	This function gets the list of signatures on a key. Used for key 
+ *	indexing and doing stats bits.
+ */
+struct ll *getkeysigs(uint64_t keyid)
+{
+	struct ll *sigs = NULL;
+	PGresult *result = NULL;
+	uint64_t signer;
+	char statement[1024];
+	int i = 0;
+	int numsigs = 0;
+	bool intrans = false;
+
+	if (!intrans) {
+		result = PQexec(dbconn, "BEGIN");
+		PQclear(result);
+	}
+
+	snprintf(statement, 1023,
+		"SELECT signer FROM onak_sigs WHERE signee = '%llX'",
+		keyid);
+	result = PQexec(dbconn, statement);
+
+	if (PQresultStatus(result) == PGRES_TUPLES_OK) {
+		numsigs = PQntuples(result);
+		for (i = 0; i < numsigs;  i++) {
+			signer = strtol(PQgetvalue(result, i, 0), NULL, 16);
+			sigs = lladd(sigs, createandaddtohash(signer));
+		}
+	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+		fprintf(stderr, "Problem retrieving key from DB.\n");
+	}
+
+	PQclear(result);
+
+	if (!intrans) {
+		result = PQexec(dbconn, "COMMIT");
+		PQclear(result);
+	}
+	return sigs;
+}
+
 /*
  * Include the basic keydb routines.
  */
-#define NEED_GETKEYSIGS 1
 #define NEED_GETFULLKEYID 1
 #include "keydb.c"
