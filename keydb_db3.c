@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb_db3.c,v 1.24 2004/03/28 21:27:03 noodles Exp $
+ * $Id: keydb_db3.c,v 1.25 2004/05/26 17:46:21 noodles Exp $
  */
 
 #include <assert.h>
@@ -201,7 +201,7 @@ void initdb(bool readonly)
 		snprintf(buf, 1023, "keydb.%d.db", i);
 		flags = DB_CREATE;
 		if (readonly) {
-			flags |= DB_RDONLY;
+			flags = DB_RDONLY;
 		}
 		ret = dbconns[i]->open(dbconns[i], buf,
 			NULL,
