@@ -224,17 +224,25 @@ void cleanupdb(void)
 {
 	int i = 0;
 
-	dbenv->txn_checkpoint(dbenv, 0, 0, 0);
-	id32db->close(id32db, 0);
-	id32db = NULL;
-	worddb->close(worddb, 0);
-	worddb = NULL;
-	for (i = 0; i < numdbs; i++) {
-		dbconns[i]->close(dbconns[i], 0);
-		dbconns[i] = NULL;
+	if (dbenv != NULL) {
+		dbenv->txn_checkpoint(dbenv, 0, 0, 0);
+		if (id32db != NULL) {
+			id32db->close(id32db, 0);
+			id32db = NULL;
+		}
+		if (worddb != NULL) {
+			worddb->close(worddb, 0);
+			worddb = NULL;
+		}
+		for (i = 0; i < numdbs; i++) {
+			if (dbconns[i] != NULL) {
+				dbconns[i]->close(dbconns[i], 0);
+				dbconns[i] = NULL;
+			}
+		}
+		dbenv->close(dbenv, 0);
+		dbenv = NULL;
 	}
-	dbenv->close(dbenv, 0);
-	dbenv = NULL;
 }
 
 /**
