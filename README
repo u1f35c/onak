@@ -1,5 +1,5 @@
-onak 0.2.1
-Copyright 2003 Project Purple. Written by Jonathan McDowell
+onak 0.3.0
+Copyright 2003-2004 Project Purple. Written by Jonathan McDowell
 http://www.earth.li/projectpurple/progs/onak.html
 
 
@@ -18,12 +18,13 @@ replacement for pksd, which I was running (and still am).
 Installation:
 
 onak has been mainly developed under Linux with a bit of work on FreeBSD
-at times also. It's i386 specific at present thanks to the bit of
-assembly in bithelp.h. Feel free to submit a patch for your arch. :)
+at times also. It should run on all architectures, but has only been
+tested on i386 and PowerPC so far.
 
-Typing "make" should produce a version of onak with support for the DB3
-backend. If you want to choose a different backend (see below for a
-discussion about the options) you'll need to edit the Makefile first.
+Typing "./configure && make" should produce a version of onak with
+support for the DB4 backend. If you want to choose a different backend
+(see below for a discussion about the options) you'll need to pass the
+appropriate option to ./configure.
 
 Once make has completed you'll end up with various binaries:
 
@@ -79,11 +80,17 @@ Currently there is support for 4 different database backends:
   keyid - no key updating or searching by key test. Found to be
   tempramental and prone to deadlock in the db2 library.
 
-* db3 (Berkeley libdb3)
+* db4 (Berkeley libdb4)
   The currently preferred backend. Supports the full range of functions
   like the pg backend but is considerably faster. Also easier to setup
-  assuming you have libdb3 installed; there's no need to have an SQL
+  assuming you have libdb4 installed; there's no need to have an SQL
   database running and configured.
+
+* fs (file backend)
+  A fuller featured file based backend. Doesn't need any external
+  libraries and supports the full range of operations (such as text and
+  subkey searching). Needs a good filesystem to get good performance
+  though as it creates many, many files and links.
 
 
 Other keyservers:
