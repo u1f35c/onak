@@ -5,7 +5,7 @@
  * 
  * Copyright 2003 Project Purple
  *
- * $Id: splitkeys.c,v 1.1 2003/09/30 21:16:14 noodles Exp $
+ * $Id: splitkeys.c,v 1.2 2003/10/03 23:03:02 noodles Exp $
  */
 
 #include <fcntl.h>
@@ -16,7 +16,9 @@
 
 #include "charfuncs.h"
 #include "keystructs.h"
+#include "log.h"
 #include "mem.h"
+#include "onak-conf.h"
 #include "parsekey.h"
 
 int main(int argc, char *argv[])
@@ -36,9 +38,12 @@ int main(int argc, char *argv[])
 			fprintf(stderr,
 				"Couldn't parse %s as a number of keys!\n",
 				argv[1]);
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
+
+	readconfig();
+	initlogthing("splitkeys", config.logfile);
 
 	do {
 		result = read_openpgp_stream(stdin_getchar, NULL,
@@ -64,6 +69,9 @@ int main(int argc, char *argv[])
 			count++;
 		}
 	} while (packets != NULL);
+
+	cleanuplogthing();
+	cleanupconfig();
 
 	return 0;
 }
