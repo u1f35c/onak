@@ -206,34 +206,22 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
 	int i = 0;
 	int numkeys = 0;
 	Oid key_oid;
-	char *dodgychar = NULL;
+	char *newsearch = NULL;
 
 	result = PQexec(dbconn, "BEGIN");
 	PQclear(result);
 
-	/*
-	 * TODO: We really want to use PQescapeString, but this isn't supported
-	 * by the version of Postgresql in Debian Stable. Roll on Woody and for
-	 * now kludge it.
-	 */
-	dodgychar = strchr(search, '\'');
-	while (dodgychar != NULL) {
-		*dodgychar = ' ';
-		dodgychar = strchr(search, '\'');
-	}
-	dodgychar = strchr(search, '\\');
-	while (dodgychar != NULL) {
-		*dodgychar = ' ';
-		dodgychar = strchr(search, '\\');
-	}
-
-	
+	newsearch = malloc(strlen(search) * 2 + 1);
+	memset(newsearch, 0, strlen(search) * 2 + 1);
+	PQescapeString(newsearch, search, strlen(search));
 	snprintf(statement, 1023,
 			"SELECT DISTINCT onak_keys.keydata FROM onak_keys, "
 			"onak_uids WHERE onak_keys.keyid = onak_uids.keyid "
 			"AND onak_uids.uid LIKE '%%%s%%'",
-			search);
+			newsearch);
 	result = PQexec(dbconn, statement);
+	free(newsearch);
+	newsearch = NULL;
 
 	if (PQresultStatus(result) == PGRES_TUPLES_OK) {
 		numkeys = PQntuples(result);
@@ -285,7 +273,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 	int fd;
 	char **uids = NULL;
 	char *primary = NULL;
-	char *dodgychar = NULL;
+	char *safeuid = NULL;
 	int i;
 
 	if (!intrans) {
@@ -335,29 +323,28 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 	uids = keyuids(publickey, &primary);
 	if (uids != NULL) {
 		for (i = 0; uids[i] != NULL; i++) {
-			/*
-			 * TODO: We really want to use PQescapeString, but this
-			 * isn't supported by the version of Postgresql in
-			 * Debian Stable. Roll on Woody and for now kludge it.
-			 */
-			dodgychar = strchr(uids[i], '\'');
-			while (dodgychar != NULL) {
-				*dodgychar = ' ';
-				dodgychar = strchr(uids[i], '\'');
-			}
-			dodgychar = strchr(uids[i], '\\');
-				while (dodgychar != NULL) {
-				*dodgychar = ' ';
-				dodgychar = strchr(uids[i], '\\');
-			}
+			safeuid = malloc(strlen(uids[i]) * 2 + 1);
+			if (safeuid != NULL) {
+				memset(safeuid, 0, strlen(uids[i]) * 2 + 1);
+				PQescapeString(safeuid, uids[i],
+						strlen(uids[i]));
 
-			snprintf(statement, 1023,
-				"INSERT INTO onak_uids (keyid, uid, pri) "
-				"VALUES	('%llX', '%s', '%c')",
-				get_keyid(publickey),
-				uids[i],
-				(uids[i] == primary) ? 't' : 'f');
-			result = PQexec(dbconn, statement);
+				snprintf(statement, 1023,
+					"INSERT INTO onak_uids "
+					"(keyid, uid, pri) "
+					"VALUES	('%llX', '%s', '%c')",
+					get_keyid(publickey),
+					safeuid,
+					(uids[i] == primary) ? 't' : 'f');
+				result = PQexec(dbconn, statement);
+
+				free(safeuid);
+				safeuid = NULL;
+			}
+			if (uids[i] != NULL) {
+				free(uids[i]);
+				uids[i] = NULL;
+			}
 
 			if (PQresultStatus(result) != PGRES_COMMAND_OK) {
 				fprintf(stderr, "Problem storing key in DB.\n");
@@ -369,6 +356,8 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 			 */
 			PQclear(result);
 		}
+		free(uids);
+		uids = NULL;
 	}
 
 	if (!intrans) {
