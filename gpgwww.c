@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 	initlogthing("gpgwww", config.logfile);
 	initdb();
 	inithash();
-	dofindpath(from, to, true);
+	dofindpath(from, to, true, 3);
 	destroyhash();
 	cleanupdb();
 	cleanuplogthing();

@@ -74,7 +74,8 @@ unsigned long findpath(struct stats_key *have, struct stats_key *want)
 			 * Check if we've seen this key before and if not mark
 			 * it and add its sigs to the list we want to look at.
 			 */
-			if (((struct stats_key *)sigs->object)->colour == 0) {
+			if (!((struct stats_key *)sigs->object)->disabled &&
+			    ((struct stats_key *)sigs->object)->colour == 0) {
 				count++;
 				((struct stats_key *)sigs->object)->colour =
 					curdegree;
@@ -111,16 +112,18 @@ unsigned long findpath(struct stats_key *have, struct stats_key *want)
  *	@have: The key we have.
  *	@want: The key we want to get to.
  *	@html: Should we output in html.
+ *	@count: How many paths we should look for.
  *
  *	This does a breadth first search on the key tree, starting with the
  *	key we have. It returns as soon as a path is found or when we run out
  *	of keys; whichever comes sooner.
  */
-void dofindpath(uint64_t have, uint64_t want, bool html)
+void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 {
 	struct stats_key *keyinfoa, *keyinfob, *curkey;
 	uint64_t fullhave, fullwant;
 	int rec;
+	int pathnum;
 	char *uid;
 
 	fullhave = getfullkeyid(have);
@@ -140,81 +143,94 @@ void dofindpath(uint64_t have, uint64_t want, bool html)
 		printf("Couldn't find key 0x%llX.\n", want);
 		return;
 	}
-	
-	/*
-	 * Fill the tree info up.
-	 */
-	initcolour(true);
-	rec = findpath(keyinfoa, keyinfob);
-	keyinfob->parent = 0;
 
-	printf("%d nodes examined. %ld elements in the hash%s\n", rec,
+	pathnum = 0;
+	
+	while (pathnum < count) {
+		/*
+		 * Fill the tree info up.
+		 */
+		initcolour(true);
+		rec = findpath(keyinfoa, keyinfob);
+		keyinfob->parent = 0;
+
+		printf("%s%d nodes examined. %ld elements in the hash%s\n",
+			html ? "<HR>" : "",
+			rec,
 			hashelements(),
 			html ? "<BR>" : "");
-	if (keyinfoa->colour == 0) {
-		printf("Can't find a link from 0x%08llX to 0x%08llX%s\n",
+		if (keyinfoa->colour == 0) {
+			printf("Can't find a link from 0x%08llX to 0x%08llX"
+				"%s\n",
 				have,
 				want,
 				html ? "<BR>" : "");
-	} else {
-		printf("%d steps from 0x%08llX to 0x%08llX%s\n",
+		} else {
+			printf("%d steps from 0x%08llX to 0x%08llX%s\n",
 				keyinfoa->colour, have & 0xFFFFFFFF,
 				want & 0xFFFFFFFF,
 				html ? "<BR>" : "");
-		curkey = keyinfoa;
-		while (curkey != NULL && curkey->keyid != 0) {
-			uid = keyid2uid(curkey->keyid);
-			if (html && uid == NULL) {
-				printf("<a href=\"lookup?op=get&search="
-					"0x%08llX\">0x%08llX</a> ([User id"
-					" not found])%s<BR>\n",
-					curkey->keyid & 0xFFFFFFFF,
-					curkey->keyid & 0xFFFFFFFF,
-					(curkey->keyid == fullwant) ? "" :
-					 " signs");
-			} else if (html && uid != NULL) {
-				printf("<a href=\"lookup?op=get&search="
-					"0x%08llX\">0x%08llX</a>"
-					" (<a href=\"lookup?op=vindex"
-					"&search=0x%08llX\">%s</a>)%s<BR>\n",
-					curkey->keyid & 0xFFFFFFFF,
-					curkey->keyid & 0xFFFFFFFF,
-					curkey->keyid & 0xFFFFFFFF,
-					txt2html(uid),
-					(curkey->keyid == fullwant) ? "" :
-					 " signs");
+			curkey = keyinfoa;
+			while (curkey != NULL && curkey->keyid != 0) {
+				uid = keyid2uid(curkey->keyid);
+				if (html && uid == NULL) {
+					printf("<a href=\"lookup?op=get&search="
+						"0x%08llX\">0x%08llX</a> (["
+						"User id not found])%s<BR>\n",
+						curkey->keyid & 0xFFFFFFFF,
+						curkey->keyid & 0xFFFFFFFF,
+						(curkey->keyid == fullwant) ?
+							"" : " signs");
+				} else if (html && uid != NULL) {
+					printf("<a href=\"lookup?op=get&search="
+						"0x%08llX\">0x%08llX</a>"
+						" (<a href=\"lookup?op=vindex&"
+						"search=0x%08llX\">%s</a>)%s"
+						"<BR>\n",
+						curkey->keyid & 0xFFFFFFFF,
+						curkey->keyid & 0xFFFFFFFF,
+						curkey->keyid & 0xFFFFFFFF,
+						txt2html(uid),
+						(curkey->keyid == fullwant) ?
+						"" : " signs");
+				} else {
+					printf("0x%08llX (%s)%s\n",
+						curkey->keyid & 0xFFFFFFFF,
+						(uid == NULL) ?
+							"[User id not found]" :
+							uid,
+						(curkey->keyid == fullwant) ?
+						"" : " signs");
+				}
+				if (uid != NULL) {
+					free(uid);
+					uid = NULL;
+				}
+				if (curkey != keyinfoa && curkey != keyinfob) {
+					curkey->disabled = true;
+				}
+				curkey = findinhash(curkey->parent);
+			}
+			if (html) {
+				puts("<P>List of key ids in path:</P>");
 			} else {
-				printf("0x%08llX (%s)%s\n",
-					curkey->keyid & 0xFFFFFFFF,
-					(uid == NULL) ? "[User id not found]" :
-						uid,
-					(curkey->keyid == fullwant) ? "" :
-					 " signs");
+				puts("List of key ids in path:");
 			}
-			if (uid != NULL) {
-				free(uid);
-				uid = NULL;
+			curkey = keyinfoa;
+			while (curkey != NULL && curkey->keyid != 0) {
+				printf("0x%08llX ", curkey->keyid & 0xFFFFFFFF);
+				curkey = findinhash(curkey->parent);
 			}
-			curkey = findinhash(curkey->parent);
-		}
-		if (html) {
-			puts("<P>List of key ids in path:</P>");
-		} else {
-			puts("List of key ids in path:");
-		}
-		curkey = keyinfoa;
-		while (curkey != NULL && curkey->keyid != 0) {
-			printf("0x%08llX ", curkey->keyid & 0xFFFFFFFF);
-			curkey = findinhash(curkey->parent);
-		}
-		putchar('\n');
-		if (html) {
-			printf("<BR>"
-				"<A HREF=\"gpgwww?from=0x%08llX&to=0x%08llX\">"
+			putchar('\n');
+			if (html) {
+				printf("<BR><A HREF=\"gpgwww?from=0x%08llX&"
+					"to=0x%08llX\">"
 					"Find reverse path</A>\n",
 					want,
 					have);
+			}
 		}
+		pathnum++;
 	}
 }
 

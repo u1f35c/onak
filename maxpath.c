@@ -64,7 +64,7 @@ void findmaxpath(unsigned long max)
 			from->keyid,
 			to->keyid,
 			distance);
-	dofindpath(to->keyid, from->keyid, false);
+	dofindpath(to->keyid, from->keyid, false, 1);
 }
 
 int main(int argc, char *argv[])

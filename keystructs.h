@@ -95,6 +95,7 @@ struct stats_key {
 	uint64_t parent;
 	struct ll *sigs;
 	bool gotsigs;
+	bool disabled;
 };
 
 #endif /* __KEYSTRUCTS_H__ */

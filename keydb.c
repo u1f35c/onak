@@ -109,6 +109,7 @@ struct ll *cached_getkeysigs(uint64_t keyid)
 			key->parent = 0;
 			key->sigs = NULL;
 			key->gotsigs = false;
+			key->disabled = false;
 			addtohash(key);
 		} else {
 			perror("cached_getkeysigs()");
