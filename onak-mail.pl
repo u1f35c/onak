@@ -6,10 +6,11 @@
 # Copyright 2002 Project Purple
 # Released under the GPL.
 #
-# $Id: onak-mail.pl,v 1.8 2003/10/11 22:17:17 noodles Exp $
+# $Id: onak-mail.pl,v 1.9 2004/01/04 18:48:37 noodles Exp $
 #
 
 use strict;
+use Fcntl ':flock';
 use IPC::Open3;
 
 my %config;
@@ -38,6 +39,8 @@ sub readconfig {
 			$config{'mta'} = $1;
 		} elsif (/^pks_bin_dir (.*)/) {
 			$config{'pks_bin_dir'} = $1;
+		} elsif (/^db_dir (.*)/) {
+			$config{'db_dir'} = $1;
 		} elsif (/^syncsite (.*)/) {
 			push @{$config{'syncsites'}}, $1;
 		}
@@ -59,6 +62,10 @@ sub submitupdate {
 	my @data = @_;
 	my (@errors, @mergedata);
 
+	open(LOCKFILE, '>'.$config{'db_dir'}.'/onak-mail.lck');
+	flock(LOCKFILE, LOCK_EX);
+	print LOCKFILE "$$";
+
 	open3(\*MERGEIN, \*MERGEOUT, \*MERGEERR,
 		$config{'pks_bin_dir'}."/onak", "-u", "add");
 
@@ -68,6 +75,9 @@ sub submitupdate {
 	close MERGEOUT;
 	@errors = <MERGEERR>;
 	close MERGEERR;
+
+	flock(LOCKFILE, LOCK_UN);
+	close(LOCKFILE);
 
 	return @mergedata;
 }
