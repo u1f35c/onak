@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb_db3.c,v 1.23 2004/03/23 12:33:46 noodles Exp $
+ * $Id: keydb_db3.c,v 1.24 2004/03/28 21:27:03 noodles Exp $
  */
 
 #include <assert.h>
@@ -124,10 +124,11 @@ struct ll *makewordlist(struct ll *wordlist, char *word)
  */
 void initdb(bool readonly)
 {
-	char  buf[1024];
-	FILE *numdb = NULL;
-	int   ret = 0;
-	int   i = 0;
+	char       buf[1024];
+	FILE      *numdb = NULL;
+	int        ret = 0;
+	int        i = 0;
+	u_int32_t  flags = 0;
 
 	snprintf(buf, sizeof(buf) - 1, "%s/num_keydb", config.db_dir);
 	numdb = fopen(buf, "r");
@@ -136,7 +137,7 @@ void initdb(bool readonly)
 			numdbs = atoi(buf);
 		}
 		fclose(numdb);
-	} else {
+	} else if (!readonly) {
 		logthing(LOGTHING_ERROR, "Couldn't open num_keydb: %s",
 				strerror(errno));
 		numdb = fopen(buf, "w");
@@ -198,10 +199,14 @@ void initdb(bool readonly)
 		}
 
 		snprintf(buf, 1023, "keydb.%d.db", i);
+		flags = DB_CREATE;
+		if (readonly) {
+			flags |= DB_RDONLY;
+		}
 		ret = dbconns[i]->open(dbconns[i], buf,
 			NULL,
 			DB_HASH,
-			DB_CREATE,
+			flags,
 			0664);
 		if (ret != 0) {
 			logthing(LOGTHING_CRITICAL,
@@ -220,7 +225,7 @@ void initdb(bool readonly)
 	ret = worddb->set_flags(worddb, DB_DUP);
 
 	ret = worddb->open(worddb, "worddb", NULL, DB_BTREE,
-			DB_CREATE,
+			flags,
 			0664);
 	if (ret != 0) {
 		logthing(LOGTHING_CRITICAL,
