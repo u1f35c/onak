@@ -25,7 +25,6 @@
 
 int list_sigs(struct openpgp_packet_list *sigs, bool html)
 {
-	int length = 0;
 	char *uid = NULL;
 	uint64_t sigid = 0;
 
@@ -86,6 +85,61 @@ int list_uids(struct openpgp_signedpacket_list *uids, bool verbose, bool html)
 	return 0;
 }
 
+int list_subkeys(struct openpgp_signedpacket_list *subkeys, bool verbose,
+		bool html)
+{
+	struct tm	*created = NULL;
+	time_t		created_time = 0;
+	int	 	type = 0;
+	int	 	length = 0;
+
+	while (subkeys != NULL) {
+		if (subkeys->packet->tag == 14) {
+
+			created_time = (subkeys->packet->data[1] << 24) +
+					(subkeys->packet->data[2] << 16) +
+					(subkeys->packet->data[3] << 8) +
+					subkeys->packet->data[4];
+			created = gmtime(&created_time);
+
+			switch (subkeys->packet->data[0]) {
+			case 2:
+			case 3:
+				type = subkeys->packet->data[7];
+				length = (subkeys->packet->data[8] << 8) +
+					subkeys->packet->data[9];
+				break;
+			case 4:
+				type = subkeys->packet->data[5];
+				length = (subkeys->packet->data[6] << 8) +
+					subkeys->packet->data[7];
+				break;
+			default:
+				fprintf(stderr, "Unknown key type: %d\n",
+					subkeys->packet->data[0]);
+			}
+		
+			printf("sub  %5d%c/%08X %04d/%02d/%02d\n",
+				length,
+				(type == 1) ? 'R' : ((type == 16) ? 'g' : 
+					((type == 17) ? 'D' : '?')),
+				(uint32_t) (get_packetid(subkeys->packet) &
+					    0xFFFFFFFF),
+				created->tm_year + 1900,
+				created->tm_mon + 1,
+				created->tm_mday);
+
+		}
+		if (verbose) {
+			list_sigs(subkeys->sigs, html);
+		}
+		subkeys = subkeys->next;
+	}
+
+	return 0;
+}
+
+
 /**
  *	key_index - List a set of OpenPGP keys.
  *	@keys: The keys to display.
@@ -136,7 +190,8 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 		
 		printf("pub  %5d%c/%08X %04d/%02d/%02d ",
 			length,
-			(type == 1) ? 'R' : ((type == 17) ? 'D' : '?'),
+			(type == 1) ? 'R' : ((type == 16) ? 'g' : 
+				((type == 17) ? 'D' : '?')),
 			(uint32_t) (get_keyid(keys) & 0xFFFFFFFF),
 			created->tm_year + 1900,
 			created->tm_mon + 1,
@@ -157,8 +212,7 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 		}
 
 		list_uids(curuid, verbose, html);
-
-		//TODO: List subkeys.
+		list_subkeys(keys->subkeys, verbose, html);
 
 		keys = keys->next;
 	}

@@ -13,11 +13,21 @@
 #include "md5.h"
 #include "sha.h"
 
+
 /**
  *	get_keyid - Given a public key returns the keyid.
- *	@publickey: The key to calculate the fingerprint for.
+ *	@publickey: The key to calculate the id for.
  */
 uint64_t get_keyid(struct openpgp_publickey *publickey)
+{
+	return (get_packetid(publickey->publickey));
+}
+
+/**
+ *	get_packetid - Given a PGP packet returns the keyid.
+ *	@packet: The packet to calculate the id for.
+ */
+uint64_t get_packetid(struct openpgp_packet *packet)
 {
 	SHA1_CONTEXT sha_ctx;
 	uint64_t keyid = 0;
@@ -26,9 +36,9 @@ uint64_t get_keyid(struct openpgp_publickey *publickey)
 	unsigned char c;
 	unsigned char *buff = NULL;
 
-	assert(publickey != NULL);
+	assert(packet != NULL);
 
-	switch (publickey->publickey->data[0]) {
+	switch (packet->data[0]) {
 	case 2:
 	case 3:
 		/*
@@ -38,14 +48,14 @@ uint64_t get_keyid(struct openpgp_publickey *publickey)
 		 *
 		 * We need to ensure it's an RSA key.
 		 */
-		if (publickey->publickey->data[7] == 1) {
-			offset = (publickey->publickey->data[8] << 8) +
-				publickey->publickey->data[9];
+		if (packet->data[7] == 1) {
+			offset = (packet->data[8] << 8) +
+				packet->data[9];
 			offset = ((offset + 7) / 8) + 2;
 
 			for (keyid = 0, i = 0; i < 8; i++) {
 				keyid <<= 8;
-				keyid += publickey->publickey->data[offset++];
+				keyid += packet->data[offset++];
 			}
 		} else {
 			fputs("Type 2 or 3 key, but not RSA.\n", stderr);
@@ -65,12 +75,12 @@ uint64_t get_keyid(struct openpgp_publickey *publickey)
 		 */
 		c = 0x99;
 		sha1_write(&sha_ctx, &c, sizeof(c));
-		c = publickey->publickey->length >> 8;
+		c = packet->length >> 8;
 		sha1_write(&sha_ctx, &c, sizeof(c));
-		c = publickey->publickey->length & 0xFF;
+		c = packet->length & 0xFF;
 		sha1_write(&sha_ctx, &c, sizeof(c));
-		sha1_write(&sha_ctx, publickey->publickey->data,
-			publickey->publickey->length);
+		sha1_write(&sha_ctx, packet->data,
+			packet->length);
 		sha1_final(&sha_ctx);
 		buff = sha1_read(&sha_ctx);
 
@@ -84,7 +94,7 @@ uint64_t get_keyid(struct openpgp_publickey *publickey)
 		break;
 	default:
 		fprintf(stderr, "Unknown key type: %d\n",
-				publickey->publickey->data[0]);
+				packet->data[0]);
 	}
 
 	return keyid;
