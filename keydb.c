@@ -89,7 +89,7 @@ struct ll *getkeysigs(uint64_t keyid)
  *	@keyid: The 32bit keyid.
  *
  *	This function maps a 32bit key id to the full 64bit one. It returns the
- *	full keyid.
+ *	full keyid. If the key isn't found a keyid of 0 is returned.
  */
 uint64_t getfullkeyid(uint64_t keyid)
 {
@@ -97,8 +97,13 @@ uint64_t getfullkeyid(uint64_t keyid)
 
 	if (keyid < 0x100000000LL) {
 		fetch_key(keyid, &publickey, false);
-		keyid = get_keyid(publickey);
-		free_publickey(publickey);
+		if (publickey != NULL) {
+			keyid = get_keyid(publickey);
+			free_publickey(publickey);
+			publickey = NULL;
+		} else {
+			keyid = 0;
+		}
 	}
 	
 	return keyid;
