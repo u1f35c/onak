@@ -6,6 +6,7 @@
  * Copyright 2002 Project Purple
  */
 
+#include <assert.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <ctype.h>
@@ -28,6 +29,11 @@
 #include "parsekey.h"
 
 /**
+ *	dbenv - our database environment.
+ */
+static DB_ENV *dbenv = NULL;
+
+/**
  *	dbconn - our connection to the key database.
  */
 static DB *dbconn = NULL;
@@ -36,6 +42,11 @@ static DB *dbconn = NULL;
  *	worddb - our connection to the word database.
  */
 static DB *worddb = NULL;
+
+/**
+ *	txn - our current transaction id.
+ */
+static DB_TXN *txn = NULL;
 
 /**
  *	makewordlist - Takes a string and splits it into a set of unique words.
@@ -99,38 +110,50 @@ void initdb(void)
 	char buf[1024];
 	int ret = 0;
 
-	strcpy(buf, config.db_dir);
-	strcat(buf, "/keydb.db");
-	
-	ret = db_create(&dbconn, NULL, 0);
+	ret = db_env_create(&dbenv, 0);
+	if (ret != 0) {
+		fprintf(stderr, "db_env_create: %s\n", db_strerror(ret));
+		exit(1);
+	}
+
+	ret = dbenv->open(dbenv, config.db_dir,
+			DB_INIT_LOG | DB_INIT_MPOOL | DB_INIT_LOCK |
+			DB_INIT_TXN |
+			DB_RECOVER | DB_CREATE,
+			0);
+	if (ret != 0) {
+		dbenv->err(dbenv, ret, "%s", config.db_dir);
+		exit(1);
+	}
+
+	ret = db_create(&dbconn, dbenv, 0);
 	if (ret != 0) {
 		fprintf(stderr, "db_create: %s\n", db_strerror(ret));
 		exit(1);
 	}
 
-	ret = dbconn->open(dbconn, buf, NULL, DB_HASH,
+	ret = dbconn->open(dbconn, "keydb.db", 
+			NULL,
+			DB_HASH,
 			DB_CREATE,
 			0664);
 	if (ret != 0) {
-		dbconn->err(dbconn, ret, "%s", buf);
+		dbconn->err(dbconn, ret, "keydb.db");
 		exit(1);
 	}
 
-	strcpy(buf, config.db_dir);
-	strcat(buf, "/worddb");
-	
-	ret = db_create(&worddb, NULL, 0);
+	ret = db_create(&worddb, dbenv, 0);
 	if (ret != 0) {
 		fprintf(stderr, "db_create: %s\n", db_strerror(ret));
 		exit(1);
 	}
 	ret = worddb->set_flags(worddb, DB_DUP);
 
-	ret = worddb->open(worddb, buf, NULL, DB_BTREE,
+	ret = worddb->open(worddb, "worddb", NULL, DB_BTREE,
 			DB_CREATE,
 			0664);
 	if (ret != 0) {
-		worddb->err(worddb, ret, "%s", buf);
+		worddb->err(worddb, ret, "worddb");
 		exit(1);
 	}
 	
@@ -149,6 +172,8 @@ void cleanupdb(void)
 	worddb = NULL;
 	dbconn->close(dbconn, 0);
 	dbconn = NULL;
+	dbenv->close(dbenv, 0);
+	dbenv = NULL;
 }
 
 /**
@@ -160,6 +185,19 @@ void cleanupdb(void)
  */
 bool starttrans(void)
 {
+	int ret;
+
+	assert(txn == NULL);
+
+	ret = txn_begin(dbenv,
+		NULL, /* No parent transaction */
+		&txn,
+		0);
+	if (ret != 0) {
+		dbenv->err(dbenv, ret, "starttrans():");
+		exit(1);
+	}
+
 	return true;
 }
 
@@ -170,6 +208,18 @@ bool starttrans(void)
  */
 void endtrans(void)
 {
+	int ret;
+
+	assert(txn != NULL);
+
+	ret = txn_commit(txn,
+		0);
+	if (ret != 0) {
+		dbenv->err(dbenv, ret, "endtrans():");
+		exit(1);
+	}
+	txn = NULL;
+
 	return;
 }
 
@@ -204,8 +254,12 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 	key.data = &keyid;
 	keyid &= 0xFFFFFFFF;
 
+	if (!intrans) {
+		starttrans();
+	}
+
 	ret = dbconn->get(dbconn,
-			NULL, /* txn id */
+			txn,
 			&key,
 			&data,
 			0); /* flags*/
@@ -222,6 +276,10 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 		numkeys++;
 	} else if (ret != DB_NOTFOUND) {
 		dbconn->err(dbconn, ret, "Problem retrieving key");
+	}
+
+	if (!intrans) {
+		endtrans();
 	}
 
 	return (numkeys);
@@ -258,9 +316,10 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
 	searchtext = strdup(search);
 	wordlist = makewordlist(wordlist, searchtext);
 
+	starttrans();
 
 	ret = worddb->cursor(worddb,
-			NULL, /* txn */
+			txn,
 			&cursor,
 			0);   /* flags */
 
@@ -322,7 +381,7 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
 
 			numkeys += fetch_key(keyid,
 					publickey,
-					false);
+					true);
 	}
 	llfree(keylist, free);
 	keylist = NULL;
@@ -331,6 +390,8 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
 
 	ret = cursor->c_close(cursor);
 	cursor = NULL;
+
+	endtrans();
 	
 	return (numkeys);
 }
@@ -365,6 +426,10 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 	struct ll *curword  = NULL;
 
 	keyid = get_keyid(publickey);
+
+	if (!intrans) {
+		starttrans();
+	}
 
 	/*
 	 * Delete the key if we already have it.
@@ -404,7 +469,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 	data.data = storebuf.buffer;
 
 	ret = dbconn->put(dbconn,
-			NULL, /* txn id */
+			txn,
 			&key,
 			&data,
 			0); /* flags*/
@@ -455,7 +520,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 			worddb_data[10] = (keyid >>  8) & 0xFF;
 			worddb_data[11] = keyid & 0xFF; 
 			ret = worddb->put(worddb,
-				0,
+				txn,
 				&key,
 				&data,
 				0);
@@ -475,6 +540,10 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 		}
 		free(uids);
 		uids = NULL;
+	}
+
+	if (!intrans) {
+		endtrans();
 	}
 
 	return 0;
@@ -503,7 +572,11 @@ int delete_key(uint64_t keyid, bool intrans)
 
 	keyid &= 0xFFFFFFFF;
 
-	fetch_key(keyid, &publickey, intrans);
+	if (!intrans) {
+		starttrans();
+	}
+
+	fetch_key(keyid, &publickey, true);
 
 	/*
 	 * Walk through the uids removing the words from the worddb.
@@ -517,7 +590,7 @@ int delete_key(uint64_t keyid, bool intrans)
 		}
 				
 		ret = worddb->cursor(worddb,
-			NULL, /* txn */
+			txn,
 			&cursor,
 			0);   /* flags */
 
@@ -551,8 +624,13 @@ int delete_key(uint64_t keyid, bool intrans)
 				&key,
 				&data,
 				DB_GET_BOTH);
+
 			if (ret == 0) {
 				ret = cursor->c_del(cursor, 0);
+				if (ret != 0) {
+					worddb->err(worddb, ret,
+						"Problem deleting word.");
+				}
 			}
 
 			if (ret != 0) {
@@ -581,9 +659,13 @@ int delete_key(uint64_t keyid, bool intrans)
 	key.size = sizeof(keyid);
 
 	dbconn->del(dbconn,
-			NULL, /* txn id */
+			txn,
 			&key,
 			0); /* flags */
+
+	if (!intrans) {
+		endtrans();
+	}
 
 	return (ret == DB_NOTFOUND);
 }
