@@ -395,11 +395,14 @@ int update_keys(struct openpgp_publickey **keys, bool verbose)
 				} else {
 					prev->next = curkey->next;
 					prev = curkey->next;
+					curkey->next = NULL;
+					free_publickey(curkey);
 				}
 			} else {
 				prev = curkey;
 				if (verbose) {
-					fprintf(stderr, "Merged key; storing updated key.\n");
+					fprintf(stderr,
+					"Merged key; storing updated key.\n");
 				}
 				store_key(oldkey, intrans, true);
 			}
@@ -407,7 +410,8 @@ int update_keys(struct openpgp_publickey **keys, bool verbose)
 			oldkey = NULL;
 		} else {
 			if (verbose) {
-				fprintf(stderr, "Storing completely new key.\n");
+				fprintf(stderr,
+					"Storing completely new key.\n");
 			}
 			store_key(curkey, intrans, false);
 			newkeys++;

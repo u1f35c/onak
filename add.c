@@ -16,9 +16,11 @@
 #include "getcgi.h"
 #include "keydb.h"
 #include "keystructs.h"
+#include "mem.h"
+#include "merge.h"
 #include "onak-conf.h"
 #include "parsekey.h"
-#include "merge.h"
+#include "sendsync.h"
 
 int main(int argc, char *argv[])
 {
@@ -60,6 +62,11 @@ int main(int argc, char *argv[])
 			initdb();
 			printf("Got %d new keys.\n",
 					update_keys(&keys, false));
+			if (keys != NULL) {
+				sendkeysync(keys);
+				free_publickey(keys);
+				keys = NULL;
+			}
 			cleanupdb();
 		} else {
 			puts("No OpenPGP packets found in input.");

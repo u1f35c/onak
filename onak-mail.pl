@@ -55,7 +55,7 @@ sub submitupdate {
 	my (@errors, @mergedata);
 
 	open3(\*MERGEIN, \*MERGEOUT, \*MERGEERR,
-		"/home/noodles/onak-0.0.3/onak", "add");
+		"/home/noodles/onak-0.0.3/onak", "-u", "add");
 
 	print MERGEIN @data;
 	close MERGEIN;
@@ -63,13 +63,13 @@ sub submitupdate {
 	@mergedata = <MERGEOUT>;
 
 	open (LOG, ">>/home/noodles/onak-0.0.3/keyadd.log");
-	print LOG @errors;
+	print LOG "[".localtime(time)."] ", @errors;
 	close LOG;
 
 	return @mergedata;
 }
 
-my ($inheader, %syncsites, $subject, $from, $replyto, @body, @syncmail);
+my ($inheader, %seenby, $subject, $from, $replyto, @body, @syncmail);
 
 $inheader = 1;
 $subject = "";
@@ -80,7 +80,7 @@ while (<>) {
 		if (/^Subject:\s*(.*)\s*$/i) {
 			$subject = $1;
 		} elsif (/^X-KeyServer-Sent:\s*(.*)\s*$/i) {
-			$syncsites{$1} = 1;
+			$seenby{$1} = 1;
 		} elsif (/^From:\s*(.*)\s*$/i) {
 			$from = $1;
 		} elsif (/^Reply-To:\s*(.*)\s*$/i) {
@@ -98,5 +98,53 @@ while (<>) {
 # LAST <days>
 
 if ($subject =~ /^INCREMENTAL$/i) {
-	submitupdate(@body);
+	my $site;
+	my $count;
+	my $i;
+	my @newupdate = submitupdate(@body);
+
+	$count = 0;
+	foreach $i (@{$config{'syncsites'}}) {
+		if (! defined($seenby{$i})) {
+			$count++;
+		}
+	}
+
+	open (LOG, ">>/home/noodles/logs/keyadd.log");
+	print LOG "[".localtime(time)."] Syncing with $count sites.\n";
+	close LOG;
+
+	if ($newupdate[0] eq '') {
+		open (LOG, ">>/home/noodles/logs/keyadd.log");
+		print LOG "[".localtime(time)."] Nothing to sync.\n";
+		close LOG;
+		$count = 0;
+	}
+
+	if ($count > 0) {
+		open(MAIL, "|$config{mta}");
+		print MAIL "From: $config{adminemail}\n";
+		print MAIL "To: ";
+		foreach $i (@{$config{'syncsites'}}) {
+			if (! defined($seenby{$i})) {
+				print MAIL "$i";
+				$count--;
+				if ($count > 0) {
+					print MAIL ", ";
+				}
+			}
+		}
+		print MAIL "\n";
+		print MAIL "Subject: incremental\n";
+		foreach $site (keys %seenby) {
+			print MAIL "X-KeyServer-Sent: $site\n";
+		}
+		print MAIL "X-KeyServer-Sent: $config{thissite}\n";
+		print MAIL "Precedence: list\n";
+		print MAIL "MIME-Version: 1.0\n";
+		print MAIL "Content-Type: application/pgp-keys\n";
+		print MAIL "\n";
+		print @newupdate;
+		close MAIL;
+	}
 }

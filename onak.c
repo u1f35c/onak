@@ -92,14 +92,18 @@ int main(int argc, char *argv[])
 	uint64_t			 keyid = 0;
 	bool				 ishex = false;
 	bool				 verbose = false;
+	bool				 update = false;
 	bool				 binary = false;
 	int				 optchar;
 
 
-	while ((optchar = getopt(argc, argv, "bv")) != -1 ) {
+	while ((optchar = getopt(argc, argv, "buv")) != -1 ) {
 		switch (optchar) {
 		case 'b': 
 			binary = true;
+			break;
+		case 'u': 
+			update = true;
 			break;
 		case 'v': 
 			verbose = true;
@@ -128,6 +132,16 @@ int main(int argc, char *argv[])
 			initdb();
 			fprintf(stderr, "Got %d new keys.\n",
 					update_keys(&keys, verbose));
+			if (keys != NULL && update) {
+				flatten_publickey(keys,
+					&packets,
+					&list_end);
+				armor_openpgp_stream(stdout_putchar,
+					NULL,
+					packets);
+				free_packet_list(packets);
+				packets = NULL;
+			}
 			cleanupdb();
 		} else {
 			rc = 1;
@@ -169,6 +183,8 @@ int main(int argc, char *argv[])
 				armor_openpgp_stream(stdout_putchar,
 						NULL,
 						packets);
+				free_packet_list(packets);
+				packets = NULL;
 			} else {
 				puts("Key not found");
 			}
