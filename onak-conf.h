@@ -9,8 +9,6 @@
 #ifndef __ONAK_CONF_H_
 #define __ONAK_CONF_H_
 
-#define VERSION "0.2.1"
-
 /*
  *	struct onak_config - Runtime configuration for onak.
  *	@maxkeys: The maximum number of keys a query should return.

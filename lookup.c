@@ -17,6 +17,7 @@
 #include "charfuncs.h"
 #include "cleankey.h"
 #include "cleanup.h"
+#include "config.h"
 #include "getcgi.h"
 #include "keydb.h"
 #include "keyindex.h"
@@ -211,7 +212,8 @@ int main(int argc, char *argv[])
 	}
 	if (!mrhkp) {
 		puts("<hr>");
-		puts("Produced by onak " VERSION " by Jonathan McDowell");
+		puts("Produced by onak " PACKAGE_VERSION 
+				" by Jonathan McDowell");
 		end_html();
 	}
 

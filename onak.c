@@ -18,6 +18,7 @@
 #include "charfuncs.h"
 #include "cleankey.h"
 #include "cleanup.h"
+#include "config.h"
 #include "keydb.h"
 #include "keyid.h"
 #include "keyindex.h"
@@ -54,7 +55,7 @@ void find_keys(char *search, uint64_t keyid, bool ishex,
 }
 
 void usage(void) {
-	puts("onak " VERSION " - an OpenPGP keyserver.\n");
+	puts("onak " PACKAGE_VERSION " - an OpenPGP keyserver.\n");
 	puts("Usage:\n");
 	puts("\tonak [options] <command> <parameters>\n");
 	puts("\tCommands:\n");

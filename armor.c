@@ -9,6 +9,7 @@
 #include <stdlib.h>
 
 #include "armor.h"
+#include "config.h"
 #include "keystructs.h"
 #include "log.h"
 #include "onak-conf.h"
@@ -320,8 +321,8 @@ int armor_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
 	 */
 	putchar_func(ctx, sizeof("-----BEGIN PGP PUBLIC KEY BLOCK-----\n") - 1,
 		(unsigned char *) "-----BEGIN PGP PUBLIC KEY BLOCK-----\n");
-	putchar_func(ctx, sizeof("Version: onak " VERSION "\n\n") - 1,
-		(unsigned char *) "Version: onak " VERSION "\n\n");
+	putchar_func(ctx, sizeof("Version: onak " PACKAGE_VERSION "\n\n") - 1,
+		(unsigned char *) "Version: onak " PACKAGE_VERSION "\n\n");
 	
 	armor_init(&armor_ctx);
 	armor_ctx.putchar_func = putchar_func;

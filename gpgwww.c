@@ -14,6 +14,7 @@
 #include "armor.h"
 #include "charfuncs.h"
 #include "cleanup.h"
+#include "config.h"
 #include "getcgi.h"
 #include "hash.h"
 #include "keydb.h"
@@ -184,7 +185,7 @@ int main(int argc, char *argv[])
 
 	if (op != OP_GET) {
 		puts("<HR>");
-		puts("Produced by gpgwww " VERSION ", part of onak. "
+		puts("Produced by gpgwww " PACKAGE_VERSION ", part of onak. "
 			"<A HREF=\"mailto:noodles-onak@earth.li\">"
 			"Jonathan McDowell</A>");
 		end_html();
