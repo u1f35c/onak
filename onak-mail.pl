@@ -1,5 +1,4 @@
 #!/usr/bin/perl -w
-
 #
 # onak-mail.pl - Mail processing interface for onak, an OpenPGP Keyserver.
 #
@@ -7,7 +6,7 @@
 # Copyright 2002 Project Purple
 # Released under the GPL.
 #
-# $Id: onak-mail.pl,v 1.7 2003/09/28 17:25:40 noodles Exp $
+# $Id: onak-mail.pl,v 1.8 2003/10/11 22:17:17 noodles Exp $
 #
 
 use strict;
@@ -66,7 +65,9 @@ sub submitupdate {
 	print MERGEIN @data;
 	close MERGEIN;
 	@mergedata = <MERGEOUT>;
+	close MERGEOUT;
 	@errors = <MERGEERR>;
+	close MERGEERR;
 
 	return @mergedata;
 }
@@ -94,6 +95,9 @@ while (<>) {
 	if (!$inheader) {
 		push @body, $_;
 	}
+}
+if (! defined($replyto)) {
+	$replyto = $from;
 }
 
 # HELP, ADD, INCREMENTAL, VERBOSE INDEX <keyid>, INDEX <keyid>, GET <keyid>,
@@ -156,7 +160,34 @@ if ($subject =~ /^INCREMENTAL$/i) {
 		print MAIL "MIME-Version: 1.0\n";
 		print MAIL "Content-Type: application/pgp-keys\n";
 		print MAIL "\n";
-		print @newupdate;
+		print MAIL @newupdate;
 		close MAIL;
 	}
+} elsif ($subject =~ /^(VERBOSE )?INDEX (.*)$/i) {
+	my (@indexdata, $command);
+
+	$command = "index";
+	if (defined($1)) {
+		$command = "vindex";
+	}
+
+	open3(\*INDEXIN, \*INDEXOUT, \*INDEXERR,
+		$config{'pks_bin_dir'}."/onak", $command, "$2");
+	close INDEXIN;
+	@indexdata = <INDEXOUT>;
+	close INDEXOUT;
+	close INDEXERR;
+
+	open(MAIL, "|$config{mta}");
+	print MAIL "From: $config{adminemail}\n";
+	print MAIL "To: $replyto\n";
+	print MAIL "Subject: Reply to INDEX $2\n";
+	print MAIL "Precedence: list\n";
+	print MAIL "MIME-Version: 1.0\n";
+	print MAIL "Content-Type: text/plain\n";
+	print MAIL "\n";
+	print MAIL "Below follows the reply to your recent keyserver query:\n";
+	print MAIL "\n";
+	print MAIL @indexdata;
+	close MAIL;
 }
