@@ -1,7 +1,7 @@
 #
 # Makefile for onak.
 #
-# $Id: Makefile,v 1.22 2004/05/31 14:16:49 noodles Exp $
+# $Id: Makefile,v 1.23 2004/05/31 22:04:50 noodles Exp $
 #
 
 CC = gcc
@@ -17,11 +17,11 @@ LIBS = -L/usr/local/lib -ldb3
 
 PROGS = add lookup gpgwww onak splitkeys
 CORE_OBJS = armor.o charfuncs.o decodekey.o getcgi.o hash.o keydb_$(DBTYPE).o \
-	keyid.o keyindex.o ll.o mem.o onak-conf.o parsekey.o sha.o md5.o \
+	keyid.o keyindex.o ll.o mem.o onak-conf.o parsekey.o sha1.o md5.o \
 	log.o photoid.o wordlist.o
 OBJS = merge.o stats.o sendsync.o cleankey.o $(CORE_OBJS)
-SRCS = armor.c parsekey.c merge.c keyid.c md5.c sha.c main.c getcgi.c stats.c \
-	keyindex.c mem.c lookup.c add.c keydb_$(DBTYPE).c ll.c hash.c \
+SRCS = armor.c parsekey.c merge.c keyid.c md5.c sha1.c main.c getcgi.c mem.c \
+	keyindex.c stats.c lookup.c add.c keydb_$(DBTYPE).c ll.c hash.c \
 	gpgwww.c onak-conf.c charfuncs.c sendsync.c log.c photoid.c \
 	wordlist.c cleankey.c
 

@@ -5,16 +5,17 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keyid.c,v 1.9 2004/05/29 02:52:56 noodles Exp $
+ * $Id: keyid.c,v 1.10 2004/05/31 22:04:51 noodles Exp $
  */
 
 #include <sys/types.h>
 
+#include "assert.h"
 #include "keyid.h"
 #include "keystructs.h"
 #include "log.h"
 #include "md5.h"
-#include "sha.h"
+#include "sha1.h"
 
 
 /**
@@ -40,10 +41,9 @@ unsigned char *get_fingerprint(struct openpgp_packet *packet,
 	unsigned char *fingerprint,
 	size_t *len)
 {
-	SHA1_CONTEXT sha_ctx;
-	MD5_CONTEXT md5_ctx;
+	SHA1_CTX sha_ctx;
+	struct md5_ctx md5_context;
 	unsigned char c;
-	unsigned char *buff = NULL;
 	size_t         modlen, explen;
 
 	assert(fingerprint != NULL);
@@ -54,46 +54,42 @@ unsigned char *get_fingerprint(struct openpgp_packet *packet,
 	switch (packet->data[0]) {
 	case 2:
 	case 3:
-		md5_init(&md5_ctx);
+		md5_init_ctx(&md5_context);
 
 		/*
 		 * MD5 the modulus and exponent.
 		 */
 		modlen = ((packet->data[8] << 8) +
 			 packet->data[9] + 7) >> 3;
-		md5_write(&md5_ctx, &packet->data[10], modlen);
+		md5_process_bytes(&packet->data[10], modlen, &md5_context);
 
 		explen = ((packet->data[10+modlen] << 8) +
 			 packet->data[11+modlen] + 7) >> 3;
-		md5_write(&md5_ctx, &packet->data[12 + modlen], explen);
+		md5_process_bytes(&packet->data[12 + modlen], explen,
+				&md5_context);
 
-		md5_final(&md5_ctx);
-		buff = md5_read(&md5_ctx);
-
+		md5_finish_ctx(&md5_context, fingerprint);
 		*len = 16;
-		memcpy(fingerprint, buff, *len);
 
 		break;
 
 	case 4:
-		sha1_init(&sha_ctx);
+		SHA1Init(&sha_ctx);
 		/*
 		 * TODO: Can this be 0x99? Are all public key packets old
 		 * format with 2 bytes of length data?
 		 */
 		c = 0x99;
-		sha1_write(&sha_ctx, &c, sizeof(c));
+		SHA1Update(&sha_ctx, &c, sizeof(c));
 		c = packet->length >> 8;
-		sha1_write(&sha_ctx, &c, sizeof(c));
+		SHA1Update(&sha_ctx, &c, sizeof(c));
 		c = packet->length & 0xFF;
-		sha1_write(&sha_ctx, &c, sizeof(c));
-		sha1_write(&sha_ctx, packet->data,
+		SHA1Update(&sha_ctx, &c, sizeof(c));
+		SHA1Update(&sha_ctx, packet->data,
 			packet->length);
-		sha1_final(&sha_ctx);
-		buff = sha1_read(&sha_ctx);
-
+		SHA1Final(fingerprint, &sha_ctx);
 		*len = 20;
-		memcpy(fingerprint, buff, *len);
+
 		break;
 	default:
 		logthing(LOGTHING_ERROR, "Unknown key type: %d",
