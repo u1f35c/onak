@@ -6,6 +6,8 @@
  * Copyright 2002 Project Purple
  */
 
+#include "config.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -10,6 +10,7 @@ LDFLAGS += @LDFLAGS@
 DBTYPE = @DBTYPE@
 #
 LIBS = @LIBS@
+prefix ?= @prefix@
 
 PROGS = add lookup gpgwww onak splitkeys
 CORE_OBJS = armor.o charfuncs.o decodekey.o getcgi.o hash.o keydb_$(DBTYPE).o \
@@ -49,6 +50,9 @@ add: add.o cleankey.o merge.o sendsync.o $(CORE_OBJS)
 onak: onak.o merge.o cleankey.o $(CORE_OBJS)
 	$(CC) $(LDFLAGS) -o onak onak.o merge.o cleankey.o \
 		$(CORE_OBJS) $(LIBS)
+
+onak-conf.o: onak-conf.c onak-conf.h
+	$(CC) $(CFLAGS) -DCONFIGFILE=\"@sysconfdir@/onak.conf\" -c onak-conf.c
 
 clean:
 	$(RM) -f $(PROGS) $(OBJS) Makefile.bak testparse maxpath *.core core \

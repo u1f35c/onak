@@ -10,7 +10,6 @@
 #define __ONAK_CONF_H_
 
 #define VERSION "0.2.1"
-#define CONFIGFILE "/home/noodles/projects/onak/onak.conf"
 
 /*
  *	struct onak_config - Runtime configuration for onak.
