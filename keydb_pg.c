@@ -499,9 +499,10 @@ struct ll *getkeysigs(uint64_t keyid)
 	PGresult *result = NULL;
 	uint64_t signer;
 	char statement[1024];
-	int i = 0;
+	int i, j;
 	int numsigs = 0;
 	bool intrans = false;
+	char *str;
 
 	if (!intrans) {
 		result = PQexec(dbconn, "BEGIN");
@@ -509,14 +510,25 @@ struct ll *getkeysigs(uint64_t keyid)
 	}
 
 	snprintf(statement, 1023,
-		"SELECT signer FROM onak_sigs WHERE signee = '%llX'",
+		"SELECT DISTINCT signer FROM onak_sigs WHERE signee = '%llX'",
 		keyid);
 	result = PQexec(dbconn, statement);
 
 	if (PQresultStatus(result) == PGRES_TUPLES_OK) {
 		numsigs = PQntuples(result);
 		for (i = 0; i < numsigs;  i++) {
-			signer = strtol(PQgetvalue(result, i, 0), NULL, 16);
+			j = 0;
+			signer = 0;
+			str = PQgetvalue(result, i, 0);
+			while (str[j] != 0) {
+				signer <<= 4;
+				if (str[j] >= '0' && str[j] <= '9') {
+					signer += str[j] - '0';
+				} else {
+					signer += str[j] - 'A' + 10;
+				}
+				j++;
+			}
 			sigs = lladd(sigs, createandaddtohash(signer));
 		}
 	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
