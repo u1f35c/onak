@@ -101,6 +101,57 @@ loglevels setlogthreshold(loglevels loglevel)
 }
 
 /*
+ *	vflog - write a log entry to an already opened log file.
+ *      @logfile: The FILE * handle of the open log file.
+ *      @format: A format string.
+ *      @ap: The va_list of the parmeters for the format string.
+ *
+ *	This function outputs a log entry to an opened file. A leading
+ *	time/date stamp and a trailing newline are automatically added. The
+ *	format parameter is of the same nature as that used in vprintf.
+ */
+static void vflog(FILE *logfile, const char *format, va_list ap)
+{
+	struct tm *timestamp = NULL;
+	time_t     timer = 0;
+
+	timer = time(NULL);
+	timestamp = localtime(&timer);
+
+	fprintf(logfile, "[%02d/%02d/%4d %02d:%02d:%02d] %s[%d]: ",
+			timestamp->tm_mday,
+			timestamp->tm_mon + 1,
+			timestamp->tm_year + 1900,
+			timestamp->tm_hour,
+			timestamp->tm_min,
+			timestamp->tm_sec,
+			(logappname == NULL) ? "" : logappname,
+			getpid());
+	vfprintf(logfile, format, ap);
+	fprintf(logfile, "\n");
+
+	return;
+}
+
+/*
+ *	flog - write a log entry to an already opened log file.
+ *      @logfile: The FILE * handle of the open log file.
+ *      @format: A format string.
+ *
+ *	This function outputs a log entry to an opened file. A leading
+ *	time/date stamp and a trailing newline are automatically added. The
+ *	format parameter is of the same nature as that used in printf.
+ */
+static void flog(FILE *logfile, const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	vflog(logfile, format, ap);
+	va_end(ap);
+}
+
+/*
  *	logthing - output a log entry
  *      @loglevel: The level of the log.
  *      @format: A format string, followed by any parameters required.
@@ -114,37 +165,27 @@ loglevels setlogthreshold(loglevels loglevel)
 int logthing(loglevels loglevel, const char *format, ...)
 {
 	FILE      *logfile = NULL;
-	struct tm *timestamp = NULL;
-	time_t     timer = 0;
 	va_list    ap;
 
 	if (loglevel >= logthres) {
-		timer = time(NULL);
-		timestamp = localtime(&timer);
-
 		if (logfilename != NULL) {
 			logfile = fopen(logfilename, "a");
-			flockfile(logfile);
+			if (logfile != NULL) {
+				flockfile(logfile);
+			} else {
+				logfile = stderr;
+				flog(logfile, "Couldn't open logfile: %s",
+						logfilename);
+			}
 		} else {
 			logfile = stderr;
 		}
 	
-		fprintf(logfile, "[%02d/%02d/%4d %02d:%02d:%02d] %s[%d]: ",
-				timestamp->tm_mday,
-				timestamp->tm_mon + 1,
-				timestamp->tm_year + 1900,
-				timestamp->tm_hour,
-				timestamp->tm_min,
-				timestamp->tm_sec,
-				(logappname == NULL) ? "" : logappname,
-				getpid());
 		va_start(ap, format);
-		vfprintf(logfile, format, ap);
+		vflog(logfile, format, ap);
 		va_end(ap);
-		fprintf(logfile, "\n");
 
-
-		if (logfilename != NULL) {
+		if (logfile != stderr) {
 			funlockfile(logfile);
 			fclose(logfile);
 			logfile = NULL;
