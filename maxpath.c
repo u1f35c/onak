@@ -21,7 +21,6 @@ void findmaxpath(unsigned long max)
 	struct ll *curkey;
 	unsigned long distance, loop;
 
-	printf("In findmaxpath\n");
 	distance = 0;
 	from = to = tmp = NULL;
 	hash_getkeysigs(0xF1BD4BE45B430367);
@@ -51,6 +50,7 @@ void findmaxpath(unsigned long max)
 			from->keyid,
 			to->keyid,
 			distance);
+	dofindpath(to->keyid, from->keyid, false);
 }
 
 int main(int argc, char *argv[])
@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
 	findmaxpath(30);
 	printf("--------\n");
 	findmaxpath(30);
+	destroyhash();
 	cleanupdb();
 	
 	return EXIT_SUCCESS;
