@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: onak-conf.c,v 1.7 2003/06/04 20:57:11 noodles Exp $
+ * $Id: onak-conf.c,v 1.8 2003/10/15 21:15:21 noodles Exp $
  */
 
 #include <ctype.h>
@@ -45,13 +45,17 @@ struct onak_config config = {
 	NULL,			/* pg_dbpass */
 };
 
-void readconfig(void) {
+void readconfig(const char *configfile) {
 	FILE *conffile;
 	char  curline[1024];
 	int   i;
 
 	curline[1023] = 0;
-	conffile = fopen(CONFIGFILE, "r");
+	if (configfile == NULL) {
+		conffile = fopen(CONFIGFILE, "r");
+	} else {
+		conffile = fopen(configfile, "r");
+	}
 	if (conffile != NULL) {
 		fgets(curline, 1023, conffile);
 

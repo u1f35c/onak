@@ -5,7 +5,7 @@
  *
  * Copyright 2001-2002 Project Purple.
  *
- * $Id: maxpath.c,v 1.9 2003/06/04 20:57:10 noodles Exp $
+ * $Id: maxpath.c,v 1.10 2003/10/15 21:15:21 noodles Exp $
  */
 
 #include <stdio.h>
@@ -71,7 +71,7 @@ void findmaxpath(unsigned long max)
 
 int main(int argc, char *argv[])
 {
-	readconfig();
+	readconfig(NULL);
 	initdb();
 	inithash();
 	findmaxpath(30);

@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: add.c,v 1.10 2003/06/04 20:57:06 noodles Exp $
+ * $Id: add.c,v 1.11 2003/10/15 21:15:20 noodles Exp $
  */
 
 #include <errno.h>
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 	if (ctx.buffer == NULL) {
 		puts("Error: No keytext to add supplied.");
 	} else {
-		readconfig();
+		readconfig(NULL);
 		initlogthing("add", config.logfile);
 		dearmor_openpgp_stream(buffer_fetchchar,
 					&ctx,

@@ -5,7 +5,7 @@
  *
  * Copyright 2001-2002 Project Purple.
  *
- * $Id: gpgwww.c,v 1.11 2003/06/08 19:04:31 noodles Exp $
+ * $Id: gpgwww.c,v 1.12 2003/10/15 21:15:20 noodles Exp $
  */
 
 #include <inttypes.h>
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 			to,
 			from);
 
-	readconfig();
+	readconfig(NULL);
 	initlogthing("gpgwww", config.logfile);
 	initdb();
 	inithash();

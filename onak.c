@@ -7,7 +7,7 @@
  * 
  * Copyright 2002 Project Purple
  *
- * $Id: onak.c,v 1.17 2003/09/30 20:40:11 noodles Exp $
+ * $Id: onak.c,v 1.18 2003/10/15 21:15:21 noodles Exp $
  */
 
 #include <stdio.h>
@@ -71,6 +71,7 @@ int main(int argc, char *argv[])
 	struct openpgp_packet_list	*packets = NULL;
 	struct openpgp_packet_list	*list_end = NULL;
 	struct openpgp_publickey	*keys = NULL;
+	char				*configfile = NULL;
 	int				 rc = EXIT_SUCCESS;
 	int				 result = 0;
 	char				*search = NULL;
@@ -83,10 +84,13 @@ int main(int argc, char *argv[])
 	bool				 fingerprint = false;
 	int				 optchar;
 
-	while ((optchar = getopt(argc, argv, "bfuv")) != -1 ) {
+	while ((optchar = getopt(argc, argv, "bc:fuv")) != -1 ) {
 		switch (optchar) {
 		case 'b': 
 			binary = true;
+			break;
+		case 'c':
+			configfile = strdup(optarg);
 			break;
 		case 'f': 
 			fingerprint = true;
@@ -101,7 +105,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	readconfig();
+	readconfig(configfile);
 	initlogthing("onak", config.logfile);
 
 	if ((argc - optind) < 1) {

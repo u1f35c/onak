@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: lookup.c,v 1.11 2003/10/04 10:21:41 noodles Exp $
+ * $Id: lookup.c,v 1.12 2003/10/15 21:15:21 noodles Exp $
  */
 
 #include <inttypes.h>
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 	} else if (search == NULL) {
 		puts("Error: No key to search for supplied.");
 	} else {
-		readconfig();
+		readconfig(NULL);
 		initlogthing("lookup", config.logfile);
 		initdb();
 		switch (op) {

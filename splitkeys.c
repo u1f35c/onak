@@ -5,7 +5,7 @@
  * 
  * Copyright 2003 Project Purple
  *
- * $Id: splitkeys.c,v 1.3 2003/10/03 23:34:06 noodles Exp $
+ * $Id: splitkeys.c,v 1.4 2003/10/15 21:15:21 noodles Exp $
  */
 
 #include <fcntl.h>
@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	readconfig();
+	readconfig(NULL);
 	initlogthing("splitkeys", config.logfile);
 
 	do {

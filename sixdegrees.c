@@ -5,7 +5,7 @@
  *
  * Copyright 2001-2002 Project Purple.
  *
- * $Id: sixdegrees.c,v 1.4 2003/06/04 20:57:12 noodles Exp $
+ * $Id: sixdegrees.c,v 1.5 2003/10/15 21:15:21 noodles Exp $
  */
 
 #include <stdio.h>
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
 		keyid = strtoll(argv[1], NULL, 16);
 	}
 
-	readconfig();
+	readconfig(NULL);
 	initdb();
 	inithash();
 	sixdegrees(getfullkeyid(keyid));

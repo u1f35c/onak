@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: onak-conf.h,v 1.11 2003/10/11 22:28:23 noodles Exp $
+ * $Id: onak-conf.h,v 1.12 2003/10/15 21:15:21 noodles Exp $
  */
 
 #ifndef __ONAK_CONF_H_
@@ -65,8 +65,12 @@ extern struct onak_config config;
 
 /*
  *	readconfig - read the onak config.
+ *	@configfile - the config file to read.
+ *
+ *	Read in our config file. If config file is NULL read in the compile
+ *	time default.
  */
-void readconfig(void);
+void readconfig(const char *configfile);
 
 /*
  *	cleanupconfig - clean up the config when we're shutting down.
