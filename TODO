@@ -1,4 +1,3 @@
-* Revoked keys on index.
 * Check keys on import?
 * Better signature subpacket parsing (primary UID for example).
 * Better merging of signatures; need to compare subpackets on Type 4 packets
