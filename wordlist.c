@@ -5,7 +5,7 @@
  *
  * Copyright 2004 Project Purple
  *
- * $Id: wordlist.c,v 1.1 2004/05/27 03:34:35 noodles Exp $
+ * $Id: wordlist.c,v 1.2 2004/05/28 02:55:49 noodles Exp $
  */
 
 #include <ctype.h>
@@ -80,12 +80,19 @@ struct ll *makewordlist(struct ll *wordlist, char *word)
 struct ll *makewordlistfromkey(struct ll *wordlist,
 			       struct openpgp_publickey *key)
 {
-	char **uids;
-	int i;
+	char      **uids;
+	int         i;
+	struct ll  *words = NULL;
+	struct ll  *wl = NULL;
 
 	uids = keyuids(key, NULL);
 	for (i = 0; uids[i] != NULL; ++i) {
-		wordlist = makewordlist(wordlist, uids[i]);
+		words = makewordlist(wordlist, uids[i]);
+		for (wl = words; wl->next; wl = wl->next) {
+			if (llfind(wordlist, wl->object, strcmp) == NULL) {
+				wordlist = lladd(wordlist, strdup(wl->object));
+			}
+		}
 		free(uids[i]);
 		uids[i] = NULL;
 	}
