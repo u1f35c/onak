@@ -1,8 +1,5 @@
 * Revoked keys on index.
 * Check keys on import?
-* config file
-* Sort out merging (use onak + some Perl to answer incoming email. Not
-  sure about keys via hkp yet though - need to send updates out).
 * Better signature subpacket parsing (primary UID for example).
 * Better merging of signatures; need to compare subpackets on Type 4 packets
   and choose which we should use (how? most recent date?)
@@ -21,8 +18,8 @@
 * Test library?
 * autoconf
 * logging framework so we can log debug/warning messages and so on. syslog?
+* Full email interface support (ADD, INDEX etc)
 * Check freeing.
 * More comments.
 * Look at db2 backend - is it db2's fault? (Well, deadlock in that the library
-  probably is...). Is there an alternative library that would provide us with
-  similar features but be more reliable? gdbm? Jason Harris suggests db3/4.
+  probably is...). Pull some of the DB3 stuff across for completeness.

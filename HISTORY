@@ -62,3 +62,11 @@
 * Wrote DB3 backend; although much work is still needed it vastly outperforms
   the PostgreSQL backend and should hopefully not suffer from the problems of
   the DB2 implementation.
+
+0.1.0 - 13th November 2002
+
+* Code cleanup; pull out common character functions.
+* Make DB3 backend support proper searching.
+* Added config file.
+* Fixed ASCII armor bug (we'd output NULLs in the headers/footer).
+* Added bidirectional syncing (previously we could receive but wouldn't send).
