@@ -1,0 +1,23 @@
+Brett's rough guide to onak and Apache2 on Debian:
+
+1) create a new virtual host for apache2 as the config snippet below in
+	/etc/apache2/sites-available/keyserver and symlink it in
+	/etc/apache2/sites-enabled/
+2) edit the /etc/apache2/ports.conf file and add Listen 11371
+3) edit the /etc/apache2/sites-available/default file and change the
+	NameVirtualHost and VirtualHost directives to only play with
+	port 80
+4) make sure that suexec is *NOT* enabled in apache2 (remove the
+	suexec.load symlink from /etc/apache2/mods-enabled/ if it
+	exists), this is because suexec will not run the cgi scripts
+	located in the /usr/lib/cgi-bin/pks directory.
+5) apache2ctl graceful
+6) marvel as it all works.
+
+Apache2 config snippet:
+	<VirtualHost *:11371>
+		DocumentRoot /var/lib/onak
+		ScriptAlias /pks /usr/lib/cgi-bin/pks
+		CustomLog /var/log/apache2/keyserver-access.log combined
+		ErrorLog /var/log/apache2/keyserver-error.log
+	</VirtualHost>
