@@ -6,7 +6,6 @@
  * Copyright 2004 Project Purple
  */
 
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,7 +30,7 @@ int dedupuids(struct openpgp_publickey *key)
 	struct openpgp_signedpacket_list *tmp = NULL;
 	int                               merged = 0;
 
-	assert(key != NULL);
+	log_assert(key != NULL);
 	curuid = key->uids;
 	while (curuid != NULL) {
 		dup = find_signed_packet(curuid->next, curuid->packet);
@@ -48,7 +47,7 @@ int dedupuids(struct openpgp_publickey *key)
 			while (tmp != NULL && tmp->next != dup) {
 				tmp = tmp->next;
 			}
-			assert(tmp != NULL);
+			log_assert(tmp != NULL);
 			tmp->next = dup->next;
 			dup->next = NULL;
 			free_signedpacket_list(dup);

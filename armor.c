@@ -6,11 +6,11 @@
  * Copyright 2002 Project Purple
  */
 
-#include <assert.h>
 #include <stdlib.h>
 
 #include "armor.h"
 #include "keystructs.h"
+#include "log.h"
 #include "onak-conf.h"
 #include "parsekey.h"
 
@@ -34,7 +34,7 @@ static unsigned char encode64(unsigned char c) {
 	} else if (c == 63) {
 		c = '/';
 	} else {
-		assert(c < 64);
+		log_assert(c < 64);
 	}
 
 	return c;
@@ -142,7 +142,7 @@ static int armor_putchar_int(void *ctx, unsigned char c)
 	unsigned char t;
 	int i;
 
-	assert(ctx != NULL);
+	log_assert(ctx != NULL);
 	state = (struct armor_context *) ctx;
 
 	switch (state->curoctet++) {
@@ -243,7 +243,7 @@ static int dearmor_getchar(void *ctx, unsigned char *c)
 	unsigned char tmpc;
 	int i;
 
-	assert(ctx != NULL);
+	log_assert(ctx != NULL);
 	state = (struct dearmor_context *) ctx;
 	*c = 0;
 	

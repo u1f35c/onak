@@ -6,7 +6,6 @@
  * Copyright 2002 Project Purple
  */
 
-#include <assert.h>
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>

@@ -9,6 +9,18 @@
 #ifndef __LOG_H__
 #define __LOG_H__
 
+#include <assert.h>
+
+#define log_assert(expr) \
+	if (!(expr)) { \
+		logthing(LOGTHING_CRITICAL, \
+			"Assertion %s failed in %s, line %d", \
+			#expr, \
+			__FILE__, \
+			__LINE__); \
+	} \
+	assert(expr)
+
 /*
  *	loglevels - levels of severity for a log entry
  *

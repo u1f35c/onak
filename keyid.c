@@ -8,7 +8,6 @@
 
 #include <sys/types.h>
 
-#include "assert.h"
 #include "keyid.h"
 #include "keystructs.h"
 #include "log.h"
@@ -44,8 +43,8 @@ unsigned char *get_fingerprint(struct openpgp_packet *packet,
 	unsigned char c;
 	size_t         modlen, explen;
 
-	assert(fingerprint != NULL);
-	assert(len != NULL);
+	log_assert(fingerprint != NULL);
+	log_assert(len != NULL);
 
 	*len = 0;
 
@@ -110,7 +109,7 @@ uint64_t get_packetid(struct openpgp_packet *packet)
 	size_t		length = 0;
 	unsigned char	buff[20];
 
-	assert(packet != NULL);
+	log_assert(packet != NULL);
 
 	switch (packet->data[0]) {
 	case 2:

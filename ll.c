@@ -6,11 +6,11 @@
  * Copyright 2000-2002 Project Purple
  */
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "ll.h"
+#include "log.h"
 
 struct ll *lladd(struct ll *curll, void *object)
 {
@@ -34,7 +34,7 @@ struct ll *lldel(struct ll *curll, void *object,
 	struct ll *cur = NULL;
 	struct ll *old = NULL;
 
-	assert(objectcmp != NULL);
+	log_assert(objectcmp != NULL);
 
 	cur = curll;
 	if (cur == NULL) {
@@ -61,7 +61,7 @@ struct ll *llfind(struct ll *curll, void *object,
 {
 	struct ll *cur;
 
-	assert(objectcmp != NULL);
+	log_assert(objectcmp != NULL);
 
 	cur = curll;
 	while (cur != NULL && (*objectcmp)(cur->object, object)) {

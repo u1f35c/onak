@@ -6,7 +6,6 @@
  * Copyright 2002-2004 Project Purple
  */
 
-#include <assert.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <ctype.h>
@@ -249,8 +248,8 @@ bool starttrans(void)
 {
 	int ret;
 
-	assert(dbenv != NULL);
-	assert(txn == NULL);
+	log_assert(dbenv != NULL);
+	log_assert(txn == NULL);
 
 	ret = dbenv->txn_begin(dbenv,
 		NULL, /* No parent transaction */
@@ -275,8 +274,8 @@ void endtrans(void)
 {
 	int ret;
 
-	assert(dbenv != NULL);
-	assert(txn != NULL);
+	log_assert(dbenv != NULL);
+	log_assert(txn != NULL);
 
 	ret = txn->commit(txn,
 		0);

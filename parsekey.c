@@ -6,7 +6,6 @@
  * Copyright 2002 Project Purple
  */
 
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,7 +51,7 @@ int parse_keys(struct openpgp_packet_list *packets,
 			 * key (it should be a revocation), to the current UID
 			 * or the current subkey.
 			 */
-			assert(curkey != NULL);
+			log_assert(curkey != NULL);
 			if (curkey->subkeys != NULL) {
 				ADD_PACKET_TO_LIST_END(curkey->last_subkey,
 					sig,
@@ -88,8 +87,8 @@ int parse_keys(struct openpgp_packet_list *packets,
 			/*
 			 * It's a UID packet (or a photo id, which is similar).
 			 */
-			assert(curkey != NULL);
-			assert(curkey->subkeys == NULL);
+			log_assert(curkey != NULL);
+			log_assert(curkey->subkeys == NULL);
 			ADD_PACKET_TO_LIST_END(curkey,
 				uid,
 				packet_dup(packets->packet));
@@ -98,7 +97,7 @@ int parse_keys(struct openpgp_packet_list *packets,
 			/*
 			 * It's a subkey packet.
 			 */
-			assert(curkey != NULL);
+			log_assert(curkey != NULL);
 			ADD_PACKET_TO_LIST_END(curkey,
 				subkey,
 				packet_dup(packets->packet));
@@ -164,7 +163,7 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 	int				 keys = 0;
 	bool				 inpacket = false;
 
-	assert(packets != NULL);
+	log_assert(packets != NULL);
 	curpacket = *packets;
 	if (curpacket != NULL) {
 		while (curpacket->next != NULL) {

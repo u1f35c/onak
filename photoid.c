@@ -6,7 +6,6 @@
  * Copyright 2004 Project Purple
  */
 
-#include <assert.h>
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -37,9 +36,9 @@ int getphoto(struct openpgp_publickey *key, int index, unsigned char **photo,
 	int                               i = 0;
 	int                               j = 0;
 
-	assert(key != NULL);
-	assert(photo != NULL);
-	assert(length != NULL);
+	log_assert(key != NULL);
+	log_assert(photo != NULL);
+	log_assert(length != NULL);
 
 	*photo = NULL;
 	

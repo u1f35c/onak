@@ -6,7 +6,6 @@
  * Copyright 2002 Project Purple
  */
 
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,7 +34,7 @@ int parse_subpackets(unsigned char *data, uint64_t *keyid)
 	int length = 0;
 	int packetlen = 0;
 
-	assert(data != NULL);
+	log_assert(data != NULL);
 
 	length = (data[0] << 8) + data[1] + 2;
 

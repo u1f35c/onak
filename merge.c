@@ -6,7 +6,6 @@
  * Copyright 2002 Project Purple
  */
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -174,7 +173,7 @@ int merge_packet_sigs(struct openpgp_signedpacket_list *old,
 	struct openpgp_packet_list	*curpacket = NULL;
 	struct openpgp_packet_list	*nextpacket = NULL;
 
-	assert(compare_packets(old->packet, new->packet));
+	log_assert(compare_packets(old->packet, new->packet));
 
 	curpacket = new->sigs;
 	while (curpacket != NULL) {
@@ -194,7 +193,7 @@ int merge_packet_sigs(struct openpgp_signedpacket_list *old,
 			if (lastpacket != NULL) {
 				lastpacket->next = curpacket->next;
 			} else {
-				assert(curpacket == new->sigs);
+				log_assert(curpacket == new->sigs);
 				new->sigs = curpacket->next;
 			}
 			curpacket->next = NULL;
@@ -319,7 +318,7 @@ int merge_keys(struct openpgp_publickey *a, struct openpgp_publickey *b)
 				if (lastpacket != NULL) {
 					lastpacket->next = curpacket->next;
 				} else {
-					assert(curpacket == b->revocations);
+					log_assert(curpacket == b->revocations);
 					b->revocations = curpacket->next;
 				}
 				curpacket->next = NULL;
