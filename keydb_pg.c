@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb_pg.c,v 1.10 2003/06/04 20:57:09 noodles Exp $
+ * $Id: keydb_pg.c,v 1.11 2003/06/05 07:32:00 noodles Exp $
  */
 
 #include <postgresql/libpq-fe.h>
@@ -557,6 +557,21 @@ struct ll *getkeysigs(uint64_t keyid)
 		PQclear(result);
 	}
 	return sigs;
+}
+
+/**
+ *	dumpdb - dump the key database
+ *	@filenamebase: The base filename to use for the dump.
+ *
+ *	Dumps the database into one or more files, which contain pure OpenPGP
+ *	that can be reimported into onak or gpg. filenamebase provides a base
+ *	file name for the dump; several files may be created, all of which will
+ *	begin with this string and then have a unique number and a .pgp
+ *	extension.
+ *          */
+int dumpdb(char *filenamebase)
+{
+	return 0;
 }
 
 /*

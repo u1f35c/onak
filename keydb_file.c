@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb_file.c,v 1.8 2003/06/04 20:57:09 noodles Exp $
+ * $Id: keydb_file.c,v 1.9 2003/06/05 07:31:59 noodles Exp $
  */
 
 #include <sys/types.h>
@@ -165,6 +165,21 @@ int delete_key(uint64_t keyid, bool intrans)
  *	TODO: Write for flat file access. Some sort of grep?
  */
 int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
+{
+	return 0;
+}
+
+/**
+ *	dumpdb - dump the key database
+ *	@filenamebase: The base filename to use for the dump.
+ *
+ *	Dumps the database into one or more files, which contain pure OpenPGP
+ *	that can be reimported into onak or gpg. filenamebase provides a base
+ *	file name for the dump; several files may be created, all of which will
+ *	begin with this string and then have a unique number and a .pgp
+ *	extension.
+ *          */
+int dumpdb(char *filenamebase)
 {
 	return 0;
 }
