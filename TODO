@@ -4,20 +4,16 @@
   and choose which we should use (how? most recent date?)
 * Honor no-modify keyserver flag ("Brian M. Carlson" <karlsson@hal-pc.org>)
 * Better txt2html routine.
-* Remove bithelp.h (i386 only at present & inlined).
-  - Build and test on non-i386.
 * Pathfinder - graphical as well?
 * Do pathlengths for similar email addresses to help aide keysigning.
   (ie "Find me the keys furthest from mine that end ox.ac.uk'")
   Suggested by Jochen Voss <voss@mathematik.uni-kl.de>.
-* Other stats. with piccy? most signed? signs most?
+* Other stats. most signed? signs most?
 * DB access modules as a library to allow runtime configuration of it?
 * Clean up gcc warnings (`ll' length modifier especially! Also inline & wrong
   signedness for lo_read/write)
 * Test library?
-* autoconf
 * Full email interface support (ADD, INDEX etc)
 * More comments.
 * Look at db2 backend - is it db2's fault? (Well, deadlock in that the library
   probably is...). Pull some of the DB3 stuff across for completeness.
-* Add Ian Haywood's path.c code for path finding and returning the actual keys.
