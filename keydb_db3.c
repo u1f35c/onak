@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb_db3.c,v 1.16 2003/06/04 20:57:08 noodles Exp $
+ * $Id: keydb_db3.c,v 1.17 2003/09/28 14:54:57 noodles Exp $
  */
 
 #include <assert.h>
@@ -37,9 +37,14 @@
 static DB_ENV *dbenv = NULL;
 
 /**
- *	dbconn - our connection to the key database.
+ *	numdb - The number of database files we have.
  */
-static DB *dbconn = NULL;
+static int numdbs = 16;
+
+/**
+ *	dbconn - our connections to the key database files.
+ */
+static DB **dbconns = NULL;
 
 /**
  *	worddb - our connection to the word database.
@@ -50,6 +55,11 @@ static DB *worddb = NULL;
  *	txn - our current transaction id.
  */
 static DB_TXN *txn = NULL;
+
+DB *keydb(uint64_t keyid)
+{
+	return(dbconns[keyid % numdbs]);
+}
 
 /**
  *	makewordlist - Takes a string and splits it into a set of unique words.
@@ -110,7 +120,29 @@ struct ll *makewordlist(struct ll *wordlist, char *word)
  */
 void initdb(void)
 {
-	int ret = 0;
+	char  buf[1024];
+	FILE *numdb = NULL;
+	int   ret = 0;
+	int   i = 0;
+
+	snprintf(buf, sizeof(buf) - 1, "%s/num_keydb", config.db_dir);
+	numdb = fopen(buf, "r");
+	if (numdb != NULL) {
+		if (fgets(buf, sizeof(buf), numdb) != NULL) {
+			numdbs = atoi(buf);
+		}
+		fclose(numdb);
+	} else {
+		logthing(LOGTHING_ERROR, "Couldn't open num_keydb: %s",
+				strerror(errno));
+	}
+
+	dbconns = malloc(sizeof (DB *) * numdbs);
+	if (dbconns == NULL) {
+		logthing(LOGTHING_CRITICAL,
+				"Couldn't allocate memory for dbconns");
+		exit(1);
+	}
 
 	ret = db_env_create(&dbenv, 0);
 	if (ret != 0) {
@@ -144,24 +176,27 @@ void initdb(void)
 		exit(1);
 	}
 
-	ret = db_create(&dbconn, dbenv, 0);
-	if (ret != 0) {
-		logthing(LOGTHING_CRITICAL,
+	for (i = 0; i < numdbs; i++) {
+		ret = db_create(&dbconns[i], dbenv, 0);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL,
 				"db_create: %s", db_strerror(ret));
-		exit(1);
-	}
+			exit(1);
+		}
 
-	ret = dbconn->open(dbconn, "keydb.db", 
+		snprintf(buf, 1023, "keydb.%d.db", i);
+		ret = dbconns[i]->open(dbconns[i], buf,
 			NULL,
 			DB_HASH,
 			DB_CREATE,
 			0664);
-	if (ret != 0) {
-		logthing(LOGTHING_CRITICAL,
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL,
 				"Error opening key database: %s (%s)",
-				"keydb.db",
+				buf,
 				db_strerror(ret));
-		exit(1);
+			exit(1);
+		}
 	}
 
 	ret = db_create(&worddb, dbenv, 0);
@@ -193,11 +228,15 @@ void initdb(void)
  */
 void cleanupdb(void)
 {
+	int i = 0;
+
 	txn_checkpoint(dbenv, 0, 0, 0);
 	worddb->close(worddb, 0);
 	worddb = NULL;
-	dbconn->close(dbconn, 0);
-	dbconn = NULL;
+	for (i = 0; i < numdbs; i++) {
+		dbconns[i]->close(dbconns[i], 0);
+		dbconns[i] = NULL;
+	}
 	dbenv->close(dbenv, 0);
 	dbenv = NULL;
 }
@@ -290,7 +329,7 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 		starttrans();
 	}
 
-	ret = dbconn->get(dbconn,
+	ret = keydb(keyid)->get(keydb(keyid),
 			txn,
 			&key,
 			&data,
@@ -505,7 +544,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 		data.size = storebuf.offset;
 		data.data = storebuf.buffer;
 
-		ret = dbconn->put(dbconn,
+		ret = keydb(keyid)->put(keydb(keyid),
 				txn,
 				&key,
 				&data,
@@ -714,7 +753,7 @@ int delete_key(uint64_t keyid, bool intrans)
 		key.data = &keyid;
 		key.size = sizeof(keyid);
 
-		dbconn->del(dbconn,
+		keydb(keyid)->del(keydb(keyid),
 				txn,
 				&key,
 				0); /* flags */
@@ -743,35 +782,38 @@ int dumpdb(char *filenamebase)
 	DBC *cursor = NULL;
 	int ret = 0;
 	int fd = -1;
+	int i;
 
-	starttrans();
+	for (i = 0; i < numdbs; i++) {
+		starttrans();
 	
-	ret = dbconn->cursor(dbconn,
-		txn,
-		&cursor,
-		0);   /* flags */
+		ret = dbconns[i]->cursor(dbconns[i],
+			NULL,
+			&cursor,
+			0);   /* flags */
 
-	fd = open(filenamebase, O_CREAT | O_WRONLY | O_TRUNC, 0640);
-	memset(&key, 0, sizeof(key));
-	memset(&data, 0, sizeof(data));
-	ret = cursor->c_get(cursor, &key, &data, DB_NEXT);
-	while (ret == 0) {
-		write(fd, data.data, data.size);
+		fd = open(filenamebase, O_CREAT | O_WRONLY | O_TRUNC, 0640);
 		memset(&key, 0, sizeof(key));
 		memset(&data, 0, sizeof(data));
 		ret = cursor->c_get(cursor, &key, &data, DB_NEXT);
-	}
-	if (ret != DB_NOTFOUND) {
-		logthing(LOGTHING_ERROR, "Problem reading key: %s",
-				db_strerror(ret));
-	}
+		while (ret == 0) {
+			write(fd, data.data, data.size);
+			memset(&key, 0, sizeof(key));
+			memset(&data, 0, sizeof(data));
+			ret = cursor->c_get(cursor, &key, &data, DB_NEXT);
+		}
+		if (ret != DB_NOTFOUND) {
+			logthing(LOGTHING_ERROR, "Problem reading key: %s",
+					db_strerror(ret));
+		}
 
-	close(fd);
+		close(fd);
 
-	ret = cursor->c_close(cursor);
-	cursor = NULL;
+		ret = cursor->c_close(cursor);
+		cursor = NULL;
 	
-	endtrans();
+		endtrans();
+	}
 	
 	return 0;
 }
