@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: parsekey.c,v 1.8 2003/06/08 19:04:32 noodles Exp $
+ * $Id: parsekey.c,v 1.9 2003/09/28 21:07:49 noodles Exp $
  */
 
 #include <assert.h>
@@ -278,9 +278,16 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 				curpacket->packet->data =
 					malloc(curpacket->packet->length *
 					sizeof(unsigned char));
-				rc = getchar_func(ctx,
-					curpacket->packet->length,
-					curpacket->packet->data);
+				if (curpacket->packet->data == NULL) {
+					logthing(LOGTHING_ERROR, 
+						"Can't allocate memory for "
+						"packet!");
+					rc = -1;
+				} else {
+					rc = getchar_func(ctx,
+						curpacket->packet->length,
+						curpacket->packet->data);
+				}
 			}
 			inpacket = false;
 		} else {
