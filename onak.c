@@ -7,7 +7,7 @@
  * 
  * Copyright 2002 Project Purple
  *
- * $Id: onak.c,v 1.13 2003/06/04 20:57:12 noodles Exp $
+ * $Id: onak.c,v 1.14 2003/06/07 13:37:33 noodles Exp $
  */
 
 #include <stdio.h>
@@ -193,7 +193,10 @@ int main(int argc, char *argv[])
 		} else if (!strcmp("delete", argv[optind])) {
 			delete_key(getfullkeyid(keyid), false);
 		} else if (!strcmp("get", argv[optind])) {
-			if (fetch_key(keyid, &keys, false)) {
+			if (!ishex) {
+				puts("Can't get a key on uid text."
+					" You must supply a keyid.");
+			} else if (fetch_key(keyid, &keys, false)) {
 				logthing(LOGTHING_INFO, "Got key.");
 				flatten_publickey(keys,
 						&packets,
