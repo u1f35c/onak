@@ -78,14 +78,15 @@ int main(int argc, char *argv[])
 			logthing(LOGTHING_INFO, "%d keys cleaned.",
 					count);
 
-			count = update_keys(&keys);
+			count = update_keys(&keys, true);
 			logthing(LOGTHING_NOTICE, "Got %d new keys.",
 				count);
+
 			if (keys != NULL) {
-				sendkeysync(keys);
 				free_publickey(keys);
 				keys = NULL;
 			}
+			
 			cleanupdb();
 		} else {
 			puts("No OpenPGP packets found in input.");

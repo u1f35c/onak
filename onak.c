@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
 
 			initdb(false);
 			logthing(LOGTHING_NOTICE, "Got %d new keys.",
-					update_keys(&keys));
+					update_keys(&keys, false));
 			if (keys != NULL && update) {
 				flatten_publickey(keys,
 					&packets,

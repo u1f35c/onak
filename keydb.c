@@ -156,6 +156,7 @@ uint64_t getfullkeyid(uint64_t keyid)
 /**
  *	update_keys - Takes a list of public keys and updates them in the DB.
  *	@keys: The keys to update in the DB.
+ *	@sendsync: Should we send a sync mail to our peers.
  *
  *	Takes a list of keys and adds them to the database, merging them with
  *	the key in the database if it's already present there. The key list is
@@ -163,7 +164,7 @@ uint64_t getfullkeyid(uint64_t keyid)
  *	we had before to what we have now (ie the set of data that was added to
  *	the DB). Returns the number of entirely new keys added.
  */
-int update_keys(struct openpgp_publickey **keys)
+int update_keys(struct openpgp_publickey **keys, bool sendsync)
 {
 	struct openpgp_publickey *curkey = NULL;
 	struct openpgp_publickey *oldkey = NULL;
@@ -213,6 +214,10 @@ int update_keys(struct openpgp_publickey **keys)
 		}
 		endtrans();
 		intrans = false;
+	}
+
+	if (sendsync && keys != NULL) {
+		sendkeysync(keys);
 	}
 
 	return newkeys;

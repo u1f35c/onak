@@ -18,7 +18,7 @@ exec_prefix ?= @exec_prefix@
 PROGS = add lookup gpgwww onak splitkeys onak-mail.pl stripkey
 CORE_OBJS = armor.o charfuncs.o decodekey.o getcgi.o hash.o \
 	keyid.o keyindex.o ll.o mem.o onak-conf.o parsekey.o sha1.o md5.o \
-	log.o photoid.o wordlist.o cleanup.o merge.o
+	log.o photoid.o wordlist.o cleanup.o merge.o sendsync.o
 SRCS = armor.c parsekey.c merge.c keyid.c md5.c sha1.c main.c getcgi.c mem.c \
 	keyindex.c stats.c lookup.c add.c keydb_$(DBTYPE).c ll.c hash.c \
 	gpgwww.c onak-conf.c charfuncs.c sendsync.c log.c photoid.c \
@@ -32,7 +32,7 @@ else
 KEYDB_OBJ = keydb_$(DBTYPE).o
 endif
 
-OBJS = stats.o sendsync.o cleankey.o $(CORE_OBJS) $(KEYDB_OBJ)
+OBJS = stats.o cleankey.o $(CORE_OBJS) $(KEYDB_OBJ)
 
 all: .depend $(PROGS) testparse maxpath sixdegrees splitkeys onak.conf
 
@@ -62,8 +62,8 @@ lookup: lookup.o cleankey.o $(CORE_OBJS) $(KEYDB_OBJ)
 	$(CC) $(LDFLAGS) -o lookup lookup.o cleankey.o $(CORE_OBJS) \
 		$(KEYDB_OBJ) $(LIBS)
 
-add: add.o cleankey.o sendsync.o $(CORE_OBJS) $(KEYDB_OBJ)
-	$(CC) $(LDFLAGS) -o add add.o cleankey.o sendsync.o \
+add: add.o cleankey.o $(CORE_OBJS) $(KEYDB_OBJ)
+	$(CC) $(LDFLAGS) -o add add.o cleankey.o \
 		$(CORE_OBJS) $(KEYDB_OBJ) $(LIBS)
 
 onak: onak.o cleankey.o $(CORE_OBJS) $(KEYDB_OBJ)

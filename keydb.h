@@ -100,14 +100,18 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey);
 /**
  *	update_keys - Takes a list of public keys and updates them in the DB.
  *	@keys: The keys to update in the DB.
+ *	@sendsync: If we should send a keysync mail.
  *
  *	Takes a list of keys and adds them to the database, merging them with
  *	the key in the database if it's already present there. The key list is
  *	update to contain the minimum set of updates required to get from what
  *	we had before to what we have now (ie the set of data that was added to
  *	the DB). Returns the number of entirely new keys added.
+ *
+ *	If sendsync is true then we send out a keysync mail to our sync peers
+ *	with the update.
  */
-int update_keys(struct openpgp_publickey **keys);
+int update_keys(struct openpgp_publickey **keys, bool sendsync);
 
 /**
  *	keyid2uid - Takes a keyid and returns the primary UID for it.
