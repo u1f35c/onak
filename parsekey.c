@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: parsekey.c,v 1.17 2003/10/11 21:52:18 noodles Exp $
+ * $Id: parsekey.c,v 1.18 2004/01/04 18:47:35 noodles Exp $
  */
 
 #include <assert.h>
@@ -292,6 +292,7 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 		} else {
 			logthing(LOGTHING_ERROR, "Unexpected character: 0x%X",
 				curchar);
+			rc = 1;
 		}
 	}
 
