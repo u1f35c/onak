@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: lookup.c,v 1.13 2004/03/23 12:33:47 noodles Exp $
+ * $Id: lookup.c,v 1.14 2004/05/26 18:53:14 noodles Exp $
  */
 
 #include <inttypes.h>
@@ -151,6 +151,8 @@ int main(int argc, char *argv[])
 		initdb(true);
 		switch (op) {
 		case OP_GET:
+			logthing(LOGTHING_NOTICE, "Getting keyid %llX",
+					keyid);
 			if (fetch_key(keyid, &publickey, false)) {
 				puts("<pre>");
 				flatten_publickey(publickey,

@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: add.c,v 1.12 2004/03/23 12:33:46 noodles Exp $
+ * $Id: add.c,v 1.13 2004/05/26 18:53:14 noodles Exp $
  */
 
 #include <errno.h>
@@ -27,11 +27,12 @@
 
 int main(int argc, char *argv[])
 {
-	struct openpgp_packet_list *packets = NULL;
-	struct openpgp_publickey *keys = NULL;
-	char **params = NULL;
-	struct buffer_ctx ctx;
-	int i;
+	struct openpgp_packet_list  *packets = NULL;
+	struct openpgp_publickey    *keys = NULL;
+	char                       **params = NULL;
+	struct buffer_ctx            ctx;
+	int                          count = 0;
+	int                          i;
 
 	memset(&ctx, 0, sizeof(ctx));
 
@@ -64,8 +65,10 @@ int main(int argc, char *argv[])
 		if (packets != NULL) {
 			parse_keys(packets, &keys);
 			initdb(false);
-			printf("Got %d new keys.\n",
-					update_keys(&keys));
+			count = update_keys(&keys);
+			printf("Got %d new keys.\n", count);
+			logthing(LOGTHING_NOTICE, "Got %d new keys.",
+				count);
 			if (keys != NULL) {
 				sendkeysync(keys);
 				free_publickey(keys);

@@ -5,7 +5,7 @@
  *
  * Copyright 2001-2002 Project Purple.
  *
- * $Id: gpgwww.c,v 1.13 2004/03/23 12:33:46 noodles Exp $
+ * $Id: gpgwww.c,v 1.14 2004/05/26 18:53:14 noodles Exp $
  */
 
 #include <inttypes.h>
@@ -66,6 +66,9 @@ int main(int argc, char *argv[])
 	initlogthing("gpgwww", config.logfile);
 	initdb(true);
 	inithash();
+	logthing(LOGTHING_NOTICE, "Looking for path from 0x%llX to 0x%llX.",
+			from,
+			to);
 	dofindpath(from, to, true, 3);
 	destroyhash();
 	cleanupdb();
