@@ -27,7 +27,7 @@ struct onak_config config = {
 	/*
 	 * Options for the file backend.
 	 */
-	NULL,			/* file_dbpath */
+	"/home/noodles/projects/onak/db",	/* file_dbpath */
 	
 	/*
 	 * Options for the Postgres backend.
