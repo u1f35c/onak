@@ -5,7 +5,7 @@
  *
  * Copyright 2000-2002 Project Purple
  *
- * $Id: stats.c,v 1.10 2003/06/04 20:57:13 noodles Exp $
+ * $Id: stats.c,v 1.11 2003/06/04 22:32:56 noodles Exp $
  */
 
 #include <stdio.h>
@@ -162,11 +162,17 @@ void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 			hashelements(),
 			html ? "<BR>" : "");
 		if (keyinfoa->colour == 0) {
-			printf("Can't find a link from 0x%08llX to 0x%08llX"
-				"%s\n",
+			if (pathnum == 0) {
+				printf("Can't find a link from 0x%08llX to "
+				"0x%08llX%s\n",
 				have,
 				want,
 				html ? "<BR>" : "");
+			} else {
+				printf("Can't find any further paths%s\n",
+					html ? "<BR>" : "");
+			}
+			pathnum = count;
 		} else {
 			printf("%d steps from 0x%08llX to 0x%08llX%s\n",
 				keyinfoa->colour, have & 0xFFFFFFFF,
