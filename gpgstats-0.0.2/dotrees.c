@@ -259,144 +259,6 @@ void printtrees(int minsize)
 }
 
 
-unsigned long size2degree(struct ll *curll, struct key *prev, int sigs, int curdegree, int maxdegree, int *rec)
-{
-	unsigned long count=0;
-	struct ll *nextll;
-
-	++curdegree;
-	++(*rec);
-
-	nextll=NULL;
-	while (curll!=NULL) {
-		if (((struct key *) curll->object)->revoked==1) {
-			/* It's revoked. Ignore it. */
-		} else if (((struct key *) curll->object)->colour==0) {
-			/* We've never seen it. Count it, mark it and
-				explore its subtree */
-			count++;
-			printf("0x%08lX (%s)\n", ((struct key *) curll->object)->keyid,
-				((struct key *) curll->object)->name);
-			((struct key *)curll->object)->colour=curdegree;
-			((struct key *)curll->object)->pi=(struct ll *) prev;
-			nextll=lladd(nextll, curll->object);
-		} else if (((struct key *) curll->object)->colour>curdegree) {
-			/* We've seen it, but it it's closer to us than we
-				thought. Re-evaluate, but don't count it
-				again */
-			((struct key *)curll->object)->colour=curdegree;
-			((struct key *)curll->object)->pi=(struct ll *) prev;
-			nextll=lladd(nextll, curll->object);
-		}
-		curll=curll->next;
-	}
-	/* Now we've marked, let's recurse */
-	if (curdegree<maxdegree) curll=nextll; else curll=NULL;
-	while (curll!=NULL) {
-		if (sigs) {
-			count += size2degree(((struct key *)curll->object)->sigs, curll->object, sigs, curdegree, maxdegree, rec);
-		} else {
-			count += size2degree(((struct key *)curll->object)->signs, curll->object, sigs, curdegree, maxdegree, rec);
-		}
-		nextll=curll->next;
-		free(curll);
-		curll=nextll;
-	}
-
-	return count;
-}
-
-
-void sixdegrees(unsigned long keyid)
-{
-	struct key *keyinfo, key;
-	int loop;
-	int rec;
-
-	key.keyid=keyid;
-
-	if ((keyinfo=findinhash(&key))==NULL) {
-		printf("Couldn't find key 0x%08lX.\n", keyid);
-		return;
-	}
-
-	printf("Six degrees for 0x%08lX (%s):\n", keyinfo->keyid, keyinfo->name);
-
-	puts("\t\t   Signs       Signed by");
-	for (loop=1; loop<7; loop++) {
-		initcolour(0);
-		rec=0;
-		printf("Degree %d:\t%8ld", loop, size2degree(keyinfo->signs, NULL, 0, 0, loop, &rec));
-		printf(" (%d)", rec);
-		initcolour(0);
-		rec=0;
-		printf("\t%8ld", size2degree(keyinfo->sigs, NULL, 1, 0, loop, &rec));
-		printf(" (%d)\n", rec);
-	}
-}
-
-
-void showkeysigs(unsigned long keyid, int sigs)
-{
-	struct key *keyinfo, key;
-	struct ll *cursig;
-
-	key.keyid=keyid;
-
-	if ((keyinfo=findinhash(&key))==NULL) {
-		printf("Couldn't find key 0x%08lX.\n", keyid);
-		return;
-	}
-
-	printf("0x%08lX (%s) %s:\n", keyinfo->keyid, keyinfo->name,
-			sigs ? "is signed by" : "signs");
-
-	if (sigs) cursig=keyinfo->sigs; else cursig=keyinfo->signs;
-	while (cursig!=NULL) {
-		printf("\t0x%08lX (%s)\n", ((struct key *)cursig->object)->keyid,
-				((struct key *)cursig->object)->name);
-		cursig=cursig->next;
-	}
-}
-
-
-void findpath(unsigned long keyida, unsigned long keyidb)
-{
-	struct key *keyinfoa, *keyinfob, *curkey, keya, keyb;
-	int rec;
-
-	keya.keyid=keyida;
-	keyb.keyid=keyidb;
-
-	if ((keyinfoa=findinhash(&keya))==NULL) {
-		printf("Couldn't find key 0x%08lX.\n", keyida);
-		return;
-	}
-	if ((keyinfob=findinhash(&keyb))==NULL) {
-		printf("Couldn't find key 0x%08lX.\n", keyidb);
-		return;
-	}
-
-	/* Fill the tree info up */
-	initcolour(1);
-	rec=0;
-	size2degree(keyinfoa->signs, keyinfoa, 0, 0, 1000, &rec);
-	keyinfoa->pi=NULL;
-
-	printf("%d recursions required.\n", rec);
-	if (keyinfob->colour==0) {
-		printf("Can't find a link from 0x%08lX to 0x%08lX\n", keyida, keyidb);
-	} else {
-		printf("%d steps from 0x%08lX to 0x%08lX\n", keyinfob->colour, keyida, keyidb);
-		curkey=keyinfob;
-		while (curkey!=NULL) {
-			printf("0x%08lX (%s)\n", curkey->keyid, curkey->name);
-			curkey=(struct key *)curkey->pi;
-		}
-	}
-}
-
-
 int main(int argc, char *argv[])
 {
 	struct key *keyinfo,foo;
@@ -406,9 +268,7 @@ int main(int argc, char *argv[])
 	puts("Copyright 2000 Project Purple. Released under the GPL.");
 	puts("A simple program to do stats on a GPG keyring.\n");
 	inithash();
-//	readkeys("keyfile");
 	readkeys("keyfile.debian");
-//	readkeys("../keyfile.big");
 	printf("%ld selfsigned.\n", checkselfsig());
 	printf("%ld distinct keys.\n", hashelements());
 
@@ -418,15 +278,4 @@ int main(int argc, char *argv[])
 	printf("Starting second DFS.\n");
 	DFSsorted();
 	printtrees(2);
-
-//	foo.keyid=0xC7A966DD; /* Phil Zimmerman himself */
-//	if ((keyinfo=findinhash(&foo))==NULL) {
-//		printf("Couldn't find key 0x%08lX.\n", foo.keyid);
-//		return 1;
-//	}
-
-//	initcolour(0);
-//	rec=0;
-//	printf("%ld\n", size2degree(keyinfo->sigs, NULL, 0, 0, 1000, &rec));
-//	return 0;
 }

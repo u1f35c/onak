@@ -18,13 +18,16 @@ SRCS = armor.c parsekey.c merge.c keyid.c md5.c sha.c main.c getcgi.c stats.c \
 	keyindex.c mem.c lookup.c add.c keydb_$(DBTYPE).c ll.c hash.c \
 	gpgwww.c onak-conf.c charfuncs.c sendsync.c
 
-all: $(PROGS) testparse maxpath
+all: $(PROGS) testparse maxpath sixdegrees
 
 testparse: main.o $(OBJS)
 	$(LINK) -o testparse main.o $(OBJS) $(LIBS)
 
 maxpath: maxpath.o $(OBJS)
 	$(LINK) -o maxpath maxpath.o $(OBJS) $(LIBS)
+
+sixdegrees: sixdegrees.o $(OBJS)
+	$(LINK) -o sixdegrees sixdegrees.o $(OBJS) $(LIBS)
 
 gpgwww: gpgwww.o $(OBJS)
 	$(LINK) -o gpgwww gpgwww.o $(OBJS) $(LIBS)

@@ -66,33 +66,6 @@ void printtrees(int minsize)
 //	log(LOG_INFO, "Total of %ld trees.\n", total);
 }
 
-
-void sixdegrees(uint64_t keyid)
-{
-	struct stats_key *keyinfo;
-	int loop;
-	long degree;
-
-	if ((keyinfo = findinhash(keyid)) == NULL) {
-		printf("Couldn't find key 0x%llX.\n", keyid);
-		return;
-	}
-
-	printf("Six degrees for 0x%llX (%s):\n", keyinfo->keyid,
-						 keyid2uid(keyinfo->keyid));
-
-	puts("\t\t   Signs       Signed by");
-	for (loop = 1; loop < 7; loop++) {
-		initcolour(false);
-		degree = countdegree(keyinfo, 0, loop);
-		printf("Degree %d:\t%8ld", loop, degree);
-		initcolour(false);
-		degree = countdegree(keyinfo, 1, loop);
-		printf("\t%8ld\n", degree);
-	}
-}
-
-
 void showkeysigs(uint64_t keyid, bool sigs)
 {
 	struct stats_key *keyinfo = NULL;
@@ -198,35 +171,6 @@ void showmostsigns(int sigs)
 	}
 }
 
-void findmaxpath(unsigned long max)
-{
-	struct key *from, *to, *tmp;
-	struct ll *curkey;
-	unsigned long distance, loop;
-
-	printf("In findmaxpath\n");
-	distance=0;
-	from=to=NULL;
-	for (loop=0; loop<HASHSIZE && distance<max; loop++) {
-		curkey=gethashtableentry(loop);
-		while (curkey!=NULL && distance<max) {
-			initcolour(false);
-			tmp=furthestkey((struct key *)curkey->object);
-			if (tmp->colour>distance) {
-				from=(struct key *)curkey->object;
-				to=tmp;
-				distance=to->colour;
-				printf("Current max path (#%ld) is from %08lX to %08lX (%ld steps)\n", loop, from->keyid, to->keyid, distance);
-			}
-			curkey=curkey->next;
-		}
-	}
-	printf("Max path is from %08lX to %08lX (%ld steps)\n",
-			from->keyid,
-			to->keyid,
-			distance);
-}
-
 void showhelp(void)
 {
 	printf("gpgstats %s by Jonathan McDowell\n", VERSION);
@@ -283,9 +227,6 @@ void commandloop(void)
 		case 2:
 			readkeys(param);
 			break;
-		case 3:
-			sixdegrees(strtoul(param, NULL, 16));
-			break;
 		case 4:
 			//dofindpath(strtoul(param, NULL, 16),
 			//	strtoul(strchr(param, ' ')+1, NULL, 16));
@@ -320,9 +261,6 @@ void commandloop(void)
 			break;
 		case 12:
 			memstats();
-			break;
-		case 13:
-			findmaxpath(atoi(param));
 			break;
 		}
 	} while (cmd!=1);
