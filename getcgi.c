@@ -66,7 +66,7 @@ char *txt2html(const char *string)
  */
 void start_html(const char *title)
 {
-	puts("Content-Type: text/html; charset=utf8\n");
+	puts("Content-Type: text/html; charset=UTF-8\n");
 	puts("<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 3.2 Final//EN'>");
 	puts("<HTML>");
 	puts("<HEAD>");
