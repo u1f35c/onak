@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keyindex.c,v 1.12 2003/06/08 21:11:01 noodles Exp $
+ * $Id: keyindex.c,v 1.13 2003/10/11 21:52:18 noodles Exp $
  */
 
 #include <assert.h>
@@ -294,7 +294,7 @@ int mrkey_index(struct openpgp_publickey *keys)
 					keys->publickey->data[9];
 			break;
 		case 4:
-			get_fingerprint(keys->publickey, fp, &fplength);
+			(void) get_fingerprint(keys->publickey, fp, &fplength);
 
 			for (i = 0; i < fplength; i++) {
 				printf("%02X", fp[i]);

@@ -5,7 +5,7 @@
  *
  * Copyright 2000-2002 Project Purple
  *
- * $Id: hash.h,v 1.4 2003/06/04 20:57:08 noodles Exp $
+ * $Id: hash.h,v 1.5 2003/10/11 21:52:18 noodles Exp $
  */
 
 #ifndef __HASH_H__
@@ -73,6 +73,6 @@ unsigned long hashelements(void);
  *	Gets a particular entry from the hash. Useful for doing something over
  *	all entries in the hash.
  */
-struct ll *gethashtableentry(int entry);
+struct ll *gethashtableentry(unsigned int entry);
 
 #endif /* __HASH_H__ */

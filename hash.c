@@ -5,7 +5,7 @@
  *
  * Copyright 2000-2002 Project Purple
  *
- * $Id: hash.c,v 1.9 2003/10/04 10:21:40 noodles Exp $
+ * $Id: hash.c,v 1.10 2003/10/11 21:52:18 noodles Exp $
  */
 
 #include <stdio.h>
@@ -123,7 +123,7 @@ unsigned long hashelements(void)
 	return elements;
 }
 
-struct ll *gethashtableentry(int entry)
+struct ll *gethashtableentry(unsigned int entry)
 {
 	return hashtable[entry];
 }

@@ -5,7 +5,7 @@
  *
  * Copyright 2000-2002 Project Purple
  *
- * $Id: stats.c,v 1.12 2003/06/08 21:11:01 noodles Exp $
+ * $Id: stats.c,v 1.13 2003/10/11 21:52:18 noodles Exp $
  */
 
 #include <stdio.h>
@@ -26,7 +26,7 @@
  */
 void initcolour(bool parent)
 {
-	unsigned long loop;
+	unsigned int loop;
 	struct ll *curkey;
 
 	/*
@@ -62,7 +62,7 @@ unsigned long findpath(struct stats_key *have, struct stats_key *want)
 	struct ll *sigs = NULL;
 	struct ll *nextkeys = NULL;
 	long curdegree = 0;
-	long count = 0;
+	unsigned long count = 0;
 	
 	curdegree = 1;
 	keys = lladd(NULL, want);
@@ -135,8 +135,8 @@ void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 	/*
 	 * Make sure the keys we have and want are in the cache.
 	 */
-	cached_getkeysigs(fullhave);
-	cached_getkeysigs(fullwant);
+	(void) cached_getkeysigs(fullhave);
+	(void) cached_getkeysigs(fullwant);
 
 	if ((keyinfoa = findinhash(fullhave)) == NULL) {
 		printf("Couldn't find key 0x%llX.\n", have);

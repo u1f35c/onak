@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: parsekey.c,v 1.16 2003/10/04 10:21:40 noodles Exp $
+ * $Id: parsekey.c,v 1.17 2003/10/11 21:52:18 noodles Exp $
  */
 
 #include <assert.h>
@@ -135,7 +135,7 @@ int parse_keys(struct openpgp_packet_list *packets,
  */
 int debug_packet(struct openpgp_packet *packet)
 {
-	printf("\tNew format: %d, Tag: %d, Length: %d\n",
+	printf("\tNew format: %d, Tag: %u, Length: %d\n",
 			packet->newformat,
 			packet->tag,
 			packet->length);
