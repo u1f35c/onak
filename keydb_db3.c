@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb_db3.c,v 1.20 2003/09/30 20:40:10 noodles Exp $
+ * $Id: keydb_db3.c,v 1.21 2003/10/03 23:02:04 noodles Exp $
  */
 
 #include <assert.h>
@@ -58,7 +58,11 @@ static DB_TXN *txn = NULL;
 
 DB *keydb(uint64_t keyid)
 {
-	return(dbconns[keyid % numdbs]);
+	uint64_t keytrun;
+
+	keytrun = keyid >> 8;
+
+	return(dbconns[keytrun % numdbs]);
 }
 
 /**
@@ -170,7 +174,7 @@ void initdb(void)
 			0);
 	if (ret != 0) {
 		logthing(LOGTHING_CRITICAL,
-				"Erroring opening db environment: %s (%s)",
+				"Error opening db environment: %s (%s)",
 				config.db_dir,
 				db_strerror(ret));
 		exit(1);
