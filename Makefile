@@ -43,7 +43,8 @@ onak: onak.o merge.o $(CORE_OBJS)
 
 clean:
 	rm -f $(PROGS) $(OBJS) Makefile.bak testparse maxpath *.core core \
-		gpgwww.o add.o lookup.o main.o maxpath.o onak.o
+		gpgwww.o add.o lookup.o main.o maxpath.o onak.o sixdegrees \
+		sixdegrees.o
 
 depend:
 	makedepend $(SRCS)
