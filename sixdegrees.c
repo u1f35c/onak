@@ -132,6 +132,7 @@ int main(int argc, char *argv[])
 	sixdegrees(getfullkeyid(keyid));
 	destroyhash();
 	cleanupdb();
+	cleanuplogthing();
 	cleanupconfig();
 
 	return 0;
