@@ -1,7 +1,7 @@
 #
 # Makefile for onak.
 #
-# $Id: Makefile,v 1.20 2004/05/27 03:33:24 noodles Exp $
+# $Id: Makefile,v 1.21 2004/05/27 22:02:05 noodles Exp $
 #
 
 CC = gcc
@@ -10,7 +10,7 @@ CFLAGS += -Wall -pedantic -g -I/usr/local/include
 # Uncomment to enable profiling.
 #LDFLAGS += -pg
 # Can be "pg" for Postgresql, "file" for flat files or "db2" for pksd db2 style.
-DBTYPE = fs
+DBTYPE = db3
 # If using DBTYPE of "file" then comment the following line out.
 #LIBS = -L/usr/local/lib -lpq
 LIBS = -L/usr/local/lib -ldb3
@@ -22,7 +22,7 @@ CORE_OBJS = armor.o charfuncs.o decodekey.o getcgi.o hash.o keydb_$(DBTYPE).o \
 OBJS = merge.o stats.o sendsync.o $(CORE_OBJS)
 SRCS = armor.c parsekey.c merge.c keyid.c md5.c sha.c main.c getcgi.c stats.c \
 	keyindex.c mem.c lookup.c add.c keydb_$(DBTYPE).c ll.c hash.c \
-	gpgwww.c onak-conf.c charfuncs.c sendsync.c log.c photoid.c wordlist.o
+	gpgwww.c onak-conf.c charfuncs.c sendsync.c log.c photoid.c wordlist.c
 
 all: .depend $(PROGS) testparse maxpath sixdegrees splitkeys
 

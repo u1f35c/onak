@@ -19,7 +19,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  *
- * $Id: sha.c,v 1.2 2003/06/04 20:57:12 noodles Exp $
+ * $Id: sha.c,v 1.3 2004/05/27 22:02:06 noodles Exp $
  */
 
 /* This file was copied from GnuPG                               */
@@ -64,9 +64,9 @@ static void transform( SHA1_CONTEXT *hd, uint8_t *data )
     d = hd->h3;
     e = hd->h4;
 
-  #ifdef BIG_ENDIAN_HOST
+#ifdef BIG_ENDIAN_HOST
     memcpy( x, data, 64 );
-  #else
+#else
     { int i;
       uint8_t *p2;
       for(i=0, p2=(unsigned char*)x; i < 16; i++, p2 += 4 ) {
@@ -76,7 +76,7 @@ static void transform( SHA1_CONTEXT *hd, uint8_t *data )
 	p2[0] = *data++;
       }
     }
-  #endif
+#endif
 
 
 #define K1  0x5A827999L
@@ -273,18 +273,18 @@ void sha1_final(SHA1_CONTEXT *hd)
     transform( hd, hd->buf );
 
     p = hd->buf;
-  #ifdef BIG_ENDIAN_HOST
-    #define X(a) do { *(uint32_t *)p = hd->h##a ; p += 4; } while(0)
-  #else /* little endian */
-    #define X(a) do { *p++ = hd->h##a >> 24; *p++ = hd->h##a >> 16;	 \
+#ifdef BIG_ENDIAN_HOST
+#define X(a) do { *(uint32_t *)p = hd->h##a ; p += 4; } while(0)
+#else /* little endian */
+#define X(a) do { *p++ = hd->h##a >> 24; *p++ = hd->h##a >> 16;	 \
 		      *p++ = hd->h##a >> 8; *p++ = hd->h##a; } while(0)
-  #endif
+#endif
     X(0);
     X(1);
     X(2);
     X(3);
     X(4);
-  #undef X
+#undef X
 
 }
 

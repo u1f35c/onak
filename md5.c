@@ -18,7 +18,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * $Id: md5.c,v 1.3 2003/10/04 10:21:41 noodles Exp $
+ * $Id: md5.c,v 1.4 2004/05/27 22:02:05 noodles Exp $
  */
 /* Written by Ulrich Drepper <drepper@gnu.ai.mit.edu>, 1995.  */
 /* heavily modified for GnuPG by <werner.koch@guug.de> */
@@ -264,12 +264,12 @@ void md5_final( MD5_CONTEXT *hd )
     /*#define X(a) do { *(u32*)p = hd->##a ; p += 4; } while(0)*/
     /* Unixware's cpp doesn't like the above construct so we do it his way:
      * (reported by Allan Clark) */
-    #define X(a) do { *(unsigned int *)p = (*hd).a ; p += 4; } while(0)
+#define X(a) do { *(unsigned int *)p = (*hd).a ; p += 4; } while(0)
     X(A);
     X(B);
     X(C);
     X(D);
-  #undef X
+#undef X
 
 }
 
