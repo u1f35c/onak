@@ -38,6 +38,41 @@ void inithash(void)
 	elements = 0;
 }
 
+/**
+ *	destroyhash - Clean up the hash after use.
+ *
+ *	This function destroys the hash after use, freeing any memory that was
+ *	used during its lifetime.
+ */
+void destroyhash(void)
+{
+	int i;
+	struct ll *curll = NULL;
+	struct ll *nextll = NULL;
+
+	for (i = 0; i < HASHSIZE; i++) {
+		curll = hashtable[i];
+		while (curll != NULL) {
+			nextll = curll->next;
+			/*
+			 * TODO: The problem is the object has pointers that
+			 * need freed too.
+			 */
+			free(curll->object);
+			free(curll);
+			curll = nextll;
+		}
+		hashtable[i] = NULL;
+	}
+	elements = 0;
+}
+
+/**
+ *	addtohash - Adds a key to the hash.
+ *	@key: The key to add.
+ *
+ *	Takes a key and stores it in the hash.
+ */
 void addtohash(struct stats_key *key)
 {
 	++elements;

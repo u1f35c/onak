@@ -24,6 +24,14 @@
 void inithash(void);
 
 /**
+ *	destroyhash - Clean up the hash after use.
+ *
+ *	This function destroys the hash after use, freeing any memory that was
+ *	used during its lifetime.
+ */
+void destroyhash(void);
+
+/**
  *	addtohash - Adds a key to the hash.
  *	@key: The key to add.
  *
