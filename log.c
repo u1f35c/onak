@@ -131,7 +131,7 @@ int logthing(loglevels loglevel, const char *format, ...)
 	
 		fprintf(logfile, "[%02d/%02d/%4d %02d:%02d:%02d] %s[%d]: ",
 				timestamp->tm_mday,
-				timestamp->tm_mon,
+				timestamp->tm_mon + 1,
 				timestamp->tm_year + 1900,
 				timestamp->tm_hour,
 				timestamp->tm_min,
