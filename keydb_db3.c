@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb_db3.c,v 1.17 2003/09/28 14:54:57 noodles Exp $
+ * $Id: keydb_db3.c,v 1.18 2003/09/28 14:56:32 noodles Exp $
  */
 
 #include <assert.h>
@@ -785,8 +785,6 @@ int dumpdb(char *filenamebase)
 	int i;
 
 	for (i = 0; i < numdbs; i++) {
-		starttrans();
-	
 		ret = dbconns[i]->cursor(dbconns[i],
 			NULL,
 			&cursor,
@@ -811,8 +809,6 @@ int dumpdb(char *filenamebase)
 
 		ret = cursor->c_close(cursor);
 		cursor = NULL;
-	
-		endtrans();
 	}
 	
 	return 0;
