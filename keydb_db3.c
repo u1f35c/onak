@@ -355,7 +355,7 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 	return (numkeys);
 }
 
-int worddb_cmp(const char *d1, const char *d2)
+int worddb_cmp(const void *d1, const void *d2)
 {
 	return memcmp(d1, d2, 12);
 }

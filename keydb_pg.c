@@ -40,7 +40,7 @@ static PGconn *dbconn = NULL;
  */
 static int keydb_fetchchar(void *fd, size_t count, unsigned char *c)
 {
-	return (!lo_read(dbconn, *(int *) fd, c, count));
+	return (!lo_read(dbconn, *(int *) fd, (char *) c, count));
 }
 
 /**
@@ -48,7 +48,7 @@ static int keydb_fetchchar(void *fd, size_t count, unsigned char *c)
  */
 static int keydb_putchar(void *fd, size_t count, unsigned char *c)
 {
-	return !(lo_write(dbconn, *(int *) fd, c, count));
+	return !(lo_write(dbconn, *(int *) fd, (char *) c, count));
 }
 
 /**

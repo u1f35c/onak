@@ -271,7 +271,7 @@ uint64_t *keysubkeys(struct openpgp_publickey *key)
 			subkeys[count++] = get_packetid(cursubkey->packet);
 			cursubkey = cursubkey -> next;
 		}
-		subkeys[count] = NULL;
+		subkeys[count] = 0;
 	}
 
 	return subkeys;

@@ -45,7 +45,7 @@ static uint32_t calchash(uint8_t * ptr)
 {
 	register uint32_t h = FNV_offset_basis;
 	register uint32_t p = FNV_mixing_prime;
-	register uint32_t n = strlen(ptr);
+	register uint32_t n = strlen((char *) ptr);
 	register uint8_t *c = ptr;
 	while (n--) {
 		h *= p;
@@ -58,7 +58,7 @@ static uint32_t calchash(uint8_t * ptr)
 void keypath(char *buffer, uint64_t _keyid)
 {
 	uint64_t keyid = _keyid << 32;
-	snprintf(buffer, PATH_MAX, "%s/key/%02X/%02X/%08lX/%016llX",
+	snprintf(buffer, PATH_MAX, "%s/key/%02X/%02X/%08X/%016llX",
 		 config.db_dir, (uint8_t) ((keyid >> 56) & 0xFF),
 		 (uint8_t) ((keyid >> 48) & 0xFF),
 		 (uint32_t) (keyid >> 32), _keyid);
@@ -67,7 +67,7 @@ void keypath(char *buffer, uint64_t _keyid)
 void keydir(char *buffer, uint64_t _keyid)
 {
 	uint64_t keyid = _keyid << 32;
-	snprintf(buffer, PATH_MAX, "%s/key/%02X/%02X/%08lX", config.db_dir,
+	snprintf(buffer, PATH_MAX, "%s/key/%02X/%02X/%08X", config.db_dir,
 		 (uint8_t) ((keyid >> 56) & 0xFF),
 		 (uint8_t) ((keyid >> 48) & 0xFF),
 		 (uint32_t) (keyid >> 32));
@@ -88,7 +88,7 @@ void prove_path_to(uint64_t keyid, char *what)
 		 (uint8_t) ((keyid >> 16) & 0xFF));
 	mkdir(buffer, 0777);
 
-	snprintf(buffer, PATH_MAX, "%s/%s/%02X/%02X/%08lX", config.db_dir, what,
+	snprintf(buffer, PATH_MAX, "%s/%s/%02X/%02X/%08X", config.db_dir, what,
 		 (uint8_t) ((keyid >> 24) & 0xFF),
 		 (uint8_t) ((keyid >> 16) & 0xFF), (uint32_t) (keyid));
 	mkdir(buffer, 0777);
@@ -96,14 +96,14 @@ void prove_path_to(uint64_t keyid, char *what)
 
 void wordpath(char *buffer, char *word, uint32_t hash, uint64_t keyid)
 {
-	snprintf(buffer, PATH_MAX, "%s/words/%02X/%02X/%08lX/%s/%016llX",
+	snprintf(buffer, PATH_MAX, "%s/words/%02X/%02X/%08X/%s/%016llX",
 		 config.db_dir, (uint8_t) ((hash >> 24) & 0xFF),
 		 (uint8_t) ((hash >> 16) & 0xFF), hash, word, keyid);
 }
 
 void worddir(char *buffer, char *word, uint32_t hash)
 {
-	snprintf(buffer, PATH_MAX, "%s/words/%02X/%02X/%08lX/%s", config.db_dir,
+	snprintf(buffer, PATH_MAX, "%s/words/%02X/%02X/%08X/%s", config.db_dir,
 		 (uint8_t) ((hash >> 24) & 0xFF),
 		 (uint8_t) ((hash >> 16) & 0xFF), hash, word);
 }
@@ -375,16 +375,20 @@ int fetch_key_text(const char *search,
 {
 	struct ll *wordlist = NULL, *wl = NULL;
 	struct ll *keylist = NULL;
+	char      *searchtext = NULL;
 	int addedkeys = 0;
 
 	logthing(LOGTHING_CRITICAL, "Search was '%s'", search);
 
-	wl = wordlist = makewordlist(wordlist, search);
+	searchtext = strdup(search);
+	wl = wordlist = makewordlist(wordlist, searchtext);
 
 	keylist = internal_get_key_by_word(wordlist->object, NULL);
 
 	if (!keylist) {
 		llfree(wordlist, NULL);
+		free(searchtext);
+		searchtext = NULL;
 		return 0;
 	}
 
@@ -395,6 +399,8 @@ int fetch_key_text(const char *search,
 		if (!nkl) {
 			llfree(wordlist, NULL);
 			llfree(keylist, free);
+			free(searchtext);
+			searchtext = NULL;
 			return 0;
 		}
 		llfree(keylist, free);
@@ -417,6 +423,8 @@ int fetch_key_text(const char *search,
 	}
 
 	llfree(keylist, free);
+	free(searchtext);
+	searchtext = NULL;
 
 	return addedkeys;
 }
