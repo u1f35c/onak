@@ -1,0 +1,80 @@
+/*
+ * cleanup.c - Cleanup and shutdown framework.
+ *
+ * Jonathan McDowell <noodles@earth.li>
+ *
+ * Copyright 2004 Project Purple
+ */
+
+#include <signal.h>
+#include <stdbool.h>
+#include <stdlib.h>
+
+#include "cleanup.h"
+#include "keydb.h"
+#include "log.h"
+
+static bool should_cleanup = false;
+
+/*
+ *	trytocleanup - say we should try to cleanup.
+ *
+ *      This function sets the cleanup flag indicating we want to try and
+ *      cleanup ASAP.
+ */
+void trytocleanup(void)
+{
+	logthing(LOGTHING_NOTICE, "Setting cleanup flag.");
+	should_cleanup = true;
+
+	return;
+}
+
+/*
+ *	cleanup - indicate if we should try to cleanup.
+ *
+ *	This function returns a bool which indicates if we want to cleanup and
+ *	exit ASAP.
+ */
+bool cleanup(void)
+{
+	return(should_cleanup);
+}
+
+/**
+ *	sig_cleanup - set the cleanup flag when we receive a signal
+ *
+ *	This is our signal handler; all it does it log the fact we got a signal
+ *	and set the cleanup flag.
+ */
+void sig_cleanup(int signal)
+{
+	logthing(LOGTHING_NOTICE, "Got signal %d.", signal);
+	trytocleanup();
+
+	return;
+}
+
+/**
+ *	catchsignals - Register signal handlers for various signals.
+ *
+ *	This function registers a signal handler for various signals (PIPE,
+ *	ALRM, INT, TERM, HUP) that sets the cleanup flag so we try to exit
+ *	ASAP, but cleanly.
+ */
+void catchsignals(void)
+{
+	struct sigaction alarmh;
+
+	logthing(LOGTHING_NOTICE, "Catching signals");
+
+	memset(&alarmh, 0, sizeof(alarmh));
+	alarmh.sa_handler = sig_cleanup;
+	sigaction(SIGALRM, &alarmh, NULL);
+	sigaction(SIGPIPE, &alarmh, NULL);
+	sigaction(SIGTERM, &alarmh, NULL);
+	sigaction(SIGINT, &alarmh, NULL);
+	sigaction(SIGHUP, &alarmh, NULL);
+
+	return;
+}
