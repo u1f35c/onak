@@ -1,4 +1,9 @@
 * Check keys on import?
+   * Non self-signed user IDs
+   * Non self-signed subkeys
+   * Invalid revocations
+   * Signatures marked as non-exportable
+   * PKS subkey damage
 * Better signature subpacket parsing (primary UID for example).
 * Better merging of signatures; need to compare subpackets on Type 4 packets
   and choose which we should use (how? most recent date?)
