@@ -6,7 +6,7 @@ pks_bin_dir @BINDIR@
 db_dir @STATEDIR@/lib/onak
 logfile @STATEDIR@/log/onak.log
 # Loglevel : 0 is highest debug, default is 3, nothing is 7+
-loglevel 0
+loglevel 3
 
 ### Set www_port to the port on which HTTP requests should be accepted.
 ### If you do not want to process HTTP requests, set this to 0.
