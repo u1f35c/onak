@@ -237,7 +237,7 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 	if (html) {
 		puts("<pre>");
 	}
-	puts("Type  bits/keyID    Date       User ID");
+	puts("Type   bits/keyID    Date       User ID");
 	while (keys != NULL) {
 		created_time = (keys->publickey->data[1] << 24) +
 					(keys->publickey->data[2] << 16) +

@@ -1,5 +1,5 @@
 /*
- * onak_conf.h - Routines related to runtime config.
+ * onak-conf.h - Routines related to runtime config.
  *
  * Jonathan McDowell <noodles@earth.li>
  *
@@ -9,7 +9,7 @@
 #ifndef __ONAK_CONF_H_
 #define __ONAK_CONF_H_
 
-#define VERSION "0.0.2"
+#define VERSION "0.0.3"
 
 /*
  *	struct onak_config - Runtime configuration for onak.

@@ -2,10 +2,12 @@
 * Check keys on import?
 * Test library?
 * Better signature subpacket parsing (primary UID for example).
+* Better merging of signatures; need to decode subpackets so we can make sure
+  we don't add a signature that's already on a key but has different
+  subpackets.
 * Better txt2html routine.
 * Remove bithelp.h (i386 only at present & inlined).
   - Build and test on non-i386.
-* BSD license? (Needs md5 & sha routines rewritten/replaced then)
 * Pathfinder - graphical as well? Multiple paths?
 * Do pathlengths for similar email addresses to help aide keysigning.
   (ie "Find me the keys furthest from mine that end ox.ac.uk'")
@@ -22,8 +24,9 @@
 * Change over to PQescapeString in PostgreSQL backend once Woody releases.
 * Check freeing.
 * More comments.
-* Sort out merging (use keymerge + some Perl to answer incoming email. Not
-  sure about keys via hkp yet though).
+* Sort out merging (use onak + some Perl to answer incoming email. Not
+  sure about keys via hkp yet though - need to send updates out).
 * Look at db2 backend - is it db2's fault? (Well, deadlock in that the library
   probably is...). Is there an alternative library that would provide us with
   similar features but be more reliable? gdbm?
+* Honor no-modify keyserver flag ("Brian M. Carlson" <karlsson@hal-pc.org>)

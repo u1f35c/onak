@@ -6,6 +6,7 @@
  * Copyright 2000-2002 Project Purple
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "hash.h"
@@ -87,6 +88,7 @@ unsigned long findpath(struct stats_key *have, struct stats_key *want)
 			nextkeys = NULL;
 			curdegree++;
 		}
+		fprintf(stderr, "Hash contains %ld keys.\n", hashelements());
 	}
 
 	return count;

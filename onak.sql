@@ -6,6 +6,7 @@ CREATE TABLE onak_keys (
 	keyid	char(16) NOT NULL,
 	keydata	oid NOT NULL
 );
+CREATE INDEX onak_keys_keyid_index ON onak_keys(keyid);
 
 CREATE TABLE onak_uids (
 	keyid	char(16) NOT NULL,

@@ -281,64 +281,66 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
  *	This function uses putchar_func to write characters to an OpenPGP
  *	packet stream from a linked list of packets.
  */
-int write_openpgp_stream(int (*putchar_func)(void *ctx, unsigned char c),
+int write_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
+						unsigned char *c),
 				void *ctx,
 				struct openpgp_packet_list *packets)
 {
 	unsigned char	curchar = 0;
-	int		i;
 
 	while (packets != NULL) {
 		curchar = 0x80;
 		if (packets->packet->newformat) {
 			curchar |= 0x40;
 			curchar |= packets->packet->tag;
-			putchar_func(ctx, curchar);
+			putchar_func(ctx, 1, &curchar);
 
 			if (packets->packet->length < 192) {
-				putchar_func(ctx, packets->packet->length);
+				curchar = packets->packet->length;
+				putchar_func(ctx, 1, &curchar);
 			} else if (packets->packet->length > 191 &&
 				packets->packet->length < 8383) {
-//				fputs("Potentially dodgy code here.\n", stderr);
-				putchar_func(ctx, 
-					(((packets->packet->length - 192) &
-					 0xFF00) >> 8) + 192);
+				curchar = (((packets->packet->length - 192) &
+					 0xFF00) >> 8) + 192;
+				putchar_func(ctx, 1, &curchar);
 
-				putchar_func(ctx, 
-					(packets->packet->length - 192) &
-					 0xFF);
-
+				curchar = (packets->packet->length - 192) &
+					 0xFF;
+				putchar_func(ctx, 1, &curchar);
 			} else {
 				fputs("Unsupported new format length.\n", stderr);
 			}
 		} else {
 			curchar |= (packets->packet->tag << 2);
 			if (packets->packet->length < 256) {
-				putchar_func(ctx, curchar);
-				putchar_func(ctx, packets->packet->length);
+				putchar_func(ctx, 1, &curchar);
+				curchar = packets->packet->length;
+				putchar_func(ctx, 1, &curchar);
 			} else if (packets->packet->length < 0x10000) {
 				curchar |= 1;
-				putchar_func(ctx, curchar);
-				putchar_func(ctx, packets->packet->length >> 8);
-				putchar_func(ctx,
-					packets->packet->length & 0xFF);
+				putchar_func(ctx, 1, &curchar);
+				curchar = packets->packet->length >> 8;
+				putchar_func(ctx, 1, &curchar);
+				curchar = packets->packet->length & 0xFF;
+				putchar_func(ctx, 1, &curchar);
 			} else {
 				curchar |= 2;
-				putchar_func(ctx, curchar);
-				putchar_func(ctx,
-					packets->packet->length >> 24);
-				putchar_func(ctx,
-					(packets->packet->length >> 16) & 0xFF);
-				putchar_func(ctx,
-					(packets->packet->length >> 8) & 0xFF);
-				putchar_func(ctx,
-					packets->packet->length & 0xFF);
+				putchar_func(ctx, 1, &curchar);
+				curchar = packets->packet->length >> 24;
+				putchar_func(ctx, 1, &curchar);
+				curchar = (packets->packet->length >> 16) & 0xFF;
+				putchar_func(ctx, 1, &curchar);
+				curchar = (packets->packet->length >> 8) & 0xFF;
+				putchar_func(ctx, 1, &curchar);
+				curchar = packets->packet->length & 0xFF;
+				putchar_func(ctx, 1, &curchar);
 			}
 		}
 
-		for (i = 0; i < packets->packet->length; i++) {
-			putchar_func(ctx, packets->packet->data[i]);
-		}
+		putchar_func(ctx, packets->packet->length, packets->packet->data);
+//		for (i = 0; i < packets->packet->length; i++) {
+//			putchar_func(ctx, packets->packet->data[i]);
+//		}
 		packets = packets->next;
 	}
 	return 0;

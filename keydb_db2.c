@@ -21,7 +21,7 @@
 #include "keyindex.h"
 #include "keystructs.h"
 #include "mem.h"
-#include "onak_conf.h"
+#include "onak-conf.h"
 #include "parsekey.h"
 
 #define KEYDB_KEYID_BYTES 4
@@ -156,9 +156,32 @@ void cleanupdb(void)
 }
 
 /**
+ *	starttrans - Start a transaction.
+ *
+ *	Start a transaction. Intended to be used if we're about to perform many
+ *	operations on the database to help speed it all up, or if we want
+ *	something to only succeed if all relevant operations are successful.
+ */
+bool starttrans(void)
+{
+	return true;
+}
+
+/**
+ *	endtrans - End a transaction.
+ *
+ *	Ends a transaction.
+ */
+void endtrans(void)
+{
+	return;
+}
+
+/**
  *	fetch_key - Given a keyid fetch the key from storage.
  *	@keyid: The keyid to fetch.
  *	@publickey: A pointer to a structure to return the key in.
+ *	@intrans: If we're already in a transaction.
  *
  *	We use the hex representation of the keyid as the filename to fetch the
  *	key from. The key is stored in the file as a binary OpenPGP stream of
@@ -166,7 +189,8 @@ void cleanupdb(void)
  *	in and then parse_keys() to parse the packets into a publickey
  *	structure.
  */
-int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey)
+int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
+		bool intrans)
 {
 	struct openpgp_packet_list *packets = NULL;
 	int ret;
@@ -187,7 +211,6 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey)
 
 	ret = (*(keydb(&key)->get))(keydb(&key), NULL, &key, &data, 0);
 	if (ret == 0) {
-		//do stuff with data.
 		fetchbuf.buffer = data.data;
 		fetchbuf.offset = 0;
 		fetchbuf.size = data.size;
@@ -199,15 +222,30 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey)
 }
 
 /**
+ *	fetch_key_text - Trys to find the keys that contain the supplied text.
+ *	@search: The text to search for.
+ *	@publickey: A pointer to a structure to return the key in.
+ *
+ *	This function searches for the supplied text and returns the keys that
+ *	contain it.
+ */
+int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
+{
+	return 0;
+}
+
+/**
  *	store_key - Takes a key and stores it.
  *	@publickey: A pointer to the public key to store.
+ *	@intrans: If we're already in a transaction.
+ *	@update: If true the key exists and should be updated.
  *
  *	Again we just use the hex representation of the keyid as the filename
  *	to store the key to. We flatten the public key to a list of OpenPGP
  *	packets and then use write_openpgp_stream() to write the stream out to
  *	the file.
  */
-int store_key(struct openpgp_publickey *publickey)
+int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 {
 	return 0;
 }
@@ -215,11 +253,12 @@ int store_key(struct openpgp_publickey *publickey)
 /**
  *	delete_key - Given a keyid delete the key from storage.
  *	@keyid: The keyid to delete.
+ *	@intrans: If we're already in a transaction.
  *
  *	This function deletes a public key from whatever storage mechanism we
  *	are using. Returns 0 if the key existed.
  */
-int delete_key(uint64_t keyid)
+int delete_key(uint64_t keyid, bool intrans)
 {
 	return (1);
 }
@@ -229,4 +268,5 @@ int delete_key(uint64_t keyid)
  */
 #define NEED_KEYID2UID 1
 #define NEED_GETKEYSIGS 1
+#define NEED_GETFULLKEYID 1
 #include "keydb.c"

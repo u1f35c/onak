@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 			parse_keys(packets, &keys);
 			initdb();
 			printf("Got %d new keys.\n",
-					update_keys(&keys));
+					update_keys(&keys, false));
 			cleanupdb();
 		} else {
 			puts("No OpenPGP packets found in input.");

@@ -11,6 +11,7 @@
 
 #include "armor.h"
 #include "keystructs.h"
+#include "onak-conf.h"
 #include "parsekey.h"
 
 #define ARMOR_WIDTH 64
@@ -62,21 +63,6 @@ static unsigned char decode64(unsigned char c) {
 	return c;
 }
 
-
-void putstring(int (*putchar_func)(void *ctx, unsigned char c),
-			void *ctx,
-			const char *string)
-{
-	int i;
-
-	assert(putchar_func != NULL);
-	assert(string != NULL);
-
-	for (i = 0; string[i] != 0; i++) {
-		putchar_func(ctx, string[i]);
-	}
-}
-
 /**
  *	@lastoctet: The last octet we got.
  *	@curoctet: The current octet we're expecting (0, 1 or 2).
@@ -90,7 +76,7 @@ struct armor_context {
 	int curoctet;
 	int count;
 	long crc24;
-	int (*putchar_func)(void *ctx, unsigned char c);
+	int (*putchar_func)(void *ctx, size_t count, unsigned char *c);
 	void *ctx;
 };
 
@@ -104,36 +90,44 @@ static void armor_init(struct armor_context *ctx)
 
 static void armor_finish(struct armor_context *state)
 {
+	unsigned char c;
+
 	switch (state->curoctet++) {
 	case 0:
 		break;
 	case 1:
-		state->putchar_func(state->ctx,
-			encode64((state->lastoctet & 3) << 4));
-		state->putchar_func(state->ctx, '=');
-		state->putchar_func(state->ctx, '=');
+		c = encode64((state->lastoctet & 3) << 4);
+		state->putchar_func(state->ctx, 1, &c);
+		state->putchar_func(state->ctx, 1, (unsigned char *) "=");
+		state->putchar_func(state->ctx, 1, (unsigned char *) "=");
 		break;
 	case 2:
-		state->putchar_func(state->ctx,
-			encode64((state->lastoctet & 0xF) << 2));
-		state->putchar_func(state->ctx, '=');
+		c = encode64((state->lastoctet & 0xF) << 2);
+		state->putchar_func(state->ctx, 1, &c);
+		state->putchar_func(state->ctx, 1, (unsigned char *) "=");
 		break;
 	}
 
 	state->crc24 &= 0xffffffL;
-	state->putchar_func(state->ctx, '\n');
-	state->putchar_func(state->ctx, '=');
-	state->putchar_func(state->ctx, encode64(state->crc24 >> 18));
-	state->putchar_func(state->ctx, encode64((state->crc24 >> 12) & 0x3F));
-	state->putchar_func(state->ctx, encode64((state->crc24 >> 6) & 0x3F));
-	state->putchar_func(state->ctx, encode64(state->crc24 & 0x3F));
-	state->putchar_func(state->ctx, '\n');
+	state->putchar_func(state->ctx, 1, (unsigned char *) "\n");
+	state->putchar_func(state->ctx, 1, (unsigned char *) "=");
+	c = encode64(state->crc24 >> 18);
+	state->putchar_func(state->ctx, 1, &c);
+	c = encode64((state->crc24 >> 12) & 0x3F);
+	state->putchar_func(state->ctx, 1, &c);
+	c = encode64((state->crc24 >> 6) & 0x3F);
+	state->putchar_func(state->ctx, 1, &c);
+	c = encode64(state->crc24 & 0x3F);
+	state->putchar_func(state->ctx, 1, &c);
+	state->putchar_func(state->ctx, 1, (unsigned char *) "\n");
 
 }
 
-static int armor_putchar(void *ctx, unsigned char c)
+
+static int armor_putchar_int(void *ctx, unsigned char c)
 {
 	struct armor_context *state;
+	unsigned char t;
 	int i;
 
 	assert(ctx != NULL);
@@ -141,18 +135,20 @@ static int armor_putchar(void *ctx, unsigned char c)
 
 	switch (state->curoctet++) {
 	case 0:
-		state->putchar_func(state->ctx, encode64(c >> 2));
+		t = encode64(c >> 2);
+		state->putchar_func(state->ctx, 1, &t);
 		state->count++;
 		break;
 	case 1:
-		state->putchar_func(state->ctx,
-			encode64(((state->lastoctet & 3) << 4) + (c >> 4)));
+		t = encode64(((state->lastoctet & 3) << 4) + (c >> 4));
+		state->putchar_func(state->ctx, 1, &t);
 		state->count++;
 		break;
 	case 2:
-		state->putchar_func(state->ctx,
-			encode64(((state->lastoctet & 0xF) << 2) + (c >> 6)));
-		state->putchar_func(state->ctx, encode64(c & 0x3F));
+		t = encode64(((state->lastoctet & 0xF) << 2) + (c >> 6));
+		state->putchar_func(state->ctx, 1, &t);
+		t = encode64(c & 0x3F);
+		state->putchar_func(state->ctx, 1, &t);
 		state->count += 2;
 		break;
 	}
@@ -168,9 +164,21 @@ static int armor_putchar(void *ctx, unsigned char c)
 	}
 
 	if ((state->count % ARMOR_WIDTH) == 0) {
-		state->putchar_func(state->ctx, '\n');
+		state->putchar_func(state->ctx, 1, (unsigned char *) "\n");
 	}
 
+	return 0;
+}
+
+
+static int armor_putchar(void *ctx, size_t count, unsigned char *c)
+{
+	int i;
+
+	for (i = 0; i < count; i++) {
+		armor_putchar_int(ctx, c[i]);
+	}
+	
 	return 0;
 }
 
@@ -285,18 +293,20 @@ static int dearmor_getchar_c(void *ctx, size_t count, unsigned char *c)
  *	This function ASCII armors a list of OpenPGP packets and outputs it
  *	using putchar_func.
  */
-int armor_openpgp_stream(int (*putchar_func)(void *ctx, unsigned char c),
+int armor_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
+						unsigned char *c),
 				void *ctx,
 				struct openpgp_packet_list *packets)
 {
 	struct armor_context armor_ctx;
 
-
 	/*
 	 * Print armor header
 	 */
-	putstring(putchar_func, ctx, "-----BEGIN PGP PUBLIC KEY BLOCK-----\n");
-	putstring(putchar_func, ctx, "Version: onak 0.0.1\n\n");
+	putchar_func(ctx, sizeof("-----BEGIN PGP PUBLIC KEY BLOCK-----\n"),
+		(unsigned char *) "-----BEGIN PGP PUBLIC KEY BLOCK-----\n");
+	putchar_func(ctx, sizeof("Version: onak " VERSION "\n\n"),
+		(unsigned char *) "Version: onak " VERSION "\n\n");
 	
 	armor_init(&armor_ctx);
 	armor_ctx.putchar_func = putchar_func;
@@ -307,7 +317,8 @@ int armor_openpgp_stream(int (*putchar_func)(void *ctx, unsigned char c),
 	/*
 	 * Print armor footer
 	 */
-	putstring(putchar_func, ctx, "-----END PGP PUBLIC KEY BLOCK-----\n");
+	putchar_func(ctx, sizeof("-----END PGP PUBLIC KEY BLOCK-----\n"),
+		(unsigned char *) "-----END PGP PUBLIC KEY BLOCK-----\n");
 
 	return 0;
 }

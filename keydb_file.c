@@ -20,7 +20,7 @@
 #include "keystructs.h"
 #include "ll.h"
 #include "mem.h"
-#include "onak_conf.h"
+#include "onak-conf.h"
 #include "parsekey.h"
 
 /**
@@ -34,9 +34,9 @@ static int keydb_fetchchar(void *fd, size_t count, unsigned char *c)
 /**
  *	keydb_putchar - Puts a char to a file.
  */
-static int keydb_putchar(void *fd, unsigned char c)
+static int keydb_putchar(void *fd, size_t count, unsigned char *c)
 {
-	return !(write( *(int *) fd, &c, sizeof(c)));
+	return !(write( *(int *) fd, c, count));
 }
 
 /**
@@ -143,4 +143,5 @@ int delete_key(uint64_t keyid)
  */
 #define NEED_KEYID2UID 1
 #define NEED_GETKEYSIGS 1
+#define NEED_GETFULLKEYID 1
 #include "keydb.c"

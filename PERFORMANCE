@@ -1,0 +1,39 @@
+Performance of adding 2M key chunks (~ 1700 keys).
+
+Originally ~ 30 mins with 0.0.2.
+
+After adding an index on keyid for onak_keys:
+        Command being timed: "/u2/noodles/onak-0.0.3/onak"
+        User time (seconds): 75.12
+        System time (seconds): 76.08
+        Percent of CPU this job got: 3%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 1:18:17
+        Major (requiring I/O) page faults: 630
+        Minor (reclaiming a frame) page faults: 1238
+
+Making deletion in the same transaction as readding:
+        Command being timed: "/u2/noodles/onak-0.0.3/onak"
+        User time (seconds): 67.28
+        System time (seconds): 75.74
+        Percent of CPU this job got: 2%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 1:22:08
+        Major (requiring I/O) page faults: 617
+        Minor (reclaiming a frame) page faults: 1241
+
+Making merge_keys all one transaction:
+        Command being timed: "/u2/noodles/onak-0.0.3/onak"
+        User time (seconds): 74.45
+        System time (seconds): 69.82
+        Percent of CPU this job got: 2%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 1:29:28
+        Major (requiring I/O) page faults: 610
+        Minor (reclaiming a frame) page faults: 1237
+
+Only delete old key if we know it exists:
+	Command being timed: "/u2/noodles/onak-0.0.3/onak"
+        User time (seconds): 77.47
+        System time (seconds): 75.06
+        Percent of CPU this job got: 3%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 1:16:41
+        Major (requiring I/O) page faults: 610
+        Minor (reclaiming a frame) page faults: 1239

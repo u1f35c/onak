@@ -25,7 +25,7 @@
 #include "keyindex.h"
 #include "keystructs.h"
 #include "mem.h"
-#include "onak_conf.h"
+#include "onak-conf.h"
 #include "parsekey.h"
 
 /**
@@ -44,9 +44,9 @@ static int keydb_fetchchar(void *fd, size_t count, unsigned char *c)
 /**
  *	keydb_putchar - Puts a char to a file.
  */
-static int keydb_putchar(void *fd, unsigned char c)
+static int keydb_putchar(void *fd, size_t count, unsigned char *c)
 {
-	return !(lo_write(dbconn, *(int *) fd, &c, sizeof(c)));
+	return !(lo_write(dbconn, *(int *) fd, c, count));
 }
 
 /**
@@ -88,9 +88,42 @@ void cleanupdb(void)
 }
 
 /**
+ *	starttrans - Start a transaction.
+ *
+ *	Start a transaction. Intended to be used if we're about to perform many
+ *	operations on the database to help speed it all up, or if we want
+ *	something to only succeed if all relevant operations are successful.
+ */
+bool starttrans(void)
+{
+	PGresult *result = NULL;
+	
+	result = PQexec(dbconn, "BEGIN");
+	PQclear(result);
+
+	return true;
+}
+
+/**
+ *	endtrans - End a transaction.
+ *
+ *	Ends a transaction.
+ */
+void endtrans(void)
+{
+	PGresult *result = NULL;
+
+	result = PQexec(dbconn, "COMMIT");
+	PQclear(result);
+
+	return;
+}
+
+/**
  *	fetch_key - Given a keyid fetch the key from storage.
  *	@keyid: The keyid to fetch.
  *	@publickey: A pointer to a structure to return the key in.
+ *	@intrans: If we're already in a transaction.
  *
  *	We use the hex representation of the keyid as the filename to fetch the
  *	key from. The key is stored in the file as a binary OpenPGP stream of
@@ -98,7 +131,7 @@ void cleanupdb(void)
  *	in and then parse_keys() to parse the packets into a publickey
  *	structure.
  */
-int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey)
+int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey, bool intrans)
 {
 	struct openpgp_packet_list *packets = NULL;
 	PGresult *result = NULL;
@@ -109,8 +142,10 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey)
 	int numkeys = 0;
 	Oid key_oid;
 
-	result = PQexec(dbconn, "BEGIN");
-	PQclear(result);
+	if (!intrans) {
+		result = PQexec(dbconn, "BEGIN");
+		PQclear(result);
+	}
 	
 	if (keyid > 0xFFFFFFFF) {
 		snprintf(statement, 1023,
@@ -146,8 +181,10 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey)
 
 	PQclear(result);
 
-	result = PQexec(dbconn, "COMMIT");
-	PQclear(result);
+	if (!intrans) {
+		result = PQexec(dbconn, "COMMIT");
+		PQclear(result);
+	}
 	return (numkeys);
 }
 
@@ -228,13 +265,16 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
 /**
  *	store_key - Takes a key and stores it.
  *	@publickey: A pointer to the public key to store.
+ *	@intrans: If we're already in a transaction.
+ *	@update: If true the key exists and should be updated.
  *
  *	Again we just use the hex representation of the keyid as the filename
  *	to store the key to. We flatten the public key to a list of OpenPGP
  *	packets and then use write_openpgp_stream() to write the stream out to
- *	the file.
+ *	the file. If update is true then we delete the old key first, otherwise we
+ *	trust that it doesn't exist.
  */
-int store_key(struct openpgp_publickey *publickey)
+int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 {
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_packet_list *list_end = NULL;
@@ -248,6 +288,10 @@ int store_key(struct openpgp_publickey *publickey)
 	char *dodgychar = NULL;
 	int i;
 
+	if (!intrans) {
+		result = PQexec(dbconn, "BEGIN");
+		PQclear(result);
+	}
 
 	/*
 	 * Delete the key if we already have it.
@@ -257,10 +301,9 @@ int store_key(struct openpgp_publickey *publickey)
 	 * of difference though - the largest chunk of data is the keydata and
 	 * it definitely needs updated.
 	 */
-	delete_key(get_keyid(publickey));
-
-	result = PQexec(dbconn, "BEGIN");
-	PQclear(result);
+	if (update) {
+		delete_key(get_keyid(publickey), true);
+	}
 
 	next = publickey->next;
 	publickey->next = NULL;
@@ -328,8 +371,10 @@ int store_key(struct openpgp_publickey *publickey)
 		}
 	}
 
-	result = PQexec(dbconn, "COMMIT");
-	PQclear(result);
+	if (!intrans) {
+		result = PQexec(dbconn, "COMMIT");
+		PQclear(result);
+	}
 	
 	return 0;
 }
@@ -337,11 +382,12 @@ int store_key(struct openpgp_publickey *publickey)
 /**
  *	delete_key - Given a keyid delete the key from storage.
  *	@keyid: The keyid to delete.
+ *	@intrans: If we're already in a transaction.
  *
  *	This function deletes a public key from whatever storage mechanism we
  *	are using. Returns 0 if the key existed.
  */
-int delete_key(uint64_t keyid)
+int delete_key(uint64_t keyid, bool intrans)
 {
 	PGresult *result = NULL;
 	char *oids = NULL;
@@ -350,8 +396,10 @@ int delete_key(uint64_t keyid)
 	int i;
 	Oid key_oid;
 
-	result = PQexec(dbconn, "BEGIN");
-	PQclear(result);
+	if (!intrans) {
+		result = PQexec(dbconn, "BEGIN");
+		PQclear(result);
+	}
 	
 	snprintf(statement, 1023,
 			"SELECT keydata FROM onak_keys WHERE keyid = '%llX'",
@@ -386,8 +434,10 @@ int delete_key(uint64_t keyid)
 
 	PQclear(result);
 
-	result = PQexec(dbconn, "COMMIT");
-	PQclear(result);
+	if (!intrans) {
+		result = PQexec(dbconn, "COMMIT");
+		PQclear(result);
+	}
 	return (found);
 }
 
@@ -430,4 +480,5 @@ char *keyid2uid(uint64_t keyid)
  * Include the basic keydb routines.
  */
 #define NEED_GETKEYSIGS 1
+#define NEED_GETFULLKEYID 1
 #include "keydb.c"

@@ -11,6 +11,7 @@
 
 #include "hash.h"
 #include "keydb.h"
+#include "keyid.h"
 #include "ll.h"
 #include "stats.h"
 

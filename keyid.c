@@ -26,6 +26,8 @@ uint64_t get_keyid(struct openpgp_publickey *publickey)
 	unsigned char c;
 	unsigned char *buff = NULL;
 
+	assert(publickey != NULL);
+
 	switch (publickey->publickey->data[0]) {
 	case 2:
 	case 3:

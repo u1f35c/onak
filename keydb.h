@@ -33,37 +33,59 @@ void initdb(void);
 void cleanupdb(void);
 
 /**
+ *	starttrans - Start a transaction.
+ *
+ *	Start a transaction. Intended to be used if we're about to perform many
+ *	operations on the database to help speed it all up, or if we want
+ *	something to only succeed if all relevant operations are successful.
+ */
+bool starttrans(void);
+
+/**
+ *	endtrans - End a transaction.
+ *
+ *	Ends a transaction.
+ */
+void endtrans(void);
+
+/**
  *	fetch_key - Given a keyid fetch the key from storage.
  *	@keyid: The keyid to fetch.
  *	@publickey: A pointer to a structure to return the key in.
+ *	@intrans: If we're already in a transaction.
  *
  *	This function returns a public key from whatever storage mechanism we
  *	are using.
  *
  *      TODO: What about keyid collisions? Should we use fingerprint instead?
  */
-int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey);
+int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey, bool intrans);
 
 /**
  *	store_key - Takes a key and stores it.
  *	@publickey: A pointer to the public key to store.
+ *	@intrans: If we're already in a transaction.
+ *	@update: If true the key exists and should be updated.
  *
  *	This function stores a public key in whatever storage mechanism we are
- *	using.
+ *	using. intrans indicates if we're already in a transaction so don't
+ *	need to start one. update indicates if the key already exists and is
+ *	just being updated.
  *
  *	TODO: Do we store multiple keys of the same id? Or only one and replace
  *	it?
  */
-int store_key(struct openpgp_publickey *publickey);
+int store_key(struct openpgp_publickey *publickey, bool intrans, bool update);
 
 /**
  *	delete_key - Given a keyid delete the key from storage.
  *	@keyid: The keyid to delete.
+ *	@intrans: If we're already in a transaction.
  *
  *	This function deletes a public key from whatever storage mechanism we
  *	are using. Returns 0 if the key existed.
  */
-int delete_key(uint64_t keyid);
+int delete_key(uint64_t keyid, bool intrans);
 
 /**
  *	fetch_key_text - Trys to find the keys that contain the supplied text.
@@ -92,5 +114,14 @@ char *keyid2uid(uint64_t keyid);
  *	indexing and doing stats bits.
  */
 struct ll *getkeysigs(uint64_t keyid);
+
+/**
+ *	getfullkeyid - Maps a 32bit key id to a 64bit one.
+ *	@keyid: The 32bit keyid.
+ *
+ *	This function maps a 32bit key id to the full 64bit one. It returns the
+ *	full keyid.
+ */
+uint64_t getfullkeyid(uint64_t keyid);
 
 #endif /* __KEYDB_H__ */

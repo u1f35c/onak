@@ -14,7 +14,7 @@
 #include "getcgi.h"
 #include "hash.h"
 #include "keydb.h"
-#include "onak_conf.h"
+#include "onak-conf.h"
 #include "stats.h"
 
 void dofindpath(uint64_t have, uint64_t want, bool html)
@@ -22,6 +22,9 @@ void dofindpath(uint64_t have, uint64_t want, bool html)
 	struct stats_key *keyinfoa, *keyinfob, *curkey;
 	int rec;
 	char *uid;
+
+	have = getfullkeyid(have);
+	want = getfullkeyid(want);
 
 	/*
 	 * Make sure the keys we have and want are in the cache.
@@ -53,30 +56,31 @@ void dofindpath(uint64_t have, uint64_t want, bool html)
 				want);
 	} else {
 		printf("%d steps from 0x%llX to 0x%llX\n",
-				keyinfoa->colour, have, want);
+				keyinfoa->colour, have & 0xFFFFFFFF,
+				want & 0xFFFFFFFF);
 		curkey = keyinfoa;
 		while (curkey != NULL && curkey->keyid != 0) {
 			uid = keyid2uid(curkey->keyid);
 			if (html && uid == NULL) {
 				printf("<a href=\"lookup?op=get&search=%llX\">"
 					"0x%llX</a> ([User id not found])%s)%s\n",
-					curkey->keyid,
-					curkey->keyid,
+					curkey->keyid & 0xFFFFFFFF,
+					curkey->keyid & 0xFFFFFFFF,
 					(curkey->keyid == want) ? "" :
 					 " signs");
 			} else if (html && uid != NULL) {
 				printf("<a href=\"lookup?op=get&search=%llX\">"
 					"0x%llX</a> (<a href=\"lookup?op=vindex"
 					"&search=0x%llX\">%s</a>)%s\n",
-					curkey->keyid,
-					curkey->keyid,
-					curkey->keyid,
+					curkey->keyid & 0xFFFFFFFF,
+					curkey->keyid & 0xFFFFFFFF,
+					curkey->keyid & 0xFFFFFFFF,
 					txt2html(keyid2uid(curkey->keyid)),
 					(curkey->keyid == want) ? "" :
 					 " signs");
 			} else {
 				printf("0x%llX (%s)%s\n",
-					curkey->keyid,
+					curkey->keyid & 0xFFFFFFFF,
 					(uid == NULL) ? "[User id not found]" :
 						uid,
 					(curkey->keyid == want) ? "" :

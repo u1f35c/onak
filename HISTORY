@@ -21,3 +21,22 @@
 * Added searching on uids to lookup & keydb_pg.
 * Changed Postgres backend to use 64 bit keyids instead of 32 bit.
 * Made dearmor ignore CRs when looking for 2 blank lines.
+
+0.0.3 - 2nd July 2002
+
+* Added index on keyid for key table in Postgres backend.
+* Twiddled transaction support in an attempt to speed up mass key adding.
+* Changed putchar_func to take a character count rather than doing one char at
+  a time (massive speed up in Postgres case).
+* Introduced onak binary for general keyserver operations.
+* Changed all version number references to use VERSION macro.
+* Made lldel free the unused list structure. (pointed out by Simon Huggins)
+* Made llfind assert that the cmp function is non NULL. (Simon Huggins again)
+* Fixed gpgwww; after the move to 64bit keyids internally it was trying to
+  compare the 32bit user supplied keyid to the retrieved 64bit one and never
+  finding paths.
+* Various tidying up I've forgotten.
+* Fixed bug with removing signed packets while merging.
+* Fixed bug with potentially adding an already existing uid to a key when
+  merging.
+* Fixed stupid typo bug in merging keys.

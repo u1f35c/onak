@@ -22,14 +22,16 @@ sub submitupdate {
 	my @data = @_;
 	my (@errors, @mergedata);
 
-	open3(\*MERGEIN, \*MERGEOUT, \*MERGEERR, "/home/noodles/onak-0.0.2/keymerge");
+	open3(\*MERGEIN, \*MERGEOUT, \*MERGEERR, "/home/noodles/onak-0.0.3/onak", "add");
 
 	print MERGEIN @data;
 	close MERGEIN;
 	@errors = <MERGEERR>;
 	@mergedata = <MERGEOUT>;
 
-	#print @errors;
+	open (LOG, ">>/home/noodles/onak-0.0.3/keyadd.log");
+	print LOG @errors;
+	close LOG;
 
 	return @mergedata;
 }

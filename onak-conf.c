@@ -1,5 +1,5 @@
 /*
- * onak_conf.c - Routines related to runtime config.
+ * onak-conf.c - Routines related to runtime config.
  *
  * Jonathan McDowell <noodles@earth.li>
  *
@@ -8,7 +8,7 @@
 
 #include <stdlib.h>
 
-#include "onak_conf.h"
+#include "onak-conf.h"
 
 /*
  *	config - Runtime configuration for onak.
@@ -22,7 +22,7 @@ struct onak_config config = {
 	/*
 	 * Options for the db2 file backend.
 	 */
-	NULL,			/* db2_dbpath */
+	"/community/pgp-keyserver/db-copy",	/* db2_dbpath */
 
 	/*
 	 * Options for the file backend.
@@ -33,7 +33,7 @@ struct onak_config config = {
 	 * Options for the Postgres backend.
 	 */
 	NULL,			/* pg_dbhost */
-	NULL,			/* pg_dbname */
-	"noodles",		/* pg_dbuser */
+	"noodles",		/* pg_dbname */
+	NULL,			/* pg_dbuser */
 	NULL,			/* pg_dbpass */
 };

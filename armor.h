@@ -20,7 +20,8 @@
  *	This function ASCII armors a list of OpenPGP packets and outputs it
  *	using putchar_func.
  */
-int armor_openpgp_stream(int (*putchar_func)(void *ctx, unsigned char c),
+int armor_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
+						unsigned char *c),
 				void *ctx,
 				struct openpgp_packet_list *packets);
 

@@ -35,7 +35,7 @@ char *keyid2uid(uint64_t keyid)
 	static char buf[1024];
 
 	buf[0]=0;
-	if (fetch_key(keyid, &publickey) && publickey != NULL) {
+	if (fetch_key(keyid, &publickey, false) && publickey != NULL) {
 		curuid = publickey->uids;
 		while (curuid != NULL && buf[0] == 0) {
 			if (curuid->packet->tag == 13) {
@@ -70,7 +70,7 @@ struct ll *getkeysigs(uint64_t keyid)
 	struct openpgp_signedpacket_list *uids = NULL;
 	struct openpgp_publickey *publickey = NULL;
 
-	fetch_key(keyid, &publickey);
+	fetch_key(keyid, &publickey, false);
 	
 	if (publickey != NULL) {
 		for (uids = publickey->uids; uids != NULL; uids = uids->next) {
@@ -80,5 +80,27 @@ struct ll *getkeysigs(uint64_t keyid)
 	}
 
 	return sigs;
+}
+#endif
+
+#ifdef NEED_GETFULLKEYID
+/**
+ *	getfullkeyid - Maps a 32bit key id to a 64bit one.
+ *	@keyid: The 32bit keyid.
+ *
+ *	This function maps a 32bit key id to the full 64bit one. It returns the
+ *	full keyid.
+ */
+uint64_t getfullkeyid(uint64_t keyid)
+{
+	struct openpgp_publickey *publickey = NULL;
+
+	if (keyid < 0x100000000) {
+		fetch_key(keyid, &publickey, false);
+		keyid = get_keyid(publickey);
+		free_publickey(publickey);
+	}
+	
+	return keyid;
 }
 #endif

@@ -18,7 +18,7 @@
 #include "keydb.h"
 #include "keyindex.h"
 #include "mem.h"
-#include "onak_conf.h"
+#include "onak-conf.h"
 #include "parsekey.h"
 
 #define OP_UNKNOWN 0
@@ -26,9 +26,9 @@
 #define OP_INDEX   2
 #define OP_VINDEX  3
 
-int putnextchar(void *ctx, unsigned char c)
+int putnextchar(void *ctx, size_t count, unsigned char *c)
 {
-        return putchar(c);
+	return printf("%.*s", count, c);
 }
 
 void find_keys(char *search, uint64_t keyid, bool ishex,
@@ -38,7 +38,7 @@ void find_keys(char *search, uint64_t keyid, bool ishex,
 	int count = 0;
 
 	if (ishex) {
-		count = fetch_key(keyid, &publickey);
+		count = fetch_key(keyid, &publickey, false);
 	} else {
 		count = fetch_key_text(search, &publickey);
 	}
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 		initdb();
 		switch (op) {
 		case OP_GET:
-			if (fetch_key(keyid, &publickey)) {
+			if (fetch_key(keyid, &publickey, false)) {
 				puts("<pre>");
 				flatten_publickey(publickey,
 							&packets,

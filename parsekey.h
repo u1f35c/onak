@@ -68,7 +68,8 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
  *	This function uses putchar_func to write characters to an OpenPGP
  *	packet stream from a linked list of packets.
  */
-int write_openpgp_stream(int (*putchar_func)(void *ctx, unsigned char c),
+int write_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
+						unsigned char *c),
 				void *ctx,
 				struct openpgp_packet_list *packets);
 

@@ -31,7 +31,8 @@ struct ll *lladd(struct ll *curll, void *object)
 struct ll *lldel(struct ll *curll, void *object,
 	int (*objectcmp) (const void *object1, const void *object2))
 {
-	struct ll *cur;
+	struct ll *cur = NULL;
+	struct ll *old = NULL;
 
 	assert(objectcmp != NULL);
 
@@ -39,11 +40,16 @@ struct ll *lldel(struct ll *curll, void *object,
 	if (cur == NULL) {
 		return NULL;
 	} else if (!(*objectcmp)(cur->object, object)) {
-		return cur->next;
+		old = cur;
+		cur = cur->next;
+		free(old);
+		return cur;
 	} 
 	while (cur->next != NULL) {
 		if (!(*objectcmp)(cur->next->object, object)) {
+			old = cur->next;
 			cur->next = cur->next->next;
+			free(old);
 			break;
 		}
 	}
@@ -54,6 +60,8 @@ struct ll *llfind(struct ll *curll, void *object,
 	int (*objectcmp) (const void *object1, const void *object2))
 {
 	struct ll *cur;
+
+	assert(objectcmp != NULL);
 
 	cur = curll;
 	while (cur != NULL && (*objectcmp)(cur->object, object)) {

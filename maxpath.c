@@ -24,7 +24,7 @@ void findmaxpath(unsigned long max)
 	printf("In findmaxpath\n");
 	distance = 0;
 	from = to = tmp = NULL;
-	hash_getkeysigs(0x5B430367);
+	hash_getkeysigs(0xF1BD4BE45B430367);
 
 	for (loop = 0; (loop < HASHSIZE) && (distance < max); loop++) {
 		curkey = gethashtableentry(loop);
