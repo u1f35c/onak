@@ -9,6 +9,8 @@ AC_C_BIGENDIAN
 
 AC_ARG_ENABLE(backend,AC_HELP_STRING([--enable-backend=<backend>],[Choose the backend database to use. Defaults to db4.]), [], [enable_backend="db4"])
 
+AC_ARG_ENABLE(keyd,AC_HELP_STRING([--enable-keyd],[Use keyd as the DB backend.]), [], [])
+
 AC_MSG_CHECKING([which key database backend to use])
 AC_MSG_RESULT([$enable_backend])
 AC_CHECK_FILE([$srcdir/keydb_$enable_backend.c], ,AC_MSG_ERROR([non existent key database backend $enable_backend]))
@@ -45,6 +47,8 @@ fi
 fi
 
 AC_SUBST(DBTYPE, $enable_backend)
+
+AC_SUBST(KEYD, $enable_keyd)
 
 AC_CONFIG_FILES(Makefile)
 

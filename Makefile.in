@@ -16,19 +16,32 @@ prefix ?= @prefix@
 exec_prefix ?= @exec_prefix@
 
 PROGS = add lookup gpgwww onak splitkeys onak-mail.pl stripkey
-CORE_OBJS = armor.o charfuncs.o decodekey.o getcgi.o hash.o keydb_$(DBTYPE).o \
+CORE_OBJS = armor.o charfuncs.o decodekey.o getcgi.o hash.o \
 	keyid.o keyindex.o ll.o mem.o onak-conf.o parsekey.o sha1.o md5.o \
 	log.o photoid.o wordlist.o cleanup.o
-OBJS = merge.o stats.o sendsync.o cleankey.o $(CORE_OBJS)
 SRCS = armor.c parsekey.c merge.c keyid.c md5.c sha1.c main.c getcgi.c mem.c \
 	keyindex.c stats.c lookup.c add.c keydb_$(DBTYPE).c ll.c hash.c \
 	gpgwww.c onak-conf.c charfuncs.c sendsync.c log.c photoid.c \
 	wordlist.c cleankey.c cleanup.c
 
+ifeq (x@KEYD@, xyes)
+PROGS += keyd
+KEYDB_OBJ = keydb_keyd.o
+SRCS += keyd.c keydb_keyd.c
+else
+KEYDB_OBJ = keydb_$(DBTYPE).o
+endif
+
+OBJS = merge.o stats.o sendsync.o cleankey.o $(CORE_OBJS) $(KEYDB_OBJ)
+
 all: .depend $(PROGS) testparse maxpath sixdegrees splitkeys onak.conf
 
-splitkeys: splitkeys.o $(CORE_OBJS)
-	$(CC) $(LDFLAGS) -o splitkeys splitkeys.o $(CORE_OBJS) $(LIBS)
+keyd: keyd.o $(CORE_OBJS) keydb_$(DBTYPE).o
+	$(CC) $(LDFLAGS) -o keyd keyd.o $(CORE_OBJS) keydb_$(DBTYPE).o $(LIBS)
+
+splitkeys: splitkeys.o $(CORE_OBJS) $(KEYDB_OBJ)
+	$(CC) $(LDFLAGS) -o splitkeys splitkeys.o $(CORE_OBJS) $(KEYDB_OBJ) \
+		$(LIBS)
 
 testparse: main.o $(OBJS)
 	$(CC) $(LDFLAGS) -o testparse main.o $(OBJS) $(LIBS)
@@ -45,17 +58,17 @@ stripkey: stripkey.o $(OBJS)
 gpgwww: gpgwww.o $(OBJS)
 	$(CC) $(LDFLAGS) -o gpgwww gpgwww.o $(OBJS) $(LIBS)
 
-lookup: lookup.o cleankey.o merge.o $(CORE_OBJS)
+lookup: lookup.o cleankey.o merge.o $(CORE_OBJS) $(KEYDB_OBJ)
 	$(CC) $(LDFLAGS) -o lookup lookup.o cleankey.o merge.o $(CORE_OBJS) \
-		$(LIBS)
+		$(KEYDB_OBJ) $(LIBS)
 
-add: add.o cleankey.o merge.o sendsync.o $(CORE_OBJS)
+add: add.o cleankey.o merge.o sendsync.o $(CORE_OBJS) $(KEYDB_OBJ)
 	$(CC) $(LDFLAGS) -o add add.o cleankey.o merge.o sendsync.o \
-		$(CORE_OBJS) $(LIBS)
+		$(CORE_OBJS) $(KEYDB_OBJ) $(LIBS)
 
-onak: onak.o merge.o cleankey.o $(CORE_OBJS)
+onak: onak.o merge.o cleankey.o $(CORE_OBJS) $(KEYDB_OBJ)
 	$(CC) $(LDFLAGS) -o onak onak.o merge.o cleankey.o \
-		$(CORE_OBJS) $(LIBS)
+		$(CORE_OBJS) $(KEYDB_OBJ) $(LIBS)
 
 onak-conf.o: onak-conf.c onak-conf.h
 	$(CC) $(CFLAGS) -DCONFIGFILE=\"@sysconfdir@/onak.conf\" -c onak-conf.c
