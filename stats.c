@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "getcgi.h"
 #include "hash.h"
 #include "keydb.h"
 #include "ll.h"
@@ -88,11 +89,111 @@ unsigned long findpath(struct stats_key *have, struct stats_key *want)
 			nextkeys = NULL;
 			curdegree++;
 		}
-		fprintf(stderr, "Hash contains %ld keys.\n", hashelements());
 	}
 
 	return count;
 }
+
+/**
+ *	dofindpath - Given 2 keys displays a path between them.
+ *	@have: The key we have.
+ *	@want: The key we want to get to.
+ *	@html: Should we output in html.
+ *
+ *	This does a breadth first search on the key tree, starting with the
+ *	key we have. It returns as soon as a path is found or when we run out
+ *	of keys; whichever comes sooner.
+ */
+void dofindpath(uint64_t have, uint64_t want, bool html)
+{
+	struct stats_key *keyinfoa, *keyinfob, *curkey;
+	int rec;
+	char *uid;
+
+	have = getfullkeyid(have);
+	want = getfullkeyid(want);
+
+	/*
+	 * Make sure the keys we have and want are in the cache.
+	 */
+	hash_getkeysigs(have);
+	hash_getkeysigs(want);
+
+	if ((keyinfoa = findinhash(have)) == NULL) {
+		printf("Couldn't find key 0x%llX.\n", have);
+		return;
+	}
+	if ((keyinfob = findinhash(want)) == NULL) {
+		printf("Couldn't find key 0x%llX.\n", want);
+		return;
+	}
+	
+	/*
+	 * Fill the tree info up.
+	 */
+	initcolour(true);
+	rec = findpath(keyinfoa, keyinfob);
+	keyinfob->parent = 0;
+
+	printf("%d nodes examined. %ld elements in the hash%s\n", rec,
+			hashelements(),
+			html ? "<BR>" : "");
+	if (keyinfoa->colour == 0) {
+		printf("Can't find a link from 0x%08llX to 0x%08llX%s\n",
+				have,
+				want,
+				html ? "<BR>" : "");
+	} else {
+		printf("%d steps from 0x%08llX to 0x%08llX%s\n",
+				keyinfoa->colour, have & 0xFFFFFFFF,
+				want & 0xFFFFFFFF,
+				html ? "<BR>" : "");
+		curkey = keyinfoa;
+		while (curkey != NULL && curkey->keyid != 0) {
+			uid = keyid2uid(curkey->keyid);
+			if (html && uid == NULL) {
+				printf("<a href=\"lookup?op=get&search=%llX\">"
+					"0x%08llX</a> ([User id not found])%s"
+					"<BR>\n",
+					curkey->keyid & 0xFFFFFFFF,
+					curkey->keyid & 0xFFFFFFFF,
+					(curkey->keyid == want) ? "" :
+					 " signs");
+			} else if (html && uid != NULL) {
+				printf("<a href=\"lookup?op=get&search=%llX\">"
+					"0x%08llX</a> (<a href=\"lookup?op=vindex"
+					"&search=0x%llX\">%s</a>)%s<BR>\n",
+					curkey->keyid & 0xFFFFFFFF,
+					curkey->keyid & 0xFFFFFFFF,
+					curkey->keyid & 0xFFFFFFFF,
+					txt2html(keyid2uid(curkey->keyid)),
+					(curkey->keyid == want) ? "" :
+					 " signs");
+			} else {
+				printf("0x%08llX (%s)%s\n",
+					curkey->keyid & 0xFFFFFFFF,
+					(uid == NULL) ? "[User id not found]" :
+						uid,
+					(curkey->keyid == want) ? "" :
+					 " signs");
+			}
+			curkey = findinhash(curkey->parent);
+		}
+		if (html) {
+			puts("<P>List of key ids in path:</P>");
+		} else {
+			puts("List of key ids in path:");
+		}
+		curkey = keyinfoa;
+		while (curkey != NULL && curkey->keyid != 0) {
+			printf("0x%08llX ", curkey->keyid & 0xFFFFFFFF);
+			curkey = findinhash(curkey->parent);
+		}
+		putchar('\n');
+	}
+}
+
+
 
 struct stats_key *furthestkey(struct stats_key *have)
 {

@@ -61,6 +61,17 @@ void initcolour(bool parent);
  */
 unsigned long findpath(struct stats_key *have, struct stats_key *want);
 
+/**
+ *	dofindpath - Given 2 keys displays a path between them.
+ *	@have: The key we have.
+ *	@want: The key we want to get to.
+ *	@html: Should we output in html.
+ *
+ *	This does a breadth first search on the key tree, starting with the
+ *	key we have. It returns as soon as a path is found or when we run out
+ *	of keys; whichever comes sooner.
+ */
+void dofindpath(uint64_t have, uint64_t want, bool html);
 
 struct stats_key *furthestkey(struct stats_key *have);
 
