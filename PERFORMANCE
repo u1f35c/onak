@@ -37,3 +37,37 @@ Only delete old key if we know it exists:
         Elapsed (wall clock) time (h:mm:ss or m:ss): 1:16:41
         Major (requiring I/O) page faults: 610
         Minor (reclaiming a frame) page faults: 1239
+
+onak 0.0.4ish with db3 backend; only 1203 keys:
+	Command being timed: "./onak -b add"
+	User time (seconds): 0.88
+	System time (seconds): 0.21
+	Percent of CPU this job got: 80%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:01.36
+	Major (requiring I/O) page faults: 198
+	Minor (reclaiming a frame) page faults: 5443
+
+
+maxpath:
+
+Orig:
+
+List of key ids in path:
+0x651E4299 0x2213E772 0x1EB2DE66 0x87CD3DBD 0xC02440B8 0xEA1572F1 0xF5C75256 0x6
+8FD549F 0x5B430367 0x8C90A57F 0x316C50AE 0x56ABD303 0x641B6747 0x6B5A209A
+real    5m58.355s
+user    0m11.110s
+sys     0m0.440s
+
+
+After DISTINCT:
+
+real    5m59.231s
+user    0m9.630s
+sys     0m0.410s
+
+With DB3 backend:
+
+real    0m15.917s
+user    0m15.620s
+sys     0m0.310s
