@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: decodekey.c,v 1.2 2003/06/04 20:57:07 noodles Exp $
+ * $Id: decodekey.c,v 1.3 2003/06/08 10:45:44 noodles Exp $
  */
 
 #include <assert.h>
@@ -20,6 +20,7 @@
 #include "keyid.h"
 #include "keystructs.h"
 #include "ll.h"
+#include "log.h"
 
 /*
  *	parse_subpackets - Parse the subpackets of a Type 4 signature.
@@ -55,13 +56,13 @@ int parse_subpackets(unsigned char *data, uint64_t *keyid)
 			packetlen <<= 8;
 			packetlen = data[offset++];
 		}
-		switch (data[offset]) {
+		switch (data[offset] & 0x7F) {
 		case 2:
 			/*
 			 * Signature creation time. Might want to output this?
 			 */
 			break;
-		case 0x83:
+		case 3:
 			/*
 			 * Signature expiration time. Might want to output this?
 			 */
@@ -96,10 +97,14 @@ int parse_subpackets(unsigned char *data, uint64_t *keyid)
 		default:
 			/*
 			 * We don't care about unrecognized packets unless bit
-			 * 7 is set in which case we prefer an error than
-			 * ignoring it.
+			 * 7 is set in which case we log a major error.
 			 */
-			assert(!(data[offset] & 0x80));
+			if (data[offset] & 0x80) {
+				logthing(LOGTHING_CRITICAL,
+				"Critical subpacket type not parsed: 0x%X",
+					data[offset]);
+			}
+				
 		}
 		offset += packetlen;
 	}
