@@ -58,7 +58,7 @@ clean:
 		sixdegrees.o splitkeys.o
 
 distclean: clean
-	$(RM) -f Makefile depend config.{log,status,h}
+	$(RM) -f Makefile .depend config.{log,status,h}
 	$(RM) -r autom4te.cache
 
 .depend: $(SRCS)
