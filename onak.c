@@ -7,7 +7,7 @@
  * 
  * Copyright 2002 Project Purple
  *
- * $Id: onak.c,v 1.14 2003/06/07 13:37:33 noodles Exp $
+ * $Id: onak.c,v 1.15 2003/09/28 20:33:34 noodles Exp $
  */
 
 #include <stdio.h>
@@ -28,13 +28,15 @@
 
 int stdin_getchar(void *ctx, size_t count, unsigned char *c)
 {
-	int ic;
+	int ic = 0;
 
-	do {
+	while ((count > 0) && (ic != EOF)) {
 		ic = getchar();
 		*c = ic;
 		c++;
-	} while ((ic != EOF) && (--count > 0));
+		count--;
+	}
+
 	return (ic == EOF);
 }
 
