@@ -759,7 +759,10 @@ int dumpdb(char *filenamebase)
 		memset(&data, 0, sizeof(data));
 		ret = cursor->c_get(cursor, &key, &data, DB_NEXT);
 	}
-	logthing(LOGTHING_ERROR, "Problem reading key: %s", db_strerror(ret));
+	if (ret != DB_NOTFOUND) {
+		logthing(LOGTHING_ERROR, "Problem reading key: %s",
+				db_strerror(ret));
+	}
 
 	close(fd);
 
