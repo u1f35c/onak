@@ -1,12 +1,13 @@
-onak (0.3.0+arch-1) unstable; urgency=low
+onak (0.3.1-1) unstable; urgency=low
 
-  * arch snapshot
+  * New upstream release
+    - Add onak-mail.pl man page (Closes: #276879)
+    - Add links to HTML index output. (Closes: #275227)
 
- -- Jonathan McDowell <noodles@earth.li>  Fri, 24 Sep 2004 19:35:48 +0100
+ -- Jonathan McDowell <noodles@earth.li>  Sat, 23 Oct 2004 18:01:39 +0100
 
 onak (0.3.0-1) unstable; urgency=low
 
   * Initial Release. (closes: #254425)
 
  -- Ross Burton <ross@debian.org>  Thu, 17 Jun 2004 11:59:00 +0100
-

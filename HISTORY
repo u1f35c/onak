@@ -164,3 +164,20 @@
   behaviour in the face of abnormal termination.
 * Add Apache2 example config info.
 * Update mathopd example config to newer version.
+
+0.3.1 - 23rd October 2004
+
+* Add onak-mail.pl man page (Debian bug #276879)
+* Add links to HTML index output. (Debian bug #275227)
+* Speed up fetch_key_text (use of lladdend/sorted keyid array).
+* Cleanup db4 properly if we fail to open it.
+* Change buffer_put/fetchchar functions to use memcpy (speed up).
+* Add key iteration functionality to keydb backends.
+* Move dumpdb to iterate_keys.
+* Add keyd backend (persistant database access over Unix socket)
+* Cleanup logging in sixdegrees.c
+* Fix maxpath to initialise the logging infrastructure.
+* Fix sixdegrees to initialise the logging infrastructure.
+* Fix transaction around id32 updating in DB4 backend.
+* Compile warning cleanup; add missed include file.
+* Hard error when db version is < 4.
