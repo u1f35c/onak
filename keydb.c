@@ -95,29 +95,22 @@ struct ll *getkeysigs(uint64_t keyid)
 struct ll *cached_getkeysigs(uint64_t keyid)
 {
 	struct stats_key *key = NULL;
+	struct stats_key *signedkey = NULL;
+	struct ll        *cursig = NULL;
 
 	if (keyid == 0)  {
 		return NULL;
 	}
 
-	key = findinhash(keyid);
-	if (key == NULL) {
-		key = malloc(sizeof(*key));
-		if (key != NULL) {
-			key->keyid = keyid;
-			key->colour = 0;
-			key->parent = 0;
-			key->sigs = NULL;
-			key->gotsigs = false;
-			key->disabled = false;
-			addtohash(key);
-		} else {
-			perror("cached_getkeysigs()");
-			return NULL;
-		}
-	}
+	key = createandaddtohash(keyid);
+
 	if (key->gotsigs == false) {
 		key->sigs = getkeysigs(key->keyid);
+		for (cursig = key->sigs; cursig != NULL;
+				cursig = cursig->next) {
+			signedkey = (struct stats_key *) cursig->object;
+			signedkey->signs = lladd(signedkey->signs, key);
+		}
 		key->gotsigs = true;
 	}
 

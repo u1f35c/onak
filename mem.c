@@ -187,6 +187,10 @@ void free_statskey(struct stats_key *key)
 			llfree(key->sigs, NULL);
 			key->sigs = NULL;
 		}
+		if (key->signs != NULL) {
+			llfree(key->signs, NULL);
+			key->signs = NULL;
+		}
 		free(key);
 	}
 }

@@ -16,10 +16,11 @@
 #include "onak-conf.h"
 #include "stats.h"
 
-unsigned long countdegree(struct stats_key *have, int maxdegree)
+unsigned long countdegree(struct stats_key *have, bool sigs, int maxdegree)
 {
-	unsigned long count = 0, curdegree = 0;
-	struct ll *curll, *nextll, *sigll, *tmp;
+	unsigned long     count = 0, curdegree = 0;
+	struct ll        *curll, *nextll, *sigll, *tmp;
+	struct stats_key *key = NULL;
 
 	++curdegree;
 
@@ -27,8 +28,17 @@ unsigned long countdegree(struct stats_key *have, int maxdegree)
 	curll = lladd(NULL, have);
 
 	while (curll != NULL && curdegree <= maxdegree) {
-		sigll = cached_getkeysigs(((struct stats_key *)
+		if (sigs) {
+			sigll = cached_getkeysigs(((struct stats_key *)
 				curll->object)->keyid);
+		} else {
+			sigll = NULL;
+			key = findinhash(((struct stats_key *)
+				curll->object)->keyid);
+			if (key != NULL) {
+				sigll = key->signs;
+			}
+		}
 		while (sigll != NULL) {
 			if (((struct stats_key *) sigll->object)->colour==0) {
 				/* We've never seen it. Count it, mark it and
@@ -83,17 +93,26 @@ void sixdegrees(uint64_t keyid)
 	free(uid);
 	uid = NULL;
 
-	puts("\t\tSigned by");
+	/*
+	 * Cheat. This prefills the ->sign part of all the keys we want to
+	 * look at so that we can output that info at the same time as the
+	 * signers. However we're assuming that the signers and signees are
+	 * reasonably closely related otherwise the info is wildly off - the
+	 * only way to get 100% accurate results is to examine every key to see
+	 * if it's signed by the key we're looking at.
+	 */
+	initcolour(false);
+	degree = countdegree(keyinfo, true, 7);
+
+	puts("\t\tSigned by\t\tSigns");
 	for (loop = 1; loop < 7; loop++) {
 		initcolour(false);
-		degree = countdegree(keyinfo, loop);
-		printf("Degree %d:\t%8ld\n", loop, degree);
-		/*
-		 * TODO: Used to have keys we signed as well but this takes a
-		 * lot of resource and isn't quite appropriate for something
-		 * intended to be run on the fly. Given this isn't a CGI at
-		 * present perhaps should be readded.
-		 */
+		degree = countdegree(keyinfo, true, loop);
+		printf("Degree %d:\t%8ld", loop, degree);
+
+		initcolour(false);
+		degree = countdegree(keyinfo, false, loop);
+		printf("\t\t%8ld\n", degree);
 	}
 }
 
@@ -108,7 +127,7 @@ int main(int argc, char *argv[])
 	readconfig();
 	initdb();
 	inithash();
-	sixdegrees(keyid);
+	sixdegrees(getfullkeyid(keyid));
 	destroyhash();
 	cleanupdb();
 	cleanupconfig();

@@ -94,6 +94,7 @@ struct stats_key {
 	int colour;
 	uint64_t parent;
 	struct ll *sigs;
+	struct ll *signs;
 	bool gotsigs;
 	bool disabled;
 };
