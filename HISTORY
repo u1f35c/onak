@@ -86,3 +86,11 @@
 * Updated README to be a bit more useful.
 * Code cleanup; removed circular dependencies.
 * Added sixdegrees.
+
+0.1.2 - 15th February 2003
+
+* Added fingerprint calculation/display.
+* Cleanup sixdegrees binary/object file on make clean.
+* Introduced transaction support to DB3 backend, along with deadlock detection.
+* Added keydb dumping ability.
+* Added logging infrastructure to help more easily track down problems.

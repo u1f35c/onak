@@ -9,7 +9,7 @@
 #ifndef __ONAK_CONF_H_
 #define __ONAK_CONF_H_
 
-#define VERSION "0.1.1"
+#define VERSION "0.1.2"
 #define CONFIGFILE "/home/noodles/projects/onak/onak.conf"
 
 /*
