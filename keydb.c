@@ -32,7 +32,7 @@ char *keyid2uid(uint64_t keyid)
 {
 	struct openpgp_publickey *publickey = NULL;
 	struct openpgp_signedpacket_list *curuid = NULL;
-	static char buf[1024];
+	char buf[1024];
 
 	buf[0]=0;
 	if (fetch_key(keyid, &publickey, false) && publickey != NULL) {
@@ -51,7 +51,7 @@ char *keyid2uid(uint64_t keyid)
 	if (buf[0] == 0) {
 		return NULL;
 	} else {
-		return buf;
+		return strdup(buf);
 	}
 }
 #endif
@@ -95,7 +95,7 @@ uint64_t getfullkeyid(uint64_t keyid)
 {
 	struct openpgp_publickey *publickey = NULL;
 
-	if (keyid < 0x100000000) {
+	if (keyid < 0x100000000LL) {
 		fetch_key(keyid, &publickey, false);
 		keyid = get_keyid(publickey);
 		free_publickey(publickey);
