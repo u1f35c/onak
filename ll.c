@@ -28,6 +28,33 @@ struct ll *lladd(struct ll *curll, void *object)
 	return new;
 }
 
+struct ll *lladdend(struct ll *curll, void *object)
+{
+	struct ll *new;
+	struct ll *cur;
+
+	if ((new = malloc(sizeof(struct ll))) == NULL) {
+		logthing(LOGTHING_ERROR,
+				"Couldn't allocate memory in lladdend()");
+		return NULL;
+	}
+
+	new->next = NULL;
+	new->object = object;
+
+	if (curll != NULL) {
+		cur = curll;
+		while (cur->next != NULL) {
+			cur = cur->next;
+		}
+		cur->next = new;
+	} else {
+		curll = new;
+	}
+	
+	return curll;
+}
+
 struct ll *lldel(struct ll *curll, void *object,
 	int (*objectcmp) (const void *object1, const void *object2))
 {

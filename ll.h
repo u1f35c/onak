@@ -50,6 +50,15 @@ struct ll {
 struct ll *lladd(struct ll *curll, void *object);
 
 /**
+ *	lladdend - Add an item to the end of a linked list.
+ *	@curll: The list to add to. Can be NULL to create a new list.
+ *	@object: The object to add.
+ *
+ *	Returns a pointer to the head of the new list.
+ */
+struct ll *lladdend(struct ll *curll, void *object);
+
+/**
  *	lldel - Remove an item from a linked list.
  *	@curll: The list to remove the item from.
  *	@object: The object to remove.

@@ -57,7 +57,7 @@ struct ll *makewordlist(struct ll *wordlist, char *word)
 			if (llfind(wordlist, start, 
 				(int (*)(const void *, const void *)) strcmp
 					) == NULL) {
-				wordlist = lladd(wordlist, start);
+				wordlist = lladdend(wordlist, start);
 			}
 		}
 	}
