@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb_pg.c,v 1.13 2003/09/30 20:40:11 noodles Exp $
+ * $Id: keydb_pg.c,v 1.14 2004/03/23 12:33:47 noodles Exp $
  */
 
 #include <postgresql/libpq-fe.h>
@@ -60,7 +60,7 @@ static int keydb_putchar(void *fd, size_t count, unsigned char *c)
  *	this file are called in order to allow the DB to be initialized ready
  *	for access.
  */
-void initdb(void)
+void initdb(bool readonly)
 {
 	dbconn = PQsetdbLogin(config.pg_dbhost, // host
 			NULL, // port

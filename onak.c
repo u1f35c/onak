@@ -7,7 +7,7 @@
  * 
  * Copyright 2002 Project Purple
  *
- * $Id: onak.c,v 1.18 2003/10/15 21:15:21 noodles Exp $
+ * $Id: onak.c,v 1.19 2004/03/23 12:33:47 noodles Exp $
  */
 
 #include <stdio.h>
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
 	if ((argc - optind) < 1) {
 		usage();
 	} else if (!strcmp("dump", argv[optind])) {
-		initdb();
+		initdb(true);
 		dumpdb("keydump");
 		cleanupdb();
 	} else if (!strcmp("add", argv[optind])) {
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 			logthing(LOGTHING_INFO, "Finished reading %d keys.",
 					result);
 
-			initdb();
+			initdb(false);
 			logthing(LOGTHING_NOTICE, "Got %d new keys.",
 					update_keys(&keys));
 			if (keys != NULL && update) {
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
 				ishex = true;
 			}
 		}
-		initdb();
+		initdb(false);
 		if (!strcmp("index", argv[optind])) {
 			find_keys(search, keyid, ishex, fingerprint,
 					false, false);

@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 
 	key_index(keys, true, false, false);
 
-	initdb();
+	initdb(true);
 	fetch_key(get_keyid(keys), &newkeys);
 	cleanupdb();
 

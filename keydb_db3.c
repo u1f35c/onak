@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb_db3.c,v 1.22 2003/10/10 16:57:27 noodles Exp $
+ * $Id: keydb_db3.c,v 1.23 2004/03/23 12:33:46 noodles Exp $
  */
 
 #include <assert.h>
@@ -122,7 +122,7 @@ struct ll *makewordlist(struct ll *wordlist, char *word)
  *	this file are called in order to allow the DB to be initialized ready
  *	for access.
  */
-void initdb(void)
+void initdb(bool readonly)
 {
 	char  buf[1024];
 	FILE *numdb = NULL;

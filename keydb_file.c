@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb_file.c,v 1.10 2003/09/30 20:40:10 noodles Exp $
+ * $Id: keydb_file.c,v 1.11 2004/03/23 12:33:46 noodles Exp $
  */
 
 #include <sys/types.h>
@@ -31,7 +31,7 @@
  *
  *	This is just a no-op for flat file access.
  */
-void initdb(void)
+void initdb(bool readonly)
 {
 }
 

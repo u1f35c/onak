@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb.h,v 1.9 2003/06/08 21:11:00 noodles Exp $
+ * $Id: keydb.h,v 1.10 2004/03/23 12:33:46 noodles Exp $
  */
 
 #ifndef __KEYDB_H__
@@ -18,12 +18,13 @@
 
 /**
  *	initdb - Initialize the key database.
+ *	@readonly: If we'll only be reading the DB, not writing to it.
  *
  *	This function should be called before any of the other functions in
  *	this file are called in order to allow the DB to be initialized ready
  *	for access.
  */
-void initdb(void);
+void initdb(bool readonly);
 
 /**
  *	cleanupdb - De-initialize the key database.

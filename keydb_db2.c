@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb_db2.c,v 1.10 2003/09/30 20:40:10 noodles Exp $
+ * $Id: keydb_db2.c,v 1.11 2004/03/23 12:33:46 noodles Exp $
  */
 
 #include <sys/types.h>
@@ -65,7 +65,7 @@ DB *keydb(DBT *key)
  *	this file are called in order to allow the DB to be initialized ready
  *	for access.
  */
-void initdb(void)
+void initdb(bool readonly)
 {
 	DB_INFO keydbinfo;
 	int i;

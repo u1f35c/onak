@@ -5,7 +5,7 @@
  *
  * Copyright 2003 Project Purple
  *
- * $Id: log.c,v 1.4 2003/06/04 20:57:10 noodles Exp $
+ * $Id: log.c,v 1.5 2004/03/23 12:33:47 noodles Exp $
  */
 
 #include <stdarg.h>
@@ -24,7 +24,7 @@
  *	logs - if we're asked to log something below this level we won't output
  *	it.
  */
-static loglevels logthres = LOGTHING_DEBUG;
+static loglevels logthres = LOGTHING_NOTICE;
 
 /*
  *	logappname - the name of the application using us.

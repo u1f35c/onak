@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: lookup.c,v 1.12 2003/10/15 21:15:21 noodles Exp $
+ * $Id: lookup.c,v 1.13 2004/03/23 12:33:47 noodles Exp $
  */
 
 #include <inttypes.h>
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 	} else {
 		readconfig(NULL);
 		initlogthing("lookup", config.logfile);
-		initdb();
+		initdb(true);
 		switch (op) {
 		case OP_GET:
 			if (fetch_key(keyid, &publickey, false)) {

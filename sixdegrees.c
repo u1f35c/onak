@@ -5,7 +5,7 @@
  *
  * Copyright 2001-2002 Project Purple.
  *
- * $Id: sixdegrees.c,v 1.5 2003/10/15 21:15:21 noodles Exp $
+ * $Id: sixdegrees.c,v 1.6 2004/03/23 12:33:47 noodles Exp $
  */
 
 #include <stdio.h>
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 	}
 
 	readconfig(NULL);
-	initdb();
+	initdb(true);
 	inithash();
 	sixdegrees(getfullkeyid(keyid));
 	destroyhash();

@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: add.c,v 1.11 2003/10/15 21:15:20 noodles Exp $
+ * $Id: add.c,v 1.12 2004/03/23 12:33:46 noodles Exp $
  */
 
 #include <errno.h>
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 					&packets);
 		if (packets != NULL) {
 			parse_keys(packets, &keys);
-			initdb();
+			initdb(false);
 			printf("Got %d new keys.\n",
 					update_keys(&keys));
 			if (keys != NULL) {
