@@ -537,4 +537,5 @@ uint64_t getfullkeyid(uint64_t keyid)
  */
 #define NEED_KEYID2UID 1
 #define NEED_GETKEYSIGS 1
+#define NEED_UPDATEKEYS 1
 #include "keydb.c"

@@ -586,4 +586,5 @@ int dumpdb(char *filenamebase)
  * Include the basic keydb routines.
  */
 #define NEED_GETFULLKEYID 1
+#define NEED_UPDATEKEYS 1
 #include "keydb.c"

@@ -3,7 +3,7 @@
  *
  * Jonathan McDowell <noodles@earth.li>
  *
- * Copyright 2002 Project Purple
+ * Copyright 2002-2004 Project Purple
  */
 
 #ifndef __KEYDB_H__
@@ -96,6 +96,18 @@ int delete_key(uint64_t keyid, bool intrans);
  *	contain it.
  */
 int fetch_key_text(const char *search, struct openpgp_publickey **publickey);
+
+/**
+ *	update_keys - Takes a list of public keys and updates them in the DB.
+ *	@keys: The keys to update in the DB.
+ *
+ *	Takes a list of keys and adds them to the database, merging them with
+ *	the key in the database if it's already present there. The key list is
+ *	update to contain the minimum set of updates required to get from what
+ *	we had before to what we have now (ie the set of data that was added to
+ *	the DB). Returns the number of entirely new keys added.
+ */
+int update_keys(struct openpgp_publickey **keys);
 
 /**
  *	keyid2uid - Takes a keyid and returns the primary UID for it.

@@ -3,7 +3,7 @@
  *
  * Jonathan McDowell <noodles@earth.li>
  *
- * Copyright 2002 Project Purple
+ * Copyright 2002-2004 Project Purple
  */
 
 /**
@@ -22,6 +22,7 @@
 #include "keyid.h"
 #include "keystructs.h"
 #include "mem.h"
+#include "merge.h"
 #include "parsekey.h"
 
 #ifdef NEED_KEYID2UID
@@ -150,3 +151,70 @@ uint64_t getfullkeyid(uint64_t keyid)
 	return keyid;
 }
 #endif
+
+#ifdef NEED_UPDATEKEYS
+/**
+ *	update_keys - Takes a list of public keys and updates them in the DB.
+ *	@keys: The keys to update in the DB.
+ *
+ *	Takes a list of keys and adds them to the database, merging them with
+ *	the key in the database if it's already present there. The key list is
+ *	update to contain the minimum set of updates required to get from what
+ *	we had before to what we have now (ie the set of data that was added to
+ *	the DB). Returns the number of entirely new keys added.
+ */
+int update_keys(struct openpgp_publickey **keys)
+{
+	struct openpgp_publickey *curkey = NULL;
+	struct openpgp_publickey *oldkey = NULL;
+	struct openpgp_publickey *prev = NULL;
+	int newkeys = 0;
+	bool intrans;
+
+	for (curkey = *keys; curkey != NULL; curkey = curkey->next) {
+		intrans = starttrans();
+		logthing(LOGTHING_INFO,
+			"Fetching key 0x%llX, result: %d",
+			get_keyid(curkey),
+			fetch_key(get_keyid(curkey), &oldkey, intrans));
+
+		/*
+		 * If we already have the key stored in the DB then merge it
+		 * with the new one that's been supplied. Otherwise the key
+		 * we've just got is the one that goes in the DB and also the
+		 * one that we send out.
+		 */
+		if (oldkey != NULL) {
+			merge_keys(oldkey, curkey);
+			if (curkey->revocations == NULL &&
+					curkey->uids == NULL &&
+					curkey->subkeys == NULL) {
+				if (prev == NULL) {
+					*keys = curkey->next;
+				} else {
+					prev->next = curkey->next;
+					curkey->next = NULL;
+					free_publickey(curkey);
+					curkey = prev;
+				}
+			} else {
+				prev = curkey;
+				logthing(LOGTHING_INFO,
+					"Merged key; storing updated key.");
+				store_key(oldkey, intrans, true);
+			}
+			free_publickey(oldkey);
+			oldkey = NULL;
+		} else {
+			logthing(LOGTHING_INFO,
+				"Storing completely new key.");
+			store_key(curkey, intrans, false);
+			newkeys++;
+		}
+		endtrans();
+		intrans = false;
+	}
+
+	return newkeys;
+}
+#endif /* NEED_UPDATEKEYS */

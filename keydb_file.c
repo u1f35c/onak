@@ -188,4 +188,5 @@ int dumpdb(char *filenamebase)
 #define NEED_KEYID2UID 1
 #define NEED_GETKEYSIGS 1
 #define NEED_GETFULLKEYID 1
+#define NEED_UPDATEKEYS 1
 #include "keydb.c"
