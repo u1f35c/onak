@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: parsekey.c,v 1.19 2004/05/27 18:42:22 noodles Exp $
+ * $Id: parsekey.c,v 1.20 2004/05/27 21:55:38 noodles Exp $
  */
 
 #include <assert.h>
@@ -333,6 +333,28 @@ int write_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
 
 				curchar = (packets->packet->length - 192) &
 					 0xFF;
+				putchar_func(ctx, 1, &curchar);
+			} else if (packets->packet->length > 8382 &&
+				packets->packet->length < 0xFFFFFFFF) {
+				logthing(LOGTHING_DEBUG,
+					"Writing 5 byte length");
+				curchar = 255;
+				putchar_func(ctx, 1, &curchar);
+				
+				curchar = (packets->packet->length >> 24);
+				curchar &= 0xFF;
+				putchar_func(ctx, 1, &curchar);
+				
+				curchar = (packets->packet->length >> 16);
+				curchar &= 0xFF;
+				putchar_func(ctx, 1, &curchar);
+				
+				curchar = (packets->packet->length >> 8);
+				curchar &= 0xFF;
+				putchar_func(ctx, 1, &curchar);
+				
+				curchar = packets->packet->length;
+				curchar &= 0xFF;
 				putchar_func(ctx, 1, &curchar);
 			} else {
 				logthing(LOGTHING_ERROR,
