@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: decodekey.c,v 1.4 2003/09/28 21:07:50 noodles Exp $
+ * $Id: decodekey.c,v 1.5 2004/03/23 12:35:11 noodles Exp $
  */
 
 #include <assert.h>
@@ -84,6 +84,12 @@ int parse_subpackets(unsigned char *data, uint64_t *keyid)
 			*keyid <<= 8;
 			*keyid += data[offset+packetlen - 1];
 			break;
+		case 20:
+			/*
+			 * Annotation data.
+			 */
+			break;
+
 		case 23:
 			/*
 			 * Key server preferences. Including no-modify.
