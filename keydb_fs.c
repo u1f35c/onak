@@ -19,6 +19,7 @@
 #include <dirent.h>
 
 #include "charfuncs.h"
+#include "decodekey.h"
 #include "keydb.h"
 #include "keyid.h"
 #include "keystructs.h"
@@ -104,6 +105,25 @@ void worddir(char *buffer, char *word, uint32_t hash)
 	snprintf(buffer, PATH_MAX, "%s/words/%02X/%02X/%08X/%s", config.db_dir,
 		 (uint8_t) ((hash >> 24) & 0xFF),
 		 (uint8_t) ((hash >> 16) & 0xFF), hash, word);
+}
+
+void subkeypath(char *buffer, uint64_t subkey, uint64_t keyid)
+{
+	snprintf(buffer, PATH_MAX, "%s/subkeys/%02X/%02X/%08X/%016llX",
+		 config.db_dir,
+		 (uint8_t) ((subkey >> 24) & 0xFF),
+		 (uint8_t) ((subkey >> 16) & 0xFF),
+		 (uint32_t) (subkey & 0xFFFFFFFF),
+		 keyid);
+}
+
+void subkeydir(char *buffer, uint64_t subkey)
+{
+	snprintf(buffer, PATH_MAX, "%s/subkeys/%02X/%02X/%08X",
+		 config.db_dir,
+		 (uint8_t) ((subkey >> 24) & 0xFF),
+		 (uint8_t) ((subkey >> 16) & 0xFF),
+		 (uint32_t) (subkey & 0xFFFFFFFF));
 }
 
 /*****************************************************************************/
@@ -240,6 +260,8 @@ int store_key(struct openpgp_publickey *publickey, bool intrans,
 	struct openpgp_publickey *next = NULL;
 	uint64_t keyid = get_keyid(publickey);
 	struct ll *wordlist = NULL, *wl = NULL;
+	uint64_t *subkeyids = NULL;
+	int i = 0;
 
 
 	if (!intrans)
@@ -276,8 +298,24 @@ int store_key(struct openpgp_publickey *publickey, bool intrans,
 
 			wl = wl->next;
 		}
-
 		llfree(wordlist, free);
+		
+		subkeyids = keysubkeys(publickey);
+		i = 0;
+		while (subkeyids != NULL && subkeyids[i] != 0) {
+			prove_path_to(subkeyids[i], "subkeys");
+
+			subkeydir(wbuffer, subkeyids[i]);
+			mkdir(wbuffer, 0777);
+			subkeypath(wbuffer, subkeyids[i], keyid);
+			link(buffer, wbuffer);
+
+			i++;
+		}
+		if (subkeyids != NULL) {
+			free(subkeyids);
+			subkeyids = NULL;
+		}
 	}
 
 	if (!intrans)
@@ -296,6 +334,8 @@ int delete_key(uint64_t keyid, bool intrans)
 	int ret;
 	struct openpgp_publickey *pk = NULL;
 	struct ll *wordlist = NULL, *wl = NULL;
+	uint64_t *subkeyids = NULL;
+	int i = 0;
 
 	if ((keyid >> 32) == 0)
 		keyid = getfullkeyid(keyid);
@@ -320,6 +360,22 @@ int delete_key(uint64_t keyid, bool intrans)
 
 			wl = wl->next;
 		}
+
+		subkeyids = keysubkeys(pk);
+		i = 0;
+		while (subkeyids != NULL && subkeyids[i] != 0) {
+			prove_path_to(subkeyids[i], "subkeys");
+
+			subkeypath(buffer, subkeyids[i], keyid);
+			unlink(buffer);
+
+			i++;
+		}
+		if (subkeyids != NULL) {
+			free(subkeyids);
+			subkeyids = NULL;
+		}
+
 	}
 
 	keypath(buffer, keyid);
@@ -441,8 +497,8 @@ int dumpdb(char *filenamebase)
 uint64_t getfullkeyid(uint64_t keyid)
 {
 	static char buffer[PATH_MAX];
-	DIR *d;
-	struct dirent *de;
+	DIR *d = NULL;
+	struct dirent *de = NULL;
 	uint64_t ret = 0;
 
 	keydir(buffer, keyid);
@@ -451,13 +507,28 @@ uint64_t getfullkeyid(uint64_t keyid)
 	if (d) {
 		do {
 			de = readdir(d);
-			if (de)
+			if (de && de->d_name[0] != '.') {
+				ret = strtoull(de->d_name, NULL, 16);
+			}
+		} while (de && de->d_name[0] == '.');
+		closedir(d);	
+	}
+
+	if (ret == 0) {
+		subkeydir(buffer, keyid);
+
+		d = opendir(buffer);
+		if (d) {
+			do {
+				de = readdir(d);
 				if (de && de->d_name[0] != '.') {
 					ret = strtoull(de->d_name, NULL, 16);
 				}
-		} while (de && de->d_name[0] == '.');
-		closedir(d);
+			} while (de && de->d_name[0] == '.');
+			closedir(d);
+		}
 	}
+	
 	return ret;
 }
 
