@@ -54,7 +54,9 @@ struct ll *makewordlist(struct ll *wordlist, char *word)
 				end++;
 			}
 
-			if (llfind(wordlist, start, strcmp) == NULL) {
+			if (llfind(wordlist, start, 
+				(int (*)(const void *, const void *)) strcmp
+					) == NULL) {
 				wordlist = lladd(wordlist, start);
 			}
 		}
@@ -87,7 +89,9 @@ struct ll *makewordlistfromkey(struct ll *wordlist,
 	for (i = 0; uids[i] != NULL; ++i) {
 		words = makewordlist(NULL, uids[i]);
 		for (wl = words; wl != NULL; wl = wl->next) {
-			if (llfind(wordlist, wl->object, strcmp) == NULL) {
+			if (llfind(wordlist, wl->object, 
+				(int (*)(const void *, const void *)) strcmp
+						) == NULL) {
 				wordlist = lladd(wordlist, strdup(wl->object));
 			}
 		}

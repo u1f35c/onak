@@ -347,7 +347,9 @@ static struct ll *internal_get_key_by_word(char *word, struct ll *mct)
 			de = readdir(d);
 			if (de && de->d_name[0] != '.') {
 				if ((!mct)
-				    || (llfind(mct, de->d_name, strcmp) !=
+				    || (llfind(mct, de->d_name,
+					(int (*)(const void *, const void *))
+						    strcmp) !=
 					NULL)) {
 					logthing(LOGTHING_CRITICAL,
 						 "Found %s // %s", word,
