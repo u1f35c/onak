@@ -7,6 +7,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
@@ -22,12 +23,11 @@
 int buffer_fetchchar(void *ctx, size_t count, unsigned char *c)
 {
 	struct buffer_ctx *buf = NULL;
-	size_t i;
 	
 	buf = (struct buffer_ctx *) ctx;
-	for (i = 0; i < count; i++) {
-		c[i] = buf->buffer[buf->offset++];
-	}
+	
+	memcpy(c, &buf->buffer[buf->offset], count);
+	buf->offset += count;
 
 	return (((buf->offset) == (buf->size)) ? 1 : 0);
 }
@@ -46,7 +46,6 @@ int buffer_putchar(void *ctx, size_t count, unsigned char *c)
 {
 	struct buffer_ctx *buf = NULL;
 	size_t newsize = 0;
-	size_t i;
 	
 	buf = (struct buffer_ctx *) ctx;
 
@@ -57,11 +56,10 @@ int buffer_putchar(void *ctx, size_t count, unsigned char *c)
 		buf->buffer = realloc(buf->buffer, newsize);
 		buf->size = newsize;
 	}
-	
-	for (i = 0; i < count; i++) {
-		buf->buffer[buf->offset++] = c[i];
-	}
 
+	memcpy(&buf->buffer[buf->offset], c, count);
+	buf->offset += count;
+	
 	return 1;
 }
 
