@@ -13,7 +13,6 @@
 #include "keystructs.h"
 #include "ll.h"
 #include "mem.h"
-#include "stats.h"
 
 /**
  *	packet_dup - duplicate an OpenPGP packet.

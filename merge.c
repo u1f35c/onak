@@ -10,9 +10,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "decodekey.h"
 #include "keydb.h"
 #include "keyid.h"
-#include "keyindex.h"
 #include "keystructs.h"
 #include "ll.h"
 #include "mem.h"

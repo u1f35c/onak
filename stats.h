@@ -19,27 +19,11 @@ key_getsigns - get the keys a key signs. */
 #ifndef __STATS_H__
 #define __STATS_H__
 
-#include <stdbool.h>
-// #include <stdint.h>
 #include <inttypes.h>
+#include <stdbool.h>
 
+#include "keystructs.h"
 #include "ll.h"
-
-/**
- *	struct stats_key - holds key details suitable for doing stats on.
- *	@keyid: The keyid.
- *	@colour: Used for marking during DFS/BFS.
- *	@parent: The key that lead us to this one for DFS/BFS.
- *	@sigs: A linked list of the signatures on this key.
- *	@gotsigs: A bool indicating if we've initialized the sigs element yet.
- */
-struct stats_key {
-	uint64_t keyid;
-	int colour;
-	uint64_t parent;
-	struct ll *sigs;
-	bool gotsigs;
-};
 
 /**
  *	initcolour - Clear the key graph ready for use.

@@ -11,8 +11,8 @@ DBTYPE = db3
 LIBS = -L/usr/local/lib -ldb3
 
 PROGS = add lookup gpgwww onak
-CORE_OBJS = armor.o charfuncs.o getcgi.o hash.o keydb_$(DBTYPE).o keyid.o \
-	keyindex.o ll.o mem.o onak-conf.o parsekey.o sha.o
+CORE_OBJS = armor.o charfuncs.o decodekey.o getcgi.o hash.o keydb_$(DBTYPE).o \
+	keyid.o keyindex.o ll.o mem.o onak-conf.o parsekey.o sha.o
 OBJS = merge.o md5.o stats.o sendsync.o $(CORE_OBJS)
 SRCS = armor.c parsekey.c merge.c keyid.c md5.c sha.c main.c getcgi.c stats.c \
 	keyindex.c mem.c lookup.c add.c keydb_$(DBTYPE).c ll.c hash.c \

@@ -116,6 +116,15 @@ char *keyid2uid(uint64_t keyid);
 struct ll *getkeysigs(uint64_t keyid);
 
 /**
+ *	cached_getkeysigs - Gets the signatures on a key.
+ *	@keyid: The key we want the signatures for.
+ *	
+ *	This function gets the signatures on a key. It's the same as the
+ *	getkeysigs function above except we use the hash module to cache the
+ */
+struct ll *cached_getkeysigs(uint64_t keyid);
+
+/**
  *	getfullkeyid - Maps a 32bit key id to a 64bit one.
  *	@keyid: The 32bit keyid.
  *

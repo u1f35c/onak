@@ -9,8 +9,8 @@
 #ifndef __HASH_H__
 #define __HASH_H__
 
+#include "keystructs.h"
 #include "ll.h"
-#include "stats.h"
 
 #define HASHSIZE 1024
 #define HASHMASK 0x3FF
@@ -72,15 +72,5 @@ unsigned long hashelements(void);
  *	all entries in the hash.
  */
 struct ll *gethashtableentry(int entry);
-
-/**
- *	hash_getkeysigs - Gets the signatures on a key.
- *	@keyid: The key we want the signatures for.
- *	
- *	This function gets the signatures on a key. It's the same as the
- *	getkeysigs function from the keydb module except we also cache the data
- *	so that if we need it again we already have it available.
- */
-struct ll *hash_getkeysigs(uint64_t keyid);
 
 #endif /* __HASH_H__ */

@@ -9,8 +9,11 @@
 #ifndef __KEYSTRUCTS_H__
 #define __KEYSTRUCTS_H__
 
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdlib.h>
+
+#include "ll.h"
 
 /**
  *	struct openpgp_packet - Stores an OpenPGP packet.
@@ -76,6 +79,22 @@ struct openpgp_publickey {
 	struct openpgp_signedpacket_list	*subkeys;
 	struct openpgp_signedpacket_list	*last_subkey;
 	struct openpgp_publickey		*next;
+};
+
+/**
+ *	struct stats_key - holds key details suitable for doing stats on.
+ *	@keyid: The keyid.
+ *	@colour: Used for marking during DFS/BFS.
+ *	@parent: The key that lead us to this one for DFS/BFS.
+ *	@sigs: A linked list of the signatures on this key.
+ *	@gotsigs: A bool indicating if we've initialized the sigs element yet.
+ */
+struct stats_key {
+	uint64_t keyid;
+	int colour;
+	uint64_t parent;
+	struct ll *sigs;
+	bool gotsigs;
 };
 
 #endif /* __KEYSTRUCTS_H__ */

@@ -67,7 +67,7 @@ unsigned long findpath(struct stats_key *have, struct stats_key *want)
 	oldkeys = keys;
 
 	while (keys != NULL && have->colour == 0) {
-		sigs = hash_getkeysigs(((struct stats_key *)
+		sigs = cached_getkeysigs(((struct stats_key *)
 					keys->object)->keyid);
 		while (sigs != NULL && have->colour == 0) {
 			/*
@@ -129,8 +129,8 @@ void dofindpath(uint64_t have, uint64_t want, bool html)
 	/*
 	 * Make sure the keys we have and want are in the cache.
 	 */
-	hash_getkeysigs(fullhave);
-	hash_getkeysigs(fullwant);
+	cached_getkeysigs(fullhave);
+	cached_getkeysigs(fullwant);
 
 	if ((keyinfoa = findinhash(fullhave)) == NULL) {
 		printf("Couldn't find key 0x%llX.\n", have);
@@ -232,7 +232,7 @@ struct stats_key *furthestkey(struct stats_key *have)
 	curll = lladd(NULL, have);
 
 	while (curll != NULL) {
-		sigs = hash_getkeysigs(((struct stats_key *)
+		sigs = cached_getkeysigs(((struct stats_key *)
 				curll->object)->keyid);
 		while (sigs != NULL) {
 			if (((struct stats_key *) sigs->object)->colour == 0) {

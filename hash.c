@@ -10,11 +10,9 @@
 #include <stdlib.h>
 
 #include "hash.h"
-#include "keydb.h"
-#include "keyid.h"
+#include "keystructs.h"
 #include "ll.h"
 #include "mem.h"
-#include "stats.h"
 
 /**
  *	hashtable - the hash table array.
@@ -125,43 +123,4 @@ unsigned long hashelements(void)
 struct ll *gethashtableentry(int entry)
 {
 	return hashtable[entry];
-}
-
-/**
- *	hash_getkeysigs - Gets the signatures on a key.
- *	@keyid: The key we want the signatures for.
- *	
- *	This function gets the signatures on a key. It's the same as the
- *	getkeysigs function from the keydb module except we also cache the data
- *	so that if we need it again we already have it available.
- */
-struct ll *hash_getkeysigs(uint64_t keyid)
-{
-	struct stats_key *key = NULL;
-
-	if (keyid == 0)  {
-		return NULL;
-	}
-
-	key = findinhash(keyid);
-	if (key == NULL) {
-		key = malloc(sizeof(*key));
-		if (key != NULL) {
-			key->keyid = keyid;
-			key->colour = 0;
-			key->parent = 0;
-			key->sigs = NULL;
-			key->gotsigs = false;
-			addtohash(key);
-		} else {
-			perror("hash_getkeysigs()");
-			return NULL;
-		}
-	}
-	if (key->gotsigs == false) {
-		key->sigs = getkeysigs(key->keyid);
-		key->gotsigs = true;
-	}
-
-	return key->sigs;
 }
