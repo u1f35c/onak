@@ -7,6 +7,13 @@ if [ "$1" = "configure" ]; then
     # Add the onak user
     adduser --system --home /var/lib/onak --no-create-home --disabled-login onak
 
+    # 
+    # If there's no onak database, create it by adding my key.
+    #
+    if [ ! -e /var/lib/onak/num_keydb ]; then
+        zcat /usr/share/doc/onak/noodles.key | onak -b add
+    fi
+
     # Take ownership of the database directory
     chown -R onak /var/lib/onak
 
