@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: parsekey.c,v 1.11 2003/09/30 16:58:04 noodles Exp $
+ * $Id: parsekey.c,v 1.12 2003/09/30 17:40:41 noodles Exp $
  */
 
 #include <assert.h>
@@ -180,8 +180,10 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 
 	assert(packets != NULL);
 	curpacket = *packets;
-	while (curpacket->next != NULL) {
-		curpacket = curpacket->next;
+	if (curpacket != NULL) {
+		while (curpacket->next != NULL) {
+			curpacket = curpacket->next;
+		}
 	}
 
 	while (!rc && !getchar_func(ctx, 1, &curchar)) {
