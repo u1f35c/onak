@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb_db3.c,v 1.25 2004/05/26 17:46:21 noodles Exp $
+ * $Id: keydb_db3.c,v 1.26 2004/05/27 03:33:24 noodles Exp $
  */
 
 #include <assert.h>
@@ -30,6 +30,7 @@
 #include "log.h"
 #include "onak-conf.h"
 #include "parsekey.h"
+#include "wordlist.h"
 
 /**
  *	dbenv - our database environment.
@@ -63,56 +64,6 @@ DB *keydb(uint64_t keyid)
 	keytrun = keyid >> 8;
 
 	return(dbconns[keytrun % numdbs]);
-}
-
-/**
- *	makewordlist - Takes a string and splits it into a set of unique words.
- *	@wordlist: The current word list.
- *	@words: The string to split and add.
- *
- *	We take words and split it on non alpha numeric characters. These get
- *	added to the word list if they're not already present. If the wordlist
- *	is NULL then we start a new list, otherwise it's search for already
- *	added words. Note that words is modified in the process of scanning.
- *
- *	Returns the new word list.
- */
-struct ll *makewordlist(struct ll *wordlist, char *word)
-{
-	char *start = NULL;
-	char *end = NULL;
-
-	/*
-	 * Walk through the words string, spliting on non alphanumerics and
-	 * then checking if the word already exists in the list. If not then
-	 * we add it.
-	 */
-	end = word;
-	while (end != NULL && *end != 0) {
-		start = end;
-		while (*start != 0 && !isalnum(*start)) {
-			start++;
-		}
-		end = start;
-		while (*end != 0 && isalnum(*end)) {
-			*end = tolower(*end);
-			end++;
-		}
-		if (end - start > 1) {
-			if (*end != 0) {
-				*end = 0;
-				end++;
-			}
-			
-			if (llfind(wordlist, start,
-					strcmp) == NULL) {
-				wordlist = lladd(wordlist,
-						start);
-			}
-		}
-	}
-
-	return wordlist;
 }
 
 /**
