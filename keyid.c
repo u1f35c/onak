@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keyid.c,v 1.7 2003/06/04 20:57:09 noodles Exp $
+ * $Id: keyid.c,v 1.8 2003/11/01 19:25:15 noodles Exp $
  */
 
 #include <sys/types.h>
@@ -125,21 +125,25 @@ uint64_t get_packetid(struct openpgp_packet *packet)
 		 * For a type 2 or 3 key the keyid is the last 64 bits of the
 		 * public modulus n, which is stored as an MPI from offset 8
 		 * onwards.
-		 *
-		 * We need to ensure it's an RSA key.
 		 */
-		if (packet->data[7] == 1) {
-			offset = (packet->data[8] << 8) +
-				packet->data[9];
-			offset = ((offset + 7) / 8) + 2;
+		offset = (packet->data[8] << 8) +
+			packet->data[9];
+		offset = ((offset + 7) / 8) + 2;
 
-			for (keyid = 0, i = 0; i < 8; i++) {
-				keyid <<= 8;
-				keyid += packet->data[offset++];
-			}
-		} else {
-			logthing(LOGTHING_ERROR,
-					"Type 2 or 3 key, but not RSA.");
+		for (keyid = 0, i = 0; i < 8; i++) {
+			keyid <<= 8;
+			keyid += packet->data[offset++];
+		}
+		/*
+		 * I thought we needed to ensure it's an RSA key, but pks
+		 * doesn't seem to care and I've seen some type 3 keys.
+		 * So just log a warning.
+		 */
+		if (packet->data[7] != 1) {
+			logthing(LOGTHING_NOTICE,
+				"Type 2 or 3 key, but not RSA: %llx (type %d)",
+				keyid,
+				packet->data[7]);
 		}
 		break;
 	case 4:
