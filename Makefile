@@ -18,7 +18,7 @@ SRCS = armor.c parsekey.c merge.c keyid.c md5.c sha.c main.c getcgi.c stats.c \
 	keyindex.c mem.c lookup.c add.c keydb_$(DBTYPE).c ll.c hash.c \
 	gpgwww.c onak-conf.c charfuncs.c sendsync.c log.c
 
-all: $(PROGS) testparse maxpath sixdegrees
+all: .depend $(PROGS) testparse maxpath sixdegrees
 
 testparse: main.o $(OBJS)
 	$(LINK) -o testparse main.o $(OBJS) $(LIBS)
@@ -46,7 +46,10 @@ clean:
 		gpgwww.o add.o lookup.o main.o maxpath.o onak.o sixdegrees \
 		sixdegrees.o
 
-depend:
-	makedepend $(SRCS)
+.depend: $(SRCS)
+	rm .depend
+	makedepend -f- -- $(CFLAGS) -- $(SRCS) > .depend
 
-# DO NOT DELETE
+include .depend
+
+.PHONY: all clean
