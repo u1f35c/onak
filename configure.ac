@@ -19,7 +19,7 @@ then
 		AC_MSG_ERROR([cannot compile DB3 backend without libdb3]))
 else if test "x$enable_backend" = "xpg"
 then
-	AC_CHECK_LIB(pq, PQsetdbLoginx,,
+	AC_CHECK_LIB(pq, PQsetdbLogin,,
 		AC_MSG_ERROR([cannot compile PostgreSQL backend without libpq]))
 fi
 fi

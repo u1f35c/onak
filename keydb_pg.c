@@ -11,8 +11,6 @@
 #include <postgresql/libpq-fe.h>
 #include <postgresql/libpq/libpq-fs.h>
 
-//#include <libpq-fe.h>
-//#include <libpq/libpq-fs.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <errno.h>
@@ -243,7 +241,8 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
 						"Can't open large object.");
 			} else {
 				read_openpgp_stream(keydb_fetchchar, &fd,
-						&packets);
+						&packets,
+						0);
 				parse_keys(packets, publickey);
 				lo_close(dbconn, fd);
 				free_packet_list(packets);
