@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keydb_db3.c,v 1.18 2003/09/28 14:56:32 noodles Exp $
+ * $Id: keydb_db3.c,v 1.19 2003/09/28 16:12:47 noodles Exp $
  */
 
 #include <assert.h>
@@ -778,34 +778,45 @@ int delete_key(uint64_t keyid, bool intrans)
  */
 int dumpdb(char *filenamebase)
 {
-	DBT key, data;
-	DBC *cursor = NULL;
-	int ret = 0;
-	int fd = -1;
-	int i;
+	DBT   key, data;
+	DBC  *cursor = NULL;
+	int   ret = 0;
+	int   fd = -1;
+	int   i = 0;
+	char  filename[1024];
 
+	filename[1023] = 0;
 	for (i = 0; i < numdbs; i++) {
 		ret = dbconns[i]->cursor(dbconns[i],
 			NULL,
 			&cursor,
 			0);   /* flags */
 
-		fd = open(filenamebase, O_CREAT | O_WRONLY | O_TRUNC, 0640);
-		memset(&key, 0, sizeof(key));
-		memset(&data, 0, sizeof(data));
-		ret = cursor->c_get(cursor, &key, &data, DB_NEXT);
-		while (ret == 0) {
-			write(fd, data.data, data.size);
+		snprintf(filename, 1023, "%s.%d.pgp", filenamebase, i);
+		fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0640);
+		if (fd == -1) {
+			logthing(LOGTHING_ERROR,
+				"Error opening keydump file (%s): %s",
+				filename,
+				strerror(errno));
+		} else {
 			memset(&key, 0, sizeof(key));
 			memset(&data, 0, sizeof(data));
 			ret = cursor->c_get(cursor, &key, &data, DB_NEXT);
-		}
-		if (ret != DB_NOTFOUND) {
-			logthing(LOGTHING_ERROR, "Problem reading key: %s",
+			while (ret == 0) {
+				write(fd, data.data, data.size);
+				memset(&key, 0, sizeof(key));
+				memset(&data, 0, sizeof(data));
+				ret = cursor->c_get(cursor, &key, &data,
+						DB_NEXT);
+			}
+			if (ret != DB_NOTFOUND) {
+				logthing(LOGTHING_ERROR,
+					"Problem reading key: %s",
 					db_strerror(ret));
+			}
+			close(fd);
 		}
-
-		close(fd);
 
 		ret = cursor->c_close(cursor);
 		cursor = NULL;
