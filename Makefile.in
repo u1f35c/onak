@@ -83,9 +83,12 @@ onak.conf: onak.conf.in
 		< onak.conf.in > onak.conf
 
 clean:
-	$(RM) -f $(PROGS) $(OBJS) Makefile.bak testparse maxpath *.core core \
+	$(RM) $(PROGS) $(OBJS) Makefile.bak testparse maxpath *.core core \
 		gpgwww.o add.o lookup.o main.o maxpath.o onak.o sixdegrees \
 		sixdegrees.o splitkeys.o stripkey.o onak.conf
+ifeq (x@KEYD@, xyes)
+	$(RM) keyd.o keydb_$(DBTYPE).o
+endif
 
 distclean: clean
 	$(RM) -f Makefile .depend config.{log,status,h}
