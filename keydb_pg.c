@@ -23,7 +23,7 @@
 #include "hash.h"
 #include "keydb.h"
 #include "keyid.h"
-#include "keyindex.h"
+#include "decodekey.h"
 #include "keystructs.h"
 #include "mem.h"
 #include "onak-conf.h"
