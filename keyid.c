@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keyid.c,v 1.8 2003/11/01 19:25:15 noodles Exp $
+ * $Id: keyid.c,v 1.9 2004/05/29 02:52:56 noodles Exp $
  */
 
 #include <sys/types.h>
@@ -135,11 +135,12 @@ uint64_t get_packetid(struct openpgp_packet *packet)
 			keyid += packet->data[offset++];
 		}
 		/*
-		 * I thought we needed to ensure it's an RSA key, but pks
-		 * doesn't seem to care and I've seen some type 3 keys.
-		 * So just log a warning.
+		 * Check for an RSA key; if not then log but accept anyway.
+		 * 1 == RSA
+		 * 2 == RSA Encrypt-Only
+		 * 3 == RSA Sign-Only
 		 */
-		if (packet->data[7] != 1) {
+		if (packet->data[7] < 1 || packet->data[7] > 3) {
 			logthing(LOGTHING_NOTICE,
 				"Type 2 or 3 key, but not RSA: %llx (type %d)",
 				keyid,
