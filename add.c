@@ -68,8 +68,13 @@ int main(int argc, char *argv[])
 				count);
 			printf("Storing %d keys.\n", count);
 			end_html();
-			fclose(stdout);
-			fclose(stderr);
+			if (stdout != NULL && fileno(stdout) != -1) {
+				fclose(stdout);
+			}
+			if (stderr != NULL && stderr != stdout &&
+					fileno(stderr) != -1) {
+				fclose(stderr);
+			}
 			catchsignals();
 			initdb(false);
 			
