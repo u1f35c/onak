@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: charfuncs.h,v 1.2 2003/06/04 20:57:07 noodles Exp $
+ * $Id: charfuncs.h,v 1.3 2003/09/30 17:15:39 noodles Exp $
  */
 
 #ifndef __CHARFUNCS_H__
@@ -55,5 +55,14 @@ int file_fetchchar(void *fd, size_t count, unsigned char *c);
  */
 int file_putchar(void *fd, size_t count, unsigned char *c);
 
+/**
+ *	stdin_getchar - Gets a char from stdin.
+ */
+int stdin_getchar(void *ctx, size_t count, unsigned char *c);
+
+/**
+ *	stdout_putchar - Puts a char to stdout.
+ */
+int stdout_putchar(void *ctx, size_t count, unsigned char *c);
 
 #endif /* __CHARFUNCS_H__ */

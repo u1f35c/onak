@@ -7,7 +7,7 @@
  * 
  * Copyright 2002 Project Purple
  *
- * $Id: onak.c,v 1.15 2003/09/28 20:33:34 noodles Exp $
+ * $Id: onak.c,v 1.16 2003/09/30 17:15:39 noodles Exp $
  */
 
 #include <stdio.h>
@@ -16,6 +16,7 @@
 #include <unistd.h>
 
 #include "armor.h"
+#include "charfuncs.h"
 #include "keydb.h"
 #include "keyid.h"
 #include "keyindex.h"
@@ -25,30 +26,6 @@
 #include "merge.h"
 #include "onak-conf.h"
 #include "parsekey.h"
-
-int stdin_getchar(void *ctx, size_t count, unsigned char *c)
-{
-	int ic = 0;
-
-	while ((count > 0) && (ic != EOF)) {
-		ic = getchar();
-		*c = ic;
-		c++;
-		count--;
-	}
-
-	return (ic == EOF);
-}
-
-int stdout_putchar(void *ctx, size_t count, unsigned char *c)
-{
-	int i;
-
-	for (i = 0; i < count; i++) {
-		putchar(c[i]);
-	}
-	return 0;
-}
 
 void find_keys(char *search, uint64_t keyid, bool ishex,
 		bool fingerprint, bool exact, bool verbose)

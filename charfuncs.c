@@ -5,9 +5,10 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: charfuncs.c,v 1.2 2003/06/04 20:57:07 noodles Exp $
+ * $Id: charfuncs.c,v 1.3 2003/09/30 17:15:39 noodles Exp $
  */
 
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
@@ -80,4 +81,34 @@ int file_fetchchar(void *fd, size_t count, unsigned char *c)
 int file_putchar(void *fd, size_t count, unsigned char *c)
 {
 	return !(write( *(int *) fd, c, count));
+}
+
+/**
+ *	stdin_getchar - Gets a char from stdin.
+ */
+int stdin_getchar(void *ctx, size_t count, unsigned char *c)
+{
+	int ic = 0;
+
+	while ((count > 0) && (ic != EOF)) {
+		ic = getchar();
+		*c = ic;
+		c++;
+		count--;
+	}
+
+	return (ic == EOF);
+}
+
+/**
+ *	stdout_putchar - Puts a char to stdout.
+ */
+int stdout_putchar(void *ctx, size_t count, unsigned char *c)
+{
+	int i;
+
+	for (i = 0; i < count; i++) {
+		putchar(c[i]);
+	}
+	return 0;
 }
