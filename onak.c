@@ -96,12 +96,16 @@ int main(int argc, char *argv[])
 	bool				 verbose = false;
 	bool				 update = false;
 	bool				 binary = false;
+	bool				 fingerprint = false;
 	int				 optchar;
 
-	while ((optchar = getopt(argc, argv, "buv")) != -1 ) {
+	while ((optchar = getopt(argc, argv, "bfuv")) != -1 ) {
 		switch (optchar) {
 		case 'b': 
 			binary = true;
+			break;
+		case 'f': 
+			fingerprint = true;
 			break;
 		case 'u': 
 			update = true;
@@ -174,9 +178,11 @@ int main(int argc, char *argv[])
 		}
 		initdb();
 		if (!strcmp("index", argv[optind])) {
-			find_keys(search, keyid, ishex, false, false, false);
+			find_keys(search, keyid, ishex, fingerprint,
+					false, false);
 		} else if (!strcmp("vindex", argv[optind])) {
-			find_keys(search, keyid, ishex, false, false, true);
+			find_keys(search, keyid, ishex, fingerprint,
+					false, true);
 		} else if (!strcmp("delete", argv[optind])) {
 			delete_key(getfullkeyid(keyid), false);
 		} else if (!strcmp("get", argv[optind])) {

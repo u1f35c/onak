@@ -24,17 +24,94 @@ uint64_t get_keyid(struct openpgp_publickey *publickey)
 }
 
 /**
+ *	get_fingerprint - Given a public key returns the fingerprint.
+ *	@publickey: The key to calculate the id for.
+ *	@fingerprint: The fingerprint (must be at least 20 bytes of space). 
+ *	@len: The length of the returned fingerprint.
+ *
+ *	This function returns the fingerprint for a given public key. As Type 3
+ *	fingerprints are 16 bytes and Type 4 are 20 the len field indicates
+ *	which we've returned.
+ */
+unsigned char *get_fingerprint(struct openpgp_packet *packet,
+	unsigned char *fingerprint,
+	size_t *len)
+{
+	SHA1_CONTEXT sha_ctx;
+	MD5_CONTEXT md5_ctx;
+	unsigned char c;
+	unsigned char *buff = NULL;
+	size_t         modlen, explen;
+
+	assert(fingerprint != NULL);
+	assert(len != NULL);
+
+	*len = 0;
+
+	switch (packet->data[0]) {
+	case 2:
+	case 3:
+		md5_init(&md5_ctx);
+
+		/*
+		 * MD5 the modulus and exponent.
+		 */
+		modlen = ((packet->data[8] << 8) +
+			 packet->data[9] + 7) >> 3;
+		md5_write(&md5_ctx, &packet->data[10], modlen);
+
+		explen = ((packet->data[10+modlen] << 8) +
+			 packet->data[11+modlen] + 7) >> 3;
+		md5_write(&md5_ctx, &packet->data[12 + modlen], explen);
+
+		md5_final(&md5_ctx);
+		buff = md5_read(&md5_ctx);
+
+		*len = 16;
+		memcpy(fingerprint, buff, *len);
+
+		break;
+
+	case 4:
+		sha1_init(&sha_ctx);
+		/*
+		 * TODO: Can this be 0x99? Are all public key packets old
+		 * format with 2 bytes of length data?
+		 */
+		c = 0x99;
+		sha1_write(&sha_ctx, &c, sizeof(c));
+		c = packet->length >> 8;
+		sha1_write(&sha_ctx, &c, sizeof(c));
+		c = packet->length & 0xFF;
+		sha1_write(&sha_ctx, &c, sizeof(c));
+		sha1_write(&sha_ctx, packet->data,
+			packet->length);
+		sha1_final(&sha_ctx);
+		buff = sha1_read(&sha_ctx);
+
+		*len = 20;
+		memcpy(fingerprint, buff, *len);
+		break;
+	default:
+		fprintf(stderr, "Unknown key type: %d\n",
+				packet->data[0]);
+	}
+
+	return fingerprint;
+}
+
+
+/**
  *	get_packetid - Given a PGP packet returns the keyid.
  *	@packet: The packet to calculate the id for.
  */
 uint64_t get_packetid(struct openpgp_packet *packet)
 {
-	SHA1_CONTEXT sha_ctx;
-	uint64_t keyid = 0;
-	int offset = 0;
-	int i = 0;
-	unsigned char c;
-	unsigned char *buff = NULL;
+	uint64_t	keyid = 0;
+	int		offset = 0;
+	int		i = 0;
+	size_t		length = 0;
+	unsigned char	buff[20];
 
 	assert(packet != NULL);
 
@@ -62,29 +139,7 @@ uint64_t get_packetid(struct openpgp_packet *packet)
 		}
 		break;
 	case 4:
-		/*
-		 * For a type 4 key the keyid is the last 64 bits of the
-		 * fingerprint, which is the 160 bit SHA-1 hash of the packet
-		 * tag, 2 octet packet length and the public key packet
-		 * including version field.
-		 */
-		sha1_init(&sha_ctx);
-		/*
-		 * TODO: Can this be 0x99? Are all public key packets old
-		 * format with 2 bytes of length data?
-		 */
-		c = 0x99;
-		sha1_write(&sha_ctx, &c, sizeof(c));
-		c = packet->length >> 8;
-		sha1_write(&sha_ctx, &c, sizeof(c));
-		c = packet->length & 0xFF;
-		sha1_write(&sha_ctx, &c, sizeof(c));
-		sha1_write(&sha_ctx, packet->data,
-			packet->length);
-		sha1_final(&sha_ctx);
-		buff = sha1_read(&sha_ctx);
-
-		assert(buff != NULL);
+		get_fingerprint(packet, buff, &length);
 		
 		for (keyid = 0, i = 12; i < 20; i++) {
 			keyid <<= 8;

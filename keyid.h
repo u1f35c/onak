@@ -23,6 +23,20 @@
 uint64_t get_keyid(struct openpgp_publickey *publickey);
 
 /**
+ *	get_fingerprint - Given a public key returns the fingerprint.
+ *	@publickey: The key to calculate the id for.
+ *	@fingerprint: The fingerprint (must be at least 20 bytes of space). 
+ *	@len: The length of the returned fingerprint.
+ *
+ *	This function returns the fingerprint for a given public key. As Type 3
+ *	fingerprints are 16 bytes and Type 4 are 20 the len field indicates
+ *	which we've returned.
+ */
+unsigned char *get_fingerprint(struct openpgp_packet *packet,
+	unsigned char *fingerprint,
+	size_t *len);
+
+/**
  *	get_packetid - Given a PGP packet returns the keyid.
  *	@packet: The packet to calculate the id for.
  *

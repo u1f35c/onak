@@ -138,6 +138,29 @@ int list_subkeys(struct openpgp_signedpacket_list *subkeys, bool verbose,
 	return 0;
 }
 
+void display_fingerprint(struct openpgp_publickey *key)
+{
+	int		i = 0;
+	size_t		length = 0;
+	unsigned char	fp[20];
+
+	get_fingerprint(key->publickey, fp, &length);
+	printf("      Key fingerprint =");
+	for (i = 0; i < length; i++) {
+		if ((length == 16) ||
+			(i % 2 == 0)) {
+			printf(" ");
+		}
+		printf("%02X", fp[i]);
+		if ((i * 2) == length) {
+			printf(" ");
+		}
+	}
+	printf("\n");
+
+	return;
+}
+
 /**
  *	key_index - List a set of OpenPGP keys.
  *	@keys: The keys to display.
@@ -201,12 +224,18 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 				(int) curuid->packet->length,
 				curuid->packet->data);
 			printf("%s\n", (html) ? txt2html(buf) : buf);
+			if (fingerprint) {
+				display_fingerprint(keys);
+			}
 			if (verbose) {
 				list_sigs(curuid->sigs, html);
 			}
 			curuid = curuid->next;
 		} else {
 			putchar('\n');
+			if (fingerprint) {
+				display_fingerprint(keys);
+			}
 		}
 
 		list_uids(curuid, verbose, html);
