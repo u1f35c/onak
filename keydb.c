@@ -1,0 +1,80 @@
+/*
+ * keydb.c - Routines for DB access that just use store/fetch.
+ *
+ * Jonathan McDowell <noodles@earth.li>
+ *
+ * Copyright 2002 Project Purple
+ */
+
+/**
+ *	The routines in this file are meant to be used as an initial step when
+ *	adding a new db access module. They provide various functions required
+ *	of the db access module using only the store and fetch functions. As
+ *	they need to parse the actual OpenPGP data to work they are a lot
+ *	slower than custom functions however.
+ */
+
+#include <stdio.h>
+
+#include "keydb.h"
+#include "keyid.h"
+#include "keyindex.h"
+#include "keystructs.h"
+#include "mem.h"
+#include "parsekey.h"
+
+/**
+ *	keyid2uid - Takes a keyid and returns the primary UID for it.
+ *	@keyid: The keyid to lookup.
+ */
+char *keyid2uid(uint64_t keyid)
+{
+	struct openpgp_publickey *publickey = NULL;
+	struct openpgp_signedpacket_list *curuid = NULL;
+	static char buf[1024];
+
+	buf[0]=0;
+	if (fetch_key(keyid, &publickey) && publickey != NULL) {
+		curuid = publickey->uids;
+		while (curuid != NULL && buf[0] == 0) {
+			if (curuid->packet->tag == 13) {
+				snprintf(buf, 1023, "%.*s",
+						(int) curuid->packet->length,
+						curuid->packet->data);
+			}
+			curuid = curuid -> next;
+		}
+		free_publickey(publickey);
+	}
+
+	if (buf[0] == 0) {
+		return NULL;
+	} else {
+		return buf;
+	}
+}
+
+/**
+ *	getkeysigs - Gets a linked list of the signatures on a key.
+ *	@keyid: The keyid to get the sigs for.
+ *
+ *	This function gets the list of signatures on a key. Used for key 
+ *	indexing and doing stats bits.
+ */
+struct ll *getkeysigs(uint64_t keyid)
+{
+	struct ll *sigs = NULL;
+	struct openpgp_signedpacket_list *uids = NULL;
+	struct openpgp_publickey *publickey = NULL;
+
+	fetch_key(keyid, &publickey);
+	
+	if (publickey != NULL) {
+		for (uids = publickey->uids; uids != NULL; uids = uids->next) {
+			sigs = keysigs(sigs, uids->sigs);
+		}
+		free_publickey(publickey);
+	}
+	
+	return sigs;
+}

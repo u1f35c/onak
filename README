@@ -1,0 +1,26 @@
+onak 0.0.1
+
+First release. You're mostly on your own folks.
+
+Developed under Linux & FreeBSD. Not currently autoconfed, so might need some
+tweaking to compile under anything else (or indeed either of those with header
+files in different places).
+
+The DB2 support for pksd databases is read only at present. It was knocked up
+in an hour to get the pathfinder working with the wwwkeys.uk.pgp.net DB.
+
+File database backend support is good for testing.
+
+It's running on hell.on.earth.li; currently with just under 400 keys in the
+database (Postgres backend). This isn't merging with anything at present
+though; that's the next step which is sort of there.
+
+You want to put add & lookup in a /pks directory under a web server running on
+port 11371 to make gpg happy. There's a mathopd.conf file that I used for
+testing, however I'm now running it under Apache for the public test rig as
+that host already runs it.
+
+Really needs a config file so all the hardcoded stuff isn't any more.
+
+Patches to do stuff welcome. Bug reports welcome. Don't expect quick responses
+though. ;)

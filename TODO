@@ -1,0 +1,28 @@
+* Search on key text.
+* Revoked keys on index.
+* Check keys on import?
+* Test library?
+* Better signature subpacket parsing (primary UID for example).
+* Better txt2html routine.
+* Remove bithelp.h (i386 only at present & inlined).
+* BSD license? (Needs md5 & sha routines rewritten/replaced then)
+* Pathfinder - graphical as well? Multiple paths?
+* Do pathlengths for similar email addresses to help aide keysigning.
+  (ie "Find me the keys furthest from mine that end ox.ac.uk'")
+  Suggested by Jochen Voss <voss@mathematik.uni-kl.de>.
+* Other stats. sixdegrees? with piccy? most signed? signs most?
+* DB access modules as a library to allow runtime configuration of it?
+* Clean up gcc warnings (`ll' length modifier especially! Also inline & wrong
+  signedness for lo_read/write)
+* Webpages should bt UTF-8?
+* autoconf
+* config file
+
+Must do before initial release:
+
+* Key deletion (needed for updating keys).
+* Fix output to make GPG happy with --keyserver.
+* Check freeing.
+* More comments.
+* Sort out merging (use keymerge + some Perl to answer incoming email. Not
+  sure about keys via hkp yet though).

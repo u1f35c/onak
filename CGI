@@ -1,0 +1,12 @@
+
+/pks/lookup:
+
+op		index | vindex | get	required
+search					required
+fingerprint	boolean (true == on)
+exact		boolean
+
+
+/pks/add:
+
+keytext		for ADD.		required

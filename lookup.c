@@ -1,0 +1,144 @@
+/*
+ * lookup.c - CGI to lookup keys.
+ *
+ * Jonathan McDowell <noodles@earth.li>
+ *
+ * Copyright 2002 Project Purple
+ */
+
+//#include <stdint.h>
+#include <inttypes.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include "armor.h"
+#include "getcgi.h"
+#include "keydb.h"
+#include "keyindex.h"
+#include "mem.h"
+#include "parsekey.h"
+
+#define OP_UNKNOWN 0
+#define OP_GET     1
+#define OP_INDEX   2
+#define OP_VINDEX  3
+
+int putnextchar(void *ctx, unsigned char c)
+{
+        return putchar(c);
+}
+
+void find_keys(char *search, uint64_t keyid, bool ishex,
+		bool fingerprint, bool exact, bool verbose)
+{
+	struct openpgp_publickey *publickey = NULL;
+	bool found = false;
+
+	if (ishex) {
+		if (fetch_key(keyid, &publickey)) {
+			if (publickey != NULL) {
+				key_index(publickey, verbose, fingerprint,
+						true);
+				free_publickey(publickey);
+				found = true;
+			}
+		}
+	}
+	if (!found) {
+		puts("Key not found.");
+	}
+}
+
+int main(int argc, char *argv[])
+{
+	char **params = NULL;
+	int op = OP_UNKNOWN;
+	int i;
+	bool fingerprint = false;
+	bool exact = false;
+	bool ishex = false;
+	uint64_t keyid = 0;
+	char *search = NULL;
+	char *end = NULL;
+	struct openpgp_publickey *publickey = NULL;
+	struct openpgp_packet_list *packets = NULL;
+	struct openpgp_packet_list *list_end = NULL;
+
+	params = getcgivars(argc, argv);
+	for (i = 0; params != NULL && params[i] != NULL; i += 2) {
+		if (!strcmp(params[i], "op")) {
+			if (!strcmp(params[i+1], "get")) {
+				op = OP_GET;
+			} else if (!strcmp(params[i+1], "index")) {
+				op = OP_INDEX;
+			} else if (!strcmp(params[i+1], "vindex")) {
+				op = OP_VINDEX;
+			}
+		} else if (!strcmp(params[i], "search")) {
+			search = params[i+1];
+			if (search != NULL) {
+				keyid = strtoul(search, &end, 16);
+				if (*search != 0 &&
+						end != NULL &&
+						*end == 0) {
+					ishex = true;
+				}
+			}
+		} else if (!strcmp(params[i], "fingerprint")) {
+			if (!strcmp(params[i+1], "on")) {
+				fingerprint = true;
+			}
+		} else if (!strcmp(params[i], "exact")) {
+			if (!strcmp(params[i+1], "on")) {
+				exact = true;
+			}
+		}
+	}
+
+//	puts("HTTP/1.0 200 OK");
+//	puts("Server: onak 0.0.1");
+	puts("Content-Type: text/html\n");
+	puts("<html>\n<title>Lookup of key</title>");
+	puts("<body>");
+
+	if (op == OP_UNKNOWN) {
+		puts("Error: No operation supplied.");
+	} else if (search == NULL) {
+		puts("Error: No key to search for supplied.");
+	} else {
+		initdb();
+		switch (op) {
+		case OP_GET:
+			if (fetch_key(keyid, &publickey)) {
+				puts("<pre>");
+				flatten_publickey(publickey,
+							&packets,
+							&list_end);
+				armor_openpgp_stream(putnextchar,
+						NULL,
+						packets);
+				puts("</pre>");
+			} else {
+				puts("Key not found");
+			}
+			break;
+		case OP_INDEX:
+			find_keys(search, keyid, ishex, fingerprint, exact,
+					false);
+			break;
+		case OP_VINDEX:
+			find_keys(search, keyid, ishex, fingerprint, exact,
+					true);
+			break;
+		default:
+			puts("Unknown operation!");
+		}
+		cleanupdb();
+	}
+	puts("<hr>");
+	puts("Produced by onak 0.0.1 by Jonathan McDowell");
+	puts("</body>\n</html>");
+	return (EXIT_SUCCESS);
+}
