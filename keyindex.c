@@ -5,7 +5,7 @@
  *
  * Copyright 2002 Project Purple
  *
- * $Id: keyindex.c,v 1.13 2003/10/11 21:52:18 noodles Exp $
+ * $Id: keyindex.c,v 1.14 2004/05/26 17:48:02 noodles Exp $
  */
 
 #include <assert.h>
@@ -72,10 +72,10 @@ int list_uids(struct openpgp_signedpacket_list *uids, bool verbose, bool html)
 			snprintf(buf, 1023, "%.*s",
 				(int) uids->packet->length,
 				uids->packet->data);
-			printf("uid                             %s\n",
+			printf("                                %s\n",
 				(html) ? txt2html(buf) : buf);
 		} else if (uids->packet->tag == 17) {
-			printf("uid                             "
+			printf("                                "
 				"[photo id]\n");
 		}
 		if (verbose) {
@@ -248,7 +248,9 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 		}
 
 		list_uids(curuid, verbose, html);
-		list_subkeys(keys->subkeys, verbose, html);
+		if (verbose) {
+			list_subkeys(keys->subkeys, verbose, html);
+		}
 
 		keys = keys->next;
 	}
