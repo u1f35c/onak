@@ -448,14 +448,16 @@ uint64_t getfullkeyid(uint64_t keyid)
 	keydir(buffer, keyid);
 
 	d = opendir(buffer);
-	do {
-		de = readdir(d);
-		if (de)
-			if (de && de->d_name[0] != '.') {
-				ret = strtoull(de->d_name, NULL, 16);
-			}
-	} while (de && de->d_name[0] == '.');
-	closedir(d);
+	if (d) {
+		do {
+			de = readdir(d);
+			if (de)
+				if (de && de->d_name[0] != '.') {
+					ret = strtoull(de->d_name, NULL, 16);
+				}
+		} while (de && de->d_name[0] == '.');
+		closedir(d);
+	}
 	return ret;
 }
 
