@@ -113,3 +113,19 @@
   asserting.
 * Make the Postgres backend compile again.
 * First attempt at supporting revoked keys.
+
+0.2.1 - 11th October 2003
+
+* Added support for multiple backend DB3 key files.
+* Fixed DB3 database dumping to be outside a transaction (otherwise the
+  transaction is too big and we run out of memory).
+* Change over onak-mail.pl to use the config file more.
+* Fix bug where we always read one byte from stdin in rather than allowing
+  zero.
+* Tightened up error checking in a couple of places to allow proper DB cleanup.
+* Changed a printf error message over to using logthing.
+* Allow read_openpgp_stream to append to an existing packet list.
+* Tidy up various character functions into charfuncs.c
+* Add splitkeys for spliting up keyrings.
+* Various code cleanups to help reduce warnings under C99.
+* Add (verbose) index support to onak-mail.pl
