@@ -1,6 +1,6 @@
 AC_PREREQ(2.50)
 AC_INIT([onak],[0.3.0],[noodles-onak@earth.li])
-
+AC_CONFIG_SRCDIR(onak.c)
 AC_CONFIG_HEADER(config.h)
 
 AC_PROG_CC
@@ -11,7 +11,7 @@ AC_ARG_ENABLE(backend,AC_HELP_STRING([--enable-backend=<backend>],[Choose the ba
 
 AC_MSG_CHECKING([which key database backend to use])
 AC_MSG_RESULT([$enable_backend])
-AC_CHECK_FILE(keydb_$enable_backend.c, ,AC_MSG_ERROR([non existent key database backend $enable_backend]))
+AC_CHECK_FILE([$srcdir/keydb_$enable_backend.c], ,AC_MSG_ERROR([non existent key database backend $enable_backend]))
 
 if test "x$enable_backend" = "xdb3"
 then
