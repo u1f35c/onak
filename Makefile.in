@@ -10,6 +10,8 @@ LDFLAGS += @LDFLAGS@
 DBTYPE = @DBTYPE@
 #
 LIBS = @LIBS@
+#MAKEDEPEND = makedepend -f- -- 
+MAKEDEPEND = $(CC) -MM
 prefix ?= @prefix@
 exec_prefix ?= @exec_prefix@
 
@@ -78,7 +80,7 @@ distclean: clean
 
 .depend: $(SRCS)
 	rm -f .depend
-	makedepend -f- -- $(CFLAGS) -- $(SRCS) > .depend
+	$(MAKEDEPEND) $(CFLAGS) $(SRCS) > .depend
 
 include .depend
 
