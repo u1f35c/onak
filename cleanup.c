@@ -65,17 +65,13 @@ void sig_cleanup(int signal)
  */
 void catchsignals(void)
 {
-	struct sigaction alarmh;
-
 	logthing(LOGTHING_INFO, "Catching signals");
 
-	memset(&alarmh, 0, sizeof(alarmh));
-	alarmh.sa_handler = sig_cleanup;
-	sigaction(SIGALRM, &alarmh, NULL);
-	sigaction(SIGPIPE, &alarmh, NULL);
-	sigaction(SIGTERM, &alarmh, NULL);
-	sigaction(SIGINT, &alarmh, NULL);
-	sigaction(SIGHUP, &alarmh, NULL);
+	signal(SIGALRM, &sig_cleanup);
+	signal(SIGPIPE, &sig_cleanup);
+	signal(SIGTERM, &sig_cleanup);
+	signal(SIGINT, &sig_cleanup);
+	signal(SIGHUP, &sig_cleanup);
 
 	return;
 }
