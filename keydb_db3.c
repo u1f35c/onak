@@ -18,6 +18,7 @@
 
 #include <db.h>
 
+#include "charfuncs.h"
 #include "keydb.h"
 #include "keyid.h"
 #include "keyindex.h"
@@ -35,57 +36,6 @@ static DB *dbconn = NULL;
  *	worddb - our connection to the word database.
  */
 static DB *worddb = NULL;
-
-/**
- *	db3_get_ctx - Shared with CGI buffer stuff...
- */
-struct db3_get_ctx {
-	char *buffer;
-	int offset;
-	int size;
-};
-
-/**
- *	keydb_fetchchar - Fetches a char from a file.
- */
-static int keydb_fetchchar(void *ctx, size_t count, unsigned char *c)
-{
-	struct db3_get_ctx *buf = NULL;
-	int i;
-	
-	buf = (struct db3_get_ctx *) ctx;
-	for (i = 0; i < count; i++) {
-		c[i] = buf->buffer[buf->offset++];
-	}
-
-	return (((buf->offset) == (buf->size)) ? 1 : 0);
-}
-
-/**
- *	keydb_putchar - Puts a char to a file.
- */
-static int keydb_putchar(void *ctx, size_t count, unsigned char *c)
-{
-	struct db3_get_ctx *buf = NULL;
-	size_t newsize = 0;
-	int i;
-	
-	buf = (struct db3_get_ctx *) ctx;
-
-	for (newsize = buf->size; newsize < (buf->offset + count);
-			newsize *= 2) ;
-
-	if (newsize != buf->size) {
-		buf->buffer = realloc(buf->buffer, newsize);
-		buf->size = newsize;
-	}
-	
-	for (i = 0; i < count; i++) {
-		buf->buffer[buf->offset++] = c[i];
-	}
-
-	return 1;
-}
 
 /**
  *	makewordlist - Takes a string and splits it into a set of unique words.
@@ -242,7 +192,7 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 	DBT key, data;
 	int ret = 0;
 	int numkeys = 0;
-	struct db3_get_ctx fetchbuf;
+	struct buffer_ctx fetchbuf;
 
 	memset(&key, 0, sizeof(key));
 	memset(&data, 0, sizeof(data));
@@ -264,7 +214,7 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 		fetchbuf.buffer = data.data;
 		fetchbuf.offset = 0;
 		fetchbuf.size = data.size;
-		read_openpgp_stream(keydb_fetchchar, &fetchbuf,
+		read_openpgp_stream(buffer_fetchchar, &fetchbuf,
 				&packets);
 		parse_keys(packets, publickey);
 		numkeys++;
@@ -347,7 +297,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 	struct     openpgp_publickey *next = NULL;
 	int        ret = 0;
 	int        i = 0;
-	struct     db3_get_ctx storebuf;
+	struct     buffer_ctx storebuf;
 	DBT        key;
 	DBT        data;
 	uint64_t   keyid = 0;
@@ -383,7 +333,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 	storebuf.size = 8192;
 	storebuf.buffer = malloc(8192);
 	
-	write_openpgp_stream(keydb_putchar, &storebuf, packets);
+	write_openpgp_stream(buffer_putchar, &storebuf, packets);
 
 	/*
 	 * Now we have the key data store it in the DB; the keyid is the key.

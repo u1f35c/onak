@@ -15,6 +15,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "charfuncs.h"
 #include "keydb.h"
 #include "keyid.h"
 #include "keystructs.h"
@@ -22,22 +23,6 @@
 #include "mem.h"
 #include "onak-conf.h"
 #include "parsekey.h"
-
-/**
- *	keydb_fetchchar - Fetches a char from a file.
- */
-static int keydb_fetchchar(void *fd, size_t count, unsigned char *c)
-{
-	return !(read( *(int *) fd, c, count));
-}
-
-/**
- *	keydb_putchar - Puts a char to a file.
- */
-static int keydb_putchar(void *fd, size_t count, unsigned char *c)
-{
-	return !(write( *(int *) fd, c, count));
-}
 
 /**
  *	initdb - Initialize the key database.
@@ -101,7 +86,7 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 	fd = open(keyfile, O_RDONLY); // | O_SHLOCK);
 
 	if (fd > -1) {
-		read_openpgp_stream(keydb_fetchchar, &fd, &packets);
+		read_openpgp_stream(file_fetchchar, &fd, &packets);
 		parse_keys(packets, publickey);
 		close(fd);
 	}
@@ -138,7 +123,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 		flatten_publickey(publickey, &packets, &list_end);
 		publickey -> next = next;
 		
-		write_openpgp_stream(keydb_putchar, &fd, packets);
+		write_openpgp_stream(file_putchar, &fd, packets);
 		close(fd);
 	}
 

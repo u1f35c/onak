@@ -12,37 +12,19 @@
 #include <string.h>
 
 #include "armor.h"
+#include "charfuncs.h"
 #include "getcgi.h"
 #include "keydb.h"
 #include "keystructs.h"
 #include "parsekey.h"
 #include "merge.h"
 
-struct cgi_get_ctx {
-	char *buffer;
-	int offset;
-};
-
-
-int cgi_getchar(void *ctx, size_t count, unsigned char *c)
-{
-	struct cgi_get_ctx *buf = NULL;
-
-	buf = (struct cgi_get_ctx *) ctx;
-
-	while (count-- > 0 && *c != 0) {
-		*c = buf->buffer[buf->offset++];
-	}
-
-	return (*c == 0);
-}
-
 int main(int argc, char *argv[])
 {
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_publickey *keys = NULL;
 	char **params = NULL;
-	struct cgi_get_ctx ctx;
+	struct buffer_ctx ctx;
 	int i;
 
 	memset(&ctx, 0, sizeof(ctx));
@@ -51,6 +33,7 @@ int main(int argc, char *argv[])
 	for (i = 0; params != NULL && params[i] != NULL; i += 2) {
 		if (!strcmp(params[i], "keytext")) {
 			ctx.buffer = params[i+1];
+			ctx.size = strlen(ctx.buffer);
 		} else {
 			free(params[i+1]);
 		}
@@ -67,7 +50,7 @@ int main(int argc, char *argv[])
 	if (ctx.buffer == NULL) {
 		puts("Error: No keytext to add supplied.");
 	} else {
-		dearmor_openpgp_stream(cgi_getchar,
+		dearmor_openpgp_stream(buffer_fetchchar,
 					&ctx,
 					&packets);
 		if (packets != NULL) {

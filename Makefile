@@ -11,10 +11,10 @@ LIBS = -L/usr/local/lib -ldb3
 
 PROGS = add lookup gpgwww onak
 OBJS = armor.o parsekey.o keydb_$(DBTYPE).o merge.o keyid.o md5.o sha.o \
-	getcgi.o keyindex.o mem.o stats.o ll.o hash.o onak-conf.o
+	getcgi.o keyindex.o mem.o stats.o ll.o hash.o onak-conf.o charfuncs.o
 SRCS = armor.c parsekey.c merge.c keyid.c md5.c sha.c main.c getcgi.c stats.c \
 	keyindex.c mem.c lookup.c add.c keydb_$(DBTYPE).c ll.c hash.c \
-	gpgwww.c onak-conf.c
+	gpgwww.c onak-conf.c charfuncs.c
 
 all: $(PROGS) testparse maxpath
 
@@ -28,22 +28,22 @@ gpgwww: gpgwww.o $(OBJS)
 	$(CC) -o gpgwww gpgwww.o $(OBJS) $(LIBS)
 
 lookup: lookup.o getcgi.o keyindex.o keydb_$(DBTYPE).o keyid.o sha.o \
-		parsekey.o mem.o armor.o ll.o hash.o onak-conf.o
+		parsekey.o mem.o armor.o ll.o hash.o onak-conf.o charfuncs.o
 	$(CC) -o lookup lookup.o getcgi.o keyindex.o keydb_$(DBTYPE).o keyid.o \
-		sha.o parsekey.o mem.o armor.o ll.o hash.o onak-conf.o $(LIBS)
+		sha.o parsekey.o mem.o armor.o ll.o hash.o onak-conf.o \
+		charfuncs.o $(LIBS)
 
 add: add.o getcgi.o armor.o parsekey.o keydb_$(DBTYPE).o keyid.o sha.o mem.o \
-		keyindex.o ll.o hash.o merge.o onak-conf.o
+		keyindex.o ll.o hash.o merge.o onak-conf.o charfuncs.o
 	$(CC) -o add add.o getcgi.o armor.o parsekey.o keydb_$(DBTYPE).o \
 		keyid.o sha.o mem.o keyindex.o ll.o hash.o merge.o onak-conf.o \
-		$(LIBS)
+		charfuncs.o $(LIBS)
 
-onak: onak.o merge.o keyid.o sha.o armor.o parsekey.o ll.o \
+onak: onak.o merge.o keyid.o sha.o armor.o parsekey.o ll.o charfuncs.o \
 		keydb_$(DBTYPE).o mem.o keyindex.o hash.o getcgi.o onak-conf.o
-	$(CC) $(LDFLAGS) -o onak onak.o merge.o keyid.o sha.o armor.o parsekey.o \
-		keydb_$(DBTYPE).o mem.o keyindex.o ll.o hash.o getcgi.o \
-		onak-conf.o $(LIBS)
-
+	$(CC) $(LDFLAGS) -o onak onak.o merge.o keyid.o sha.o armor.o \
+		parsekey.o keydb_$(DBTYPE).o mem.o keyindex.o ll.o hash.o \
+		getcgi.o charfuncs.o onak-conf.o $(LIBS)
 
 clean:
 	rm -f $(PROGS) $(OBJS) Makefile.bak testparse maxpath *.core core \

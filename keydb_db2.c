@@ -16,6 +16,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "charfuncs.h"
 #include "keydb.h"
 #include "keyid.h"
 #include "keyindex.h"
@@ -40,40 +41,6 @@ static DB **db2_keydbfiles = NULL;
  *	db2_env - Database environment variable.
  */
 static DB_ENV db2_env;
-
-/*
- * Shared with CGI buffer stuff...
- */
-struct db2_get_ctx {
-	char *buffer;
-	int offset;
-	int size;
-};
-
-/**
- *	keydb_fetchchar - Fetches a char from a buffer.
- */
-int keydb_fetchchar(void *ctx, int count, unsigned char *c)
-{
-	struct db2_get_ctx *buf = NULL;
-	int i;
-	
-	buf = (struct db2_get_ctx *) ctx;
-	for (i = 0; i < count; i++) {
-		c[i] = buf->buffer[buf->offset++];
-	}
-
-	return (((buf->offset) == (buf->size)) ? 1 : 0);
-}
-
-/**
- *	keydb_putchar - Puts a char to a file.
- */
-static int keydb_putchar(void *fd, unsigned char c)
-{
-//	return !(lo_write(dbconn, *(int *) fd, &c, sizeof(c)));
-	return 1;
-}
 
 DB *keydb(DBT *key)
 {
@@ -196,7 +163,7 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 	int ret;
 	DBT key, data;
 	char id[KEYDB_KEYID_BYTES];
-	struct db2_get_ctx fetchbuf;
+	struct buffer_ctx fetchbuf;
 
 	memset(&key, 0, sizeof(key));
 	memset(&data, 0, sizeof(data));
@@ -214,7 +181,7 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 		fetchbuf.buffer = data.data;
 		fetchbuf.offset = 0;
 		fetchbuf.size = data.size;
-		read_openpgp_stream(keydb_fetchchar, &fetchbuf, &packets);
+		read_openpgp_stream(buffer_fetchchar, &fetchbuf, &packets);
 		parse_keys(packets, publickey);
 	}
 
