@@ -15,19 +15,19 @@ int getnextchar(void *ctx, size_t count, unsigned char *c)
         return (!read(0, c, count));
 }
 
-int putnextchar(void *ctx, unsigned char c)
+int putnextchar(void *ctx, size_t count, unsigned char *c)
 {
-        return (!write(1, &c, 1));
+        return (!write(1, c, count));
 }
 
 
 int main(int argc, char *argv[])
 {
-	struct openpgp_packet_list *packets = NULL, *newpackets = NULL;
-	struct openpgp_packet_list *list_end = NULL;
-	struct openpgp_publickey *keys = NULL;
-	struct openpgp_publickey *newkeys = NULL;
-	void *ctx = NULL;
+	struct openpgp_packet_list *packets = NULL; //, *newpackets = NULL;
+//	struct openpgp_packet_list *list_end = NULL;
+//	struct openpgp_publickey *keys = NULL;
+//	struct openpgp_publickey *newkeys = NULL;
+//	void *ctx = NULL;
 
 //	fputs("Doing read_openpgp_stream():\n", stderr);
 //	read_openpgp_stream(getnextchar, ctx, &packets);
