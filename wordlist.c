@@ -40,11 +40,11 @@ struct ll *makewordlist(struct ll *wordlist, char *word)
 	end = word;
 	while (end != NULL && *end != 0) {
 		start = end;
-		while (*start != 0 && !isalnum(*start)) {
+		while (*start != 0 && (ispunct(*start) || isspace (*start))) {
 			start++;
 		}
 		end = start;
-		while (*end != 0 && isalnum(*end)) {
+		while (*end != 0 && (!ispunct(*end) && !isspace (*end))) {
 			*end = tolower(*end);
 			end++;
 		}
