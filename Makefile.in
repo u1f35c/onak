@@ -5,14 +5,13 @@
 #
 
 CC = @CC@
-CFLAGS += @CFLAGS@ -Wall -pedantic -g
+CFLAGS += @CFLAGS@ -Wall -pedantic
 # Uncomment to enable profiling.
-#LDFLAGS += -pg
+LDFLAGS += @LDFLAGS@
 # Can be "pg" for Postgresql, "file" for flat files or "db2" for pksd db2 style.
-DBTYPE = db3
-# If using DBTYPE of "file" then comment the following line out.
-#LIBS = -L/usr/local/lib -lpq
-LIBS = -L/usr/local/lib -ldb3
+DBTYPE = @DBTYPE@
+#
+LIBS = @LIBS@
 
 PROGS = add lookup gpgwww onak splitkeys
 CORE_OBJS = armor.o charfuncs.o decodekey.o getcgi.o hash.o keydb_$(DBTYPE).o \
@@ -54,12 +53,13 @@ onak: onak.o merge.o cleankey.o $(CORE_OBJS)
 		$(CORE_OBJS) $(LIBS)
 
 clean:
-	rm -f $(PROGS) $(OBJS) Makefile.bak testparse maxpath *.core core \
+	$(RM) -f $(PROGS) $(OBJS) Makefile.bak testparse maxpath *.core core \
 		gpgwww.o add.o lookup.o main.o maxpath.o onak.o sixdegrees \
 		sixdegrees.o splitkeys.o
 
-distclean:
-	rm -f Makefile config.h .depend
+distclean: clean
+	$(RM) -f Makefile depend config.{log,status,h}
+	$(RM) -r autom4te.cache
 
 .depend: $(SRCS)
 	rm -f .depend
