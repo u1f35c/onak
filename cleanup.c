@@ -24,7 +24,7 @@ static bool should_cleanup = false;
  */
 void trytocleanup(void)
 {
-	logthing(LOGTHING_NOTICE, "Setting cleanup flag.");
+	logthing(LOGTHING_INFO, "Setting cleanup flag.");
 	should_cleanup = true;
 
 	return;
@@ -49,7 +49,7 @@ bool cleanup(void)
  */
 void sig_cleanup(int signal)
 {
-	logthing(LOGTHING_NOTICE, "Got signal %d.", signal);
+	logthing(LOGTHING_INFO, "Got signal %d.", signal);
 	trytocleanup();
 
 	return;
@@ -66,7 +66,7 @@ void catchsignals(void)
 {
 	struct sigaction alarmh;
 
-	logthing(LOGTHING_NOTICE, "Catching signals");
+	logthing(LOGTHING_INFO, "Catching signals");
 
 	memset(&alarmh, 0, sizeof(alarmh));
 	alarmh.sa_handler = sig_cleanup;
