@@ -14,6 +14,7 @@
 #include "hash.h"
 #include "keydb.h"
 #include "ll.h"
+#include "log.h"
 #include "onak-conf.h"
 #include "stats.h"
 
@@ -70,6 +71,7 @@ void findmaxpath(unsigned long max)
 int main(int argc, char *argv[])
 {
 	readconfig(NULL);
+	initlogthing("maxpath", config.logfile);
 	initdb(true);
 	inithash();
 	findmaxpath(30);
@@ -77,6 +79,7 @@ int main(int argc, char *argv[])
 	findmaxpath(30);
 	destroyhash();
 	cleanupdb();
+	cleanuplogthing();
 	cleanupconfig();
 	
 	return EXIT_SUCCESS;
