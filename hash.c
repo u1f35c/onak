@@ -48,20 +48,14 @@ void destroyhash(void)
 {
 	int i;
 	struct ll *curll = NULL;
-	struct ll *nextll = NULL;
 
 	for (i = 0; i < HASHSIZE; i++) {
 		curll = hashtable[i];
-		while (curll != NULL) {
-			nextll = curll->next;
-			/*
-			 * TODO: The problem is the object has pointers that
-			 * need freed too.
-			 */
-			free(curll->object);
-			free(curll);
-			curll = nextll;
-		}
+		/*
+		 * TODO: The problem is the object has pointers that
+		 * need freed too.
+		 */
+		llfree(curll, free);
 		hashtable[i] = NULL;
 	}
 	elements = 0;
