@@ -222,13 +222,6 @@ void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 				curkey = findinhash(curkey->parent);
 			}
 			putchar('\n');
-			if (html) {
-				printf("<BR><A HREF=\"gpgwww?from=0x%08llX&"
-					"to=0x%08llX\">"
-					"Find reverse path</A>\n",
-					want,
-					have);
-			}
 		}
 		pathnum++;
 	}

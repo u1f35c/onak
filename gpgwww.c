@@ -54,7 +54,12 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	printf("<P>Looking for path from 0x%llX to 0x%llX</P>\n", from, to);
+	printf("<P>Looking for path from 0x%llX to 0x%llX.\n", from, to);
+	printf("<A HREF=\"gpgwww?from=0x%08llX&to=0x%08llX\">"
+			"Find reverse path</A></P>\n",
+			to,
+			from);
+
 	readconfig();
 	initlogthing("gpgwww", config.logfile);
 	initdb();
