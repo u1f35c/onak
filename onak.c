@@ -196,6 +196,7 @@ int main(int argc, char *argv[])
 				flatten_publickey(keys,
 						&packets,
 						&list_end);
+				free_publickey(keys);
 				armor_openpgp_stream(stdout_putchar,
 						NULL,
 						packets);
