@@ -4,10 +4,10 @@ CC = gcc
 CFLAGS += -Wall -pedantic -g -I/usr/local/include
 #LDFLAGS += -pg
 # Can be "pg" for Postgresql, "file" for flat files or "db2" for pksd db2 style.
-DBTYPE = pg
+DBTYPE = db3
 # If using DBTYPE of "file" then comment the following line out.
-LIBS = -L/usr/local/lib -lpq
-#LIBS = -L/usr/local/lib -ldb2
+#LIBS = -L/usr/local/lib -lpq
+LIBS = -L/usr/local/lib -ldb3
 
 PROGS = add lookup gpgwww onak
 OBJS = armor.o parsekey.o keydb_$(DBTYPE).o merge.o keyid.o md5.o sha.o \
