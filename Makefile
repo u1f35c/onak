@@ -52,6 +52,4 @@ clean:
 depend:
 	makedepend $(SRCS)
 
-keydb_pg.o: keydb.o
-
 # DO NOT DELETE
