@@ -3,12 +3,13 @@
 # onak-mail.pl - Mail processing interface for onak, an OpenPGP Keyserver.
 #
 # Written by Jonathan McDowell <noodles@earth.li>
-# Copyright 2002 Project Purple
+# Copyright 2002-2005 Project Purple
 # Released under the GPL.
 #
 
 use strict;
-use Fcntl ':flock';
+use Fcntl;
+use IO::Handle;
 use IPC::Open3;
 
 my %config;
@@ -39,6 +40,8 @@ sub readconfig {
 			$config{'pks_bin_dir'} = $1;
 		} elsif (/^db_dir (.*)/) {
 			$config{'db_dir'} = $1;
+		} elsif (/^mail_dir (.*)/) {
+			$config{'mail_dir'} = $1;
 		} elsif (/^syncsite (.*)/) {
 			push @{$config{'syncsites'}}, $1;
 		}
@@ -56,146 +59,196 @@ sub readconfig {
 # difference between what we just added and what we had before (ie the least
 # data need to get from what we had to what we have).
 #
-sub submitupdate {
-	my @data = @_;
+sub submitupdate($) {
+	my $data = shift;
 	my (@errors, @mergedata);
 
-	open(LOCKFILE, '>'.$config{'db_dir'}.'/onak-mail.lck');
-	flock(LOCKFILE, LOCK_EX);
-	print LOCKFILE "$$";
-
-	open3(\*MERGEIN, \*MERGEOUT, \*MERGEERR,
+	my $pid = open3(\*MERGEIN, \*MERGEOUT, \*MERGEERR,
 		$config{'pks_bin_dir'}."/onak", "-u", "add");
 
-	print MERGEIN @data;
+	print MERGEIN @$data;
 	close MERGEIN;
 	@mergedata = <MERGEOUT>;
 	close MERGEOUT;
 	@errors = <MERGEERR>;
 	close MERGEERR;
-
-	flock(LOCKFILE, LOCK_UN);
-	close(LOCKFILE);
+	waitpid $pid, 0;
 
 	return @mergedata;
 }
 
-my ($inheader, %seenby, $subject, $from, $replyto, @body, @syncmail);
 
-$inheader = 1;
-$subject = "";
-&readconfig;
-
-while (<>) {
-	if ($inheader) {
-		if (/^Subject:\s*(.*)\s*$/i) {
-			$subject = $1;
-		} elsif (/^X-KeyServer-Sent:\s*(.*)\s*$/i) {
-			$seenby{$1} = 1;
-		} elsif (/^From:\s*(.*)\s*$/i) {
-			$from = $1;
-		} elsif (/^Reply-To:\s*(.*)\s*$/i) {
-			$replyto = $1;
-		} elsif (/^$/) {
-			$inheader = 0;
+sub processmail($$$$$) {
+	my $subject = shift;
+	my $from = shift;
+	my $replyto = shift;
+	my $seenby = shift;
+	my $body = shift;
+	
+	# HELP, ADD, INCREMENTAL, VERBOSE INDEX <keyid>, INDEX <keyid>,
+	# GET <keyid>, LAST <days>
+	
+	if ($subject =~ /^INCREMENTAL$/i) {
+		my $site;
+		my $count;
+		my $i;
+		my @newupdate = submitupdate($body);
+		my @time;
+	
+		$count = 0;
+		foreach $i (@{$config{'syncsites'}}) {
+			if (! defined($seenby->{$i})) {
+				$count++;
+			}
 		}
-	}
-	if (!$inheader) {
-		push @body, $_;
-	}
-}
-if (! defined($replyto)) {
-	$replyto = $from;
-}
-
-# HELP, ADD, INCREMENTAL, VERBOSE INDEX <keyid>, INDEX <keyid>, GET <keyid>,
-# LAST <days>
-
-if ($subject =~ /^INCREMENTAL$/i) {
-	my $site;
-	my $count;
-	my $i;
-	my @newupdate = submitupdate(@body);
-	my @time;
-
-	$count = 0;
-	foreach $i (@{$config{'syncsites'}}) {
-		if (! defined($seenby{$i})) {
-			$count++;
-		}
-	}
-
-	open (LOG, ">>$config{'logfile'}");
-	@time = localtime(time);
-	print LOG "[";
-	print LOG sprintf "%02d/%02d/%04d %02d:%02d:%02d",
-		$time[3], $time[4] + 1, $time[5] + 1900,
-		$time[2], $time[1], $time[0];
-	print LOG "] onak-mail[$$]: Syncing with $count sites.\n";
-	close LOG;
-
-	if ((! defined($newupdate[0])) || $newupdate[0] eq '') {
+	
 		open (LOG, ">>$config{'logfile'}");
+		@time = localtime(time);
 		print LOG "[";
 		print LOG sprintf "%02d/%02d/%04d %02d:%02d:%02d",
 			$time[3], $time[4] + 1, $time[5] + 1900,
 			$time[2], $time[1], $time[0];
-		print LOG "] onak-mail[$$]: Nothing to sync.\n";
+		print LOG "] onak-mail[$$]: Syncing with $count sites.\n";
 		close LOG;
-		$count = 0;
-	}
-
-	if ($count > 0) {
-		open(MAIL, "|$config{mta}");
-		print MAIL "From: $config{adminemail}\n";
-		print MAIL "To: ";
-		foreach $i (@{$config{'syncsites'}}) {
-			if (! defined($seenby{$i})) {
-				print MAIL "$i";
-				$count--;
-				if ($count > 0) {
-					print MAIL ", ";
+	
+		if ((! defined($newupdate[0])) || $newupdate[0] eq '') {
+			open (LOG, ">>$config{'logfile'}");
+			print LOG "[";
+			print LOG sprintf "%02d/%02d/%04d %02d:%02d:%02d",
+				$time[3], $time[4] + 1, $time[5] + 1900,
+				$time[2], $time[1], $time[0];
+			print LOG "] onak-mail[$$]: Nothing to sync.\n";
+			close LOG;
+			$count = 0;
+		}
+	
+		if ($count > 0) {
+			open(MAIL, "|$config{mta}");
+			print MAIL "From: $config{adminemail}\n";
+			print MAIL "To: ";
+			foreach $i (@{$config{'syncsites'}}) {
+				if (! defined($seenby->{$i})) {
+					print MAIL "$i";
+					$count--;
+					if ($count > 0) {
+						print MAIL ", ";
+					}
 				}
 			}
+			print MAIL "\n";
+			print MAIL "Subject: incremental\n";
+			foreach $site (keys %$seenby) {
+				print MAIL "X-KeyServer-Sent: $site\n";
+			}
+			print MAIL "X-KeyServer-Sent: $config{thissite}\n";
+			print MAIL "Precedence: list\n";
+			print MAIL "MIME-Version: 1.0\n";
+			print MAIL "Content-Type: application/pgp-keys\n";
+			print MAIL "\n";
+			print MAIL @newupdate;
+			close MAIL;
 		}
-		print MAIL "\n";
-		print MAIL "Subject: incremental\n";
-		foreach $site (keys %seenby) {
-			print MAIL "X-KeyServer-Sent: $site\n";
+	} elsif ($subject =~ /^(VERBOSE )?INDEX (.*)$/i) {
+		my (@indexdata, $command);
+	
+		$command = "index";
+		if (defined($1)) {
+			$command = "vindex";
 		}
-		print MAIL "X-KeyServer-Sent: $config{thissite}\n";
+	
+		my $pid = open3(\*INDEXIN, \*INDEXOUT, \*INDEXERR,
+			$config{'pks_bin_dir'}."/onak", $command, "$2");
+		close INDEXIN;
+		@indexdata = <INDEXOUT>;
+		close INDEXOUT;
+		close INDEXERR;
+		waitpid $pid, 0;
+	
+		open(MAIL, "|$config{mta}");
+		print MAIL "From: $config{adminemail}\n";
+		print MAIL "To: $replyto\n";
+		print MAIL "Subject: Reply to INDEX $2\n";
 		print MAIL "Precedence: list\n";
 		print MAIL "MIME-Version: 1.0\n";
-		print MAIL "Content-Type: application/pgp-keys\n";
+		print MAIL "Content-Type: text/plain\n";
 		print MAIL "\n";
-		print MAIL @newupdate;
+		print MAIL "Below follows the reply to your recent keyserver query:\n";
+		print MAIL "\n";
+		print MAIL @indexdata;
 		close MAIL;
 	}
-} elsif ($subject =~ /^(VERBOSE )?INDEX (.*)$/i) {
-	my (@indexdata, $command);
-
-	$command = "index";
-	if (defined($1)) {
-		$command = "vindex";
-	}
-
-	open3(\*INDEXIN, \*INDEXOUT, \*INDEXERR,
-		$config{'pks_bin_dir'}."/onak", $command, "$2");
-	close INDEXIN;
-	@indexdata = <INDEXOUT>;
-	close INDEXOUT;
-	close INDEXERR;
-
-	open(MAIL, "|$config{mta}");
-	print MAIL "From: $config{adminemail}\n";
-	print MAIL "To: $replyto\n";
-	print MAIL "Subject: Reply to INDEX $2\n";
-	print MAIL "Precedence: list\n";
-	print MAIL "MIME-Version: 1.0\n";
-	print MAIL "Content-Type: text/plain\n";
-	print MAIL "\n";
-	print MAIL "Below follows the reply to your recent keyserver query:\n";
-	print MAIL "\n";
-	print MAIL @indexdata;
-	close MAIL;
 }
+
+my ($inheader, %seenby, $subject, $from, $replyto, @body, @syncmail);
+
+&readconfig;
+
+#
+# First dump the incoming mail to a file; this means that if we're receiving
+# loads of updates we don't spawn lots of processes but instead leave the
+# mails on disk to be dealt with sequentially.
+#
+my @time = localtime;
+my $tmpfile = sprintf "%s/%04d%02d%02d-%02d%02d%02d-%d.onak",
+			$config{'mail_dir'},
+			$time[5] + 1900,
+			$time[4],
+			$time[3],
+			$time[2],
+			$time[1],
+			$time[0],
+			$$;
+open(MAILFILE, '>'.$tmpfile);
+while (<>) {
+	print MAILFILE $_;
+}
+close(MAILFILE);
+
+#
+# Lock here to ensure that only one copy of us is processing the incoming
+# mail queue at any point in time.
+#
+sysopen(LOCKFILE, $config{'db_dir'}.'/onak-mail.lck',
+		O_WRONLY|O_CREAT|O_EXCL) or exit;
+print LOCKFILE "$$";
+close(LOCKFILE);
+
+my $file;
+opendir(MAILDIR, $config{'mail_dir'});
+while ($file = readdir(MAILDIR)) {
+	next if $file !~ /\.onak$/;
+
+	$inheader = 1;
+	$subject = $from = $replyto = "";
+	undef %seenby;
+	@body = ();
+
+	open(FILE, '<'.$config{'mail_dir'}.'/'.$file);
+	while (<FILE>) {
+		if ($inheader) {
+			if (/^Subject:\s*(.*)\s*$/i) {
+				$subject = $1;
+			} elsif (/^X-KeyServer-Sent:\s*(.*)\s*$/i) {
+				$seenby{$1} = 1;
+			} elsif (/^From:\s*(.*)\s*$/i) {
+				$from = $1;
+			} elsif (/^Reply-To:\s*(.*)\s*$/i) {
+				$replyto = $1;
+			} elsif (/^$/) {
+				$inheader = 0;
+			}
+		}
+		if (!$inheader) {
+			push @body, $_;
+		}
+	}
+	if (! defined($replyto)) {
+		$replyto = $from;
+	}
+	close(FILE);
+	unlink $config{'mail_dir'}.'/'.$file;
+
+	processmail($subject, $from, $replyto, \%seenby, \@body);
+}
+closedir(MAILDIR);
+unlink $config{'db_dir'}.'/onak-mail.lck';
