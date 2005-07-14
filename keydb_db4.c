@@ -270,6 +270,8 @@ void cleanupdb(void)
 				dbconns[i] = NULL;
 			}
 		}
+		free(dbconns);
+		dbconns = NULL;
 		dbenv->close(dbenv, 0);
 		dbenv = NULL;
 	}
