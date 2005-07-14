@@ -3,13 +3,14 @@
 #
 
 CC = @CC@
-CFLAGS += @CFLAGS@ -Wall -pedantic
+CFLAGS += @CFLAGS@ -Wall -pedantic -fPIC
 # Uncomment to enable profiling.
 LDFLAGS += @LDFLAGS@
 # Can be "pg" for Postgresql, "file" for flat files or "db2" for pksd db2 style.
 DBTYPE = @DBTYPE@
 #
 LIBS = @LIBS@
+DB4LIBS = @DB4LIBS@
 #MAKEDEPEND = makedepend -f- -- 
 MAKEDEPEND = $(CC) -MM
 prefix ?= @prefix@
@@ -22,7 +23,8 @@ CORE_OBJS = armor.o charfuncs.o decodekey.o getcgi.o hash.o \
 SRCS = armor.c parsekey.c merge.c keyid.c md5.c sha1.c main.c getcgi.c mem.c \
 	keyindex.c stats.c lookup.c add.c keydb_$(DBTYPE).c ll.c hash.c \
 	gpgwww.c onak-conf.c charfuncs.c sendsync.c log.c photoid.c \
-	wordlist.c cleankey.c cleanup.c keyarray.c
+	wordlist.c cleankey.c cleanup.c keyarray.c \
+	$(foreach be,@BACKENDS@,keydb_$(be).c)
 
 ifeq (x@KEYD@, xyes)
 PROGS += keyd
@@ -32,12 +34,32 @@ else
 KEYDB_OBJ = keydb_$(DBTYPE).o
 endif
 
+ifeq (x@DBTYPE@, xdynamic)
+LIBS += -ldl
+BACKENDS = $(foreach be,@BACKENDS@,libkeydb_$(be).so)
+PROGS += keyd
+SRCS += keyd.c
+endif
+
 OBJS = stats.o cleankey.o $(CORE_OBJS) $(KEYDB_OBJ)
 
-all: .depend $(PROGS) testparse maxpath sixdegrees splitkeys onak.conf
+all: .depend $(PROGS) testparse maxpath sixdegrees splitkeys onak.conf \
+	$(BACKENDS)
 
 keyd: keyd.o $(CORE_OBJS) keydb_$(DBTYPE).o
 	$(CC) $(LDFLAGS) -o keyd keyd.o $(CORE_OBJS) keydb_$(DBTYPE).o $(LIBS)
+
+libkeydb_db4.so: keydb_db4.o
+	$(CC) -shared $(DB4LIBS) -o libkeydb_db4.so keydb_db4.o $(CORE_OBJS)
+
+libkeydb_pg.so: keydb_pg.o
+	$(CC) -shared $(PQLIBS) -o libkeydb_pg.so keydb_pg.o $(CORE_OBJS)
+
+libkeydb_%.so: keydb_%.o
+	$(CC) -shared -o $@ $< $(CORE_OBJS)
+
+keydb_%.o: keydb_%.c
+	$(CC) -c -fPIC $(LDFLAGS) -o $@ $<
 
 splitkeys: splitkeys.o $(CORE_OBJS) $(KEYDB_OBJ)
 	$(CC) $(LDFLAGS) -o splitkeys splitkeys.o $(CORE_OBJS) $(KEYDB_OBJ) \
@@ -85,7 +107,8 @@ onak.conf: onak.conf.in
 clean:
 	$(RM) $(PROGS) $(OBJS) Makefile.bak testparse maxpath *.core core \
 		gpgwww.o add.o lookup.o main.o maxpath.o onak.o sixdegrees \
-		sixdegrees.o splitkeys.o stripkey.o onak.conf
+		sixdegrees.o splitkeys.o stripkey.o onak.conf keyd.o \
+		$(foreach be,@BACKENDS@,keydb_$(be).o) *.so
 ifeq (x@KEYD@, xyes)
 	$(RM) keyd.o keydb_$(DBTYPE).o
 endif

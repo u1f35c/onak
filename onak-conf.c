@@ -43,6 +43,12 @@ struct onak_config config = {
 	NULL,			/* pg_dbname */
 	NULL,			/* pg_dbuser */
 	NULL,			/* pg_dbpass */
+
+	/*
+	 * Options for dynamic backends.
+	 */
+	NULL,			/* db_backend */
+	NULL,			/* backends_dir */
 };
 
 void readconfig(const char *configfile) {
@@ -127,6 +133,10 @@ void readconfig(const char *configfile) {
 			/*
 			 * Not applicable; ignored for compatibility with pksd.
 			 */
+		} else if (!strncmp("db_backend ", curline, 11)) {
+			config.db_backend = strdup(&curline[11]);
+		} else if (!strncmp("backends_dir ", curline, 13)) {
+			config.backends_dir = strdup(&curline[13]);
 		} else {
 			logthing(LOGTHING_ERROR,
 				"Unknown config line: %s", curline);
@@ -181,5 +191,13 @@ void cleanupconfig(void) {
 	if (config.logfile != NULL) {
 		free(config.logfile);
 		config.logfile = NULL;
+	}
+	if (config.db_backend != NULL) {
+		free(config.db_backend);
+		config.db_backend = NULL;
+	}
+	if (config.backends_dir != NULL) {
+		free(config.backends_dir);
+		config.backends_dir = NULL;
 	}
 }

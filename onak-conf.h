@@ -51,6 +51,12 @@ struct onak_config {
 	char *pg_dbname;
 	char *pg_dbuser;
 	char *pg_dbpass;
+
+	/*
+	 * Options for the dynamic backend.
+	 */
+	char *db_backend;
+	char *backends_dir;
 };
 
 /*
