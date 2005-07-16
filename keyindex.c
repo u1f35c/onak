@@ -40,13 +40,13 @@ int list_sigs(struct openpgp_packet_list *sigs, bool html)
 		}
 		if (html && uid != NULL) {
 			printf("%s         <a href=\"lookup?op=get&"
-				"search=%08llX\">%08llX</a>             "
-				"<a href=\"lookup?op=vindex&search=0x%08llX\">"
+				"search=%016llX\">%08llX</a>             "
+				"<a href=\"lookup?op=vindex&search=0x%016llX\">"
 				"%s</a>\n",
 				sig,
+				sigid,
 				sigid & 0xFFFFFFFF,
-				sigid & 0xFFFFFFFF,
-				sigid & 0xFFFFFFFF,
+				sigid,
 				txt2html(uid));
 		} else if (html && uid == NULL) {
 			printf("%s         %08llX             "
@@ -231,25 +231,25 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 				keys->publickey->data[0]);
 		}
 		
-		keyid = (get_keyid(keys) & 0xFFFFFFFF);
+		keyid = get_keyid(keys);
 
 		if (html) {
 			printf("pub  %5d%c/<a href=\"lookup?op=get&"
-				"search=%08X\">%08X</a> %04d/%02d/%02d ",
+				"search=%016llX\">%08llX</a> %04d/%02d/%02d ",
 				length,
 				(type == 1) ? 'R' : ((type == 16) ? 'g' : 
 					((type == 17) ? 'D' : '?')),
-				(uint32_t) keyid,
-				(uint32_t) keyid,
+				keyid,
+				keyid & 0xFFFFFFFF,
 				created->tm_year + 1900,
 				created->tm_mon + 1,
 				created->tm_mday);
 		} else {
-			printf("pub  %5d%c/%08X %04d/%02d/%02d ",
+			printf("pub  %5d%c/%08llX %04d/%02d/%02d ",
 				length,
 				(type == 1) ? 'R' : ((type == 16) ? 'g' : 
 					((type == 17) ? 'D' : '?')),
-				(uint32_t) keyid,
+				keyid & 0xFFFFFFFF,
 				created->tm_year + 1900,
 				created->tm_mon + 1,
 				created->tm_mday);
@@ -262,8 +262,8 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 				curuid->packet->data);
 			if (html) {
 				printf("<a href=\"lookup?op=vindex&"
-					"search=0x%08X\">",
-					(uint32_t) keyid);
+					"search=0x%016llX\">",
+					keyid);
 			}
 			printf("%s%s%s\n", 
 				(html) ? txt2html(buf) : buf,

@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 			search = params[i+1];
 			params[i+1] = NULL;
 			if (search != NULL) {
-				keyid = strtoul(search, &end, 16);
+				keyid = strtoull(search, &end, 16);
 				if (*search != 0 &&
 						end != NULL &&
 						*end == 0) {
