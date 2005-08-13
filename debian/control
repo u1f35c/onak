@@ -10,6 +10,7 @@ Package: onak
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: apache | httpd
+Suggests: db4.2-util
 Description: OpenPGP Key Server
  onak is an OpenPGP compatible keyserver which supports multiple subkeys,
  photo ids and path finding between keys. It can provide an HKP
