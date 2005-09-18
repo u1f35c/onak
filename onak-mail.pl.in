@@ -257,7 +257,7 @@ while ($file = readdir(MAILDIR)) {
 			push @body, $_;
 		}
 	}
-	if (! defined($replyto)) {
+	if ($replyto eq '') {
 		$replyto = $from;
 	}
 	close(FILE);
