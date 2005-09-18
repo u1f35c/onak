@@ -88,7 +88,7 @@ sub processmail($$$$$) {
 	# HELP, ADD, INCREMENTAL, VERBOSE INDEX <keyid>, INDEX <keyid>,
 	# GET <keyid>, LAST <days>
 	
-	if ($subject =~ /^INCREMENTAL$/i) {
+	if ($subject =~ /^(INCREMENTAL|ADD)$/i) {
 		my $site;
 		my $count;
 		my $i;
@@ -110,6 +110,21 @@ sub processmail($$$$$) {
 			$time[2], $time[1], $time[0];
 		print LOG "] onak-mail[$$]: Syncing with $count sites.\n";
 		close LOG;
+
+		if ($subject =~ /ADD/i) {
+			open(MAIL, "|$config{mta}");
+			print MAIL "From: $config{adminemail}\n";
+			print MAIL "To: $replyto\n";
+			print MAIL "Subject: Reply to ADD\n";
+			print MAIL "Precedence: list\n";
+			print MAIL "MIME-Version: 1.0\n";
+			print MAIL "Content-Type: text/plain\n";
+			print MAIL "\n";
+			print MAIL "Thank you for your recent key submission.",
+				" It has been processed and synced\n",
+				"with ", $count, " other keyservers.\n";
+			close MAIL;
+		}
 	
 		if ((! defined($newupdate[0])) || $newupdate[0] eq '') {
 			open (LOG, ">>$config{'logfile'}");
