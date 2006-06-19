@@ -46,11 +46,11 @@ bool load_backend(void)
 
 	if (config.backends_dir == NULL) {
 		soname = malloc(strlen(config.db_backend)
-			+ strlen("/libkeydb_")
+			+ strlen("./libkeydb_")
 			+ strlen(".so")
 			+ 1);
 
-		sprintf(soname, "libkeydb_%s.so", config.db_backend);
+		sprintf(soname, "./libkeydb_%s.so", config.db_backend);
 	} else {
 		soname = malloc(strlen(config.db_backend)
 			+ strlen("/libkeydb_")
