@@ -101,6 +101,7 @@ onak-mail.pl: onak-mail.pl.in
 
 onak.conf: onak.conf.in
 	sed -e 's:@BINDIR@:@bindir@:g' \
+		-e 's:@LIBDIR@:@libdir@:g' \
 		-e 's:@STATEDIR@:@localstatedir@:g' \
 		< onak.conf.in > onak.conf
 
