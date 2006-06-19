@@ -39,6 +39,11 @@ bool load_backend(void)
 		close_backend();
 	}
 
+	if (!config.db_backend) {
+		logthing(LOGTHING_CRITICAL, "No database backend defined.");
+		exit(EXIT_FAILURE);
+	}
+
 	if (config.backends_dir == NULL) {
 		soname = malloc(strlen(config.db_backend)
 			+ strlen("/libkeydb_")
