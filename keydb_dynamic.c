@@ -66,12 +66,12 @@ bool load_backend(void)
 
 	handle = dlopen(soname, RTLD_LAZY);
 	if (handle == NULL) {
-		logthing(LOGTHING_ERROR,
+		logthing(LOGTHING_CRITICAL,
 				"Failed to open handle to library '%s': %s",
 				soname, dlerror());
 		free(soname);
 		soname = NULL;
-		return false;
+		exit(EXIT_FAILURE);
 	}
 	free(soname);
 	soname = NULL;
