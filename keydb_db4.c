@@ -144,6 +144,8 @@ void initdb(bool readonly)
 					"Error opening db environment: %s (%s)",
 					config.db_dir,
 					db_strerror(ret));
+			dbenv->close(dbenv, 0);
+			dbenv = NULL;
 		}
 	}
 
