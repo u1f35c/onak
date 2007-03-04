@@ -24,6 +24,18 @@ struct ll *keysigs(struct ll *curll,
 		struct openpgp_packet_list *sigs);
 
 /**
+ *	sig_info - Get info on a given OpenPGP signature packet
+ *	@packet: The signature packet
+ *	@keyid: A pointer for where to return the signature keyid
+ *	@creation: A pointer for where to return the signature creation time
+ *
+ *	Gets any info about a signature packet; parses the subpackets for a v4
+ *	key or pulls the data directly from v2/3. NULL can be passed for any
+ *	values which aren't cared about.
+ */
+void sig_info(struct openpgp_packet *packet, uint64_t *keyid, time_t *creation);
+
+/**
  *	sig_keyid - Return the keyid for a given OpenPGP signature packet.
  *	@packet: The signature packet.
  *

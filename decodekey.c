@@ -22,13 +22,15 @@
 /*
  *	parse_subpackets - Parse the subpackets of a Type 4 signature.
  *	@data: The subpacket data.
- *      @keyid: A pointer to where we should return the keyid.
+ *	@keyid: A pointer to where we should return the keyid.
+ *	@creationtime: A pointer to where we should return the creation time.
  *
  *	This function parses the subkey data of a Type 4 signature and fills
  *	in the supplied variables. It also returns the length of the data
- *	processed.
+ *	processed. If the value of any piece of data is not desired a NULL
+ *	can be passed instead of a pointer to a storage area for that value.
  */
-int parse_subpackets(unsigned char *data, uint64_t *keyid)
+int parse_subpackets(unsigned char *data, uint64_t *keyid, time_t *creation)
 {
 	int offset = 0;
 	int length = 0;
@@ -56,8 +58,17 @@ int parse_subpackets(unsigned char *data, uint64_t *keyid)
 		switch (data[offset] & 0x7F) {
 		case 2:
 			/*
-			 * Signature creation time. Might want to output this?
+			 * Signature creation time.
 			 */
+			if (creation != NULL) {
+				*creation = data[offset + packetlen - 4];
+				*creation <<= 8;
+				*creation = data[offset + packetlen - 3];
+				*creation <<= 8;
+				*creation = data[offset + packetlen - 2];
+				*creation <<= 8;
+				*creation = data[offset + packetlen - 1];
+			}
 			break;
 		case 3:
 			/*
@@ -65,21 +76,23 @@ int parse_subpackets(unsigned char *data, uint64_t *keyid)
 			 */
 			break;
 		case 16:
-			*keyid = data[offset+packetlen - 8];
-			*keyid <<= 8;
-			*keyid += data[offset+packetlen - 7];
-			*keyid <<= 8;
-			*keyid += data[offset+packetlen - 6];
-			*keyid <<= 8;
-			*keyid += data[offset+packetlen - 5];
-			*keyid <<= 8;
-			*keyid += data[offset+packetlen - 4];
-			*keyid <<= 8;
-			*keyid += data[offset+packetlen - 3];
-			*keyid <<= 8;
-			*keyid += data[offset+packetlen - 2];
-			*keyid <<= 8;
-			*keyid += data[offset+packetlen - 1];
+			if (keyid != NULL) {
+				*keyid = data[offset+packetlen - 8];
+				*keyid <<= 8;
+				*keyid += data[offset+packetlen - 7];
+				*keyid <<= 8;
+				*keyid += data[offset+packetlen - 6];
+				*keyid <<= 8;
+				*keyid += data[offset+packetlen - 5];
+				*keyid <<= 8;
+				*keyid += data[offset+packetlen - 4];
+				*keyid <<= 8;
+				*keyid += data[offset+packetlen - 3];
+				*keyid <<= 8;
+				*keyid += data[offset+packetlen - 2];
+				*keyid <<= 8;
+				*keyid += data[offset+packetlen - 1];
+			}
 			break;
 		case 20:
 			/*
@@ -138,42 +151,55 @@ struct ll *keysigs(struct ll *curll,
 }
 
 /**
- *	sig_keyid - Return the keyid for a given OpenPGP signature packet.
- *	@packet: The signature packet.
+ *	sig_info - Get info on a given OpenPGP signature packet
+ *	@packet: The signature packet
+ *	@keyid: A pointer for where to return the signature keyid
+ *	@creation: A pointer for where to return the signature creation time
  *
- *	Returns the keyid for the supplied signature packet.
+ *	Gets any info about a signature packet; parses the subpackets for a v4
+ *	key or pulls the data directly from v2/3. NULL can be passed for any
+ *	values which aren't cared about.
  */
-uint64_t sig_keyid(struct openpgp_packet *packet)
+void sig_info(struct openpgp_packet *packet, uint64_t *keyid, time_t *creation)
 {
 	int length = 0;
-	uint64_t keyid = 0;
 	
 	if (packet != NULL) {
-		keyid = 0;
 		switch (packet->data[0]) {
 		case 2:
 		case 3:
-			keyid = packet->data[7];
-			keyid <<= 8;
-			keyid += packet->data[8];
-			keyid <<= 8;
-			keyid += packet->data[9];
-			keyid <<= 8;
-			keyid += packet->data[10];
-			keyid <<= 8;
-			keyid += packet->data[11];
-			keyid <<= 8;
-			keyid += packet->data[12];
-			keyid <<= 8;
-			keyid += packet->data[13];
-			keyid <<= 8;
-			keyid += packet->data[14];
+			if (keyid != NULL) {
+				*keyid = packet->data[7];
+				*keyid <<= 8;
+				*keyid += packet->data[8];
+				*keyid <<= 8;
+				*keyid += packet->data[9];
+				*keyid <<= 8;
+				*keyid += packet->data[10];
+				*keyid <<= 8;
+				*keyid += packet->data[11];
+				*keyid <<= 8;
+				*keyid += packet->data[12];
+				*keyid <<= 8;
+				*keyid += packet->data[13];
+				*keyid <<= 8;
+				*keyid += packet->data[14];
+			}
+			if (creation != NULL) {
+				*creation = packet->data[3];
+				*creation <<= 8;
+				*creation = packet->data[4];
+				*creation <<= 8;
+				*creation = packet->data[5];
+				*creation <<= 8;
+				*creation = packet->data[6];
+			}
 			break;
 		case 4:
 			length = parse_subpackets(&packet->data[4],
-					&keyid);
+					keyid, creation);
 			parse_subpackets(&packet->data[length + 4],
-					&keyid);
+					keyid, creation);
 			/*
 			 * Don't bother to look at the unsigned packets.
 			 */
@@ -183,8 +209,24 @@ uint64_t sig_keyid(struct openpgp_packet *packet)
 		}
 	}
 
+	return;
+}
+
+/**
+ *	sig_keyid - Return the keyid for a given OpenPGP signature packet.
+ *	@packet: The signature packet.
+ *
+ *	Returns the keyid for the supplied signature packet.
+ */
+uint64_t sig_keyid(struct openpgp_packet *packet)
+{
+	uint64_t keyid = 0;
+
+	sig_info(packet, &keyid, NULL);
+
 	return keyid;
 }
+
 
 /*
  * TODO: Abstract out; all our linked lists should be generic and then we can

@@ -43,15 +43,19 @@ bool compare_packets(struct openpgp_packet *a, struct openpgp_packet *b)
  */
 bool compare_signatures(struct openpgp_packet *a, struct openpgp_packet *b)
 {
+	uint64_t a_keyid, b_keyid;
+	time_t a_creation, b_creation;
+
 	if (a->data[0] != b->data[0]) {
 		/* Different signature versions, so not the same */
 		return false;
 	} else if (a->data[0] == 4 && a->data[1] != b->data[1]) {
 		/* Type 4 signature, but different types */
 		return false;
-	/* TODO: Check signature time? */
 	} else {
-		return (sig_keyid(a) == sig_keyid(b));
+		sig_info(a, &a_keyid, &a_creation);
+		sig_info(b, &b_keyid, &b_creation);
+		return (a_creation == b_creation) && (a_keyid == b_keyid);
 	}
 }
 
