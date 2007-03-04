@@ -268,8 +268,7 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 			printf("%s%s%s\n", 
 				(html) ? txt2html(buf) : buf,
 				(html) ? "</a>" : "",
-				(keys->revocations == NULL) ? "" :
-					" *** REVOKED ***");
+				(keys->revoked) ? " *** REVOKED ***" : "");
 			if (fingerprint) {
 				display_fingerprint(keys);
 			}
@@ -279,8 +278,7 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 			curuid = curuid->next;
 		} else {
 			printf("%s\n", 
-				(keys->revocations == NULL) ? "" :
-					"*** REVOKED ***");
+				(keys->revoked) ? "*** REVOKED ***": "");
 			if (fingerprint) {
 				display_fingerprint(keys);
 			}
@@ -354,7 +352,7 @@ int mrkey_index(struct openpgp_publickey *keys)
 			type,
 			length,
 			created_time,
-			(keys->revocations == NULL) ? "" : "r");
+			(keys->revoked) ? "r" : "");
 	
 		for (curuid = keys->uids; curuid != NULL;
 			 curuid = curuid->next) {

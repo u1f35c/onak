@@ -150,9 +150,9 @@ void free_publickey(struct openpgp_publickey *key) {
 			free_packet(key->publickey);
 			key->publickey = NULL;
 		}
-		if (key->revocations != NULL) {
-			free_packet_list(key->revocations);
-			key->revocations = NULL;
+		if (key->sigs != NULL) {
+			free_packet_list(key->sigs);
+			key->sigs = NULL;
 		}
 		if (key->uids != NULL) {
 			free_signedpacket_list(key->uids);

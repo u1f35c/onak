@@ -82,7 +82,7 @@ struct ll *getkeysigs(uint64_t keyid, bool *revoked)
 			sigs = keysigs(sigs, uids->sigs);
 		}
 		if (revoked != NULL) {
-			*revoked = (publickey->revocations != NULL);
+			*revoked = publickey->revoked;
 		}
 		free_publickey(publickey);
 	}
@@ -188,7 +188,7 @@ int update_keys(struct openpgp_publickey **keys, bool sendsync)
 		 */
 		if (oldkey != NULL) {
 			merge_keys(oldkey, curkey);
-			if (curkey->revocations == NULL &&
+			if (curkey->sigs == NULL &&
 					curkey->uids == NULL &&
 					curkey->subkeys == NULL) {
 				if (prev == NULL) {

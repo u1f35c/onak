@@ -48,8 +48,7 @@ int parse_keys(struct openpgp_packet_list *packets,
 		case 2:
 			/*
 			 * It's a signature packet. Add it to either the public
-			 * key (it should be a revocation), to the current UID
-			 * or the current subkey.
+			 * key, to the current UID or the current subkey.
 			 */
 			log_assert(curkey != NULL);
 			if (curkey->subkeys != NULL) {
@@ -62,8 +61,25 @@ int parse_keys(struct openpgp_packet_list *packets,
 					packet_dup(packets->packet));
 			} else {
 				ADD_PACKET_TO_LIST_END(curkey,
-					revocation,
+					sig,
 					packet_dup(packets->packet));
+				/*
+				 * This is a signature on the public key; check
+				 * if it's a revocation.
+				 */
+				if (packets->packet->data[0] == 3 &&
+					packets->packet->data[2] == 0x20) {
+					/*
+					 * Type 3 key, 0x20 == revocation
+					 */
+					curkey->revoked = true;
+				} else if (packets->packet->data[0] == 4 &&
+					packets->packet->data[1] == 0x20) {
+					/*
+					 * Type 4 key, 0x20 == revocation
+					 */
+					curkey->revoked = true;
+				}
 			}
 			break;
 		case 6:
@@ -416,9 +432,9 @@ int flatten_publickey(struct openpgp_publickey *key,
 		}
 
 		/*
-		 * Now do any revocation signatures on the main key.
+		 * Now do any signatures on the main key.
 		 */
-		for (tmplist = key->revocations; tmplist != NULL;
+		for (tmplist = key->sigs; tmplist != NULL;
 				tmplist = tmplist->next) {
 			ADD_PACKET_TO_LIST((*list_end),
 					packet_dup(tmplist->packet));

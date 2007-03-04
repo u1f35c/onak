@@ -314,12 +314,12 @@ int merge_keys(struct openpgp_publickey *a, struct openpgp_publickey *b)
 		/*
 		 * Key IDs are the same, so I guess we have to merge them.
 		 */
-		curpacket = b->revocations;
+		curpacket = b->sigs;
 		while (curpacket != NULL) {
 			nextpacket = curpacket->next;
-			if (find_packet(a->revocations, curpacket->packet)) {
+			if (find_packet(a->sigs, curpacket->packet)) {
 				/*
-				 * We already have this revocation, remove it
+				 * We already have this signature, remove it
 				 * from the difference list and free the memory
 				 * allocated for it.
 				 */
@@ -327,8 +327,8 @@ int merge_keys(struct openpgp_publickey *a, struct openpgp_publickey *b)
 				if (lastpacket != NULL) {
 					lastpacket->next = curpacket->next;
 				} else {
-					log_assert(curpacket == b->revocations);
-					b->revocations = curpacket->next;
+					log_assert(curpacket == b->sigs);
+					b->sigs = curpacket->next;
 				}
 				curpacket->next = NULL;
 				free_packet_list(curpacket);
@@ -338,15 +338,15 @@ int merge_keys(struct openpgp_publickey *a, struct openpgp_publickey *b)
 			}
 			curpacket = nextpacket;
 		}
-		b->last_revocation = lastpacket;
+		b->last_sig = lastpacket;
 
 		/*
-		 * Anything left on b->revocations doesn't exist on
-		 * a->revocations, so add them to the list.
+		 * Anything left on b->sigs doesn't exist on
+		 * a->sigs, so add them to the list.
 		 */
-		packet_list_add(&a->revocations,
-				&a->last_revocation,
-				b->revocations);
+		packet_list_add(&a->sigs,
+				&a->last_sig,
+				b->sigs);
 
 		/*
 		 * Merge uids (signed list).
@@ -357,6 +357,14 @@ int merge_keys(struct openpgp_publickey *a, struct openpgp_publickey *b)
 		merge_signed_packets(&a->subkeys, &a->last_subkey,
 				&b->subkeys, &b->last_subkey);
 
+	}
+
+	/*
+	 * If either key was revoked, make sure both the new ones are marked as
+	 * being so.
+	 */
+	if (a->revoked || b->revoked) {
+		a->revoked = b->revoked = true;
 	}
 
 	return rc;

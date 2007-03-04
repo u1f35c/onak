@@ -65,15 +65,17 @@ struct openpgp_signedpacket_list {
 /**
  *	struct openpgp_publickey - An OpenPGP public key complete with sigs.
  *	@publickey: The OpenPGP packet for the public key.
- *	@revocation: The OpenPGP packet for the revocation [optional]
+ *	@revoked: True if the key is revoked.
+ *	@sigs: Any signatures directly on the publickey packet.
  *	@uids: The list of UIDs with signatures for this key.
  *	@subkeys: The list of subkeys with signatures for this key.
  *	@next: The next public key.
  */
 struct openpgp_publickey {
 	struct openpgp_packet			*publickey;
-	struct openpgp_packet_list		*revocations;
-	struct openpgp_packet_list		*last_revocation;
+	bool					 revoked;
+	struct openpgp_packet_list		*sigs;
+	struct openpgp_packet_list		*last_sig;
 	struct openpgp_signedpacket_list	*uids;
 	struct openpgp_signedpacket_list	*last_uid;
 	struct openpgp_signedpacket_list	*subkeys;
