@@ -16,3 +16,7 @@ autodns.key
 	A v4 DSA/Elg key.
 noodles.key
 	My v4 DSA/Elg key.
+putro.key
+	A v4 key with a non revocation signature on the public key.
+huggie-rev.key
+	A revoked v4 key.
