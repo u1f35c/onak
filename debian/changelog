@@ -1,3 +1,9 @@
+onak (0.3.3+arch-1) unstable; urgency=low
+
+  * Tag as arch version.
+
+ -- Jonathan McDowell <noodles@earth.li>  Sun, 04 Mar 2007 23:16:51 +0000
+
 onak (0.3.3-1) unstable; urgency=low
 
   * New upstream release

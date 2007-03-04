@@ -1,5 +1,5 @@
 AC_PREREQ(2.50)
-AC_INIT([onak],[0.3.3],[noodles-onak@earth.li])
+AC_INIT([onak],[0.3.3+arch],[noodles-onak@earth.li])
 AC_CONFIG_SRCDIR(onak.c)
 AC_CONFIG_HEADER(config.h)
 
