@@ -30,4 +30,18 @@ if [ "$1" = "configure" ]; then
             dpkg-statoverride --update --add onak root 4755 $i
         fi
     done
+
+    # If we don't have a DB backend defined, then add appropriate config
+    if ! grep -q db_backend /etc/onak.conf; then
+        echo "# Auto added on package update" >> /etc/onak.conf
+        echo "backends_dir /usr/lib/onak/backends" >> /etc/onak.conf
+        echo "db_backend db4" >> /etc/onak.conf
+    fi
+
+    # If we still have the old default mail_dir setting, fix it
+    if grep -q "mail_dir /community/pgp-keyserver/incoming" /etc/onak.conf; then
+        sed -i.bak "s/community\/pgp-keyserver\/incoming/var\/spool\/onak/" \
+		/etc/onak.conf
+    fi
+
 fi
