@@ -9,7 +9,7 @@ if [ "$1" = "purge" ]; then
 	done
     fi
 
-    rm -f /var/log/onak.log{,.1,.*.gz}
+    rm -f /var/log/onak.log /var/log/onak.log.1 /var/log/onak.log.*.gz
 fi
 
 #DEBHELPER#
