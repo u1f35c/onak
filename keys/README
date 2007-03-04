@@ -1,0 +1,18 @@
+These are various keys that have been used during testing.
+
+v4.key			0x5DE480FC
+	A v4 RSA key, complete with RSA subkey.
+swhite.key
+	A v4 DSA/Elg key with 2 UIDs.
+mjr.new
+	A v4 DSA/Elg key with an updated binding signature on the subkey.
+manysubkeys.key
+	A v4 DSA key with 4 subkeys (DSA/Elg).
+iwj.key
+	A v2 RSA key.
+blackcat.key
+	A v3 RSA key.
+autodns.key
+	A v4 DSA/Elg key.
+noodles.key
+	My v4 DSA/Elg key.
