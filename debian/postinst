@@ -14,8 +14,9 @@ if [ "$1" = "configure" ]; then
         zcat /usr/share/doc/onak/noodles.key | onak -b add
     fi
 
-    # Take ownership of the database directory
+    # Take ownership of the database and spool directory
     chown -R onak /var/lib/onak
+    chown -R onak /var/spool/onak
 
     # Create our logfile
     touch /var/log/onak.log
