@@ -190,3 +190,16 @@
   RH by Fred Strauss.
 * Make sure we use the configured path to the MTA in sendsync.c
 * Support UID revokations. Thanks to Hanna Wallach for reporting this.
+
+0.3.3 - 4th March 2007
+
+* Make onak-mail sequentially processes requests.
+* Fix db4 memory leak.
+* Add support for dynamic loading of backends.
+* Use 64bit key ids for HTML keyindex links and support these in lookup.
+* Add support for ADD to onak-mail.
+* Fix replyto address bug in onak-mail.
+* Gracefully fail when we can't open a db4 db.
+* Fix assumption that a signature on a public key is a revocation.
+* Document test keys.
+* Check signature time as well as keyid for key merges.

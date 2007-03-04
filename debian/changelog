@@ -1,8 +1,14 @@
-onak (0.3.2+arch-1) unstable; urgency=low
+onak (0.3.3-1) unstable; urgency=low
 
-  * arch build.
+  * New upstream release
+    * Check signature creation times for merging (Closes: #410796)
+    * Don't assume direct signature is revocation (Closes: #334715)
+    * Gracefully fail when we can't open a DB4 DB (Closes: #370440)
+  * Cleanup logfile upon package purge (Closes: #338516)
+  * Add suggests on db4.2-utils (Closes: #317459)
+  * Acknowledge NMU (Closes: #408270)
  
- -- Jonathan McDowell <noodles@earth.li>  Sun, 04 Mar 2007 15:45:37 +0000
+ -- Jonathan McDowell <noodles@earth.li>  Sun, 04 Mar 2007 22:55:54 +0000
 
 onak (0.3.2-1.1) unstable; urgency=high
 
