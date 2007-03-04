@@ -8,7 +8,7 @@ Standards-Version: 3.6.1
 
 Package: onak
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
 Recommends: apache | httpd
 Suggests: db4.2-util
 Description: OpenPGP Key Server

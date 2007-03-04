@@ -2,7 +2,15 @@ onak (0.3.2+arch-1) unstable; urgency=low
 
   * arch build.
  
- -- Jonathan McDowell <noodles@earth.li>  Fri, 25 Mar 2005 15:03:17 +0000
+ -- Jonathan McDowell <noodles@earth.li>  Sun, 04 Mar 2007 15:45:37 +0000
+
+onak (0.3.2-1.1) unstable; urgency=high
+
+  * Non-maintainer upload.
+  * Added missing dep on adduser (Closes: #408270)
+  * Urgency high due RCness of the bug
+
+ -- Bastian Venthur <venthur@debian.org>  Thu,  1 Feb 2007 10:38:37 +0100
 
 onak (0.3.2-1) unstable; urgency=low
 
