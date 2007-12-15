@@ -10,6 +10,9 @@ Jason Harris
   Several fixes and comments.
 Simon Huggins
   Various fixes and idea bouncing.
+Brett Parker
+  Wrote the dynamic loading keydb backend, provided an example Apache2
+  setup guide and various other ideas.
 Daniel Silverstone
   Convinced me about arch, wrote the keyfs backend and provided a very useful
   sounding board for ideas at DebConf.
