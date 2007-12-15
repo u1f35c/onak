@@ -48,6 +48,21 @@ OBJS = stats.o cleankey.o $(CORE_OBJS) $(KEYDB_OBJ)
 all: .depend $(PROGS) testparse maxpath sixdegrees splitkeys onak.conf \
 	$(BACKENDS)
 
+install: $(PROGS) onak.conf $(BACKENDS)
+	install -d $(DESTDIR)/@bindir@
+	install -d $(DESTDIR)/@libdir@/onak/backends
+	install -d $(DESTDIR)/@localstatedir@/lib/onak
+	install -d $(DESTDIR)/@mandir@/man1
+	install -d $(DESTDIR)/@sysconfdir@
+	install onak-mail.pl $(DESTDIR)/@libdir@/onak
+	install onak splitkeys $(DESTDIR)/@bindir@
+	install onak.1 splitkeys.1 $(DESTDIR)/@mandir@/man1
+ifeq (x@DBTYPE@, xdynamic)
+	install $(BACKENDS) $(DESTDIR)/@libdir@/onak/backends
+	install -d $(DESTDIR)/@sbindir@
+	install keyd $(DESTDIR)/@sbindir@
+endif
+
 keyd: keyd.o $(CORE_OBJS) keydb_$(DBTYPE).o
 	$(CC) $(LDFLAGS) $(PROGS_LDFLAGS_EXTRA) \
 		-o keyd keyd.o $(CORE_OBJS) keydb_$(DBTYPE).o $(LIBS)

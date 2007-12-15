@@ -5,7 +5,5 @@ include /usr/share/cdbs/1/class/autotools.mk
 
 DEB_CONFIGURE_EXTRA_FLAGS += --enable-backend=dynamic
 
-DEB_MAKE_INSTALL_TARGET :=
-
 # Woody doesn't like this of course
 #CFLAGS += -std=gnu99
