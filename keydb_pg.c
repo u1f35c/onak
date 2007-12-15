@@ -260,6 +260,75 @@ static int pg_fetch_key_text(const char *search,
 }
 
 /**
+ *	delete_key - Given a keyid delete the key from storage.
+ *	@keyid: The keyid to delete.
+ *	@intrans: If we're already in a transaction.
+ *
+ *	This function deletes a public key from whatever storage mechanism we
+ *	are using. Returns 0 if the key existed.
+ */
+static int pg_delete_key(uint64_t keyid, bool intrans)
+{
+	PGresult *result = NULL;
+	char *oids = NULL;
+	char statement[1024];
+	int found = 1;
+	int i;
+	Oid key_oid;
+
+	if (!intrans) {
+		result = PQexec(dbconn, "BEGIN");
+		PQclear(result);
+	}
+	
+	snprintf(statement, 1023,
+			"SELECT keydata FROM onak_keys WHERE keyid = '%llX'",
+			keyid);
+	result = PQexec(dbconn, statement);
+
+	if (PQresultStatus(result) == PGRES_TUPLES_OK) {
+		found = 0;
+		i = PQntuples(result);
+		while (i > 0) {
+			oids = PQgetvalue(result, i-1, 0);
+			key_oid = (Oid) atoi(oids);
+			lo_unlink(dbconn, key_oid);
+			i--;
+		}
+		PQclear(result);
+
+		snprintf(statement, 1023,
+			"DELETE FROM onak_keys WHERE keyid = '%llX'",
+			keyid);
+		result = PQexec(dbconn, statement);
+		PQclear(result);
+
+		snprintf(statement, 1023,
+			"DELETE FROM onak_sigs WHERE signee = '%llX'",
+			keyid);
+		result = PQexec(dbconn, statement);
+		PQclear(result);
+
+		snprintf(statement, 1023,
+			"DELETE FROM onak_uids WHERE keyid = '%llX'",
+			keyid);
+		result = PQexec(dbconn, statement);
+	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+		logthing(LOGTHING_ERROR,
+				"Problem retrieving key (%llX) from DB.",
+				keyid);
+	}
+
+	PQclear(result);
+
+	if (!intrans) {
+		result = PQexec(dbconn, "COMMIT");
+		PQclear(result);
+	}
+	return (found);
+}
+
+/**
  *	store_key - Takes a key and stores it.
  *	@publickey: A pointer to the public key to store.
  *	@intrans: If we're already in a transaction.
@@ -393,75 +462,6 @@ static int pg_store_key(struct openpgp_publickey *publickey, bool intrans,
 	}
 	
 	return 0;
-}
-
-/**
- *	delete_key - Given a keyid delete the key from storage.
- *	@keyid: The keyid to delete.
- *	@intrans: If we're already in a transaction.
- *
- *	This function deletes a public key from whatever storage mechanism we
- *	are using. Returns 0 if the key existed.
- */
-static int pg_delete_key(uint64_t keyid, bool intrans)
-{
-	PGresult *result = NULL;
-	char *oids = NULL;
-	char statement[1024];
-	int found = 1;
-	int i;
-	Oid key_oid;
-
-	if (!intrans) {
-		result = PQexec(dbconn, "BEGIN");
-		PQclear(result);
-	}
-	
-	snprintf(statement, 1023,
-			"SELECT keydata FROM onak_keys WHERE keyid = '%llX'",
-			keyid);
-	result = PQexec(dbconn, statement);
-
-	if (PQresultStatus(result) == PGRES_TUPLES_OK) {
-		found = 0;
-		i = PQntuples(result);
-		while (i > 0) {
-			oids = PQgetvalue(result, i-1, 0);
-			key_oid = (Oid) atoi(oids);
-			lo_unlink(dbconn, key_oid);
-			i--;
-		}
-		PQclear(result);
-
-		snprintf(statement, 1023,
-			"DELETE FROM onak_keys WHERE keyid = '%llX'",
-			keyid);
-		result = PQexec(dbconn, statement);
-		PQclear(result);
-
-		snprintf(statement, 1023,
-			"DELETE FROM onak_sigs WHERE signee = '%llX'",
-			keyid);
-		result = PQexec(dbconn, statement);
-		PQclear(result);
-
-		snprintf(statement, 1023,
-			"DELETE FROM onak_uids WHERE keyid = '%llX'",
-			keyid);
-		result = PQexec(dbconn, statement);
-	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-		logthing(LOGTHING_ERROR,
-				"Problem retrieving key (%llX) from DB.",
-				keyid);
-	}
-
-	PQclear(result);
-
-	if (!intrans) {
-		result = PQexec(dbconn, "COMMIT");
-		PQclear(result);
-	}
-	return (found);
 }
 
 /**
