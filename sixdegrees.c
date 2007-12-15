@@ -30,7 +30,8 @@ unsigned long countdegree(struct stats_key *have, bool sigs, int maxdegree)
 
 	while (curll != NULL && curdegree <= maxdegree) {
 		if (sigs) {
-			sigll = cached_getkeysigs(((struct stats_key *)
+			sigll = config.dbbackend->cached_getkeysigs(
+				((struct stats_key *)
 				curll->object)->keyid);
 		} else {
 			sigll = NULL;
@@ -82,14 +83,14 @@ void sixdegrees(uint64_t keyid)
 	long degree;
 	char *uid;
 
-	cached_getkeysigs(keyid);
+	config.dbbackend->cached_getkeysigs(keyid);
 
 	if ((keyinfo = findinhash(keyid)) == NULL) {
 		printf("Couldn't find key 0x%llX.\n", keyid);
 		return;
 	}
 
-	uid = keyid2uid(keyinfo->keyid);
+	uid = config.dbbackend->keyid2uid(keyinfo->keyid);
 	printf("Six degrees for 0x%llX (%s):\n", keyinfo->keyid, uid);
 	free(uid);
 	uid = NULL;
@@ -127,11 +128,11 @@ int main(int argc, char *argv[])
 
 	readconfig(NULL);
 	initlogthing("sixdegrees", config.logfile);
-	initdb(true);
+	config.dbbackend->initdb(true);
 	inithash();
-	sixdegrees(getfullkeyid(keyid));
+	sixdegrees(config.dbbackend->getfullkeyid(keyid));
 	destroyhash();
-	cleanupdb();
+	config.dbbackend->cleanupdb();
 	cleanuplogthing();
 	cleanupconfig();
 

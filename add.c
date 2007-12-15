@@ -76,13 +76,13 @@ int main(int argc, char *argv[])
 				fclose(stderr);
 			}
 			catchsignals();
-			initdb(false);
+			config.dbbackend->initdb(false);
 			
 			count = cleankeys(keys);
 			logthing(LOGTHING_INFO, "%d keys cleaned.",
 					count);
 
-			count = update_keys(&keys, true);
+			count = config.dbbackend->update_keys(&keys, true);
 			logthing(LOGTHING_NOTICE, "Got %d new keys.",
 				count);
 
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
 				keys = NULL;
 			}
 			
-			cleanupdb();
+			config.dbbackend->cleanupdb();
 		} else {
 			puts("No OpenPGP packets found in input.");
 			end_html();

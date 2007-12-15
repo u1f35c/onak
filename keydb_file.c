@@ -31,7 +31,7 @@
  *
  *	This is just a no-op for flat file access.
  */
-void initdb(bool readonly)
+static void file_initdb(bool readonly)
 {
 }
 
@@ -40,7 +40,7 @@ void initdb(bool readonly)
  *
  *	This is just a no-op for flat file access.
  */
-void cleanupdb(void)
+static void file_cleanupdb(void)
 {
 }
 
@@ -49,7 +49,7 @@ void cleanupdb(void)
  *
  *	This is just a no-op for flat file access.
  */
-bool starttrans(void)
+static bool file_starttrans(void)
 {
 	return true;
 }
@@ -59,7 +59,7 @@ bool starttrans(void)
  *
  *	This is just a no-op for flat file access.
  */
-void endtrans(void)
+static void file_endtrans(void)
 {
 	return;
 }
@@ -76,7 +76,7 @@ void endtrans(void)
  *	in and then parse_keys() to parse the packets into a publickey
  *	structure.
  */
-int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
+static int file_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 		bool intrans)
 {
 	struct openpgp_packet_list *packets = NULL;
@@ -109,7 +109,8 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
  *	packets and then use write_openpgp_stream() to write the stream out to
  *	the file.
  */
-int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
+static int file_store_key(struct openpgp_publickey *publickey, bool intrans,
+		bool update)
 {
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_packet_list *list_end = NULL;
@@ -144,7 +145,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
  *	This function deletes a public key from whatever storage mechanism we
  *	are using. Returns 0 if the key existed.
  */
-int delete_key(uint64_t keyid, bool intrans)
+static int file_delete_key(uint64_t keyid, bool intrans)
 {
 	char keyfile[1024];
 
@@ -164,7 +165,8 @@ int delete_key(uint64_t keyid, bool intrans)
  *
  *	TODO: Write for flat file access. Some sort of grep?
  */
-int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
+static int file_fetch_key_text(const char *search,
+		struct openpgp_publickey **publickey)
 {
 	return 0;
 }
@@ -180,8 +182,8 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
  *
  *	Returns the number of keys we iterated over.
  */
-int iterate_keys(void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
-		void *ctx)
+static int file_iterate_keys(void (*iterfunc)(void *ctx,
+		struct openpgp_publickey *key),	void *ctx)
 {
 	int                         numkeys = 0;
 	struct openpgp_packet_list *packets = NULL;
@@ -236,3 +238,20 @@ int iterate_keys(void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
 #define NEED_GETFULLKEYID 1
 #define NEED_UPDATEKEYS 1
 #include "keydb.c"
+
+struct dbfuncs keydb_file_funcs = {
+	.initdb			= file_initdb,
+	.cleanupdb		= file_cleanupdb,
+	.starttrans		= file_starttrans,
+	.endtrans		= file_endtrans,
+	.fetch_key		= file_fetch_key,
+	.fetch_key_text		= file_fetch_key_text,
+	.store_key		= file_store_key,
+	.update_keys		= generic_update_keys,
+	.delete_key		= file_delete_key,
+	.getkeysigs		= generic_getkeysigs,
+	.cached_getkeysigs	= generic_cached_getkeysigs,
+	.keyid2uid		= generic_keyid2uid,
+	.getfullkeyid		= generic_getfullkeyid,
+	.iterate_keys		= file_iterate_keys,
+};

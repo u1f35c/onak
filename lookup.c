@@ -40,9 +40,9 @@ void find_keys(char *search, uint64_t keyid, bool ishex,
 	int count = 0;
 
 	if (ishex) {
-		count = fetch_key(keyid, &publickey, false);
+		count = config.dbbackend->fetch_key(keyid, &publickey, false);
 	} else {
-		count = fetch_key_text(search, &publickey);
+		count = config.dbbackend->fetch_key_text(search, &publickey);
 	}
 	if (publickey != NULL) {
 		if (mrhkp) {
@@ -159,12 +159,13 @@ int main(int argc, char *argv[])
 		readconfig(NULL);
 		initlogthing("lookup", config.logfile);
 		catchsignals();
-		initdb(true);
+		config.dbbackend->initdb(true);
 		switch (op) {
 		case OP_GET:
 			logthing(LOGTHING_NOTICE, "Getting keyid 0x%llX",
 					keyid);
-			if (fetch_key(keyid, &publickey, false)) {
+			if (config.dbbackend->fetch_key(keyid, &publickey,
+					false)) {
 				puts("<pre>");
 				cleankeys(publickey);
 				flatten_publickey(publickey,
@@ -189,7 +190,8 @@ int main(int argc, char *argv[])
 					true, mrhkp);
 			break;
 		case OP_PHOTO:
-			if (fetch_key(keyid, &publickey, false)) {
+			if (config.dbbackend->fetch_key(keyid, &publickey,
+					false)) {
 				unsigned char *photo = NULL;
 				size_t         length = 0;
 
@@ -206,7 +208,7 @@ int main(int argc, char *argv[])
 		default:
 			puts("Unknown operation!");
 		}
-		cleanupdb();
+		config.dbbackend->cleanupdb();
 		cleanuplogthing();
 		cleanupconfig();
 	}

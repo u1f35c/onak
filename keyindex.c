@@ -21,6 +21,7 @@
 #include "keyindex.h"
 #include "keystructs.h"
 #include "log.h"
+#include "onak-conf.h"
 
 int list_sigs(struct openpgp_packet_list *sigs, bool html)
 {
@@ -30,7 +31,7 @@ int list_sigs(struct openpgp_packet_list *sigs, bool html)
 
 	while (sigs != NULL) {
 		sigid = sig_keyid(sigs->packet);
-		uid = keyid2uid(sigid);
+		uid = config.dbbackend->keyid2uid(sigid);
 		if (sigs->packet->data[0] == 4 &&
 				sigs->packet->data[1] == 0x30) {
 			/* It's a Type 4 sig revocation */

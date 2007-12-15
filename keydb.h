@@ -15,6 +15,10 @@
 #include "ll.h"
 
 /**
+ *	struct dbfuncs - All of the functions a DB backend exports.
+ */
+struct dbfuncs {
+/**
  *	initdb - Initialize the key database.
  *	@readonly: If we'll only be reading the DB, not writing to it.
  *
@@ -22,7 +26,7 @@
  *	this file are called in order to allow the DB to be initialized ready
  *	for access.
  */
-void initdb(bool readonly);
+	void (*initdb)(bool readonly);
 
 /**
  *	cleanupdb - De-initialize the key database.
@@ -30,7 +34,7 @@ void initdb(bool readonly);
  *	This function should be called upon program exit to allow the DB to
  *	cleanup after itself.
  */
-void cleanupdb(void);
+	void (*cleanupdb)(void);
 
 /**
  *	starttrans - Start a transaction.
@@ -39,14 +43,14 @@ void cleanupdb(void);
  *	operations on the database to help speed it all up, or if we want
  *	something to only succeed if all relevant operations are successful.
  */
-bool starttrans(void);
+	bool (*starttrans)(void);
 
 /**
  *	endtrans - End a transaction.
  *
  *	Ends a transaction.
  */
-void endtrans(void);
+	void (*endtrans)(void);
 
 /**
  *	fetch_key - Given a keyid fetch the key from storage.
@@ -59,7 +63,8 @@ void endtrans(void);
  *
  *      TODO: What about keyid collisions? Should we use fingerprint instead?
  */
-int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey, bool intrans);
+	int (*fetch_key)(uint64_t keyid, struct openpgp_publickey **publickey,
+			bool intrans);
 
 /**
  *	store_key - Takes a key and stores it.
@@ -75,7 +80,8 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey, bool intrans
  *	TODO: Do we store multiple keys of the same id? Or only one and replace
  *	it?
  */
-int store_key(struct openpgp_publickey *publickey, bool intrans, bool update);
+	int (*store_key)(struct openpgp_publickey *publickey, bool intrans,
+			bool update);
 
 /**
  *	delete_key - Given a keyid delete the key from storage.
@@ -85,7 +91,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update);
  *	This function deletes a public key from whatever storage mechanism we
  *	are using. Returns 0 if the key existed.
  */
-int delete_key(uint64_t keyid, bool intrans);
+	int (*delete_key)(uint64_t keyid, bool intrans);
 
 /**
  *	fetch_key_text - Trys to find the keys that contain the supplied text.
@@ -95,7 +101,8 @@ int delete_key(uint64_t keyid, bool intrans);
  *	This function searches for the supplied text and returns the keys that
  *	contain it.
  */
-int fetch_key_text(const char *search, struct openpgp_publickey **publickey);
+	int (*fetch_key_text)(const char *search,
+			struct openpgp_publickey **publickey);
 
 /**
  *	update_keys - Takes a list of public keys and updates them in the DB.
@@ -111,7 +118,7 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey);
  *	If sendsync is true then we send out a keysync mail to our sync peers
  *	with the update.
  */
-int update_keys(struct openpgp_publickey **keys, bool sendsync);
+	int (*update_keys)(struct openpgp_publickey **keys, bool sendsync);
 
 /**
  *	keyid2uid - Takes a keyid and returns the primary UID for it.
@@ -120,7 +127,7 @@ int update_keys(struct openpgp_publickey **keys, bool sendsync);
  *	This function returns a UID for the given key. Returns NULL if the key
  *	isn't found.
  */
-char *keyid2uid(uint64_t keyid);
+	char * (*keyid2uid)(uint64_t keyid);
 
 /**
  *	getkeysigs - Gets a linked list of the signatures on a key.
@@ -131,7 +138,7 @@ char *keyid2uid(uint64_t keyid);
  *	indexing and doing stats bits. If revoked is non-NULL then if the key
  *	is revoked it's set to true.
  */
-struct ll *getkeysigs(uint64_t keyid, bool *revoked);
+	struct ll * (*getkeysigs)(uint64_t keyid, bool *revoked);
 
 /**
  *	cached_getkeysigs - Gets the signatures on a key.
@@ -140,7 +147,7 @@ struct ll *getkeysigs(uint64_t keyid, bool *revoked);
  *	This function gets the signatures on a key. It's the same as the
  *	getkeysigs function above except we use the hash module to cache the
  */
-struct ll *cached_getkeysigs(uint64_t keyid);
+	struct ll * (*cached_getkeysigs)(uint64_t keyid);
 
 /**
  *	getfullkeyid - Maps a 32bit key id to a 64bit one.
@@ -149,7 +156,7 @@ struct ll *cached_getkeysigs(uint64_t keyid);
  *	This function maps a 32bit key id to the full 64bit one. It returns the
  *	full keyid. If the key isn't found a keyid of 0 is returned.
  */
-uint64_t getfullkeyid(uint64_t keyid);
+	uint64_t (*getfullkeyid)(uint64_t keyid);
 
 /**
  *	iterate_keys - call a function once for each key in the db.
@@ -162,7 +169,8 @@ uint64_t getfullkeyid(uint64_t keyid);
  *
  *	Returns the number of keys we iterated over.
  */
-int iterate_keys(void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
-		void *ctx);
+	int (*iterate_keys)(void (*iterfunc)(void *ctx,
+			struct openpgp_publickey *key),	void *ctx);
+};
 
 #endif /* __KEYDB_H__ */

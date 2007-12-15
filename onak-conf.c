@@ -17,6 +17,8 @@
 #include "log.h"
 #include "onak-conf.h"
 
+extern struct dbfuncs DBFUNCS;
+
 /*
  *	config - Runtime configuration for onak.
  *
@@ -49,6 +51,8 @@ struct onak_config config = {
 	 */
 	NULL,			/* db_backend */
 	NULL,			/* backends_dir */
+
+	&DBFUNCS,		/* Default dbfuncs struct */
 };
 
 void readconfig(const char *configfile) {

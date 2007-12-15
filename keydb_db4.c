@@ -70,13 +70,66 @@ DB *keydb(uint64_t keyid)
 }
 
 /**
+ *	starttrans - Start a transaction.
+ *
+ *	Start a transaction. Intended to be used if we're about to perform many
+ *	operations on the database to help speed it all up, or if we want
+ *	something to only succeed if all relevant operations are successful.
+ */
+static bool db4_starttrans(void)
+{
+	int ret;
+
+	log_assert(dbenv != NULL);
+	log_assert(txn == NULL);
+
+	ret = dbenv->txn_begin(dbenv,
+		NULL, /* No parent transaction */
+		&txn,
+		0);
+	if (ret != 0) {
+		logthing(LOGTHING_CRITICAL,
+				"Error starting transaction: %s",
+				db_strerror(ret));
+		exit(1);
+	}
+
+	return true;
+}
+
+/**
+ *	endtrans - End a transaction.
+ *
+ *	Ends a transaction.
+ */
+static void db4_endtrans(void)
+{
+	int ret;
+
+	log_assert(dbenv != NULL);
+	log_assert(txn != NULL);
+
+	ret = txn->commit(txn,
+		0);
+	if (ret != 0) {
+		logthing(LOGTHING_CRITICAL,
+				"Error ending transaction: %s",
+				db_strerror(ret));
+		exit(1);
+	}
+	txn = NULL;
+
+	return;
+}
+
+/**
  *	initdb - Initialize the key database.
  *
  *	This function should be called before any of the other functions in
  *	this file are called in order to allow the DB to be initialized ready
  *	for access.
  */
-void initdb(bool readonly)
+static void db4_initdb(bool readonly)
 {
 	char       buf[1024];
 	FILE      *numdb = NULL;
@@ -150,7 +203,7 @@ void initdb(bool readonly)
 	}
 
 	if (ret == 0) {
-		starttrans();
+		db4_starttrans();
 
 		for (i = 0; !ret && i < numdbs; i++) {
 			ret = db_create(&dbconns[i], dbenv, 0);
@@ -252,7 +305,7 @@ void initdb(bool readonly)
  *	This function should be called upon program exit to allow the DB to
  *	cleanup after itself.
  */
-void cleanupdb(void)
+static void db4_cleanupdb(void)
 {
 	int i = 0;
 
@@ -280,59 +333,6 @@ void cleanupdb(void)
 }
 
 /**
- *	starttrans - Start a transaction.
- *
- *	Start a transaction. Intended to be used if we're about to perform many
- *	operations on the database to help speed it all up, or if we want
- *	something to only succeed if all relevant operations are successful.
- */
-bool starttrans(void)
-{
-	int ret;
-
-	log_assert(dbenv != NULL);
-	log_assert(txn == NULL);
-
-	ret = dbenv->txn_begin(dbenv,
-		NULL, /* No parent transaction */
-		&txn,
-		0);
-	if (ret != 0) {
-		logthing(LOGTHING_CRITICAL,
-				"Error starting transaction: %s",
-				db_strerror(ret));
-		exit(1);
-	}
-
-	return true;
-}
-
-/**
- *	endtrans - End a transaction.
- *
- *	Ends a transaction.
- */
-void endtrans(void)
-{
-	int ret;
-
-	log_assert(dbenv != NULL);
-	log_assert(txn != NULL);
-
-	ret = txn->commit(txn,
-		0);
-	if (ret != 0) {
-		logthing(LOGTHING_CRITICAL,
-				"Error ending transaction: %s",
-				db_strerror(ret));
-		exit(1);
-	}
-	txn = NULL;
-
-	return;
-}
-
-/**
  *	fetch_key - Given a keyid fetch the key from storage.
  *	@keyid: The keyid to fetch.
  *	@publickey: A pointer to a structure to return the key in.
@@ -344,7 +344,7 @@ void endtrans(void)
  *	in and then parse_keys() to parse the packets into a publickey
  *	structure.
  */
-int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
+static int db4_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 		bool intrans)
 {
 	struct openpgp_packet_list *packets = NULL;
@@ -367,7 +367,7 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 	key.data = &keyid;
 
 	if (!intrans) {
-		starttrans();
+		db4_starttrans();
 	}
 
 	ret = keydb(keyid)->get(keydb(keyid),
@@ -412,7 +412,8 @@ int worddb_cmp(const void *d1, const void *d2)
  *	This function searches for the supplied text and returns the keys that
  *	contain it.
  */
-int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
+static int db4_fetch_key_text(const char *search,
+		struct openpgp_publickey **publickey)
 {
 	DBC *cursor = NULL;
 	DBT key, data;
@@ -431,7 +432,7 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
 	wordlist = makewordlist(wordlist, searchtext);
 
 	for (curword = wordlist; curword != NULL; curword = curword->next) {
-		starttrans();
+		db4_starttrans();
 
 		ret = worddb->cursor(worddb,
 				txn,
@@ -485,7 +486,7 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
 	llfree(wordlist, NULL);
 	wordlist = NULL;
 	
-	starttrans();
+	db4_starttrans();
 	for (i = 0; i < keylist.count; i++) {
 		numkeys += fetch_key(keylist.keys[i],
 			publickey,
@@ -512,7 +513,8 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
  *	the file. If update is true then we delete the old key first, otherwise
  *	we trust that it doesn't exist.
  */
-int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
+static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
+		bool update)
 {
 	struct     openpgp_packet_list *packets = NULL;
 	struct     openpgp_packet_list *list_end = NULL;
@@ -535,7 +537,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 	keyid = get_keyid(publickey);
 
 	if (!intrans) {
-		starttrans();
+		db4_starttrans();
 	}
 
 	/*
@@ -739,7 +741,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
  *	This function deletes a public key from whatever storage mechanism we
  *	are using. Returns 0 if the key existed.
  */
-int delete_key(uint64_t keyid, bool intrans)
+static int db4_delete_key(uint64_t keyid, bool intrans)
 {
 	struct openpgp_publickey *publickey = NULL;
 	DBT key, data;
@@ -756,7 +758,7 @@ int delete_key(uint64_t keyid, bool intrans)
 	bool deadlock = false;
 
 	if (!intrans) {
-		starttrans();
+		db4_starttrans();
 	}
 
 	fetch_key(keyid, &publickey, true);
@@ -954,8 +956,8 @@ int delete_key(uint64_t keyid, bool intrans)
  *
  *	Returns the number of keys we iterated over.
  */
-int iterate_keys(void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
-		void *ctx)
+static int db4_iterate_keys(void (*iterfunc)(void *ctx,
+		struct openpgp_publickey *key),	void *ctx)
 {
 	DBT                         dbkey, data;
 	DBC                        *cursor = NULL;
@@ -1016,7 +1018,7 @@ int iterate_keys(void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
  *	This function maps a 32bit key id to the full 64bit one. It returns the
  *	full keyid. If the key isn't found a keyid of 0 is returned.
  */
-uint64_t getfullkeyid(uint64_t keyid)
+static uint64_t db4_getfullkeyid(uint64_t keyid)
 {
 	DBT       key, data;
 	DBC      *cursor = NULL;

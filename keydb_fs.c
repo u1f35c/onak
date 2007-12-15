@@ -54,7 +54,7 @@ static uint32_t calchash(uint8_t * ptr)
 }
 
 
-void keypath(char *buffer, uint64_t _keyid)
+static void keypath(char *buffer, uint64_t _keyid)
 {
 	uint64_t keyid = _keyid << 32;
 	snprintf(buffer, PATH_MAX, "%s/key/%02X/%02X/%08X/%016llX",
@@ -63,7 +63,7 @@ void keypath(char *buffer, uint64_t _keyid)
 		 (uint32_t) (keyid >> 32), _keyid);
 }
 
-void keydir(char *buffer, uint64_t _keyid)
+static void keydir(char *buffer, uint64_t _keyid)
 {
 	uint64_t keyid = _keyid << 32;
 	snprintf(buffer, PATH_MAX, "%s/key/%02X/%02X/%08X", config.db_dir,
@@ -72,7 +72,7 @@ void keydir(char *buffer, uint64_t _keyid)
 		 (uint32_t) (keyid >> 32));
 }
 
-void prove_path_to(uint64_t keyid, char *what)
+static void prove_path_to(uint64_t keyid, char *what)
 {
 	static char buffer[1024];
 	snprintf(buffer, PATH_MAX, "%s/%s", config.db_dir, what);
@@ -93,21 +93,21 @@ void prove_path_to(uint64_t keyid, char *what)
 	mkdir(buffer, 0777);
 }
 
-void wordpath(char *buffer, char *word, uint32_t hash, uint64_t keyid)
+static void wordpath(char *buffer, char *word, uint32_t hash, uint64_t keyid)
 {
 	snprintf(buffer, PATH_MAX, "%s/words/%02X/%02X/%08X/%s/%016llX",
 		 config.db_dir, (uint8_t) ((hash >> 24) & 0xFF),
 		 (uint8_t) ((hash >> 16) & 0xFF), hash, word, keyid);
 }
 
-void worddir(char *buffer, char *word, uint32_t hash)
+static void worddir(char *buffer, char *word, uint32_t hash)
 {
 	snprintf(buffer, PATH_MAX, "%s/words/%02X/%02X/%08X/%s", config.db_dir,
 		 (uint8_t) ((hash >> 24) & 0xFF),
 		 (uint8_t) ((hash >> 16) & 0xFF), hash, word);
 }
 
-void subkeypath(char *buffer, uint64_t subkey, uint64_t keyid)
+static void subkeypath(char *buffer, uint64_t subkey, uint64_t keyid)
 {
 	snprintf(buffer, PATH_MAX, "%s/subkeys/%02X/%02X/%08X/%016llX",
 		 config.db_dir,
@@ -117,7 +117,7 @@ void subkeypath(char *buffer, uint64_t subkey, uint64_t keyid)
 		 keyid);
 }
 
-void subkeydir(char *buffer, uint64_t subkey)
+static void subkeydir(char *buffer, uint64_t subkey)
 {
 	snprintf(buffer, PATH_MAX, "%s/subkeys/%02X/%02X/%08X",
 		 config.db_dir,
@@ -131,7 +131,7 @@ void subkeydir(char *buffer, uint64_t subkey)
 /**
  *	initdb - Initialize the key database.
  */
-void initdb(bool readonly)
+static void fs_initdb(bool readonly)
 {
 	char buffer[PATH_MAX];
 
@@ -167,7 +167,7 @@ void initdb(bool readonly)
 /**
  *	cleanupdb - De-initialize the key database.
  */
-void cleanupdb(void)
+static void fs_cleanupdb(void)
 {
 	/* Mmmm nothing to do here? */
 	close(keydb_lockfile_fd);
@@ -176,7 +176,7 @@ void cleanupdb(void)
 /**
  *	starttrans - Start a transaction.
  */
-bool starttrans(void)
+static bool fs_starttrans(void)
 {
 	struct flock lockstruct;
 	int remaining = 20;
@@ -197,7 +197,7 @@ bool starttrans(void)
 /**
  *	endtrans - End a transaction.
  */
-void endtrans(void)
+static void fs_endtrans(void)
 {
 	struct flock lockstruct;
 
@@ -214,7 +214,7 @@ void endtrans(void)
  *	@publickey: A pointer to a structure to return the key in.
  *	@intrans: If we're already in a transaction.
  */
-int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
+static int fs_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 	      bool intrans)
 {
 	static char buffer[PATH_MAX];
@@ -249,7 +249,7 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
  *	@intrans: If we're already in a transaction.
  *	@update: If true the key exists and should be updated.
  */
-int store_key(struct openpgp_publickey *publickey, bool intrans,
+static int fs_store_key(struct openpgp_publickey *publickey, bool intrans,
 	      bool update)
 {
 	static char buffer[PATH_MAX];
@@ -328,7 +328,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans,
  *	@keyid: The keyid to delete.
  *	@intrans: If we're already in a transaction.
  */
-int delete_key(uint64_t keyid, bool intrans)
+static int fs_delete_key(uint64_t keyid, bool intrans)
 {
 	static char buffer[PATH_MAX];
 	int ret;
@@ -426,7 +426,7 @@ static struct ll *internal_get_key_by_word(char *word, struct ll *mct)
  *	@search: The text to search for.
  *	@publickey: A pointer to a structure to return the key in.
  */
-int fetch_key_text(const char *search,
+static int fs_fetch_key_text(const char *search,
 		   struct openpgp_publickey **publickey)
 {
 	struct ll *wordlist = NULL, *wl = NULL;
@@ -485,7 +485,7 @@ int fetch_key_text(const char *search,
 	return addedkeys;
 }
 
-uint64_t getfullkeyid(uint64_t keyid)
+static uint64_t fs_getfullkeyid(uint64_t keyid)
 {
 	static char buffer[PATH_MAX];
 	DIR *d = NULL;
@@ -534,8 +534,8 @@ uint64_t getfullkeyid(uint64_t keyid)
  *
  *	Returns the number of keys we iterated over.
  */
-int iterate_keys(void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
-		void *ctx)
+static int fs_iterate_keys(void (*iterfunc)(void *ctx,
+		struct openpgp_publickey *key),	void *ctx)
 {
 	return 0;
 }
@@ -547,3 +547,20 @@ int iterate_keys(void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
 #define NEED_GETKEYSIGS 1
 #define NEED_UPDATEKEYS 1
 #include "keydb.c"
+
+struct dbfuncs keydb_fs_funcs = {
+	.initdb			= fs_initdb,
+	.cleanupdb		= fs_cleanupdb,
+	.starttrans		= fs_starttrans,
+	.endtrans		= fs_endtrans,
+	.fetch_key		= fs_fetch_key,
+	.fetch_key_text		= fs_fetch_key_text,
+	.store_key		= fs_store_key,
+	.update_keys		= generic_update_keys,
+	.delete_key		= fs_delete_key,
+	.getkeysigs		= generic_getkeysigs,
+	.cached_getkeysigs	= generic_cached_getkeysigs,
+	.keyid2uid		= generic_keyid2uid,
+	.getfullkeyid		= fs_getfullkeyid,
+	.iterate_keys		= fs_iterate_keys,
+};

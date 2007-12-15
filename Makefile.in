@@ -101,7 +101,8 @@ onak: onak.o cleankey.o $(CORE_OBJS) $(KEYDB_OBJ)
 		$(CORE_OBJS) $(KEYDB_OBJ) $(LIBS) $(PROGS_LDFLAGS_EXTRA)
 
 onak-conf.o: onak-conf.c onak-conf.h
-	$(CC) $(CFLAGS) -DCONFIGFILE=\"@sysconfdir@/onak.conf\" -c onak-conf.c
+	$(CC) $(CFLAGS) -DCONFIGFILE=\"@sysconfdir@/onak.conf\" \
+		-DDBFUNCS=keydb_@DBTYPE@_funcs -c onak-conf.c
 
 onak-mail.pl: onak-mail.pl.in
 	sed 's:@CONFIG@:@sysconfdir@/onak.conf:g' < onak-mail.pl.in > onak-mail.pl

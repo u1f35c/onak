@@ -40,9 +40,9 @@ void find_keys(char *search, uint64_t keyid, bool ishex,
 	int count = 0;
 
 	if (ishex) {
-		count = fetch_key(keyid, &publickey, false);
+		count = config.dbbackend->fetch_key(keyid, &publickey, false);
 	} else {
-		count = fetch_key_text(search, &publickey);
+		count = config.dbbackend->fetch_key_text(search, &publickey);
 	}
 	if (publickey != NULL) {
 		key_index(publickey, verbose, fingerprint, false);
@@ -99,7 +99,7 @@ void usage(void) {
 	puts("\tCommands:\n");
 	puts("\tadd      - read armored OpenPGP keys from stdin and add to the"
 		" keyserver");
-	puts("\tclean    - read armored OpenPGP keys from stdin, run the "
+	puts("\tclean    - read armored OpenPGP keys from stdin, run the"
 		" cleaning\n\t       	   routines against them and dump to"
 		" stdout");
 	puts("\tdelete   - delete a given key from the keyserver");
@@ -159,17 +159,17 @@ int main(int argc, char *argv[])
 	if ((argc - optind) < 1) {
 		usage();
 	} else if (!strcmp("dump", argv[optind])) {
-		initdb(true);
+		config.dbbackend->initdb(true);
 		dumpstate.count = dumpstate.filenum = 0;
 		dumpstate.maxcount = 1000000;
 		dumpstate.fd = -1;
 		dumpstate.filebase = "keydump.%d.pgp";
-		iterate_keys(dump_func, &dumpstate);
+		config.dbbackend->iterate_keys(dump_func, &dumpstate);
 		if (dumpstate.fd != -1) {
 			close(dumpstate.fd);
 			dumpstate.fd = -1;
 		}
-		cleanupdb();
+		config.dbbackend->cleanupdb();
 	} else if (!strcmp("add", argv[optind])) {
 		if (binary) {
 			result = read_openpgp_stream(stdin_getchar, NULL,
@@ -190,9 +190,10 @@ int main(int argc, char *argv[])
 			logthing(LOGTHING_INFO, "%d keys cleaned.",
 					result);
 
-			initdb(false);
+			config.dbbackend->initdb(false);
 			logthing(LOGTHING_NOTICE, "Got %d new keys.",
-					update_keys(&keys, false));
+					config.dbbackend->update_keys(&keys,
+					false));
 			if (keys != NULL && update) {
 				flatten_publickey(keys,
 					&packets,
@@ -209,7 +210,7 @@ int main(int argc, char *argv[])
 				free_packet_list(packets);
 				packets = NULL;
 			}
-			cleanupdb();
+			config.dbbackend->cleanupdb();
 		} else {
 			rc = 1;
 			logthing(LOGTHING_NOTICE, "No keys read.");
@@ -279,7 +280,7 @@ int main(int argc, char *argv[])
 				ishex = true;
 			}
 		}
-		initdb(false);
+		config.dbbackend->initdb(false);
 		if (!strcmp("index", argv[optind])) {
 			find_keys(search, keyid, ishex, fingerprint,
 					false, false);
@@ -290,7 +291,8 @@ int main(int argc, char *argv[])
 			if (!ishex) {
 				puts("Can't get a key on uid text."
 					" You must supply a keyid.");
-			} else if (fetch_key(keyid, &keys, false)) {
+			} else if (config.dbbackend->fetch_key(keyid, &keys,
+					false)) {
 				unsigned char *photo = NULL;
 				size_t         length = 0;
 
@@ -306,12 +308,15 @@ int main(int argc, char *argv[])
 				puts("Key not found");
 			}
 		} else if (!strcmp("delete", argv[optind])) {
-			delete_key(getfullkeyid(keyid), false);
+			config.dbbackend->delete_key(
+					config.dbbackend->getfullkeyid(keyid),
+					false);
 		} else if (!strcmp("get", argv[optind])) {
 			if (!ishex) {
 				puts("Can't get a key on uid text."
 					" You must supply a keyid.");
-			} else if (fetch_key(keyid, &keys, false)) {
+			} else if (config.dbbackend->fetch_key(keyid, &keys,
+					false)) {
 				logthing(LOGTHING_INFO, "Got key.");
 				flatten_publickey(keys,
 						&packets,
@@ -326,7 +331,7 @@ int main(int argc, char *argv[])
 				puts("Key not found");
 			}
 		}
-		cleanupdb();
+		config.dbbackend->cleanupdb();
 	} else {
 		usage();
 	}

@@ -6,37 +6,43 @@
  * Copyright 2005 Project Purple
  */
 
+#include <dlfcn.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "decodekey.h"
 #include "hash.h"
 #include "keydb.h"
 #include "keyid.h"
 #include "keystructs.h"
+#include "log.h"
 #include "mem.h"
 #include "merge.h"
+#include "onak-conf.h"
 #include "parsekey.h"
 #include "sendsync.h"
-#include "keydb_dynamic.h"
 
-struct dynamic_backend *get_backend(void)
+static struct dbfuncs *loaded_backend = NULL;
+static char *backendsoname;
+static void *backend_handle;
+
+static bool close_backend(void)
 {
-	return &__dynamicdb_backend__;
+	loaded_backend = NULL;
+	dlclose(backend_handle);
+	backend_handle = NULL;
+
+	return true;
 }
 
-bool backend_loaded(void)
-{
-	return __dynamicdb_backend__.loaded;
-}
-
-bool load_backend(void)
+static bool load_backend(void)
 {
 	char *soname = NULL;
-	void *handle;
-	struct dynamic_backend *backend = get_backend();
+	char *funcsname = NULL;
 
-	if (backend->loaded) {
+	if (loaded_backend != NULL) {
 		close_backend();
+		loaded_backend = NULL;
 	}
 
 	if (!config.db_backend) {
@@ -64,8 +70,8 @@ bool load_backend(void)
 		
 	logthing(LOGTHING_INFO, "Loading dynamic backend: %s", soname);
 
-	handle = dlopen(soname, RTLD_LAZY);
-	if (handle == NULL) {
+	backend_handle = dlopen(soname, RTLD_LAZY);
+	if (backend_handle == NULL) {
 		logthing(LOGTHING_CRITICAL,
 				"Failed to open handle to library '%s': %s",
 				soname, dlerror());
@@ -73,83 +79,174 @@ bool load_backend(void)
 		soname = NULL;
 		exit(EXIT_FAILURE);
 	}
+
+	funcsname = malloc(strlen(config.db_backend)
+			+ strlen("keydb_")
+			+ strlen("_funcs")
+			+ 1);
+	sprintf(funcsname, "keydb_%s_funcs", config.db_backend);
+
+	loaded_backend = dlsym(backend_handle, funcsname);
+	free(funcsname);
+
+	if (loaded_backend == NULL) {
+		logthing(LOGTHING_CRITICAL,
+				"Failed to find dbfuncs structure in library "
+				"'%s' : %s", soname, dlerror());
+		free(soname);
+		soname = NULL;
+		exit(EXIT_FAILURE);
+	}
 	free(soname);
 	soname = NULL;
-
-	backend->initdb = (initdbfunc_t) dlsym(handle, "initdb");
-	backend->cleanupdb = (cleanupdbfunc_t) dlsym(handle, "cleanupdb");
-	backend->starttrans = (starttransfunc_t) dlsym(handle, "starttrans");
-	backend->endtrans = (endtransfunc_t) dlsym(handle, "endtrans");
-	backend->fetch_key = (fetch_keyfunc_t) dlsym(handle, "fetch_key");
-	backend->store_key = (store_keyfunc_t) dlsym(handle, "store_key");
-	backend->delete_key = (delete_keyfunc_t) dlsym(handle, "delete_key");
-	backend->fetch_key_text = (fetch_key_textfunc_t)
-				  dlsym (handle, "fetch_key_text");
-	backend->update_keys = (update_keysfunc_t)
-			       dlsym(handle, "update_keys");
-	backend->keyid2uid = (keyid2uidfunc_t) dlsym(handle, "keyid2uid");
-	backend->cached_getkeysigs = (cached_getkeysigsfunc_t)
-				     dlsym(handle, "cached_getkeysigs");
-	backend->getfullkeyid = (getfullkeyidfunc_t)
-				dlsym(handle, "getfullkeyid");
-	backend->iterate_keys = (iterate_keysfunc_t)
-				dlsym(handle, "iterate_keys");
-
-	backend->handle = handle;
-	backend->loaded = true;
 
 	return true;
 }
 
-bool close_backend(void)
+static bool dynamic_starttrans()
 {
 	struct dynamic_backend *backend;
-	backend = get_backend();
-	
-	backend->initdb = NULL;
-	backend->cleanupdb = NULL;
-	backend->starttrans = NULL;
-	backend->endtrans = NULL;
-	backend->fetch_key = NULL;
-	backend->store_key = NULL;
-	backend->delete_key = NULL;
-	backend->fetch_key_text = NULL;
-	backend->update_keys = NULL;
-	backend->keyid2uid = NULL;
-	backend->cached_getkeysigs = NULL;
-	backend->getfullkeyid = NULL;
-	backend->iterate_keys = NULL;
-	backend->loaded = false;
-	dlclose(backend->handle);
-	backend->handle = NULL;
 
-	return true;
+	if (loaded_backend == NULL) {
+		load_backend();
+	}
+	
+	if (loaded_backend != NULL) {
+		if (loaded_backend->starttrans != NULL) {
+			return loaded_backend->starttrans();
+		}
+	}
+
+	return false;
+}
+
+static void dynamic_endtrans()
+{
+	struct dynamic_backend *backend;
+
+	if (loaded_backend == NULL) {
+		load_backend();
+	}
+	
+	if (loaded_backend != NULL) {
+		if (loaded_backend->endtrans != NULL) {
+			loaded_backend->endtrans();
+		}
+	}
+}
+
+static int dynamic_fetch_key(uint64_t keyid,
+		struct openpgp_publickey **publickey, bool intrans)
+{
+	struct dynamic_backend *backend;
+
+	if (loaded_backend == NULL) {
+		load_backend();
+	}
+	
+	if (loaded_backend != NULL) {
+		if (loaded_backend->fetch_key != NULL) {
+			return loaded_backend->fetch_key(keyid,publickey,intrans);
+		}
+	}
+
+	return -1;
+}
+
+static int dynamic_store_key(struct openpgp_publickey *publickey, bool intrans,
+		bool update)
+{
+	struct dynamic_backend *backend;
+
+	if (loaded_backend == NULL) {
+		load_backend();
+	}
+	
+	if (loaded_backend != NULL) {
+		if (loaded_backend->store_key != NULL) {
+			return loaded_backend->store_key(publickey,intrans,update);
+		}
+	}
+
+	return -1;
+}
+
+static int dynamic_delete_key(uint64_t keyid, bool intrans)
+{
+	struct dynamic_backend *backend;
+
+	if (loaded_backend == NULL) {
+		load_backend();
+	}
+	
+	if (loaded_backend != NULL) {
+		if (loaded_backend->delete_key != NULL) {
+			return loaded_backend->delete_key(keyid, intrans);
+		}
+	}
+
+	return -1;
+}
+
+static int dynamic_fetch_key_text(const char *search,
+		struct openpgp_publickey **publickey)
+{
+	struct dynamic_backend *backend;
+
+	if (loaded_backend == NULL) {
+		load_backend();
+	}
+	
+	if (loaded_backend != NULL) {
+		if (loaded_backend->fetch_key_text != NULL) {
+			return loaded_backend->fetch_key_text(search, publickey);
+		}
+	}
+
+	return -1;
+}
+
+static int dynamic_iterate_keys(void (*iterfunc)(void *ctx,
+		struct openpgp_publickey *key), void *ctx)
+{
+	struct dynamic_backend *backend;
+
+	if (loaded_backend == NULL) {
+		load_backend();
+	}
+	
+	if (loaded_backend != NULL) {
+		if (loaded_backend->iterate_keys != NULL) {
+			return loaded_backend->iterate_keys(iterfunc, ctx);
+		}
+	}
+
+	return -1;
 }
 
 /**
  *	keyid2uid - Takes a keyid and returns the primary UID for it.
  *	@keyid: The keyid to lookup.
  */
-char *keyid2uid(uint64_t keyid)
+static char *dynamic_keyid2uid(uint64_t keyid)
 {
 	struct openpgp_publickey *publickey = NULL;
 	struct openpgp_signedpacket_list *curuid = NULL;
 	char buf[1024];
 
 	struct dynamic_backend *backend;
-	if (!backend_loaded()) {
+	if (loaded_backend == NULL) {
 		load_backend();
 	}
 	
-	if (backend_loaded()) {
-		backend = get_backend();
-		if (backend->keyid2uid != NULL) {
-			return backend->keyid2uid(keyid);
+	if (loaded_backend != NULL) {
+		if (loaded_backend->keyid2uid != NULL) {
+			return loaded_backend->keyid2uid(keyid);
 		}
 	}
 	
 	buf[0]=0;
-	if (fetch_key(keyid, &publickey, false) && publickey != NULL) {
+	if (dynamic_fetch_key(keyid, &publickey, false) && publickey != NULL) {
 		curuid = publickey->uids;
 		while (curuid != NULL && buf[0] == 0) {
 			if (curuid->packet->tag == 13) {
@@ -178,25 +275,24 @@ char *keyid2uid(uint64_t keyid)
  *	indexing and doing stats bits. If revoked is non-NULL then if the key
  *	is revoked it's set to true.
  */
-struct ll *getkeysigs(uint64_t keyid, bool *revoked)
+static struct ll *dynamic_getkeysigs(uint64_t keyid, bool *revoked)
 {
 	struct ll *sigs = NULL;
 	struct openpgp_signedpacket_list *uids = NULL;
 	struct openpgp_publickey *publickey = NULL;
 	
 	struct dynamic_backend *backend;
-	if ( !backend_loaded() ) {
+	if ( loaded_backend == NULL ) {
 		load_backend();
 	}
 	
-	if (backend_loaded()) {
-		backend = get_backend();
-		if (backend->getkeysigs != NULL) {
-			return backend->getkeysigs(keyid,revoked);
+	if (loaded_backend != NULL) {
+		if (loaded_backend->getkeysigs != NULL) {
+			return loaded_backend->getkeysigs(keyid,revoked);
 		}
 	}
 
-	fetch_key(keyid, &publickey, false);
+	dynamic_fetch_key(keyid, &publickey, false);
 	
 	if (publickey != NULL) {
 		for (uids = publickey->uids; uids != NULL; uids = uids->next) {
@@ -219,7 +315,7 @@ struct ll *getkeysigs(uint64_t keyid, bool *revoked)
  *	getkeysigs function above except we use the hash module to cache the
  *	data so if we need it again it's already loaded.
  */
-struct ll *cached_getkeysigs(uint64_t keyid)
+static struct ll *dynamic_cached_getkeysigs(uint64_t keyid)
 {
 	struct stats_key *key = NULL;
 	struct stats_key *signedkey = NULL;
@@ -232,21 +328,20 @@ struct ll *cached_getkeysigs(uint64_t keyid)
 		return NULL;
 	}
 	
-	if (!backend_loaded()) {
+	if (loaded_backend == NULL) {
 		load_backend();
 	}
 	
-	if (backend_loaded()) {
-		backend = get_backend();
-		if (backend->cached_getkeysigs != NULL) {
-			return backend->cached_getkeysigs(keyid);
+	if (loaded_backend != NULL) {
+		if (loaded_backend->cached_getkeysigs != NULL) {
+			return loaded_backend->cached_getkeysigs(keyid);
 		}
 	}
 
 	key = createandaddtohash(keyid);
 
 	if (key->gotsigs == false) {
-		key->sigs = getkeysigs(key->keyid, &revoked);
+		key->sigs = dynamic_getkeysigs(key->keyid, &revoked);
 		key->revoked = revoked;
 		for (cursig = key->sigs; cursig != NULL;
 				cursig = cursig->next) {
@@ -266,24 +361,23 @@ struct ll *cached_getkeysigs(uint64_t keyid)
  *	This function maps a 32bit key id to the full 64bit one. It returns the
  *	full keyid. If the key isn't found a keyid of 0 is returned.
  */
-uint64_t getfullkeyid(uint64_t keyid)
+static uint64_t dynamic_getfullkeyid(uint64_t keyid)
 {
 	struct openpgp_publickey *publickey = NULL;
 	struct dynamic_backend *backend;
 	
-	if (!backend_loaded()) {
+	if (loaded_backend == NULL) {
 		load_backend();
 	}
 	
-	if (backend_loaded()) {
-		backend = get_backend();
-		if (backend->getfullkeyid != NULL) {
-			return backend->getfullkeyid(keyid);
+	if (loaded_backend != NULL) {
+		if (loaded_backend->getfullkeyid != NULL) {
+			return loaded_backend->getfullkeyid(keyid);
 		}
 	}
 
 	if (keyid < 0x100000000LL) {
-		fetch_key(keyid, &publickey, false);
+		dynamic_fetch_key(keyid, &publickey, false);
 		if (publickey != NULL) {
 			keyid = get_keyid(publickey);
 			free_publickey(publickey);
@@ -307,7 +401,7 @@ uint64_t getfullkeyid(uint64_t keyid)
  *	we had before to what we have now (ie the set of data that was added to
  *	the DB). Returns the number of entirely new keys added.
  */
-int update_keys(struct openpgp_publickey **keys, bool sendsync)
+static int dynamic_update_keys(struct openpgp_publickey **keys, bool sendsync)
 {
 	struct openpgp_publickey *curkey = NULL;
 	struct openpgp_publickey *oldkey = NULL;
@@ -316,23 +410,22 @@ int update_keys(struct openpgp_publickey **keys, bool sendsync)
 	int newkeys = 0;
 	bool intrans;
 	
-	if (!backend_loaded()) {
+	if (loaded_backend == NULL) {
 		load_backend();
 	}
 	
-	if (backend_loaded()) {
-		backend = get_backend();
-		if (backend->update_keys != NULL) {
-			return backend->update_keys(keys, sendsync);
+	if (loaded_backend != NULL) {
+		if (loaded_backend->update_keys != NULL) {
+			return loaded_backend->update_keys(keys, sendsync);
 		}
 	}
 
 	for (curkey = *keys; curkey != NULL; curkey = curkey->next) {
-		intrans = starttrans();
+		intrans = dynamic_starttrans();
 		logthing(LOGTHING_INFO,
 			"Fetching key 0x%llX, result: %d",
 			get_keyid(curkey),
-			fetch_key(get_keyid(curkey), &oldkey, intrans));
+			dynamic_fetch_key(get_keyid(curkey), &oldkey, intrans));
 
 		/*
 		 * If we already have the key stored in the DB then merge it
@@ -357,7 +450,7 @@ int update_keys(struct openpgp_publickey **keys, bool sendsync)
 				prev = curkey;
 				logthing(LOGTHING_INFO,
 					"Merged key; storing updated key.");
-				store_key(oldkey, intrans, true);
+				dynamic_store_key(oldkey, intrans, true);
 			}
 			free_publickey(oldkey);
 			oldkey = NULL;
@@ -365,10 +458,10 @@ int update_keys(struct openpgp_publickey **keys, bool sendsync)
 		} else {
 			logthing(LOGTHING_INFO,
 				"Storing completely new key.");
-			store_key(curkey, intrans, false);
+			dynamic_store_key(curkey, intrans, false);
 			newkeys++;
 		}
-		endtrans();
+		dynamic_endtrans();
 		intrans = false;
 	}
 
@@ -379,158 +472,47 @@ int update_keys(struct openpgp_publickey **keys, bool sendsync)
 	return newkeys;
 }
 
-void initdb(bool readonly)
+static void dynamic_initdb(bool readonly)
 {
 	struct dynamic_backend *backend;
-	backend = get_backend();
 	
-	if (!backend_loaded()) {
+	if (loaded_backend == NULL) {
 		load_backend();
 	}
 
-	if (backend->loaded) {
-		if (backend->initdb != NULL) {
-			backend->initdb(readonly);
+	if (loaded_backend != NULL) {
+		if (loaded_backend->initdb != NULL) {
+			loaded_backend->initdb(readonly);
 		}
 	}
 }
 
-void cleanupdb(void)
+static void dynamic_cleanupdb(void)
 {
 	struct dynamic_backend *backend;
-	backend = get_backend();
 
-	if (backend->loaded) {
-		if (backend->cleanupdb != NULL) {
-			backend->cleanupdb();
+	if (loaded_backend != NULL) {
+		if (loaded_backend->cleanupdb != NULL) {
+			loaded_backend->cleanupdb();
 		}
 	}
 
 	close_backend();
 }
 
-bool starttrans()
-{
-	struct dynamic_backend *backend;
-	backend = get_backend();
-
-	if (!backend_loaded()) {
-		load_backend();
-	}
-	
-	if (backend->loaded) {
-		if (backend->starttrans != NULL) {
-			return backend->starttrans();
-		}
-	}
-
-	return false;
-}
-
-void endtrans()
-{
-	struct dynamic_backend *backend;
-	backend = get_backend();
-
-	if (!backend_loaded()) {
-		load_backend();
-	}
-	
-	if (backend->loaded) {
-		if (backend->endtrans != NULL) {
-			backend->endtrans();
-		}
-	}
-}
-
-int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
-		bool intrans)
-{
-	struct dynamic_backend *backend;
-	backend = get_backend();
-
-	if (!backend_loaded()) {
-		load_backend();
-	}
-	
-	if (backend->loaded) {
-		if (backend->fetch_key != NULL) {
-			return backend->fetch_key(keyid,publickey,intrans);
-		}
-	}
-
-	return -1;
-}
-
-int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
-{
-	struct dynamic_backend *backend;
-	backend = get_backend();
-
-	if (!backend_loaded()) {
-		load_backend();
-	}
-	
-	if (backend->loaded) {
-		if (backend->store_key != NULL) {
-			return backend->store_key(publickey,intrans,update);
-		}
-	}
-
-	return -1;
-}
-
-int delete_key(uint64_t keyid, bool intrans)
-{
-	struct dynamic_backend *backend;
-	backend = get_backend();
-
-	if (!backend_loaded()) {
-		load_backend();
-	}
-	
-	if (backend->loaded) {
-		if (backend->delete_key != NULL) {
-			return backend->delete_key(keyid, intrans);
-		}
-	}
-
-	return -1;
-}
-
-int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
-{
-	struct dynamic_backend *backend;
-	backend = get_backend();
-
-	if (!backend_loaded()) {
-		load_backend();
-	}
-	
-	if (backend->loaded) {
-		if (backend->fetch_key_text != NULL) {
-			return backend->fetch_key_text(search, publickey);
-		}
-	}
-
-	return -1;
-}
-
-int iterate_keys(void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
-		void *ctx)
-{
-	struct dynamic_backend *backend;
-	backend = get_backend();
-
-	if (!backend_loaded()) {
-		load_backend();
-	}
-	
-	if (backend->loaded) {
-		if (backend->iterate_keys != NULL) {
-			return backend->iterate_keys(iterfunc, ctx);
-		}
-	}
-
-	return -1;
-}
+struct dbfuncs keydb_dynamic_funcs = {
+	.initdb			= dynamic_initdb,
+	.cleanupdb		= dynamic_cleanupdb,
+	.starttrans		= dynamic_starttrans,
+	.endtrans		= dynamic_endtrans,
+	.fetch_key		= dynamic_fetch_key,
+	.fetch_key_text		= dynamic_fetch_key_text,
+	.store_key		= dynamic_store_key,
+	.update_keys		= dynamic_update_keys,
+	.delete_key		= dynamic_delete_key,
+	.getkeysigs		= dynamic_getkeysigs,
+	.cached_getkeysigs	= dynamic_cached_getkeysigs,
+	.keyid2uid		= dynamic_keyid2uid,
+	.getfullkeyid		= dynamic_getfullkeyid,
+	.iterate_keys		= dynamic_iterate_keys,
+};

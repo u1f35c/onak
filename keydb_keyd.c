@@ -39,7 +39,7 @@ static int keyd_fd = -1;
  *	this file are called in order to allow the DB to be initialized ready
  *	for access.
  */
-void initdb(bool readonly)
+static void keyd_initdb(bool readonly)
 {
 	struct sockaddr_un sock;
 	int		   cmd = KEYD_CMD_UNKNOWN;
@@ -101,7 +101,7 @@ void initdb(bool readonly)
  *	This function should be called upon program exit to allow the DB to
  *	cleanup after itself.
  */
-void cleanupdb(void)
+static void keyd_cleanupdb(void)
 {
 	if (shutdown(keyd_fd, SHUT_RDWR) < 0) {
 		logthing(LOGTHING_NOTICE, "Error shutting down socket: %d",
@@ -120,7 +120,7 @@ void cleanupdb(void)
  *	operations on the database to help speed it all up, or if we want
  *	something to only succeed if all relevant operations are successful.
  */
-bool starttrans(void)
+static bool keyd_starttrans(void)
 {
 	return true;
 }
@@ -130,7 +130,7 @@ bool starttrans(void)
  *
  *	Ends a transaction.
  */
-void endtrans(void)
+static void keyd_endtrans(void)
 {
 	return;
 }
@@ -146,7 +146,7 @@ void endtrans(void)
  *
  *      TODO: What about keyid collisions? Should we use fingerprint instead?
  */
-int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
+static int keyd_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 		bool intrans)
 {
 	struct buffer_ctx           keybuf;
@@ -202,7 +202,8 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
  *	TODO: Do we store multiple keys of the same id? Or only one and replace
  *	it?
  */
-int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
+static int keyd_store_key(struct openpgp_publickey *publickey, bool intrans,
+		bool update)
 {
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
@@ -254,7 +255,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
  *	This function deletes a public key from whatever storage mechanism we
  *	are using. Returns 0 if the key existed.
  */
-int delete_key(uint64_t keyid, bool intrans)
+static int keyd_delete_key(uint64_t keyid, bool intrans)
 {
 	int cmd = KEYD_CMD_DELETE;
 
@@ -275,7 +276,8 @@ int delete_key(uint64_t keyid, bool intrans)
  *	This function searches for the supplied text and returns the keys that
  *	contain it.
  */
-int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
+static int keyd_fetch_key_text(const char *search,
+		struct openpgp_publickey **publickey)
 {
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
@@ -327,7 +329,7 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
  *	This function maps a 32bit key id to the full 64bit one. It returns the
  *	full keyid. If the key isn't found a keyid of 0 is returned.
  */
-uint64_t getfullkeyid(uint64_t keyid)
+static uint64_t keyd_getfullkeyid(uint64_t keyid)
 {
 	int cmd = KEYD_CMD_GETFULLKEYID;
 
@@ -352,8 +354,8 @@ uint64_t getfullkeyid(uint64_t keyid)
  *
  *	Returns the number of keys we iterated over.
  */
-int iterate_keys(void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
-		void *ctx)
+static int keyd_iterate_keys(void (*iterfunc)(void *ctx,
+		struct openpgp_publickey *key),	void *ctx)
 {
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
@@ -410,3 +412,20 @@ int iterate_keys(void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
 #define NEED_GETKEYSIGS 1
 #define NEED_UPDATEKEYS 1
 #include "keydb.c"
+
+struct dbfuncs keydb_keyd_funcs = {
+	.initdb			= keyd_initdb,
+	.cleanupdb		= keyd_cleanupdb,
+	.starttrans		= keyd_starttrans,
+	.endtrans		= keyd_endtrans,
+	.fetch_key		= keyd_fetch_key,
+	.fetch_key_text		= keyd_fetch_key_text,
+	.store_key		= keyd_store_key,
+	.update_keys		= generic_update_keys,
+	.delete_key		= keyd_delete_key,
+	.getkeysigs		= generic_getkeysigs,
+	.cached_getkeysigs	= generic_cached_getkeysigs,
+	.keyid2uid		= generic_keyid2uid,
+	.getfullkeyid		= keyd_getfullkeyid,
+	.iterate_keys		= keyd_iterate_keys,
+};

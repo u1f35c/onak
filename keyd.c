@@ -137,6 +137,7 @@ int sock_do(int fd)
 				logthing(LOGTHING_INFO,
 						"Fetching 0x%llX, result: %d",
 						keyid,
+						config.dbbackend->
 						fetch_key(keyid, &key, false));
 				if (key != NULL) {
 					storebuf.size = 8192;
@@ -184,6 +185,7 @@ int sock_do(int fd)
 				logthing(LOGTHING_INFO,
 						"Fetching %s, result: %d",
 						search,
+						config.dbbackend->
 						fetch_key_text(search, &key));
 				if (key != NULL) {
 					storebuf.size = 8192;
@@ -244,7 +246,7 @@ int sock_do(int fd)
 						&packets,
 						0);
 				parse_keys(packets, &key);
-				store_key(key, false, false);
+				config.dbbackend->store_key(key, false, false);
 				free_packet_list(packets);
 				packets = NULL;
 				free_publickey(key);
@@ -265,7 +267,8 @@ int sock_do(int fd)
 				logthing(LOGTHING_INFO,
 						"Deleting 0x%llX, result: %d",
 						keyid,
-						delete_key(keyid, false));
+						config.dbbackend->delete_key(
+							keyid, false));
 			}
 			break;
 		case KEYD_CMD_GETFULLKEYID:
@@ -276,14 +279,15 @@ int sock_do(int fd)
 				ret = 1;
 			}
 			if (ret == 0) {
-				keyid = getfullkeyid(keyid);
+				keyid = config.dbbackend->getfullkeyid(keyid);
 				write(fd, &keyid, sizeof(keyid));
 			}
 			break;
 		case KEYD_CMD_KEYITER:
 			cmd = KEYD_REPLY_OK;
 			write(fd, &cmd, sizeof(cmd));
-			iterate_keys(iteratefunc, (void *) fd);
+			config.dbbackend->iterate_keys(iteratefunc,
+					(void *) fd);
 			bytes = 0;
 			write(fd, &bytes, sizeof(bytes));
 			break;
@@ -348,7 +352,7 @@ int main(int argc, char *argv[])
 		FD_ZERO(&rfds);
 		FD_SET(fd, &rfds);
 
-		initdb(false);
+		config.dbbackend->initdb(false);
 
 		logthing(LOGTHING_NOTICE, "Accepting connections.");
 		while (!cleanup() && select(fd + 1, &rfds, NULL, NULL, NULL) != -1) {
@@ -356,7 +360,7 @@ int main(int argc, char *argv[])
 			sock_accept(fd);
 			FD_SET(fd, &rfds);
 		}
-		cleanupdb();
+		config.dbbackend->cleanupdb();
 		sock_close(fd);
 		unlink(sockname);
 	}

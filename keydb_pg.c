@@ -56,7 +56,7 @@ static int keydb_putchar(void *fd, size_t count, unsigned char *c)
  *	this file are called in order to allow the DB to be initialized ready
  *	for access.
  */
-void initdb(bool readonly)
+static void pg_initdb(bool readonly)
 {
 	dbconn = PQsetdbLogin(config.pg_dbhost, // host
 			NULL, // port
@@ -81,7 +81,7 @@ void initdb(bool readonly)
  *	This function should be called upon program exit to allow the DB to
  *	cleanup after itself.
  */
-void cleanupdb(void)
+static void pg_cleanupdb(void)
 {
 	PQfinish(dbconn);
 	dbconn = NULL;
@@ -94,7 +94,7 @@ void cleanupdb(void)
  *	operations on the database to help speed it all up, or if we want
  *	something to only succeed if all relevant operations are successful.
  */
-bool starttrans(void)
+static bool pg_starttrans(void)
 {
 	PGresult *result = NULL;
 	
@@ -109,7 +109,7 @@ bool starttrans(void)
  *
  *	Ends a transaction.
  */
-void endtrans(void)
+static void pg_endtrans(void)
 {
 	PGresult *result = NULL;
 
@@ -131,7 +131,7 @@ void endtrans(void)
  *	in and then parse_keys() to parse the packets into a publickey
  *	structure.
  */
-int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
+static int pg_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 		bool intrans)
 {
 	struct openpgp_packet_list *packets = NULL;
@@ -200,7 +200,8 @@ int fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
  *	This function searches for the supplied text and returns the keys that
  *	contain it.
  */
-int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
+static int pg_fetch_key_text(const char *search,
+		struct openpgp_publickey **publickey)
 {
 	struct openpgp_packet_list *packets = NULL;
 	PGresult *result = NULL;
@@ -270,7 +271,8 @@ int fetch_key_text(const char *search, struct openpgp_publickey **publickey)
  *	the file. If update is true then we delete the old key first, otherwise
  *	we trust that it doesn't exist.
  */
-int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
+static int pg_store_key(struct openpgp_publickey *publickey, bool intrans,
+		bool update)
 {
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_packet_list *list_end = NULL;
@@ -299,7 +301,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
 	 * it definitely needs updated.
 	 */
 	if (update) {
-		delete_key(get_keyid(publickey), true);
+		pg_delete_key(get_keyid(publickey), true);
 	}
 
 	next = publickey->next;
@@ -401,7 +403,7 @@ int store_key(struct openpgp_publickey *publickey, bool intrans, bool update)
  *	This function deletes a public key from whatever storage mechanism we
  *	are using. Returns 0 if the key existed.
  */
-int delete_key(uint64_t keyid, bool intrans)
+static int pg_delete_key(uint64_t keyid, bool intrans)
 {
 	PGresult *result = NULL;
 	char *oids = NULL;
@@ -466,7 +468,7 @@ int delete_key(uint64_t keyid, bool intrans)
  *	keyid2uid - Takes a keyid and returns the primary UID for it.
  *	@keyid: The keyid to lookup.
  */
-char *keyid2uid(uint64_t keyid)
+static char *pg_keyid2uid(uint64_t keyid)
 {
 	PGresult *result = NULL;
 	char statement[1024];
@@ -506,7 +508,7 @@ char *keyid2uid(uint64_t keyid)
  *	This function gets the list of signatures on a key. Used for key 
  *	indexing and doing stats bits.
  */
-struct ll *getkeysigs(uint64_t keyid, bool *revoked)
+static struct ll *pg_getkeysigs(uint64_t keyid, bool *revoked)
 {
 	struct ll *sigs = NULL;
 	PGresult *result = NULL;
@@ -578,8 +580,8 @@ struct ll *getkeysigs(uint64_t keyid, bool *revoked)
  *
  *	Returns the number of keys we iterated over.
  */
-int iterate_keys(void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
-		void *ctx)
+static int pg_iterate_keys(void (*iterfunc)(void *ctx,
+		struct openpgp_publickey *key),	void *ctx)
 {
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_publickey *key = NULL;
@@ -632,3 +634,20 @@ int iterate_keys(void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
 #define NEED_GETFULLKEYID 1
 #define NEED_UPDATEKEYS 1
 #include "keydb.c"
+
+struct dbfuncs keydb_pg_funcs = {
+	.initdb			= pg_initdb,
+	.cleanupdb		= pg_cleanupdb,
+	.starttrans		= pg_starttrans,
+	.endtrans		= pg_endtrans,
+	.fetch_key		= pg_fetch_key,
+	.fetch_key_text		= pg_fetch_key_text,
+	.store_key		= pg_store_key,
+	.update_keys		= generic_update_keys,
+	.delete_key		= pg_delete_key,
+	.getkeysigs		= pg_getkeysigs,
+	.cached_getkeysigs	= generic_cached_getkeysigs,
+	.keyid2uid		= pg_keyid2uid,
+	.getfullkeyid		= generic_getfullkeyid,
+	.iterate_keys		= pg_iterate_keys,
+};

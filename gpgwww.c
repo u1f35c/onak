@@ -61,14 +61,14 @@ int getkeyspath(uint64_t have, uint64_t want, int count)
 	int rec;
 	int pathlen = 0;
 
-	fullhave = getfullkeyid(have);
-	fullwant = getfullkeyid(want);
+	fullhave = config.dbbackend->getfullkeyid(have);
+	fullwant = config.dbbackend->getfullkeyid(want);
 
 	/*
 	 * Make sure the keys we have and want are in the cache.
 	 */
-	cached_getkeysigs(fullhave);
-	cached_getkeysigs(fullwant);
+	config.dbbackend->cached_getkeysigs(fullhave);
+	config.dbbackend->cached_getkeysigs(fullwant);
 
 	if ((keyinfoa = findinhash(fullhave)) == NULL) {
 		return 1;
@@ -93,9 +93,10 @@ int getkeyspath(uint64_t have, uint64_t want, int count)
 			 */
 			curkey = findinhash(keyinfoa->parent);
 			while (curkey != NULL && curkey->keyid != 0) {
-	    			if (curkey->keyid != fullwant && fetch_key(
+	    			if (curkey->keyid != fullwant &&
+						config.dbbackend->fetch_key(
 						curkey->keyid,
-							&publickey, false)) {
+						&publickey, false)) {
 	      				flatten_publickey(publickey,
 							&packets,
 							&list_end);
@@ -114,7 +115,7 @@ int getkeyspath(uint64_t have, uint64_t want, int count)
 	/*
 	 * Add the destination key to the list of returned keys.
 	 */
-	if (fetch_key(fullwant, &publickey, false)) {
+	if (config.dbbackend->fetch_key(fullwant, &publickey, false)) {
 		flatten_publickey(publickey,
 				&packets,
 				&list_end);
@@ -168,7 +169,7 @@ int main(int argc, char *argv[])
 	readconfig(NULL);
 	initlogthing("gpgwww", config.logfile);
 	catchsignals();
-	initdb(true);
+	config.dbbackend->initdb(true);
 	inithash();
 	logthing(LOGTHING_NOTICE, "Looking for path from 0x%llX to 0x%llX.",
 			from,
@@ -179,7 +180,7 @@ int main(int argc, char *argv[])
 		dofindpath(from, to, true, 3);
 	}
 	destroyhash();
-	cleanupdb();
+	config.dbbackend->cleanupdb();
 	cleanuplogthing();
 	cleanupconfig();
 

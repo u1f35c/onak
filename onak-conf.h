@@ -9,6 +9,8 @@
 #ifndef __ONAK_CONF_H_
 #define __ONAK_CONF_H_
 
+#include "keydb.h"
+
 /*
  *	struct onak_config - Runtime configuration for onak.
  *	@maxkeys: The maximum number of keys a query should return.
@@ -57,6 +59,8 @@ struct onak_config {
 	 */
 	char *db_backend;
 	char *backends_dir;
+
+	struct dbfuncs *dbbackend;
 };
 
 /*

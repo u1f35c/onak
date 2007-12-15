@@ -31,7 +31,7 @@ void findmaxpath(unsigned long max)
 	 * My (noodles@earth.li, DSA) key is in the strongly connected set of
 	 * keys, so we use it as a suitable starting seed.
 	 */
-	cached_getkeysigs(0xF1BD4BE45B430367);
+	config.dbbackend->cached_getkeysigs(0xF1BD4BE45B430367);
 
 	/*
 	 * Loop through the hash examining each key present and finding the
@@ -42,7 +42,8 @@ void findmaxpath(unsigned long max)
 	for (loop = 0; (loop < HASHSIZE) && (distance < max); loop++) {
 		curkey = gethashtableentry(loop);
 		while (curkey != NULL && distance < max) {
-			cached_getkeysigs(((struct stats_key *)
+			config.dbbackend->cached_getkeysigs(
+					((struct stats_key *)
 					curkey->object)->keyid);
 			initcolour(false);
 			tmp = furthestkey((struct stats_key *)
@@ -72,13 +73,13 @@ int main(int argc, char *argv[])
 {
 	readconfig(NULL);
 	initlogthing("maxpath", config.logfile);
-	initdb(true);
+	config.dbbackend->initdb(true);
 	inithash();
 	findmaxpath(30);
 	printf("--------\n");
 	findmaxpath(30);
 	destroyhash();
-	cleanupdb();
+	config.dbbackend->cleanupdb();
 	cleanuplogthing();
 	cleanupconfig();
 	

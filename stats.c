@@ -14,6 +14,7 @@
 #include "hash.h"
 #include "keydb.h"
 #include "ll.h"
+#include "onak-conf.h"
 #include "stats.h"
 
 /**
@@ -68,7 +69,7 @@ unsigned long findpath(struct stats_key *have, struct stats_key *want)
 	oldkeys = keys;
 
 	while ((!cleanup()) && keys != NULL && have->colour == 0) {
-		sigs = cached_getkeysigs(((struct stats_key *)
+		sigs = config.dbbackend->cached_getkeysigs(((struct stats_key *)
 					keys->object)->keyid);
 		while ((!cleanup()) && sigs != NULL && have->colour == 0) {
 			/*
@@ -128,14 +129,14 @@ void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 	int pathnum;
 	char *uid;
 
-	fullhave = getfullkeyid(have);
-	fullwant = getfullkeyid(want);
+	fullhave = config.dbbackend->getfullkeyid(have);
+	fullwant = config.dbbackend->getfullkeyid(want);
 
 	/*
 	 * Make sure the keys we have and want are in the cache.
 	 */
-	(void) cached_getkeysigs(fullhave);
-	(void) cached_getkeysigs(fullwant);
+	(void) config.dbbackend->cached_getkeysigs(fullhave);
+	(void) config.dbbackend->cached_getkeysigs(fullwant);
 
 	if ((keyinfoa = findinhash(fullhave)) == NULL) {
 		printf("Couldn't find key 0x%llX.\n", have);
@@ -180,7 +181,8 @@ void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 				html ? "<BR>" : "");
 			curkey = keyinfoa;
 			while (curkey != NULL && curkey->keyid != 0) {
-				uid = keyid2uid(curkey->keyid);
+				uid = config.dbbackend->keyid2uid(
+						curkey->keyid);
 				if (html && uid == NULL) {
 					printf("<a href=\"lookup?op=get&search="
 						"0x%08llX\">0x%08llX</a> (["
@@ -256,7 +258,7 @@ struct stats_key *furthestkey(struct stats_key *have)
 	curll = lladd(NULL, have);
 
 	while (curll != NULL) {
-		sigs = cached_getkeysigs(((struct stats_key *)
+		sigs = config.dbbackend->cached_getkeysigs(((struct stats_key *)
 				curll->object)->keyid);
 		while (sigs != NULL) {
 			if (((struct stats_key *) sigs->object)->colour == 0) {
