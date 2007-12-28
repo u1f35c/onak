@@ -9,7 +9,7 @@ Standards-Version: 3.7.3.0
 Package: onak
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
-Recommends: apache | httpd
+Recommends: apache2 | httpd
 Suggests: db4.2-util
 Description: OpenPGP Key Server
  onak is an OpenPGP compatible keyserver which supports multiple subkeys,
