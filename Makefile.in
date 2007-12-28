@@ -53,10 +53,12 @@ install: $(PROGS) onak.conf $(BACKENDS)
 	install -d $(DESTDIR)/@libdir@/onak/backends
 	install -d $(DESTDIR)/@localstatedir@/lib/onak
 	install -d $(DESTDIR)/@mandir@/man1
+	install -d $(DESTDIR)/@mandir@/man8
 	install -d $(DESTDIR)/@sysconfdir@
 	install onak-mail.pl $(DESTDIR)/@libdir@/onak
 	install onak splitkeys $(DESTDIR)/@bindir@
 	install onak.1 splitkeys.1 $(DESTDIR)/@mandir@/man1
+	install keyd.8 onak-mail.pl.8 $(DESTDIR)/@mandir@/man8
 ifeq (x@DBTYPE@, xdynamic)
 	install $(BACKENDS) $(DESTDIR)/@libdir@/onak/backends
 	install -d $(DESTDIR)/@sbindir@

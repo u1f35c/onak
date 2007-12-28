@@ -1,0 +1,29 @@
+.TH KEYD 8
+.SH NAME
+keyd \- Backend key serving daemon for the onak PGP keyserver 
+.SH SYNOPSIS
+.PP
+.B keyd
+.SH DESCRIPTION
+.PP
+keyd is a backend daemon for the onak PGP keyserver. It listens on a Unix
+socket for connections from the various CGI and mail front ends and
+handles talking to the backend database. It is intended to be of use in
+high load keyservers to reduce the time spent in connecting and
+disconnecting from the key database.
+.PP
+keyd is currently fairly alpha code; it is only recommended that you use
+it if you know what you are doing.
+.SH FILES
+.br
+.nf
+.\" set tabstop to longest possible filename, plus a wee bit
+.ta \w'/usr/lib/perl/getopts.pl   'u
+\fI/etc/onak.conf\fR	default configuration file
+.SH NOTES
+This man page could probably do with some more details.
+.SH "SEE ALSO"
+.BR onak (1)
+.SH AUTHOR
+onak was written by Jonathan McDowell <noodles@earth.li>. It can be found at
+http://www.earth.li/projectpurple/progs/onak.html
