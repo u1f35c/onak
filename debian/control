@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Jonathan McDowell <noodles@earth.li>
 Uploaders: Ross Burton <ross@debian.org>
 Build-Depends: debhelper (>= 4.1.0), cdbs, libdb4.2-dev
-Standards-Version: 3.6.1
+Standards-Version: 3.7.3.0
 
 Package: onak
 Architecture: any

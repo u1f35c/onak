@@ -5,6 +5,7 @@ onak (0.3.3+arch-1) unstable; urgency=low
     * Add #DEBHELPER# tokens to postinst/postrm.
     * Update FSF address in copyright file.
     * Remove bashism from postrm.
+    * Update Standards-Version to 3.7.3.0 (no changes)
 
  -- Jonathan McDowell <noodles@earth.li>  Sun, 04 Mar 2007 23:16:51 +0000
 
