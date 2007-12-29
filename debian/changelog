@@ -1,6 +1,7 @@
-onak (0.3.3+arch-1) unstable; urgency=low
+onak (0.3.4) unstable; urgency=low
 
-  * Tag as arch version.
+  * New upstream release
+    * Fix config passing to backends (Closes: #413762)
   * Lintian cleanups
     * Add #DEBHELPER# tokens to postinst/postrm.
     * Update FSF address in copyright file.
@@ -8,7 +9,7 @@ onak (0.3.3+arch-1) unstable; urgency=low
     * Update Standards-Version to 3.7.3.0 (no changes)
   * Update Apache recommendation to Apache2
 
- -- Jonathan McDowell <noodles@earth.li>  Sun, 04 Mar 2007 23:16:51 +0000
+ -- Jonathan McDowell <noodles@earth.li>  Sat, 29 Dec 2007 10:50:33 +0000
 
 onak (0.3.3-1) unstable; urgency=low
 

@@ -203,3 +203,9 @@
 * Fix assumption that a signature on a public key is a revocation.
 * Document test keys.
 * Check signature time as well as keyid for key merges.
+
+0.3.4 - 29th December 2007
+
+* Fix dynamic backends bug involving passing the config to the backend.
+* Add an install target to the Makefile.
+* Add a man page for keyd. 
