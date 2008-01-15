@@ -123,6 +123,39 @@ static void db4_endtrans(void)
 }
 
 /**
+ *	cleanupdb - De-initialize the key database.
+ *
+ *	This function should be called upon program exit to allow the DB to
+ *	cleanup after itself.
+ */
+static void db4_cleanupdb(void)
+{
+	int i = 0;
+
+	if (dbenv != NULL) {
+		dbenv->txn_checkpoint(dbenv, 0, 0, 0);
+		if (id32db != NULL) {
+			id32db->close(id32db, 0);
+			id32db = NULL;
+		}
+		if (worddb != NULL) {
+			worddb->close(worddb, 0);
+			worddb = NULL;
+		}
+		for (i = 0; i < numdbs; i++) {
+			if (dbconns[i] != NULL) {
+				dbconns[i]->close(dbconns[i], 0);
+				dbconns[i] = NULL;
+			}
+		}
+		free(dbconns);
+		dbconns = NULL;
+		dbenv->close(dbenv, 0);
+		dbenv = NULL;
+	}
+}
+
+/**
  *	initdb - Initialize the key database.
  *
  *	This function should be called before any of the other functions in
@@ -290,46 +323,13 @@ static void db4_initdb(bool readonly)
 	}
 
 	if (ret != 0) {
-		cleanupdb();
+		db4_cleanupdb();
 		logthing(LOGTHING_CRITICAL,
 				"Error opening database; exiting");
 		exit(EXIT_FAILURE);
 	}
 	
 	return;
-}
-
-/**
- *	cleanupdb - De-initialize the key database.
- *
- *	This function should be called upon program exit to allow the DB to
- *	cleanup after itself.
- */
-static void db4_cleanupdb(void)
-{
-	int i = 0;
-
-	if (dbenv != NULL) {
-		dbenv->txn_checkpoint(dbenv, 0, 0, 0);
-		if (id32db != NULL) {
-			id32db->close(id32db, 0);
-			id32db = NULL;
-		}
-		if (worddb != NULL) {
-			worddb->close(worddb, 0);
-			worddb = NULL;
-		}
-		for (i = 0; i < numdbs; i++) {
-			if (dbconns[i] != NULL) {
-				dbconns[i]->close(dbconns[i], 0);
-				dbconns[i] = NULL;
-			}
-		}
-		free(dbconns);
-		dbconns = NULL;
-		dbenv->close(dbenv, 0);
-		dbenv = NULL;
-	}
 }
 
 /**
@@ -1067,3 +1067,20 @@ static uint64_t db4_getfullkeyid(uint64_t keyid)
 #define NEED_KEYID2UID 1
 #define NEED_UPDATEKEYS 1
 #include "keydb.c"
+
+struct dbfuncs keydb_db4_funcs = {
+	.initdb			= db4_initdb,
+	.cleanupdb		= db4_cleanupdb,
+	.starttrans		= db4_starttrans,
+	.endtrans		= db4_endtrans,
+	.fetch_key		= db4_fetch_key,
+	.fetch_key_text		= db4_fetch_key_text,
+	.store_key		= db4_store_key,
+	.update_keys		= generic_update_keys,
+	.delete_key		= db4_delete_key,
+	.getkeysigs		= generic_getkeysigs,
+	.cached_getkeysigs	= generic_cached_getkeysigs,
+	.keyid2uid		= generic_keyid2uid,
+	.getfullkeyid		= db4_getfullkeyid,
+	.iterate_keys		= db4_iterate_keys,
+};
