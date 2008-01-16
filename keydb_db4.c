@@ -333,6 +333,55 @@ static void db4_initdb(bool readonly)
 }
 
 /**
+ *	getfullkeyid - Maps a 32bit key id to a 64bit one.
+ *	@keyid: The 32bit keyid.
+ *
+ *	This function maps a 32bit key id to the full 64bit one. It returns the
+ *	full keyid. If the key isn't found a keyid of 0 is returned.
+ */
+static uint64_t db4_getfullkeyid(uint64_t keyid)
+{
+	DBT       key, data;
+	DBC      *cursor = NULL;
+	uint32_t  shortkeyid = 0;
+	int       ret = 0;
+
+	if (keyid < 0x100000000LL) {
+		ret = id32db->cursor(id32db,
+				txn,
+				&cursor,
+				0);   /* flags */
+
+		shortkeyid = keyid & 0xFFFFFFFF;
+
+		memset(&key, 0, sizeof(key));
+		memset(&data, 0, sizeof(data));
+		key.data = &shortkeyid;
+		key.size = sizeof(shortkeyid);
+		data.flags = DB_DBT_MALLOC;
+
+		ret = cursor->c_get(cursor,
+			&key,
+			&data,
+			DB_SET);
+
+		if (ret == 0) {
+			keyid = *(uint64_t *) data.data;
+
+			if (data.data != NULL) {
+				free(data.data);
+				data.data = NULL;
+			}
+		}
+
+		ret = cursor->c_close(cursor);
+		cursor = NULL;
+	}
+	
+	return keyid;
+}
+
+/**
  *	fetch_key - Given a keyid fetch the key from storage.
  *	@keyid: The keyid to fetch.
  *	@publickey: A pointer to a structure to return the key in.
@@ -354,7 +403,7 @@ static int db4_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 	struct buffer_ctx fetchbuf;
 
 	if (keyid < 0x100000000LL) {
-		keyid = getfullkeyid(keyid);
+		keyid = db4_getfullkeyid(keyid);
 	}
 
 	memset(&key, 0, sizeof(key));
@@ -1009,55 +1058,6 @@ static int db4_iterate_keys(void (*iterfunc)(void *ctx,
 	}
 	
 	return numkeys;
-}
-
-/**
- *	getfullkeyid - Maps a 32bit key id to a 64bit one.
- *	@keyid: The 32bit keyid.
- *
- *	This function maps a 32bit key id to the full 64bit one. It returns the
- *	full keyid. If the key isn't found a keyid of 0 is returned.
- */
-static uint64_t db4_getfullkeyid(uint64_t keyid)
-{
-	DBT       key, data;
-	DBC      *cursor = NULL;
-	uint32_t  shortkeyid = 0;
-	int       ret = 0;
-
-	if (keyid < 0x100000000LL) {
-		ret = id32db->cursor(id32db,
-				txn,
-				&cursor,
-				0);   /* flags */
-
-		shortkeyid = keyid & 0xFFFFFFFF;
-
-		memset(&key, 0, sizeof(key));
-		memset(&data, 0, sizeof(data));
-		key.data = &shortkeyid;
-		key.size = sizeof(shortkeyid);
-		data.flags = DB_DBT_MALLOC;
-
-		ret = cursor->c_get(cursor,
-			&key,
-			&data,
-			DB_SET);
-
-		if (ret == 0) {
-			keyid = *(uint64_t *) data.data;
-
-			if (data.data != NULL) {
-				free(data.data);
-				data.data = NULL;
-			}
-		}
-
-		ret = cursor->c_close(cursor);
-		cursor = NULL;
-	}
-	
-	return keyid;
 }
 
 /*
