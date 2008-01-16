@@ -319,7 +319,7 @@ static void db4_initdb(bool readonly)
 	}
 
 	if (txn != NULL) {
-		endtrans();
+		db4_endtrans();
 	}
 
 	if (ret != 0) {
@@ -393,7 +393,7 @@ static int db4_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 	}
 
 	if (!intrans) {
-		endtrans();
+		db4_endtrans();
 	}
 
 	return (numkeys);
@@ -481,14 +481,14 @@ static int db4_fetch_key_text(const char *search,
 		}
 		ret = cursor->c_close(cursor);
 		cursor = NULL;
-		endtrans();
+		db4_endtrans();
 	}
 	llfree(wordlist, NULL);
 	wordlist = NULL;
 	
 	db4_starttrans();
 	for (i = 0; i < keylist.count; i++) {
-		numkeys += fetch_key(keylist.keys[i],
+		numkeys += db4_fetch_key(keylist.keys[i],
 			publickey,
 			true);
 	}
@@ -496,241 +496,9 @@ static int db4_fetch_key_text(const char *search,
 	free(searchtext);
 	searchtext = NULL;
 
-	endtrans();
+	db4_endtrans();
 	
 	return (numkeys);
-}
-
-/**
- *	store_key - Takes a key and stores it.
- *	@publickey: A pointer to the public key to store.
- *	@intrans: If we're already in a transaction.
- *	@update: If true the key exists and should be updated.
- *
- *	Again we just use the hex representation of the keyid as the filename
- *	to store the key to. We flatten the public key to a list of OpenPGP
- *	packets and then use write_openpgp_stream() to write the stream out to
- *	the file. If update is true then we delete the old key first, otherwise
- *	we trust that it doesn't exist.
- */
-static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
-		bool update)
-{
-	struct     openpgp_packet_list *packets = NULL;
-	struct     openpgp_packet_list *list_end = NULL;
-	struct     openpgp_publickey *next = NULL;
-	int        ret = 0;
-	int        i = 0;
-	struct     buffer_ctx storebuf;
-	DBT        key;
-	DBT        data;
-	uint64_t   keyid = 0;
-	uint32_t   shortkeyid = 0;
-	uint64_t  *subkeyids = NULL;
-	char     **uids = NULL;
-	char      *primary = NULL;
-	unsigned char worddb_data[12];
-	struct ll *wordlist = NULL;
-	struct ll *curword  = NULL;
-	bool       deadlock = false;
-
-	keyid = get_keyid(publickey);
-
-	if (!intrans) {
-		db4_starttrans();
-	}
-
-	/*
-	 * Delete the key if we already have it.
-	 *
-	 * TODO: Can we optimize this perhaps? Possibly when other data is
-	 * involved as well? I suspect this is easiest and doesn't make a lot
-	 * of difference though - the largest chunk of data is the keydata and
-	 * it definitely needs updated.
-	 */
-	if (update) {
-		deadlock = (delete_key(keyid, true) == -1);
-	}
-
-	/*
-	 * Convert the key to a flat set of binary data.
-	 */
-	if (!deadlock) {
-		next = publickey->next;
-		publickey->next = NULL;
-		flatten_publickey(publickey, &packets, &list_end);
-		publickey->next = next;
-
-		storebuf.offset = 0; 
-		storebuf.size = 8192;
-		storebuf.buffer = malloc(8192);
-	
-		write_openpgp_stream(buffer_putchar, &storebuf, packets);
-
-		/*
-		 * Now we have the key data store it in the DB; the keyid is
-		 * the key.
-		 */
-		memset(&key, 0, sizeof(key));
-		memset(&data, 0, sizeof(data));
-		key.data = &keyid;
-		key.size = sizeof(keyid);
-		data.size = storebuf.offset;
-		data.data = storebuf.buffer;
-
-		ret = keydb(keyid)->put(keydb(keyid),
-				txn,
-				&key,
-				&data,
-				0); /* flags*/
-		if (ret != 0) {
-			logthing(LOGTHING_ERROR,
-					"Problem storing key: %s",
-					db_strerror(ret));
-			if (ret == DB_LOCK_DEADLOCK) {
-				deadlock = true;
-			}
-		}
-
-		free(storebuf.buffer);
-		storebuf.buffer = NULL;
-		storebuf.size = 0;
-		storebuf.offset = 0; 
-	
-		free_packet_list(packets);
-		packets = NULL;
-	}
-
-	/*
-	 * Walk through our uids storing the words into the db with the keyid.
-	 */
-	if (!deadlock) {
-		uids = keyuids(publickey, &primary);
-	}
-	if (uids != NULL) {
-		for (i = 0; ret == 0 && uids[i] != NULL; i++) {
-			wordlist = makewordlist(wordlist, uids[i]);
-		}
-
-		for (curword = wordlist; curword != NULL && !deadlock;
-				curword = curword->next) {
-			memset(&key, 0, sizeof(key));
-			memset(&data, 0, sizeof(data));
-			key.data = curword->object;
-			key.size = strlen(key.data);
-			data.data = worddb_data;
-			data.size = sizeof(worddb_data);
-
-			/*
-			 * Our data is the key creation time followed by the
-			 * key id.
-			 */
-			worddb_data[ 0] = publickey->publickey->data[1];
-			worddb_data[ 1] = publickey->publickey->data[2];
-			worddb_data[ 2] = publickey->publickey->data[3];
-			worddb_data[ 3] = publickey->publickey->data[4];
-			worddb_data[ 4] = (keyid >> 56) & 0xFF;
-			worddb_data[ 5] = (keyid >> 48) & 0xFF;
-			worddb_data[ 6] = (keyid >> 40) & 0xFF;
-			worddb_data[ 7] = (keyid >> 32) & 0xFF;
-			worddb_data[ 8] = (keyid >> 24) & 0xFF;
-			worddb_data[ 9] = (keyid >> 16) & 0xFF;
-			worddb_data[10] = (keyid >>  8) & 0xFF;
-			worddb_data[11] = keyid & 0xFF; 
-			ret = worddb->put(worddb,
-				txn,
-				&key,
-				&data,
-				0);
-			if (ret != 0) {
-				logthing(LOGTHING_ERROR,
-					"Problem storing word: %s",
-					db_strerror(ret));
-				if (ret == DB_LOCK_DEADLOCK) {
-					deadlock = true;
-				}
-			}
-		}
-
-		/*
-		 * Free our UID and word lists.
-		 */
-		llfree(wordlist, NULL);
-		for (i = 0; uids[i] != NULL; i++) {
-			free(uids[i]);
-			uids[i] = NULL;
-		}
-		free(uids);
-		uids = NULL;
-	}
-
-	/*
-	 * Write the truncated 32 bit keyid so we can lookup the full id for
-	 * queries.
-	 */
-	if (!deadlock) {
-		shortkeyid = keyid & 0xFFFFFFFF;
-
-		memset(&key, 0, sizeof(key));
-		memset(&data, 0, sizeof(data));
-		key.data = &shortkeyid;
-		key.size = sizeof(shortkeyid);
-		data.data = &keyid;
-		data.size = sizeof(keyid);
-
-		ret = id32db->put(id32db,
-			txn,
-			&key,
-			&data,
-			0);
-		if (ret != 0) {
-			logthing(LOGTHING_ERROR,
-				"Problem storing short keyid: %s",
-				db_strerror(ret));
-			if (ret == DB_LOCK_DEADLOCK) {
-				deadlock = true;
-			}
-		}
-	}
-
-	if (!deadlock) {
-		subkeyids = keysubkeys(publickey);
-		i = 0;
-		while (subkeyids != NULL && subkeyids[i] != 0) {
-			shortkeyid = subkeyids[i++] & 0xFFFFFFFF;
-
-			memset(&key, 0, sizeof(key));
-			memset(&data, 0, sizeof(data));
-			key.data = &shortkeyid;
-			key.size = sizeof(shortkeyid);
-			data.data = &keyid;
-			data.size = sizeof(keyid);
-
-			ret = id32db->put(id32db,
-				txn,
-				&key,
-				&data,
-				0);
-			if (ret != 0) {
-				logthing(LOGTHING_ERROR,
-					"Problem storing short keyid: %s",
-					db_strerror(ret));
-				if (ret == DB_LOCK_DEADLOCK) {
-					deadlock = true;
-				}
-			}
-		}
-		if (subkeyids != NULL) {
-			free(subkeyids);
-			subkeyids = NULL;
-		}
-	}
-
-	if (!intrans) {
-		endtrans();
-	}
-
-	return deadlock ? -1 : 0 ;
 }
 
 /**
@@ -761,7 +529,7 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 		db4_starttrans();
 	}
 
-	fetch_key(keyid, &publickey, true);
+	db4_fetch_key(keyid, &publickey, true);
 
 	/*
 	 * Walk through the uids removing the words from the worddb.
@@ -939,10 +707,242 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 	}
 
 	if (!intrans) {
-		endtrans();
+		db4_endtrans();
 	}
 
 	return deadlock ? (-1) : (ret == DB_NOTFOUND);
+}
+
+/**
+ *	store_key - Takes a key and stores it.
+ *	@publickey: A pointer to the public key to store.
+ *	@intrans: If we're already in a transaction.
+ *	@update: If true the key exists and should be updated.
+ *
+ *	Again we just use the hex representation of the keyid as the filename
+ *	to store the key to. We flatten the public key to a list of OpenPGP
+ *	packets and then use write_openpgp_stream() to write the stream out to
+ *	the file. If update is true then we delete the old key first, otherwise
+ *	we trust that it doesn't exist.
+ */
+static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
+		bool update)
+{
+	struct     openpgp_packet_list *packets = NULL;
+	struct     openpgp_packet_list *list_end = NULL;
+	struct     openpgp_publickey *next = NULL;
+	int        ret = 0;
+	int        i = 0;
+	struct     buffer_ctx storebuf;
+	DBT        key;
+	DBT        data;
+	uint64_t   keyid = 0;
+	uint32_t   shortkeyid = 0;
+	uint64_t  *subkeyids = NULL;
+	char     **uids = NULL;
+	char      *primary = NULL;
+	unsigned char worddb_data[12];
+	struct ll *wordlist = NULL;
+	struct ll *curword  = NULL;
+	bool       deadlock = false;
+
+	keyid = get_keyid(publickey);
+
+	if (!intrans) {
+		db4_starttrans();
+	}
+
+	/*
+	 * Delete the key if we already have it.
+	 *
+	 * TODO: Can we optimize this perhaps? Possibly when other data is
+	 * involved as well? I suspect this is easiest and doesn't make a lot
+	 * of difference though - the largest chunk of data is the keydata and
+	 * it definitely needs updated.
+	 */
+	if (update) {
+		deadlock = (db4_delete_key(keyid, true) == -1);
+	}
+
+	/*
+	 * Convert the key to a flat set of binary data.
+	 */
+	if (!deadlock) {
+		next = publickey->next;
+		publickey->next = NULL;
+		flatten_publickey(publickey, &packets, &list_end);
+		publickey->next = next;
+
+		storebuf.offset = 0; 
+		storebuf.size = 8192;
+		storebuf.buffer = malloc(8192);
+	
+		write_openpgp_stream(buffer_putchar, &storebuf, packets);
+
+		/*
+		 * Now we have the key data store it in the DB; the keyid is
+		 * the key.
+		 */
+		memset(&key, 0, sizeof(key));
+		memset(&data, 0, sizeof(data));
+		key.data = &keyid;
+		key.size = sizeof(keyid);
+		data.size = storebuf.offset;
+		data.data = storebuf.buffer;
+
+		ret = keydb(keyid)->put(keydb(keyid),
+				txn,
+				&key,
+				&data,
+				0); /* flags*/
+		if (ret != 0) {
+			logthing(LOGTHING_ERROR,
+					"Problem storing key: %s",
+					db_strerror(ret));
+			if (ret == DB_LOCK_DEADLOCK) {
+				deadlock = true;
+			}
+		}
+
+		free(storebuf.buffer);
+		storebuf.buffer = NULL;
+		storebuf.size = 0;
+		storebuf.offset = 0; 
+	
+		free_packet_list(packets);
+		packets = NULL;
+	}
+
+	/*
+	 * Walk through our uids storing the words into the db with the keyid.
+	 */
+	if (!deadlock) {
+		uids = keyuids(publickey, &primary);
+	}
+	if (uids != NULL) {
+		for (i = 0; ret == 0 && uids[i] != NULL; i++) {
+			wordlist = makewordlist(wordlist, uids[i]);
+		}
+
+		for (curword = wordlist; curword != NULL && !deadlock;
+				curword = curword->next) {
+			memset(&key, 0, sizeof(key));
+			memset(&data, 0, sizeof(data));
+			key.data = curword->object;
+			key.size = strlen(key.data);
+			data.data = worddb_data;
+			data.size = sizeof(worddb_data);
+
+			/*
+			 * Our data is the key creation time followed by the
+			 * key id.
+			 */
+			worddb_data[ 0] = publickey->publickey->data[1];
+			worddb_data[ 1] = publickey->publickey->data[2];
+			worddb_data[ 2] = publickey->publickey->data[3];
+			worddb_data[ 3] = publickey->publickey->data[4];
+			worddb_data[ 4] = (keyid >> 56) & 0xFF;
+			worddb_data[ 5] = (keyid >> 48) & 0xFF;
+			worddb_data[ 6] = (keyid >> 40) & 0xFF;
+			worddb_data[ 7] = (keyid >> 32) & 0xFF;
+			worddb_data[ 8] = (keyid >> 24) & 0xFF;
+			worddb_data[ 9] = (keyid >> 16) & 0xFF;
+			worddb_data[10] = (keyid >>  8) & 0xFF;
+			worddb_data[11] = keyid & 0xFF; 
+			ret = worddb->put(worddb,
+				txn,
+				&key,
+				&data,
+				0);
+			if (ret != 0) {
+				logthing(LOGTHING_ERROR,
+					"Problem storing word: %s",
+					db_strerror(ret));
+				if (ret == DB_LOCK_DEADLOCK) {
+					deadlock = true;
+				}
+			}
+		}
+
+		/*
+		 * Free our UID and word lists.
+		 */
+		llfree(wordlist, NULL);
+		for (i = 0; uids[i] != NULL; i++) {
+			free(uids[i]);
+			uids[i] = NULL;
+		}
+		free(uids);
+		uids = NULL;
+	}
+
+	/*
+	 * Write the truncated 32 bit keyid so we can lookup the full id for
+	 * queries.
+	 */
+	if (!deadlock) {
+		shortkeyid = keyid & 0xFFFFFFFF;
+
+		memset(&key, 0, sizeof(key));
+		memset(&data, 0, sizeof(data));
+		key.data = &shortkeyid;
+		key.size = sizeof(shortkeyid);
+		data.data = &keyid;
+		data.size = sizeof(keyid);
+
+		ret = id32db->put(id32db,
+			txn,
+			&key,
+			&data,
+			0);
+		if (ret != 0) {
+			logthing(LOGTHING_ERROR,
+				"Problem storing short keyid: %s",
+				db_strerror(ret));
+			if (ret == DB_LOCK_DEADLOCK) {
+				deadlock = true;
+			}
+		}
+	}
+
+	if (!deadlock) {
+		subkeyids = keysubkeys(publickey);
+		i = 0;
+		while (subkeyids != NULL && subkeyids[i] != 0) {
+			shortkeyid = subkeyids[i++] & 0xFFFFFFFF;
+
+			memset(&key, 0, sizeof(key));
+			memset(&data, 0, sizeof(data));
+			key.data = &shortkeyid;
+			key.size = sizeof(shortkeyid);
+			data.data = &keyid;
+			data.size = sizeof(keyid);
+
+			ret = id32db->put(id32db,
+				txn,
+				&key,
+				&data,
+				0);
+			if (ret != 0) {
+				logthing(LOGTHING_ERROR,
+					"Problem storing short keyid: %s",
+					db_strerror(ret));
+				if (ret == DB_LOCK_DEADLOCK) {
+					deadlock = true;
+				}
+			}
+		}
+		if (subkeyids != NULL) {
+			free(subkeyids);
+			subkeyids = NULL;
+		}
+	}
+
+	if (!intrans) {
+		db4_endtrans();
+	}
+
+	return deadlock ? -1 : 0 ;
 }
 
 /**

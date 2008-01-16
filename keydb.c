@@ -205,7 +205,8 @@ int generic_update_keys(struct openpgp_publickey **keys, bool sendsync)
 				prev = curkey;
 				logthing(LOGTHING_INFO,
 					"Merged key; storing updated key.");
-				store_key(oldkey, intrans, true);
+				config.dbbackend->store_key(oldkey, intrans,
+					true);
 			}
 			free_publickey(oldkey);
 			oldkey = NULL;
