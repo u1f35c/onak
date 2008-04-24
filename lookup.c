@@ -87,6 +87,7 @@ int main(int argc, char *argv[])
 	struct openpgp_publickey *publickey = NULL;
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_packet_list *list_end = NULL;
+	int result;
 
 	params = getcgivars(argc, argv);
 	for (i = 0; params != NULL && params[i] != NULL; i += 2) {
@@ -162,10 +163,21 @@ int main(int argc, char *argv[])
 		config.dbbackend->initdb(true);
 		switch (op) {
 		case OP_GET:
-			logthing(LOGTHING_NOTICE, "Getting keyid 0x%llX",
+			if (ishex) {
+				logthing(LOGTHING_NOTICE, 
+					"Getting keyid 0x%llX",
 					keyid);
-			if (config.dbbackend->fetch_key(keyid, &publickey,
-					false)) {
+				result = config.dbbackend->fetch_key(keyid,
+					&publickey, false);
+			} else {
+				logthing(LOGTHING_NOTICE, 
+					"Getting key(s) for search text %s",
+					search);
+				result = config.dbbackend->fetch_key_text(
+					search,
+					&publickey);
+			}
+			if (result) {
 				puts("<pre>");
 				cleankeys(publickey);
 				flatten_publickey(publickey,
