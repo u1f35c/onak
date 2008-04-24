@@ -66,7 +66,8 @@ int main(int argc, char *argv[])
 			count = parse_keys(packets, &keys);
 			logthing(LOGTHING_NOTICE, "Received %d keys.",
 				count);
-			printf("Storing %d keys.\n", count);
+			printf("Key block added to key server database.\n");
+			printf("  New public keys added: %d\n", count);
 			end_html();
 			if (stdout != NULL && fileno(stdout) != -1) {
 				fclose(stdout);
