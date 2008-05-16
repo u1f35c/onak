@@ -207,7 +207,8 @@ int main(int argc, char *argv[])
 				unsigned char *photo = NULL;
 				size_t         length = 0;
 
-				if (getphoto(publickey, 0, &photo, &length)) {
+				if (getphoto(publickey, indx, &photo,
+						&length)) {
 					fwrite(photo,
 							1,
 							length,
