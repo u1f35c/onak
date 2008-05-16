@@ -475,6 +475,7 @@ static int db4_fetch_key_text(const char *search,
 	struct ll *curword = NULL;
 	struct keyarray keylist = { NULL, 0, 0 };
 	struct keyarray newkeylist = { NULL, 0, 0 };
+	int firstpass = 1;
 
 	numkeys = 0;
 	searchtext = strdup(search);
@@ -507,8 +508,12 @@ static int db4_fetch_key_text(const char *search,
 						data.data)[i];
 			}
 
-			if (keylist.count == 0 ||
-					array_find(&keylist, keyid)) {
+			/*
+			 * Only add the keys containing this word if this is
+			 * our first pass (ie we have no existing key list),
+			 * or the key contained a previous word.
+			 */
+			if (firstpass || array_find(&keylist, keyid)) {
 				array_add(&newkeylist, keyid);
 			}
 
@@ -530,6 +535,7 @@ static int db4_fetch_key_text(const char *search,
 		}
 		ret = cursor->c_close(cursor);
 		cursor = NULL;
+		firstpass = 0;
 		db4_endtrans();
 	}
 	llfree(wordlist, NULL);
