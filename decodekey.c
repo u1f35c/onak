@@ -1,9 +1,7 @@
 /*
  * decodekey.c - Routines to further decode an OpenPGP key.
  *
- * Jonathan McDowell <noodles@earth.li>
- *
- * Copyright 2002 Project Purple
+ * Copyright 2002-2008 Jonathan McDowell <noodles@earth.li>
  */
 
 #include <stdbool.h>
@@ -75,6 +73,11 @@ int parse_subpackets(unsigned char *data, uint64_t *keyid, time_t *creation)
 			 * Signature expiration time. Might want to output this?
 			 */
 			break;
+		case 6:
+			/*
+			 * Regular expression for UIDs this sig is over.
+			 */
+			break;
 		case 16:
 			if (keyid != NULL) {
 				*keyid = data[offset+packetlen - 8];
@@ -108,6 +111,11 @@ int parse_subpackets(unsigned char *data, uint64_t *keyid, time_t *creation)
 		case 25:
 			/*
 			 * Primary UID.
+			 */
+			break;
+		case 26:
+			/*
+			 * Policy URI.
 			 */
 			break;
 		default:
