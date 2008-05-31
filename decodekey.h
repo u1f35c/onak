@@ -9,6 +9,8 @@
 #ifndef __DECODEKEY_H__
 #define __DECODEKEY_H__
 
+#include <inttypes.h>
+#include <time.h>
 #include "keystructs.h"
 #include "ll.h"
 
