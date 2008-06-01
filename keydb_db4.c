@@ -1,12 +1,11 @@
 /*
  * keydb_db4.c - Routines to store and fetch keys in a DB4 database.
  *
- * Jonathan McDowell <noodles@earth.li>
- *
- * Copyright 2002-2004 Project Purple
+ * Copyright 2002-2008 Jonathan McDowell <noodles@earth.li>
  */
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/uio.h>
 #include <ctype.h>
 #include <errno.h>
@@ -29,6 +28,8 @@
 #include "onak-conf.h"
 #include "parsekey.h"
 #include "wordlist.h"
+
+#define DB4_UPGRADE_FILE "db_upgrade.lck"
 
 /**
  *	dbenv - our database environment.
@@ -67,6 +68,28 @@ DB *keydb(uint64_t keyid)
 	keytrun = keyid >> 8;
 
 	return(dbconns[keytrun % numdbs]);
+}
+
+/**
+ *	db4_errfunc - Direct DB errors to logfile
+ *
+ *	Basic function to take errors from the DB library and output them to
+ *	the logfile rather than stderr.
+ */
+#if (DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR < 3)
+static void db4_errfunc(const char *errpfx, const char *errmsg)
+#else
+static void db4_errfunc(const DB_ENV *edbenv, const char *errpfx,
+		const char *errmsg)
+#endif
+{
+	if (errpfx) {
+		logthing(LOGTHING_DEBUG, "db4 error: %s:%s", errpfx, errmsg);
+	} else {
+		logthing(LOGTHING_DEBUG, "db4 error: %s", errmsg);
+	}
+
+	return;
 }
 
 /**
@@ -156,6 +179,90 @@ static void db4_cleanupdb(void)
 }
 
 /**
+ *	db4_upgradedb - Upgrade a DB4 database
+ *
+ *	Called if we discover we need to upgrade our DB4 database; ie if
+ *	we're running with a newer version of db4 than the database was
+ *	created with.
+ */
+static int db4_upgradedb(int numdb)
+{
+	DB *curdb = NULL;
+	int ret;
+	int i;
+	char buf[1024];
+	int lockfile_fd;
+	struct stat statbuf;
+
+	snprintf(buf, sizeof(buf) - 1, "%s/%s", config.db_dir,
+			DB4_UPGRADE_FILE);
+	lockfile_fd = open(buf, O_RDWR | O_CREAT | O_EXCL, 0600);
+	if (lockfile_fd < 0) {
+		if (errno == EEXIST) {
+			while (stat(buf, &statbuf) == 0) ;
+			return 0;
+		} else {
+			logthing(LOGTHING_CRITICAL, "Couldn't open database "
+				"update lock file: %s", strerror(errno));
+			return -1;
+		}
+	}
+	snprintf(buf, sizeof(buf) - 1, "%d", getpid());
+	write(lockfile_fd, buf, strlen(buf));
+	close(lockfile_fd);
+
+	logthing(LOGTHING_NOTICE, "Upgrading DB4 database");
+	ret = db_env_create(&dbenv, 0);
+	dbenv->set_errcall(dbenv, &db4_errfunc);
+	dbenv->remove(dbenv, config.db_dir, 0);
+	dbenv = NULL;
+	for (i = 0; i < numdb; i++) {
+		ret = db_create(&curdb, NULL, 0);
+		if (ret == 0) {
+			snprintf(buf, sizeof(buf) - 1, "%s/keydb.%d.db",
+				config.db_dir, i);
+			logthing(LOGTHING_DEBUG, "Upgrading %s", buf);
+			ret = curdb->upgrade(curdb, buf, 0);
+			curdb->close(curdb, 0);
+		} else {
+			logthing(LOGTHING_ERROR, "Error upgrading DB %s : %s",
+				buf,
+				db_strerror(ret));
+		}
+	}
+
+	ret = db_create(&curdb, NULL, 0);
+	if (ret == 0) {
+		snprintf(buf, sizeof(buf) - 1, "%s/worddb", config.db_dir);
+		logthing(LOGTHING_DEBUG, "Upgrading %s", buf);
+		ret = curdb->upgrade(curdb, buf, 0);
+		curdb->close(curdb, 0);
+	} else {
+		logthing(LOGTHING_ERROR, "Error upgrading DB %s : %s",
+			buf,
+			db_strerror(ret));
+	}
+
+	ret = db_create(&curdb, NULL, 0);
+	if (ret == 0) {
+		snprintf(buf, sizeof(buf) - 1, "%s/id32db", config.db_dir);
+		logthing(LOGTHING_DEBUG, "Upgrading %s", buf);
+		ret = curdb->upgrade(curdb, buf, 0);
+		curdb->close(curdb, 0);
+	} else {
+		logthing(LOGTHING_ERROR, "Error upgrading DB %s : %s",
+			buf,
+			db_strerror(ret));
+	}
+
+	snprintf(buf, sizeof(buf) - 1, "%s/%s", config.db_dir,
+			DB4_UPGRADE_FILE);
+	unlink(buf);
+
+	return ret;
+}
+
+/**
  *	initdb - Initialize the key database.
  *
  *	This function should be called before any of the other functions in
@@ -169,6 +276,22 @@ static void db4_initdb(bool readonly)
 	int        ret = 0;
 	int        i = 0;
 	u_int32_t  flags = 0;
+	struct stat statbuf;
+
+	snprintf(buf, sizeof(buf) - 1, "%s/%s", config.db_dir,
+			DB4_UPGRADE_FILE);
+	ret = stat(buf, &statbuf);
+	while ((ret == 0) || (errno != ENOENT)) {
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL, "Couldn't stat upgrade "
+				"lock file: %s (%d)", strerror(errno), ret);
+			exit(1);
+		}
+		logthing(LOGTHING_DEBUG, "DB4 upgrade in progress; waiting.");
+		sleep(5);
+		ret = stat(buf, &statbuf);
+	}
+	ret = 0;
 
 	snprintf(buf, sizeof(buf) - 1, "%s/num_keydb", config.db_dir);
 	numdb = fopen(buf, "r");
@@ -212,6 +335,7 @@ static void db4_initdb(bool readonly)
 	 * sure how to make the standard DB functions do that yet.
 	 */
 	if (ret == 0) {
+		dbenv->set_errcall(dbenv, &db4_errfunc);
 		ret = dbenv->set_lk_detect(dbenv, DB_LOCK_DEFAULT);
 		if (ret != 0) {
 			logthing(LOGTHING_CRITICAL,
@@ -225,6 +349,32 @@ static void db4_initdb(bool readonly)
 				DB_INIT_TXN |
 				DB_CREATE,
 				0);
+#ifdef DB_VERSION_MISMATCH
+		if (ret == DB_VERSION_MISMATCH) {
+			dbenv->close(dbenv, 0);
+			dbenv = NULL;
+			ret = db4_upgradedb(numdbs);
+			if (ret == 0) {
+				ret = db_env_create(&dbenv, 0);
+			}
+			if (ret == 0) {
+				dbenv->set_errcall(dbenv, &db4_errfunc);
+				dbenv->set_lk_detect(dbenv, DB_LOCK_DEFAULT);
+				ret = dbenv->open(dbenv, config.db_dir,
+					DB_INIT_LOG | DB_INIT_MPOOL |
+					DB_INIT_LOCK | DB_INIT_TXN |
+					DB_CREATE | DB_RECOVER,
+					0);
+
+				if (ret == 0) {
+					dbenv->txn_checkpoint(dbenv,
+							0,
+							0,
+							DB_FORCE);
+				}
+			}
+		}
+#endif
 		if (ret != 0) {
 			logthing(LOGTHING_CRITICAL,
 					"Error opening db environment: %s (%s)",
