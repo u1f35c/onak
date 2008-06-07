@@ -148,7 +148,7 @@ int parse_keys(struct openpgp_packet_list *packets,
  */
 int debug_packet(struct openpgp_packet *packet)
 {
-	printf("\tNew format: %d, Tag: %u, Length: %d\n",
+	printf("\tNew format: %d, Tag: %u, Length: %zd\n",
 			packet->newformat,
 			packet->tag,
 			packet->length);

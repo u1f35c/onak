@@ -52,8 +52,9 @@ void findmaxpath(unsigned long max)
 				from = (struct stats_key *)curkey->object;
 				to = tmp;
 				distance = to->colour;
-				printf("Current max path (#%ld) is from %llX"
-						" to %llX (%ld steps)\n", 
+				printf("Current max path (#%ld) is from %"
+						PRIx64 " to %" PRIx64 
+						" (%ld steps)\n", 
 						loop,
 						from->keyid,
 						to->keyid,
@@ -62,7 +63,7 @@ void findmaxpath(unsigned long max)
 			curkey=curkey->next;
 		}
 	}
-	printf("Max path is from %llX to %llX (%ld steps)\n",
+	printf("Max path is from %" PRIx64 " to %" PRIx64 " (%ld steps)\n",
 			from->keyid,
 			to->keyid,
 			distance);

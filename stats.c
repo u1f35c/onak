@@ -139,11 +139,11 @@ void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 	(void) config.dbbackend->cached_getkeysigs(fullwant);
 
 	if ((keyinfoa = findinhash(fullhave)) == NULL) {
-		printf("Couldn't find key 0x%llX.\n", have);
+		printf("Couldn't find key 0x%" PRIx64 ".\n", have);
 		return;
 	}
 	if ((keyinfob = findinhash(fullwant)) == NULL) {
-		printf("Couldn't find key 0x%llX.\n", want);
+		printf("Couldn't find key 0x%" PRIx64 ".\n", want);
 		return;
 	}
 
@@ -164,8 +164,8 @@ void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 			html ? "<BR>" : "");
 		if (keyinfoa->colour == 0) {
 			if (pathnum == 0) {
-				printf("Can't find a link from 0x%08llX to "
-				"0x%08llX%s\n",
+				printf("Can't find a link from 0x%08" PRIx64
+				" to 0x%08" PRIx64 "%s\n",
 				have,
 				want,
 				html ? "<BR>" : "");
@@ -175,7 +175,8 @@ void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 			}
 			pathnum = count;
 		} else {
-			printf("%d steps from 0x%08llX to 0x%08llX%s\n",
+			printf("%d steps from 0x%08" PRIx64 " to 0x%08" PRIx64
+				"%s\n",
 				keyinfoa->colour, have & 0xFFFFFFFF,
 				want & 0xFFFFFFFF,
 				html ? "<BR>" : "");
@@ -185,7 +186,8 @@ void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 						curkey->keyid);
 				if (html && uid == NULL) {
 					printf("<a href=\"lookup?op=get&search="
-						"0x%08llX\">0x%08llX</a> (["
+						"0x%08" PRIx64 "\">0x%08" PRIx64
+						"</a> (["
 						"User id not found])%s<BR>\n",
 						curkey->keyid & 0xFFFFFFFF,
 						curkey->keyid & 0xFFFFFFFF,
@@ -193,9 +195,11 @@ void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 							"" : " signs");
 				} else if (html && uid != NULL) {
 					printf("<a href=\"lookup?op=get&search="
-						"0x%08llX\">0x%08llX</a>"
+						"0x%08" PRIx64 "\">0x%08"
+						PRIx64 "</a>"
 						" (<a href=\"lookup?op=vindex&"
-						"search=0x%08llX\">%s</a>)%s"
+						"search=0x%08" PRIx64 
+						"\">%s</a>)%s"
 						"<BR>\n",
 						curkey->keyid & 0xFFFFFFFF,
 						curkey->keyid & 0xFFFFFFFF,
@@ -204,7 +208,7 @@ void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 						(curkey->keyid == fullwant) ?
 						"" : " signs");
 				} else {
-					printf("0x%08llX (%s)%s\n",
+					printf("0x%08" PRIx64 " (%s)%s\n",
 						curkey->keyid & 0xFFFFFFFF,
 						(uid == NULL) ?
 							"[User id not found]" :
@@ -228,7 +232,8 @@ void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 			}
 			curkey = keyinfoa;
 			while (curkey != NULL && curkey->keyid != 0) {
-				printf("0x%08llX ", curkey->keyid & 0xFFFFFFFF);
+				printf("0x%08" PRIx64 " ",
+						curkey->keyid & 0xFFFFFFFF);
 				curkey = findinhash(curkey->parent);
 			}
 			putchar('\n');
