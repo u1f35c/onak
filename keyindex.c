@@ -41,22 +41,22 @@ int list_sigs(struct openpgp_packet_list *sigs, bool html)
 		}
 		if (html && uid != NULL) {
 			printf("%s         <a href=\"lookup?op=get&"
-				"search=%016" PRIx64 "\">%08" PRIx64
+				"search=%016" PRIX64 "\">%08" PRIX64
 				"</a>             "
 				"<a href=\"lookup?op=vindex&search=0x%016"
-				PRIx64 "\">%s</a>\n",
+				PRIX64 "\">%s</a>\n",
 				sig,
 				sigid,
 				sigid & 0xFFFFFFFF,
 				sigid,
 				txt2html(uid));
 		} else if (html && uid == NULL) {
-			printf("%s         %08" PRIx64 "             "
+			printf("%s         %08" PRIX64 "             "
 				"[User id not found]\n",
 				sig,
 				sigid & 0xFFFFFFFF);
 		} else {
-			printf("%s         %08" PRIx64
+			printf("%s         %08" PRIX64
 				"             %s\n",
 				sig,
 				sigid & 0xFFFFFFFF,
@@ -90,7 +90,7 @@ int list_uids(uint64_t keyid, struct openpgp_signedpacket_list *uids,
 			printf("                                ");
 			if (html) {
 				printf("<img src=\"lookup?op=photo&search=0x%"
-					PRIx64 "&idx=%d\" alt=\"[photo id]\">"
+					PRIX64 "&idx=%d\" alt=\"[photo id]\">"
 					"\n",
 					keyid,
 					imgindx);
@@ -239,7 +239,7 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 
 		if (html) {
 			printf("pub  %5d%c/<a href=\"lookup?op=get&"
-				"search=%016" PRIx64 "\">%08" PRIx64
+				"search=%016" PRIX64 "\">%08" PRIX64
 				"</a> %04d/%02d/%02d ",
 				length,
 				(type == 1) ? 'R' : ((type == 16) ? 'g' : 
@@ -250,7 +250,7 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 				created->tm_mon + 1,
 				created->tm_mday);
 		} else {
-			printf("pub  %5d%c/%08" PRIx64 " %04d/%02d/%02d ",
+			printf("pub  %5d%c/%08" PRIX64 " %04d/%02d/%02d ",
 				length,
 				(type == 1) ? 'R' : ((type == 16) ? 'g' : 
 					((type == 17) ? 'D' : '?')),
@@ -267,7 +267,7 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 				curuid->packet->data);
 			if (html) {
 				printf("<a href=\"lookup?op=vindex&"
-					"search=0x%016" PRIx64 "\">",
+					"search=0x%016" PRIX64 "\">",
 					keyid);
 			}
 			printf("%s%s%s\n", 
@@ -332,7 +332,7 @@ int mrkey_index(struct openpgp_publickey *keys)
 		switch (keys->publickey->data[0]) {
 		case 2:
 		case 3:
-			printf("%016" PRIx64, get_keyid(keys));
+			printf("%016" PRIX64, get_keyid(keys));
 			type = keys->publickey->data[7];
 			length = (keys->publickey->data[8] << 8) +
 					keys->publickey->data[9];

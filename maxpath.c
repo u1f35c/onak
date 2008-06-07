@@ -53,7 +53,7 @@ void findmaxpath(unsigned long max)
 				to = tmp;
 				distance = to->colour;
 				printf("Current max path (#%ld) is from %"
-						PRIx64 " to %" PRIx64 
+						PRIX64 " to %" PRIX64 
 						" (%ld steps)\n", 
 						loop,
 						from->keyid,
@@ -63,7 +63,7 @@ void findmaxpath(unsigned long max)
 			curkey=curkey->next;
 		}
 	}
-	printf("Max path is from %" PRIx64 " to %" PRIx64 " (%ld steps)\n",
+	printf("Max path is from %" PRIX64 " to %" PRIX64 " (%ld steps)\n",
 			from->keyid,
 			to->keyid,
 			distance);

@@ -154,14 +154,14 @@ int main(int argc, char *argv[])
 	}
 
 	if (op != OP_GET) {
-		printf("<P>Looking for path from 0x%" PRIx64" to 0x%" PRIx64
+		printf("<P>Looking for path from 0x%" PRIX64" to 0x%" PRIX64
 				".\n",
 				from, to);
-		printf("<A HREF=\"gpgwww?from=0x%08" PRIx64 "&to=0x%08" PRIx64
+		printf("<A HREF=\"gpgwww?from=0x%08" PRIX64 "&to=0x%08" PRIX64
 				"\">Find reverse path</A>\n",
 				to,
 				from);
-		printf("<A HREF=\"gpgwww?from=0x%08" PRIx64 "&to=0x%08" PRIx64
+		printf("<A HREF=\"gpgwww?from=0x%08" PRIX64 "&to=0x%08" PRIX64
 				"&op=get\">"
 				"Get all keys listed</A></P>\n",
 				from,
@@ -173,8 +173,8 @@ int main(int argc, char *argv[])
 	catchsignals();
 	config.dbbackend->initdb(true);
 	inithash();
-	logthing(LOGTHING_NOTICE, "Looking for path from 0x%" PRIx64 " to 0x%"
-			PRIx64,
+	logthing(LOGTHING_NOTICE, "Looking for path from 0x%" PRIX64 " to 0x%"
+			PRIX64,
 			from,
 			to);
 	if (op == OP_GET) {
