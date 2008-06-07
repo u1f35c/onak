@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
@@ -32,7 +33,7 @@ void iteratefunc(void *ctx, struct openpgp_publickey *key)
 	struct openpgp_packet_list *list_end = NULL;
 	struct buffer_ctx           storebuf;
 	int                         ret = 0;
-	int                         fd = (int) ctx;
+	int                         *fd = (int *) ctx;
 
 	if (key != NULL) {
 		storebuf.offset = 0;
@@ -52,10 +53,10 @@ void iteratefunc(void *ctx, struct openpgp_publickey *key)
 		logthing(LOGTHING_TRACE,
 				"Sending %d bytes.",
 				storebuf.offset);
-		ret = write(fd, &storebuf.offset,
+		ret = write(*fd, &storebuf.offset,
 			sizeof(storebuf.offset));
 		if (ret != 0) {
-			write(fd, storebuf.buffer,
+			write(*fd, storebuf.buffer,
 				storebuf.offset);
 		}
 
@@ -287,7 +288,7 @@ int sock_do(int fd)
 			cmd = KEYD_REPLY_OK;
 			write(fd, &cmd, sizeof(cmd));
 			config.dbbackend->iterate_keys(iteratefunc,
-					(void *) fd);
+					&fd);
 			bytes = 0;
 			write(fd, &bytes, sizeof(bytes));
 			break;
