@@ -1,3 +1,11 @@
+onak (0.3.6-1) unstable; urgency=low
+
+  * New upstream release
+    * Fix lookup display for more than one photo id. (Closes: #467020)
+    * Build with libdb4.6 (Closes: #421951)
+
+ -- Jonathan McDowell <noodles@earth.li>  Sat, 07 Jun 2008 13:29:01 +0100
+
 onak (0.3.5-1) unstable; urgency=low
 
   * New upstream release

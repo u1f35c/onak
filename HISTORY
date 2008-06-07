@@ -214,3 +214,13 @@
 
 * Fix dumb mistake with db4 backend. Serves me right for testing with
   the file one.
+
+0.3.6 - 7th June 2008
+
+* Make key addition success text more like SKS/PKS. (Thanks to Timothy Legge)
+* Allow the use of search text for gets, rather than just keyids. ""
+* Fix fetching key by text bug in db4 backend (we'd fetch too many keys).
+* Fix lookup display for more than one photo id. (Thanks to Philippe Teuwen)
+* "Recognize" some extra critical subpacket types.
+* Add support for upgrading db4 DBs built with older DB4 version.
+* Various minor code cleanups.
