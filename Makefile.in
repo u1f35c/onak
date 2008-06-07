@@ -141,7 +141,7 @@ ifeq (x@KEYD@, xyes)
 endif
 
 distclean: clean
-	$(RM) -f Makefile .depend config.{log,status,h}
+	$(RM) -f Makefile .depend config.log config.status config.h
 	$(RM) -r autom4te.cache
 
 .depend: $(SRCS)
