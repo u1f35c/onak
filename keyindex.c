@@ -1,9 +1,7 @@
 /*
  * keyindex.c - Routines to list an OpenPGP key.
  *
- * Jonathan McDowell <noodles@earth.li>
- *
- * Copyright 2002-2005 Project Purple
+ * Copyright 2002-2008 Jonathan McDowell <noodles@earth.li>
  */
 
 #include <inttypes.h>
@@ -320,6 +318,7 @@ int mrkey_index(struct openpgp_publickey *keys)
 	int					 i = 0;
 	size_t					 fplength = 0;
 	unsigned char				 fp[20];
+	int					 c;
 
 	while (keys != NULL) {
 		created_time = (keys->publickey->data[1] << 24) +
@@ -363,9 +362,20 @@ int mrkey_index(struct openpgp_publickey *keys)
 			 curuid = curuid->next) {
 		
 			if (curuid->packet->tag == 13) {
-				printf("uid:%.*s\n",
-					(int) curuid->packet->length,
-					curuid->packet->data);
+				printf("uid:");
+				for (i = 0; i < (int) curuid->packet->length;
+						i++) {
+					c = curuid->packet->data[i];
+					if (c == '%') {
+						putchar('%');
+						putchar(c);
+					} else if (c == ':' || c > 127) {
+						printf("%%%X", c);
+					} else {
+						putchar(c);
+					}
+				}
+				printf("\n");
 			}
 		}
 		keys = keys->next;
