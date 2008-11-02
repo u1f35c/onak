@@ -201,6 +201,7 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 	struct tm				*created = NULL;
 	time_t					 created_time = 0;
 	int					 type = 0;
+	char					 typech;
 	int					 length = 0;
 	char					 buf[1024];
 	uint64_t				 keyid;
@@ -235,13 +236,30 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 		
 		keyid = get_keyid(keys);
 
+		switch (type) {
+		case 1:
+			typech = 'R';
+			break;
+		case 16:
+			typech = 'g';
+			break;
+		case 17:
+			typech = 'D';
+			break;
+		case 20:
+			typech = 'G';
+			break;
+		default:
+			typech = '?';
+			break;
+		}
+
 		if (html) {
 			printf("pub  %5d%c/<a href=\"lookup?op=get&"
 				"search=%016" PRIX64 "\">%08" PRIX64
 				"</a> %04d/%02d/%02d ",
 				length,
-				(type == 1) ? 'R' : ((type == 16) ? 'g' : 
-					((type == 17) ? 'D' : '?')),
+				typech,
 				keyid,
 				keyid & 0xFFFFFFFF,
 				created->tm_year + 1900,
@@ -250,8 +268,7 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 		} else {
 			printf("pub  %5d%c/%08" PRIX64 " %04d/%02d/%02d ",
 				length,
-				(type == 1) ? 'R' : ((type == 16) ? 'g' : 
-					((type == 17) ? 'D' : '?')),
+				typech,
 				keyid & 0xFFFFFFFF,
 				created->tm_year + 1900,
 				created->tm_mon + 1,
