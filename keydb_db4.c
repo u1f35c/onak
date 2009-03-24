@@ -314,7 +314,7 @@ static void db4_initdb(bool readonly)
 		}
 	}
 
-	dbconns = malloc(sizeof (DB *) * numdbs);
+	dbconns = calloc(numdbs, sizeof (DB *));
 	if (dbconns == NULL) {
 		logthing(LOGTHING_CRITICAL,
 				"Couldn't allocate memory for dbconns");
