@@ -322,9 +322,15 @@ int main(int argc, char *argv[])
 						&packets,
 						&list_end);
 				free_publickey(keys);
-				armor_openpgp_stream(stdout_putchar,
+				if (binary) {
+					write_openpgp_stream(stdout_putchar,
 						NULL,
 						packets);
+				} else {
+					armor_openpgp_stream(stdout_putchar,
+						NULL,
+						packets);
+				}
 				free_packet_list(packets);
 				packets = NULL;
 			} else {
