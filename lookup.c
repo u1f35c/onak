@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
 		readconfig(NULL);
 		initlogthing("lookup", config.logfile);
 		catchsignals();
-		config.dbbackend->initdb(true);
+		config.dbbackend->initdb(false);
 		switch (op) {
 		case OP_GET:
 			if (ishex) {
