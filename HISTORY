@@ -224,3 +224,11 @@
 * "Recognize" some extra critical subpacket types.
 * Add support for upgrading db4 DBs built with older DB4 version.
 * Various minor code cleanups.
+
+0.3.7 - 2nd June 2009
+
+* Escape colons and similar in MRHKP output. (Debian bug #487284)
+* Add support for displaying Elgamal encrypt or sign keys. (deprecated)
+* Ensure DB4 backend dbconns memory is initialised to zero.
+* Open DB read only for onak lookup function.
+* Obey binary flag for "onak get".

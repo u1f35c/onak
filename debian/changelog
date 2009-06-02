@@ -1,3 +1,11 @@
+onak (0.3.7-1) unstable; urgency=low
+
+  * New upstream release
+    * Fix escaping of : in HKP output. (Closes: #487284)
+    * Build with libdb4.7 (Closes: #520117)
+
+ -- Jonathan McDowell <noodles@earth.li>  Tue, 02 Jun 2009 15:51:09 +0100
+
 onak (0.3.6-1) unstable; urgency=low
 
   * New upstream release
