@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
 	} else if (!strcmp("dump", argv[optind])) {
 		config.dbbackend->initdb(true);
 		dumpstate.count = dumpstate.filenum = 0;
-		dumpstate.maxcount = 1000000;
+		dumpstate.maxcount = 100000;
 		dumpstate.fd = -1;
 		dumpstate.filebase = "keydump.%d.pgp";
 		config.dbbackend->iterate_keys(dump_func, &dumpstate);
