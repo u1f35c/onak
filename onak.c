@@ -74,7 +74,7 @@ void dump_func(void *ctx, struct openpgp_publickey *key)
 
 	state = (struct dump_ctx *) ctx;
 
-	if (state->fd == -1 || state->count > state->maxcount) {
+	if (state->fd == -1 || state->count++ > state->maxcount) {
 		if (state->fd != -1) {
 			close(state->fd);
 			state->fd = -1;
