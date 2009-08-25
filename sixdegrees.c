@@ -86,12 +86,13 @@ void sixdegrees(uint64_t keyid)
 	config.dbbackend->cached_getkeysigs(keyid);
 
 	if ((keyinfo = findinhash(keyid)) == NULL) {
-		printf("Couldn't find key 0x%" PRIX64 ".\n", keyid);
+		printf("Couldn't find key 0x%016" PRIX64 ".\n", keyid);
 		return;
 	}
 
 	uid = config.dbbackend->keyid2uid(keyinfo->keyid);
-	printf("Six degrees for 0x%" PRIX64 " (%s):\n", keyinfo->keyid, uid);
+	printf("Six degrees for 0x%016" PRIX64 " (%s):\n", keyinfo->keyid,
+			uid);
 	free(uid);
 	uid = NULL;
 

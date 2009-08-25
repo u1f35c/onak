@@ -139,11 +139,11 @@ void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 	(void) config.dbbackend->cached_getkeysigs(fullwant);
 
 	if ((keyinfoa = findinhash(fullhave)) == NULL) {
-		printf("Couldn't find key 0x%" PRIX64 ".\n", have);
+		printf("Couldn't find key 0x%016" PRIX64 ".\n", have);
 		return;
 	}
 	if ((keyinfob = findinhash(fullwant)) == NULL) {
-		printf("Couldn't find key 0x%" PRIX64 ".\n", want);
+		printf("Couldn't find key 0x%016" PRIX64 ".\n", want);
 		return;
 	}
 

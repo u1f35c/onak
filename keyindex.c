@@ -87,9 +87,9 @@ int list_uids(uint64_t keyid, struct openpgp_signedpacket_list *uids,
 		} else if (uids->packet->tag == 17) {
 			printf("                                ");
 			if (html) {
-				printf("<img src=\"lookup?op=photo&search=0x%"
-					PRIX64 "&idx=%d\" alt=\"[photo id]\">"
-					"\n",
+				printf("<img src=\"lookup?op=photo&search="
+					"0x%016" PRIX64 "&idx=%d\" alt=\""
+					"[photo id]\">\n",
 					keyid,
 					imgindx);
 				imgindx++;
