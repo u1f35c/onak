@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Jonathan McDowell <noodles@earth.li>
 Uploaders: Ross Burton <ross@debian.org>
 Build-Depends: debhelper (>= 7), cdbs, libdb4.7-dev
-Standards-Version: 3.7.3.0
+Standards-Version: 3.8.3.0
 Homepage: http://www.earth.li/projectpurple/progs/onak.html
 Vcs-Bzr: http://www.earth.li/~noodles/bzr/onak/mainline
 
