@@ -218,7 +218,7 @@ static int pg_fetch_key_text(const char *search,
 
 	newsearch = malloc(strlen(search) * 2 + 1);
 	memset(newsearch, 0, strlen(search) * 2 + 1);
-	PQescapeString(newsearch, search, strlen(search));
+	PQescapeStringConn(dbconn, newsearch, search, strlen(search), NULL);
 	snprintf(statement, 1023,
 			"SELECT DISTINCT onak_keys.keydata FROM onak_keys, "
 			"onak_uids WHERE onak_keys.keyid = onak_uids.keyid "
@@ -408,8 +408,8 @@ static int pg_store_key(struct openpgp_publickey *publickey, bool intrans,
 			safeuid = malloc(strlen(uids[i]) * 2 + 1);
 			if (safeuid != NULL) {
 				memset(safeuid, 0, strlen(uids[i]) * 2 + 1);
-				PQescapeString(safeuid, uids[i],
-						strlen(uids[i]));
+				PQescapeStringConn(dbconn, safeuid, uids[i],
+						strlen(uids[i]), NULL);
 
 				snprintf(statement, 1023,
 					"INSERT INTO onak_uids "
