@@ -608,7 +608,7 @@ static int pg_iterate_keys(void (*iterfunc)(void *ctx,
 			} else {
 				read_openpgp_stream(keydb_fetchchar, &fd,
 						&packets, 0);
-				parse_keys(packets, key);
+				parse_keys(packets, &key);
 				lo_close(dbconn, fd);
 
 				iterfunc(ctx, key);
