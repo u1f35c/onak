@@ -105,16 +105,24 @@ struct ll *generic_cached_getkeysigs(uint64_t keyid)
 	struct stats_key *key = NULL;
 	struct stats_key *signedkey = NULL;
 	struct ll        *cursig = NULL;
+	struct ll	 *sigs = NULL;
 	bool		  revoked = false;
 
 	if (keyid == 0)  {
 		return NULL;
 	}
 
-	key = createandaddtohash(keyid);
+	key = findinhash(keyid);
 
-	if (key->gotsigs == false) {
-		key->sigs = config.dbbackend->getkeysigs(key->keyid, &revoked);
+	if (key == NULL || key->gotsigs == false) {
+		sigs = config.dbbackend->getkeysigs(keyid, &revoked);
+		if (sigs == NULL) {
+			return NULL;
+		}
+		if (key == NULL) {
+			key = createandaddtohash(keyid);
+		}
+		key->sigs = sigs;
 		key->revoked = revoked;
 		for (cursig = key->sigs; cursig != NULL;
 				cursig = cursig->next) {
