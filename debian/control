@@ -3,7 +3,7 @@ Section: net
 Priority: optional
 Maintainer: Jonathan McDowell <noodles@earth.li>
 Uploaders: Ross Burton <ross@debian.org>
-Build-Depends: debhelper (>= 7), cdbs, libdb4.7-dev
+Build-Depends: debhelper (>= 7), cdbs, libdb4.8-dev
 Standards-Version: 3.8.3.0
 Homepage: http://www.earth.li/projectpurple/progs/onak.html
 Vcs-Bzr: http://www.earth.li/~noodles/bzr/onak/mainline
@@ -12,7 +12,7 @@ Package: onak
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
 Recommends: apache2 | httpd
-Suggests: db4.7-util
+Suggests: db4.8-util
 Description: OpenPGP Key Server
  onak is an OpenPGP compatible keyserver which supports multiple subkeys,
  photo ids and path finding between keys. It can provide an HKP
