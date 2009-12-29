@@ -232,3 +232,13 @@
 * Ensure DB4 backend dbconns memory is initialised to zero.
 * Open DB read only for onak lookup function.
 * Obey binary flag for "onak get".
+
+0.3.8 - 29th December 2009
+
+* Fix "onak dump" to actually generate multiple output files.
+* Limit key dump files to 100,000 keys for "onak dump".
+* Correct formatting of some places we output a keyid. (Debian bug #540196)
+* Don't add a key to the stats hash if it doesn't have any sigs. (Debian bug
+  #542187)
+* Change PostgreSQL backend to use PQescapeStringConn
+* Fix PostgreSQL backend key iteration

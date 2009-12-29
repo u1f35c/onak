@@ -1,3 +1,16 @@
+onak (0.3.8-1) unstable; urgency=low
+
+  * New upstream release
+    * Correct formatting of some places we output a keyid. (Closes: #540196)
+    * Don't add a key to the stats hash if it doesn't have any sigs.
+      (Closes: #542187)
+  * Add Homepage and Vcs-Bzr fields to Debian control file
+  * Bump debhelper compat level to 7
+  * Bump Debian Standards-Version to 3.8.3.0
+  * Change to build against libdb4.8
+
+ -- Jonathan McDowell <noodles@earth.li>  Tue, 29 Dec 2009 16:42:23 +0000
+
 onak (0.3.7-1) unstable; urgency=low
 
   * New upstream release
@@ -43,7 +56,7 @@ onak (0.3.3-1) unstable; urgency=low
   * Cleanup logfile upon package purge (Closes: #338516)
   * Add suggests on db4.2-utils (Closes: #317459)
   * Acknowledge NMU (Closes: #408270)
- 
+
  -- Jonathan McDowell <noodles@earth.li>  Sun, 04 Mar 2007 22:55:54 +0000
 
 onak (0.3.2-1.1) unstable; urgency=high
