@@ -78,9 +78,6 @@ libkeydb_pg.so: keydb_pg.o
 libkeydb_%.so: keydb_%.o
 	$(CC) -shared -o $@ $< $(CORE_OBJS)
 
-keydb_%.o: keydb_%.c
-	$(CC) -c -fPIC $(LDFLAGS) -o $@ $<
-
 splitkeys: splitkeys.o $(CORE_OBJS) $(KEYDB_OBJ)
 	$(CC) $(LDFLAGS) -o splitkeys splitkeys.o $(CORE_OBJS) $(KEYDB_OBJ) \
 		$(LIBS) $(PROGS_LDFLAGS_EXTRA)
