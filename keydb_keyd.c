@@ -189,6 +189,27 @@ static int keyd_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 }
 
 /**
+*	delete_key - Given a keyid delete the key from storage.
+*	@keyid: The keyid to delete.
+*	@intrans: If we're already in a transaction.
+*
+*	This function deletes a public key from whatever storage mechanism we
+*	are using. Returns 0 if the key existed.
+*/
+static int keyd_delete_key(uint64_t keyid, bool intrans)
+{
+	int cmd = KEYD_CMD_DELETE;
+
+	write(keyd_fd, &cmd, sizeof(cmd));
+	read(keyd_fd, &cmd, sizeof(cmd));
+	if (cmd == KEYD_REPLY_OK) {
+		write(keyd_fd, &keyid, sizeof(keyid));
+	}
+
+	return 0;
+}
+
+/**
  *	store_key - Takes a key and stores it.
  *	@publickey: A pointer to the public key to store.
  *	@intrans: If we're already in a transaction.
@@ -215,7 +236,7 @@ static int keyd_store_key(struct openpgp_publickey *publickey, bool intrans,
 	keyid = get_keyid(publickey);
 	
 	if (update) {
-		delete_key(keyid, false);
+		keyd_delete_key(keyid, false);
 	}
 
 	write(keyd_fd, &cmd, sizeof(cmd));
@@ -242,27 +263,6 @@ static int keyd_store_key(struct openpgp_publickey *publickey, bool intrans,
 		free(keybuf.buffer);
 		keybuf.buffer = NULL;
 		keybuf.size = keybuf.offset = 0;
-	}
-	
-	return 0;
-}
-
-/**
- *	delete_key - Given a keyid delete the key from storage.
- *	@keyid: The keyid to delete.
- *	@intrans: If we're already in a transaction.
- *
- *	This function deletes a public key from whatever storage mechanism we
- *	are using. Returns 0 if the key existed.
- */
-static int keyd_delete_key(uint64_t keyid, bool intrans)
-{
-	int cmd = KEYD_CMD_DELETE;
-
-	write(keyd_fd, &cmd, sizeof(cmd));
-	read(keyd_fd, &cmd, sizeof(cmd));
-	if (cmd == KEYD_REPLY_OK) {
-		write(keyd_fd, &keyid, sizeof(keyid));
 	}
 	
 	return 0;
