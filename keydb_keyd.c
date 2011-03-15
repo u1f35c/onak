@@ -103,6 +103,15 @@ static void keyd_initdb(bool readonly)
  */
 static void keyd_cleanupdb(void)
 {
+	int cmd = KEYD_CMD_CLOSE;
+
+	if (write(keyd_fd, &cmd, sizeof(cmd)) != sizeof(cmd)) {
+		logthing(LOGTHING_CRITICAL,
+				"Couldn't send close cmd: %s (%d)",
+				strerror(errno),
+				errno);
+	}
+
 	if (shutdown(keyd_fd, SHUT_RDWR) < 0) {
 		logthing(LOGTHING_NOTICE, "Error shutting down socket: %d",
 				errno);
