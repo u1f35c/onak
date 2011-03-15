@@ -116,6 +116,10 @@ static void keyd_cleanupdb(void)
 		logthing(LOGTHING_NOTICE, "Error shutting down socket: %d",
 				errno);
 	}
+	if (close(keyd_fd) < 0) {
+		logthing(LOGTHING_NOTICE, "Error closing down socket: %d",
+				errno);
+	}
 	keyd_fd = -1;
 
 	return;

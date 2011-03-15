@@ -311,7 +311,8 @@ int sock_do(int fd)
 
 int sock_close(int fd)
 {
-	return shutdown(fd, SHUT_RDWR);
+	shutdown(fd, SHUT_RDWR);
+	return close(fd);
 }
 
 int sock_accept(int fd)
