@@ -208,6 +208,44 @@ static void fs_endtrans(void)
 	fcntl(keydb_lockfile_fd, F_SETLK, &lockstruct);
 }
 
+static uint64_t fs_getfullkeyid(uint64_t keyid)
+{
+	static char buffer[PATH_MAX];
+	DIR *d = NULL;
+	struct dirent *de = NULL;
+	uint64_t ret = 0;
+
+	keydir(buffer, keyid);
+
+	d = opendir(buffer);
+	if (d) {
+		do {
+			de = readdir(d);
+			if (de && de->d_name[0] != '.') {
+				ret = strtoull(de->d_name, NULL, 16);
+			}
+		} while (de && de->d_name[0] == '.');
+		closedir(d);	
+	}
+
+	if (ret == 0) {
+		subkeydir(buffer, keyid);
+
+		d = opendir(buffer);
+		if (d) {
+			do {
+				de = readdir(d);
+				if (de && de->d_name[0] != '.') {
+					ret = strtoull(de->d_name, NULL, 16);
+				}
+			} while (de && de->d_name[0] == '.');
+			closedir(d);
+		}
+	}
+
+	return ret;
+}
+
 /**
  *	fetch_key - Given a keyid fetch the key from storage.
  *	@keyid: The keyid to fetch.
@@ -222,10 +260,10 @@ static int fs_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 	struct openpgp_packet_list *packets = NULL;
 
 	if (!intrans)
-		starttrans();
+		fs_starttrans();
 
 	if ((keyid >> 32) == 0)
-		keyid = getfullkeyid(keyid);
+		keyid = fs_getfullkeyid(keyid);
 
 	keypath(buffer, keyid);
 	if ((fd = open(buffer, O_RDONLY)) != -1) {
@@ -239,7 +277,7 @@ static int fs_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 	}
 
 	if (!intrans)
-		endtrans();
+		fs_endtrans();
 	return ret;
 }
 
@@ -265,7 +303,7 @@ static int fs_store_key(struct openpgp_publickey *publickey, bool intrans,
 
 
 	if (!intrans)
-		starttrans();
+		fs_starttrans();
 
 	prove_path_to(keyid, "key");
 	keypath(buffer, keyid);
@@ -319,7 +357,7 @@ static int fs_store_key(struct openpgp_publickey *publickey, bool intrans,
 	}
 
 	if (!intrans)
-		endtrans();
+		fs_endtrans();
 	return ret;
 }
 
@@ -338,12 +376,12 @@ static int fs_delete_key(uint64_t keyid, bool intrans)
 	int i = 0;
 
 	if ((keyid >> 32) == 0)
-		keyid = getfullkeyid(keyid);
+		keyid = fs_getfullkeyid(keyid);
 
 	if (!intrans)
-		starttrans();
+		fs_starttrans();
 
-	ret = fetch_key(keyid, &pk, true);
+	ret = fs_fetch_key(keyid, &pk, true);
 
 	if (ret) {
 		logthing(LOGTHING_DEBUG, "Wordlist for key %016" PRIX64,
@@ -382,7 +420,7 @@ static int fs_delete_key(uint64_t keyid, bool intrans)
 	unlink(buffer);
 
 	if (!intrans)
-		endtrans();
+		fs_endtrans();
 	return 1;
 }
 
@@ -471,7 +509,7 @@ static int fs_fetch_key_text(const char *search,
 	while (wl) {
 		logthing(LOGTHING_DEBUG, "Adding key: %s", wl->object);
 		addedkeys +=
-		    fetch_key(strtoull(wl->object, NULL, 16), publickey,
+		    fs_fetch_key(strtoull(wl->object, NULL, 16), publickey,
 			      false);
 		if (addedkeys >= config.maxkeys)
 			break;
@@ -483,44 +521,6 @@ static int fs_fetch_key_text(const char *search,
 	searchtext = NULL;
 
 	return addedkeys;
-}
-
-static uint64_t fs_getfullkeyid(uint64_t keyid)
-{
-	static char buffer[PATH_MAX];
-	DIR *d = NULL;
-	struct dirent *de = NULL;
-	uint64_t ret = 0;
-
-	keydir(buffer, keyid);
-
-	d = opendir(buffer);
-	if (d) {
-		do {
-			de = readdir(d);
-			if (de && de->d_name[0] != '.') {
-				ret = strtoull(de->d_name, NULL, 16);
-			}
-		} while (de && de->d_name[0] == '.');
-		closedir(d);	
-	}
-
-	if (ret == 0) {
-		subkeydir(buffer, keyid);
-
-		d = opendir(buffer);
-		if (d) {
-			do {
-				de = readdir(d);
-				if (de && de->d_name[0] != '.') {
-					ret = strtoull(de->d_name, NULL, 16);
-				}
-			} while (de && de->d_name[0] == '.');
-			closedir(d);
-		}
-	}
-	
-	return ret;
 }
 
 /**
