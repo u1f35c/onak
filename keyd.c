@@ -2,11 +2,12 @@
  * keyd.c - key retrieval daemon
  *
  * Jonathan McDowell <noodles@earth.li>
- * 
+ *
  * Copyright 2004 Project Purple
  */
 
 #include <fcntl.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -341,8 +342,20 @@ int main(int argc, char *argv[])
 	int fd = -1;
 	fd_set rfds;
 	char sockname[1024];
+	char *configfile = NULL;
+	int optchar;
 
-	readconfig(NULL);
+	while ((optchar = getopt(argc, argv, "c:")) != -1 ) {
+		switch (optchar) {
+		case 'c':
+			configfile = strdup(optarg);
+			break;
+		}
+	}
+
+	readconfig(configfile);
+	free(configfile);
+	configfile = NULL;
 	initlogthing("keyd", config.logfile);
 
 	catchsignals();
@@ -369,6 +382,6 @@ int main(int argc, char *argv[])
 
 	cleanuplogthing();
 	cleanupconfig();
-	
+
 	return(EXIT_SUCCESS);
 }
