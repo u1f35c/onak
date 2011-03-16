@@ -593,7 +593,6 @@ static int pg_iterate_keys(void (*iterfunc)(void *ctx,
 	struct openpgp_publickey *key = NULL;
 	PGresult *result = NULL;
 	char *oids = NULL;
-	char statement[1024];
 	int fd = -1;
 	int i = 0;
 	int numkeys = 0;

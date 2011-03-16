@@ -23,7 +23,6 @@
 #include "sendsync.h"
 
 static struct dbfuncs *loaded_backend = NULL;
-static char *backendsoname;
 static void *backend_handle;
 
 static bool close_backend(void)
@@ -110,8 +109,6 @@ static bool load_backend(void)
 
 static bool dynamic_starttrans()
 {
-	struct dynamic_backend *backend;
-
 	if (loaded_backend == NULL) {
 		load_backend();
 	}
@@ -127,8 +124,6 @@ static bool dynamic_starttrans()
 
 static void dynamic_endtrans()
 {
-	struct dynamic_backend *backend;
-
 	if (loaded_backend == NULL) {
 		load_backend();
 	}
@@ -143,8 +138,6 @@ static void dynamic_endtrans()
 static int dynamic_fetch_key(uint64_t keyid,
 		struct openpgp_publickey **publickey, bool intrans)
 {
-	struct dynamic_backend *backend;
-
 	if (loaded_backend == NULL) {
 		load_backend();
 	}
@@ -161,8 +154,6 @@ static int dynamic_fetch_key(uint64_t keyid,
 static int dynamic_store_key(struct openpgp_publickey *publickey, bool intrans,
 		bool update)
 {
-	struct dynamic_backend *backend;
-
 	if (loaded_backend == NULL) {
 		load_backend();
 	}
@@ -178,8 +169,6 @@ static int dynamic_store_key(struct openpgp_publickey *publickey, bool intrans,
 
 static int dynamic_delete_key(uint64_t keyid, bool intrans)
 {
-	struct dynamic_backend *backend;
-
 	if (loaded_backend == NULL) {
 		load_backend();
 	}
@@ -196,8 +185,6 @@ static int dynamic_delete_key(uint64_t keyid, bool intrans)
 static int dynamic_fetch_key_text(const char *search,
 		struct openpgp_publickey **publickey)
 {
-	struct dynamic_backend *backend;
-
 	if (loaded_backend == NULL) {
 		load_backend();
 	}
@@ -214,8 +201,6 @@ static int dynamic_fetch_key_text(const char *search,
 static int dynamic_iterate_keys(void (*iterfunc)(void *ctx,
 		struct openpgp_publickey *key), void *ctx)
 {
-	struct dynamic_backend *backend;
-
 	if (loaded_backend == NULL) {
 		load_backend();
 	}
@@ -239,7 +224,6 @@ static char *dynamic_keyid2uid(uint64_t keyid)
 	struct openpgp_signedpacket_list *curuid = NULL;
 	char buf[1024];
 
-	struct dynamic_backend *backend;
 	if (loaded_backend == NULL) {
 		load_backend();
 	}
@@ -286,7 +270,6 @@ static struct ll *dynamic_getkeysigs(uint64_t keyid, bool *revoked)
 	struct openpgp_signedpacket_list *uids = NULL;
 	struct openpgp_publickey *publickey = NULL;
 	
-	struct dynamic_backend *backend;
 	if ( loaded_backend == NULL ) {
 		load_backend();
 	}
@@ -326,8 +309,6 @@ static struct ll *dynamic_cached_getkeysigs(uint64_t keyid)
 	struct stats_key *signedkey = NULL;
 	struct ll        *cursig = NULL;
 	bool		  revoked = false;
-	
-	struct dynamic_backend *backend;
 
 	if (keyid == 0)  {
 		return NULL;
@@ -369,8 +350,7 @@ static struct ll *dynamic_cached_getkeysigs(uint64_t keyid)
 static uint64_t dynamic_getfullkeyid(uint64_t keyid)
 {
 	struct openpgp_publickey *publickey = NULL;
-	struct dynamic_backend *backend;
-	
+
 	if (loaded_backend == NULL) {
 		load_backend();
 	}
@@ -411,7 +391,6 @@ static int dynamic_update_keys(struct openpgp_publickey **keys, bool sendsync)
 	struct openpgp_publickey *curkey = NULL;
 	struct openpgp_publickey *oldkey = NULL;
 	struct openpgp_publickey *prev = NULL;
-	struct dynamic_backend *backend;
 	int newkeys = 0;
 	bool intrans;
 	
@@ -479,8 +458,6 @@ static int dynamic_update_keys(struct openpgp_publickey **keys, bool sendsync)
 
 static void dynamic_initdb(bool readonly)
 {
-	struct dynamic_backend *backend;
-	
 	if (loaded_backend == NULL) {
 		load_backend();
 	}
@@ -494,8 +471,6 @@ static void dynamic_initdb(bool readonly)
 
 static void dynamic_cleanupdb(void)
 {
-	struct dynamic_backend *backend;
-
 	if (loaded_backend != NULL) {
 		if (loaded_backend->cleanupdb != NULL) {
 			loaded_backend->cleanupdb();
