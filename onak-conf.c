@@ -33,6 +33,8 @@ struct onak_config config = {
 	NULL,			/* syncsites */
 	NULL,			/* logfile */
 
+	false,			/* use_keyd */
+
 	/*
 	 * Options for directory backends.
 	 */
@@ -54,6 +56,24 @@ struct onak_config config = {
 
 	&DBFUNCS,		/* Default dbfuncs struct */
 };
+
+bool parsebool(char *str, bool fallback)
+{
+	if (!strcasecmp(str, "false") || !strcasecmp(str, "no") ||
+			!strcasecmp(str, "0")) {
+		return false;
+	} else if (!strcasecmp(str, "true") || !strcasecmp(str, "yes") ||
+			!strcasecmp(str, "1")) {
+		return true;
+	} else {
+		logthing(LOGTHING_CRITICAL,
+			"Couldn't parse %s as a boolean config variable, "
+			"returning fallback of '%s'.",
+			str,
+			fallback ? "true" : "false");
+		return fallback;
+	}
+}
 
 void readconfig(const char *configfile) {
 	FILE *conffile;
@@ -141,6 +161,9 @@ void readconfig(const char *configfile) {
 			config.db_backend = strdup(&curline[11]);
 		} else if (!strncmp("backends_dir ", curline, 13)) {
 			config.backends_dir = strdup(&curline[13]);
+		} else if (!strncmp("use_keyd ", curline, 9)) {
+			config.use_keyd = parsebool(&curline[9],
+						config.use_keyd);
 		} else {
 			logthing(LOGTHING_ERROR,
 				"Unknown config line: %s", curline);

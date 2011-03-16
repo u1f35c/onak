@@ -388,6 +388,7 @@ int main(int argc, char *argv[])
 	free(configfile);
 	configfile = NULL;
 	initlogthing("keyd", config.logfile);
+	config.use_keyd = false;
 
 	if (!foreground) {
 		daemonize();

@@ -45,6 +45,11 @@ static bool load_backend(void)
 		loaded_backend = NULL;
 	}
 
+	if (config.use_keyd) {
+		free(config.db_backend);
+		config.db_backend = strdup("keyd");
+	}
+
 	if (!config.db_backend) {
 		logthing(LOGTHING_CRITICAL, "No database backend defined.");
 		exit(EXIT_FAILURE);

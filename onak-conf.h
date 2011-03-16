@@ -41,6 +41,11 @@ struct onak_config {
 	char *logfile;
 
 	/*
+	 * Set if we're using keyd as the backend.
+	 */
+	bool use_keyd;
+
+	/*
 	 * Options for any database backend that needs a directory, be it the
 	 * file, db2 or db3 options.
 	 */
