@@ -6,6 +6,7 @@
  * Copyright 2004 Project Purple
  */
 
+#include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <stdio.h>
@@ -27,6 +28,32 @@
 #include "mem.h"
 #include "onak-conf.h"
 #include "parsekey.h"
+
+void daemonize(void)
+{
+	pid_t pid;
+
+	pid = fork();
+
+	if (pid < 0) {
+		logthing(LOGTHING_CRITICAL,
+			"Failed to fork into background: %d (%s)",
+			errno,
+			strerror(errno));
+		exit(EXIT_FAILURE);
+	} else if (pid > 0) {
+		logthing(LOGTHING_INFO, "Backgrounded as pid %d.", pid);
+		exit(EXIT_SUCCESS);
+	}
+
+	pid = setsid();
+
+	freopen("/dev/null", "r", stdin);
+	freopen("/dev/null", "w", stdout);
+	freopen("/dev/null", "w", stderr);
+
+	return;
+}
 
 void iteratefunc(void *ctx, struct openpgp_publickey *key)
 {
@@ -343,12 +370,16 @@ int main(int argc, char *argv[])
 	fd_set rfds;
 	char sockname[1024];
 	char *configfile = NULL;
+	bool foreground = false;
 	int optchar;
 
-	while ((optchar = getopt(argc, argv, "c:")) != -1 ) {
+	while ((optchar = getopt(argc, argv, "c:f")) != -1 ) {
 		switch (optchar) {
 		case 'c':
 			configfile = strdup(optarg);
+			break;
+		case 'f':
+			foreground = true;
 			break;
 		}
 	}
@@ -357,6 +388,10 @@ int main(int argc, char *argv[])
 	free(configfile);
 	configfile = NULL;
 	initlogthing("keyd", config.logfile);
+
+	if (!foreground) {
+		daemonize();
+	}
 
 	catchsignals();
 	
