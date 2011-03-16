@@ -428,7 +428,7 @@ static int dynamic_update_keys(struct openpgp_publickey **keys, bool sendsync)
 	for (curkey = *keys; curkey != NULL; curkey = curkey->next) {
 		intrans = dynamic_starttrans();
 		logthing(LOGTHING_INFO,
-			"Fetching key 0x%llX, result: %d",
+			"Fetching key 0x%" PRIX64 ", result: %d",
 			get_keyid(curkey),
 			dynamic_fetch_key(get_keyid(curkey), &oldkey, intrans));
 

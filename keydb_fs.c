@@ -57,7 +57,7 @@ static uint32_t calchash(uint8_t * ptr)
 static void keypath(char *buffer, uint64_t _keyid)
 {
 	uint64_t keyid = _keyid << 32;
-	snprintf(buffer, PATH_MAX, "%s/key/%02X/%02X/%08X/%016llX",
+	snprintf(buffer, PATH_MAX, "%s/key/%02X/%02X/%08X/%016" PRIX64,
 		 config.db_dir, (uint8_t) ((keyid >> 56) & 0xFF),
 		 (uint8_t) ((keyid >> 48) & 0xFF),
 		 (uint32_t) (keyid >> 32), _keyid);
@@ -95,7 +95,7 @@ static void prove_path_to(uint64_t keyid, char *what)
 
 static void wordpath(char *buffer, char *word, uint32_t hash, uint64_t keyid)
 {
-	snprintf(buffer, PATH_MAX, "%s/words/%02X/%02X/%08X/%s/%016llX",
+	snprintf(buffer, PATH_MAX, "%s/words/%02X/%02X/%08X/%s/%016" PRIX64,
 		 config.db_dir, (uint8_t) ((hash >> 24) & 0xFF),
 		 (uint8_t) ((hash >> 16) & 0xFF), hash, word, keyid);
 }
@@ -109,7 +109,7 @@ static void worddir(char *buffer, char *word, uint32_t hash)
 
 static void subkeypath(char *buffer, uint64_t subkey, uint64_t keyid)
 {
-	snprintf(buffer, PATH_MAX, "%s/subkeys/%02X/%02X/%08X/%016llX",
+	snprintf(buffer, PATH_MAX, "%s/subkeys/%02X/%02X/%08X/%016" PRIX64,
 		 config.db_dir,
 		 (uint8_t) ((subkey >> 24) & 0xFF),
 		 (uint8_t) ((subkey >> 16) & 0xFF),
@@ -346,11 +346,11 @@ static int fs_delete_key(uint64_t keyid, bool intrans)
 	ret = fetch_key(keyid, &pk, true);
 
 	if (ret) {
-		logthing(LOGTHING_DEBUG, "Wordlist for key %016llX",
+		logthing(LOGTHING_DEBUG, "Wordlist for key %016" PRIX64,
 			 keyid);
 		wl = wordlist = makewordlistfromkey(wordlist, pk);
 		logthing(LOGTHING_DEBUG,
-			 "Wordlist for key %016llX done", keyid);
+			 "Wordlist for key %016" PRIX64 " done", keyid);
 		while (wl) {
 			uint32_t hash = calchash((uint8_t *) (wl->object));
 			prove_path_to(hash, "words");

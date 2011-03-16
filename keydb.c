@@ -185,7 +185,7 @@ int generic_update_keys(struct openpgp_publickey **keys, bool sendsync)
 	for (curkey = *keys; curkey != NULL; curkey = curkey->next) {
 		intrans = config.dbbackend->starttrans();
 		logthing(LOGTHING_INFO,
-			"Fetching key 0x%llX, result: %d",
+			"Fetching key 0x%" PRIX64 ", result: %d",
 			get_keyid(curkey),
 			config.dbbackend->fetch_key(get_keyid(curkey), &oldkey,
 					intrans));

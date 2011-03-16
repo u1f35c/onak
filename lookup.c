@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
 		case OP_GET:
 			if (ishex) {
 				logthing(LOGTHING_NOTICE, 
-					"Getting keyid 0x%llX",
+					"Getting keyid 0x%" PRIX64,
 					keyid);
 				result = config.dbbackend->fetch_key(keyid,
 					&publickey, false);

@@ -150,12 +150,13 @@ static int pg_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 	
 	if (keyid > 0xFFFFFFFF) {
 		snprintf(statement, 1023,
-			"SELECT keydata FROM onak_keys WHERE keyid = '%llX'",
+			"SELECT keydata FROM onak_keys WHERE keyid = '%"
+			PRIX64 "'",
 			keyid);
 	} else {
 		snprintf(statement, 1023,
 			"SELECT keydata FROM onak_keys WHERE keyid "
-			"LIKE '%%%llX'",
+			"LIKE '%%%" PRIX64 "'",
 			keyid);
 	}
 	result = PQexec(dbconn, statement);
@@ -282,7 +283,8 @@ static int pg_delete_key(uint64_t keyid, bool intrans)
 	}
 	
 	snprintf(statement, 1023,
-			"SELECT keydata FROM onak_keys WHERE keyid = '%llX'",
+			"SELECT keydata FROM onak_keys WHERE keyid = '%"
+			PRIX64 "'",
 			keyid);
 	result = PQexec(dbconn, statement);
 
@@ -298,24 +300,25 @@ static int pg_delete_key(uint64_t keyid, bool intrans)
 		PQclear(result);
 
 		snprintf(statement, 1023,
-			"DELETE FROM onak_keys WHERE keyid = '%llX'",
+			"DELETE FROM onak_keys WHERE keyid = '%" PRIX64 "'",
 			keyid);
 		result = PQexec(dbconn, statement);
 		PQclear(result);
 
 		snprintf(statement, 1023,
-			"DELETE FROM onak_sigs WHERE signee = '%llX'",
+			"DELETE FROM onak_sigs WHERE signee = '%" PRIX64 "'",
 			keyid);
 		result = PQexec(dbconn, statement);
 		PQclear(result);
 
 		snprintf(statement, 1023,
-			"DELETE FROM onak_uids WHERE keyid = '%llX'",
+			"DELETE FROM onak_uids WHERE keyid = '%" PRIX64 "'",
 			keyid);
 		result = PQexec(dbconn, statement);
 	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
 		logthing(LOGTHING_ERROR,
-				"Problem retrieving key (%llX) from DB.",
+				"Problem retrieving key (%" PRIX64
+				") from DB.",
 				keyid);
 	}
 
@@ -391,7 +394,7 @@ static int pg_store_key(struct openpgp_publickey *publickey, bool intrans,
 
 	snprintf(statement, 1023, 
 			"INSERT INTO onak_keys (keyid, keydata) VALUES "
-			"('%llX', '%d')", 
+			"('%" PRIX64 "', '%d')", 
 			get_keyid(publickey),
 			key_oid);
 	result = PQexec(dbconn, statement);
@@ -414,7 +417,7 @@ static int pg_store_key(struct openpgp_publickey *publickey, bool intrans,
 				snprintf(statement, 1023,
 					"INSERT INTO onak_uids "
 					"(keyid, uid, pri) "
-					"VALUES	('%llX', '%s', '%c')",
+					"VALUES	('%" PRIX64 "', '%s', '%c')",
 					get_keyid(publickey),
 					safeuid,
 					(uids[i] == primary) ? 't' : 'f');
@@ -448,7 +451,7 @@ static int pg_store_key(struct openpgp_publickey *publickey, bool intrans,
 				packets = packets->next) {
 			snprintf(statement, 1023,
 				"INSERT INTO onak_sigs (signer, signee) "
-				"VALUES	('%llX', '%llX')",
+				"VALUES ('%" PRIX64 "', '%" PRIX64 "')",
 				sig_keyid(packets->packet),
 				get_keyid(publickey));
 			result = PQexec(dbconn, statement);
@@ -475,7 +478,8 @@ static char *pg_keyid2uid(uint64_t keyid)
 	char *uid = NULL;
 
 	snprintf(statement, 1023,
-		"SELECT uid FROM onak_uids WHERE keyid = '%llX' AND pri = 't'",
+		"SELECT uid FROM onak_uids WHERE keyid = '%" PRIX64
+		"' AND pri = 't'",
 		keyid);
 	result = PQexec(dbconn, statement);
 
@@ -491,7 +495,8 @@ static char *pg_keyid2uid(uint64_t keyid)
 		uid = strdup(PQgetvalue(result, 0, 0));
 	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
 		logthing(LOGTHING_ERROR,
-				"Problem retrieving key (%llX) from DB.",
+				"Problem retrieving key (%" PRIX64
+				") from DB.",
 				keyid);
 	}
 
@@ -525,7 +530,8 @@ static struct ll *pg_getkeysigs(uint64_t keyid, bool *revoked)
 	}
 
 	snprintf(statement, 1023,
-		"SELECT DISTINCT signer FROM onak_sigs WHERE signee = '%llX'",
+		"SELECT DISTINCT signer FROM onak_sigs WHERE signee = '%"
+		PRIX64 "'",
 		keyid);
 	result = PQexec(dbconn, statement);
 

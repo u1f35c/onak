@@ -83,7 +83,7 @@ static int file_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 	char keyfile[1024];
 	int fd = -1;
 
-	snprintf(keyfile, 1023, "%s/0x%llX", config.db_dir,
+	snprintf(keyfile, 1023, "%s/0x%" PRIX64, config.db_dir,
 			keyid & 0xFFFFFFFF);
 	fd = open(keyfile, O_RDONLY); // | O_SHLOCK);
 
@@ -118,7 +118,7 @@ static int file_store_key(struct openpgp_publickey *publickey, bool intrans,
 	char keyfile[1024];
 	int fd = -1;
 
-	snprintf(keyfile, 1023, "%s/0x%llX", config.db_dir,
+	snprintf(keyfile, 1023, "%s/0x%" PRIX64, config.db_dir,
 			get_keyid(publickey) & 0xFFFFFFFF);
 	fd = open(keyfile, O_WRONLY | O_CREAT, 0664); // | O_EXLOCK);
 
@@ -149,7 +149,7 @@ static int file_delete_key(uint64_t keyid, bool intrans)
 {
 	char keyfile[1024];
 
-	snprintf(keyfile, 1023, "%s/0x%llX", config.db_dir,
+	snprintf(keyfile, 1023, "%s/0x%" PRIX64, config.db_dir,
 			keyid & 0xFFFFFFFF);
 
 	return unlink(keyfile);

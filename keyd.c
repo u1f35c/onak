@@ -69,7 +69,7 @@ void iteratefunc(void *ctx, struct openpgp_publickey *key)
 		storebuf.buffer = malloc(8192);
 
 		logthing(LOGTHING_TRACE,
-				"Iterating over 0x%016llX.",
+				"Iterating over 0x%016" PRIX64 ".",
 				get_keyid(key));
 
 		flatten_publickey(key,
@@ -164,7 +164,8 @@ int sock_do(int fd)
 			storebuf.offset = 0;
 			if (ret == 0) {
 				logthing(LOGTHING_INFO,
-						"Fetching 0x%llX, result: %d",
+						"Fetching 0x%" PRIX64
+						", result: %d",
 						keyid,
 						config.dbbackend->
 						fetch_key(keyid, &key, false));
@@ -294,7 +295,8 @@ int sock_do(int fd)
 			}
 			if (ret == 0) {
 				logthing(LOGTHING_INFO,
-						"Deleting 0x%llX, result: %d",
+						"Deleting 0x%" PRIX64
+						", result: %d",
 						keyid,
 						config.dbbackend->delete_key(
 							keyid, false));
