@@ -121,7 +121,7 @@ void sixdegrees(uint64_t keyid)
 
 int main(int argc, char *argv[])
 {
-	uint64_t keyid = 0x5B430367;
+	uint64_t keyid = 0x2DA8B985;
 
 	if (argc == 2) {
 		keyid = strtoll(argv[1], NULL, 16);

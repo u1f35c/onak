@@ -28,10 +28,10 @@ void findmaxpath(unsigned long max)
 	from = to = tmp = NULL;
 
 	/*
-	 * My (noodles@earth.li, DSA) key is in the strongly connected set of
+	 * My (noodles@earth.li, RSA) key is in the strongly connected set of
 	 * keys, so we use it as a suitable starting seed.
 	 */
-	config.dbbackend->cached_getkeysigs(0xF1BD4BE45B430367);
+	config.dbbackend->cached_getkeysigs(0x94FA372B2DA8B985);
 
 	/*
 	 * Loop through the hash examining each key present and finding the
