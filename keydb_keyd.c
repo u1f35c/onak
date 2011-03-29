@@ -42,8 +42,8 @@ static int keyd_fd = -1;
 static void keyd_initdb(bool readonly)
 {
 	struct sockaddr_un sock;
-	int		   cmd = KEYD_CMD_UNKNOWN;
-	int		   reply = KEYD_REPLY_UNKNOWN_CMD;
+	uint32_t	   cmd = KEYD_CMD_UNKNOWN;
+	uint32_t	   reply = KEYD_REPLY_UNKNOWN_CMD;
 	ssize_t		   count;
 
 	keyd_fd = socket(PF_UNIX, SOCK_STREAM, 0);
@@ -103,7 +103,7 @@ static void keyd_initdb(bool readonly)
  */
 static void keyd_cleanupdb(void)
 {
-	int cmd = KEYD_CMD_CLOSE;
+	uint32_t cmd = KEYD_CMD_CLOSE;
 
 	if (write(keyd_fd, &cmd, sizeof(cmd)) != sizeof(cmd)) {
 		logthing(LOGTHING_CRITICAL,
@@ -164,7 +164,7 @@ static int keyd_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 {
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
-	int                         cmd = KEYD_CMD_GET;
+	uint32_t                    cmd = KEYD_CMD_GET;
 	ssize_t                     bytes = 0;
 	ssize_t                     count = 0;
 
@@ -211,7 +211,7 @@ static int keyd_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 */
 static int keyd_delete_key(uint64_t keyid, bool intrans)
 {
-	int cmd = KEYD_CMD_DELETE;
+	uint32_t cmd = KEYD_CMD_DELETE;
 
 	write(keyd_fd, &cmd, sizeof(cmd));
 	read(keyd_fd, &cmd, sizeof(cmd));
@@ -243,7 +243,7 @@ static int keyd_store_key(struct openpgp_publickey *publickey, bool intrans,
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_packet_list *list_end = NULL;
 	struct openpgp_publickey   *next = NULL;
-	int                         cmd = KEYD_CMD_STORE;
+	uint32_t                    cmd = KEYD_CMD_STORE;
 	uint64_t                    keyid;
 
 	keyid = get_keyid(publickey);
@@ -294,7 +294,7 @@ static int keyd_fetch_key_text(const char *search,
 {
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
-	int                         cmd = KEYD_CMD_GETTEXT;
+	uint32_t                    cmd = KEYD_CMD_GETTEXT;
 	ssize_t                     bytes = 0;
 	ssize_t                     count = 0;
 
@@ -344,7 +344,7 @@ static int keyd_fetch_key_text(const char *search,
  */
 static uint64_t keyd_getfullkeyid(uint64_t keyid)
 {
-	int cmd = KEYD_CMD_GETFULLKEYID;
+	uint32_t cmd = KEYD_CMD_GETFULLKEYID;
 
 	write(keyd_fd, &cmd, sizeof(cmd));
 	read(keyd_fd, &cmd, sizeof(cmd));
@@ -373,7 +373,7 @@ static int keyd_iterate_keys(void (*iterfunc)(void *ctx,
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_publickey   *key = NULL;
-	int                         cmd = KEYD_CMD_KEYITER;
+	uint32_t                    cmd = KEYD_CMD_KEYITER;
 	ssize_t                     bytes = 0;
 	ssize_t                     count = 0;
 	int                         numkeys = 0;

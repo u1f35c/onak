@@ -125,7 +125,7 @@ int sock_init(const char *sockname)
 
 int sock_do(int fd)
 {
-	int      cmd = KEYD_CMD_UNKNOWN;
+	uint32_t cmd = KEYD_CMD_UNKNOWN;
 	ssize_t  bytes = 0;
 	ssize_t  count = 0;
 	int	 ret = 0;

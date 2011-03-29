@@ -9,6 +9,8 @@
 #ifndef __KEYD_H__
 #define __KEYD_H__
 
+#include <stdint.h>
+
 #define KEYD_SOCKET "keyd.sock"
 
 enum keyd_ops {
@@ -29,6 +31,6 @@ enum keyd_reply {
 	KEYD_REPLY_UNKNOWN_CMD = 1
 };
 
-static int keyd_version = 2;
+static uint32_t keyd_version = 2;
 
 #endif /* __KEYD_H__ */
