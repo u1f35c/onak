@@ -23,7 +23,8 @@ enum keyd_ops {
 	KEYD_CMD_GETFULLKEYID,
 	KEYD_CMD_KEYITER,
 	KEYD_CMD_CLOSE,
-	KEYD_CMD_QUIT
+	KEYD_CMD_QUIT,
+	KEYD_CMD_LAST			/* Placeholder */
 };
 
 enum keyd_reply {
