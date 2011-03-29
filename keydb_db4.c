@@ -277,6 +277,7 @@ static void db4_initdb(bool readonly)
 	int        i = 0;
 	u_int32_t  flags = 0;
 	struct stat statbuf;
+	int        maxlocks;
 
 	snprintf(buf, sizeof(buf) - 1, "%s/%s", config.db_dir,
 			DB4_UPGRADE_FILE);
@@ -328,6 +329,17 @@ static void db4_initdb(bool readonly)
 				"db_env_create: %s", db_strerror(ret));
 		}
 	}
+
+	/*
+	 * Up the number of locks we're allowed at once. We base this on
+	 * the maximum number of keys we're going to return.
+	 */
+	maxlocks = config.maxkeys * 16;
+	if (maxlocks < 1000) {
+		maxlocks = 1000;
+	}
+	dbenv->set_lk_max_locks(dbenv, maxlocks);
+	dbenv->set_lk_max_objects(dbenv, maxlocks);
 
 	/*
 	 * Enable deadlock detection so that we don't block indefinitely on
@@ -690,6 +702,10 @@ static int db4_fetch_key_text(const char *search,
 	}
 	llfree(wordlist, NULL);
 	wordlist = NULL;
+
+	if (keylist.count > config.maxkeys) {
+		keylist.count = config.maxkeys;
+	}
 	
 	db4_starttrans();
 	for (i = 0; i < keylist.count; i++) {
