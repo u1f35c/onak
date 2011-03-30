@@ -152,6 +152,8 @@ int sock_do(int fd)
 		case KEYD_CMD_VERSION:
 			cmd = KEYD_REPLY_OK;
 			write(fd, &cmd, sizeof(cmd));
+			cmd = sizeof(keyd_version);
+			write(fd, &cmd, sizeof(cmd));
 			write(fd, &keyd_version, sizeof(keyd_version));
 			break;
 		case KEYD_CMD_GET:
@@ -311,6 +313,8 @@ int sock_do(int fd)
 			}
 			if (ret == 0) {
 				keyid = config.dbbackend->getfullkeyid(keyid);
+				cmd = sizeof(keyid);
+				write(fd, &cmd, sizeof(cmd));
 				write(fd, &keyid, sizeof(keyid));
 			}
 			break;
@@ -323,9 +327,14 @@ int sock_do(int fd)
 			write(fd, &bytes, sizeof(bytes));
 			break;
 		case KEYD_CMD_CLOSE:
+			cmd = KEYD_REPLY_OK;
+			write(fd, &cmd, sizeof(cmd));
 			ret = 1;
 			break;
 		case KEYD_CMD_QUIT:
+			cmd = KEYD_REPLY_OK;
+			write(fd, &cmd, sizeof(cmd));
+			ret = 1;
 			trytocleanup();
 			break;
 		default:

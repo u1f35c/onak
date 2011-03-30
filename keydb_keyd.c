@@ -76,18 +76,25 @@ static void keyd_initdb(bool readonly)
 				errno);
 	} else {
 		count = read(keyd_fd, &reply, sizeof(reply));
-		if (count == sizeof(reply)) {
-			if (reply == KEYD_REPLY_OK) {
-				count = read(keyd_fd, &reply, sizeof(reply));
-				logthing(LOGTHING_DEBUG,
-						"keyd protocol version %d",
-						reply);
-				if (reply != keyd_version) {
-					logthing(LOGTHING_CRITICAL,
-						"Error! keyd protocol version "
-						"mismatch. (us = %d, it = %d)",
+		if (count == sizeof(reply) && reply == KEYD_REPLY_OK) {
+			count = read(keyd_fd, &reply, sizeof(reply));
+			if (count != sizeof(reply) || reply != sizeof(reply)) {
+				logthing(LOGTHING_CRITICAL,
+					"Error! Unexpected keyd version "
+					"length: %d != %d",
+					reply, sizeof(reply));
+				exit(EXIT_FAILURE);
+			}
+
+			count = read(keyd_fd, &reply, sizeof(reply));
+			logthing(LOGTHING_DEBUG,
+					"keyd protocol version %d",
+					reply);
+			if (reply != keyd_version) {
+				logthing(LOGTHING_CRITICAL,
+					"Error! keyd protocol version "
+					"mismatch. (us = %d, it = %d)",
 						keyd_version, reply);
-				}
 			}
 		}
 	}
@@ -110,6 +117,16 @@ static void keyd_cleanupdb(void)
 				"Couldn't send close cmd: %s (%d)",
 				strerror(errno),
 				errno);
+	}
+	
+	if (read(keyd_fd, &cmd, sizeof(cmd)) != sizeof(cmd)) {
+		logthing(LOGTHING_CRITICAL,
+			"Couldn't read close cmd reply: %s (%d)",
+			strerror(errno),
+			errno);
+	} else if (cmd != KEYD_REPLY_OK) {
+		logthing(LOGTHING_CRITICAL,
+			"Got bad reply to KEYD_CMD_CLOSE: %d", cmd);
 	}
 
 	if (shutdown(keyd_fd, SHUT_RDWR) < 0) {
@@ -350,6 +367,10 @@ static uint64_t keyd_getfullkeyid(uint64_t keyid)
 	read(keyd_fd, &cmd, sizeof(cmd));
 	if (cmd == KEYD_REPLY_OK) {
 		write(keyd_fd, &keyid, sizeof(keyid));
+		read(keyd_fd, &cmd, sizeof(cmd));
+		if (cmd != sizeof(keyid)) {
+			return 0;
+		}
 		read(keyd_fd, &keyid, sizeof(keyid));
 	}
 
