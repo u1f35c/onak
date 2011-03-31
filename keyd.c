@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -406,7 +407,8 @@ int main(int argc, char *argv[])
 	}
 
 	catchsignals();
-	
+	signal(SIGPIPE, SIG_IGN);
+
 	snprintf(sockname, 1023, "%s/%s", config.db_dir, KEYD_SOCKET);
 	fd = sock_init(sockname);
 
