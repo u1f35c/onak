@@ -335,6 +335,8 @@ int sock_do(int fd)
 		case KEYD_CMD_QUIT:
 			cmd = KEYD_REPLY_OK;
 			write(fd, &cmd, sizeof(cmd));
+			logthing(LOGTHING_NOTICE,
+				"Exiting due to quit request.");
 			ret = 1;
 			trytocleanup();
 			break;
