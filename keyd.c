@@ -19,6 +19,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include "config.h"
 #include "charfuncs.h"
 #include "cleanup.h"
 #include "keyd.h"
@@ -378,6 +379,19 @@ int sock_accept(int fd)
 	return 1;
 }
 
+static void usage(void)
+{
+	puts("keyd " PACKAGE_VERSION " - backend key serving daemon for the "
+		"onak PGP keyserver.\n");
+	puts("Usage:\n");
+	puts("\tkeyd [options]\n");
+	puts("\tOptions:\n:");
+	puts("-c <file> - use <file> as the config file");
+	puts("-f        - run in the foreground");
+	puts("-h        - show this help text");
+	exit(EXIT_FAILURE);
+}
+
 int main(int argc, char *argv[])
 {
 	int fd = -1;
@@ -387,13 +401,17 @@ int main(int argc, char *argv[])
 	bool foreground = false;
 	int optchar;
 
-	while ((optchar = getopt(argc, argv, "c:f")) != -1 ) {
+	while ((optchar = getopt(argc, argv, "c:fh")) != -1 ) {
 		switch (optchar) {
 		case 'c':
 			configfile = strdup(optarg);
 			break;
 		case 'f':
 			foreground = true;
+			break;
+		case 'h':
+		default:
+			usage();
 			break;
 		}
 	}
