@@ -4,6 +4,9 @@ keyd \- Backend key serving daemon for the onak PGP keyserver
 .SH SYNOPSIS
 .PP
 .B keyd
+[
+.B options
+]
 .SH DESCRIPTION
 .PP
 keyd is a backend daemon for the onak PGP keyserver. It listens on a Unix
@@ -14,6 +17,16 @@ disconnecting from the key database.
 .PP
 keyd is currently fairly alpha code; it is only recommended that you use
 it if you know what you are doing.
+.SS "Options"
+.TP
+\fB\-c \fIFILE\fR\fR
+Use \fIFILE\fR as the config file instead of the default.
+.TP
+\fB\-f\fR
+Run in the foreground rather than forking and daemonising.
+.TP
+\fB\-h\fR
+Display help text.
 .SH FILES
 .br
 .nf
