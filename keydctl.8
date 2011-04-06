@@ -1,0 +1,50 @@
+.TH KEYD 8
+.SH NAME
+keydctl \- control an onak keyd instance
+.SH SYNOPSIS
+.PP
+.B keydctl
+[
+.B options
+]
+.B command
+.SH DESCRIPTION
+.PP
+keydctl is a command line client for interacting with a backend keyd
+daemon. It's intended to perform functions that are specifically related
+to keyd rather than being generic keyserver functions. See
+.BR onak(1)
+for details about how to perform key related operations.
+.SS "Options"
+.TP
+\fB\-c \fIFILE\fR\fR
+Use \fIFILE\fR as the config file instead of the default.
+.TP
+\fB\-h\fR
+Display help text.
+.SS "Commands"
+.TP
+.B check
+Query if keyd is running and accepting commands. Returns 0 if it is, 1
+otherwise. Outputs nothing to stdout/stderr.
+.TP
+.B quit
+Request that keyd exits cleanly
+.TP
+.B status
+Display the status of a running keyd. Currently just the protocol version
+in use.
+.SH FILES
+.br
+.nf
+.\" set tabstop to longest possible filename, plus a wee bit
+.ta \w'/usr/lib/perl/getopts.pl   'u
+\fI/etc/onak.conf\fR	default configuration file
+.SH NOTES
+This man page could probably do with some more details.
+.SH "SEE ALSO"
+.BR onak (1)
+.BR keyd (8)
+.SH AUTHOR
+onak was written by Jonathan McDowell <noodles@earth.li>. It can be found at
+http://www.earth.li/projectpurple/progs/onak.html

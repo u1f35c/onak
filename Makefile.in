@@ -28,9 +28,9 @@ SRCS = armor.c parsekey.c merge.c keyid.c md5.c sha1.c main.c getcgi.c mem.c \
 PROGS_LDFLAGS_EXTRA =
 
 ifeq (x@KEYD@, xyes)
-PROGS += keyd
+PROGS += keyd keydctl
 KEYDB_OBJ = keydb_keyd.o
-SRCS += keyd.c keydb_keyd.c
+SRCS += keyd.c keydb_keyd.c keydctl.c
 else
 KEYDB_OBJ = keydb_$(DBTYPE).o
 endif
@@ -38,9 +38,9 @@ endif
 ifeq (x@DBTYPE@, xdynamic)
 LIBS += -ldl
 BACKENDS = $(foreach be,@BACKENDS@,libkeydb_$(be).so)
-PROGS += keyd
+PROGS += keyd keydctl
 PROGS_LDFLAGS_EXTRA = -rdynamic
-SRCS += keyd.c
+SRCS += keyd.c keydctl.c
 endif
 
 OBJS = stats.o cleankey.o $(CORE_OBJS) $(KEYDB_OBJ)
@@ -58,16 +58,21 @@ install: $(PROGS) onak.conf $(BACKENDS)
 	install onak-mail.pl $(DESTDIR)/@libdir@/onak
 	install onak splitkeys $(DESTDIR)/@bindir@
 	install onak.1 splitkeys.1 $(DESTDIR)/@mandir@/man1
-	install keyd.8 onak-mail.pl.8 $(DESTDIR)/@mandir@/man8
+	install keyd.8 keydctl.8 onak-mail.pl.8 $(DESTDIR)/@mandir@/man8
 ifeq (x@DBTYPE@, xdynamic)
 	install $(BACKENDS) $(DESTDIR)/@libdir@/onak/backends
 	install -d $(DESTDIR)/@sbindir@
 	install keyd $(DESTDIR)/@sbindir@
+	install keydctl $(DESTDIR)/@bindir@
 endif
 
 keyd: keyd.o $(CORE_OBJS) keydb_$(DBTYPE).o
 	$(CC) $(LDFLAGS) $(PROGS_LDFLAGS_EXTRA) \
 		-o keyd keyd.o $(CORE_OBJS) keydb_$(DBTYPE).o $(LIBS)
+
+keydctl: keydctl.o onak-conf.o ll.o log.o
+	$(CC) $(LDFLAGS) $(PROGS_LDFLAGS_EXTRA) \
+		-o keydctl keydctl.o onak-conf.o ll.o log.o $(LIBS)
 
 libkeydb_db4.so: keydb_db4.o
 	$(CC) -shared $(DB4LIBS) -o libkeydb_db4.so keydb_db4.o $(CORE_OBJS)
@@ -117,6 +122,11 @@ onak: onak.o cleankey.o $(CORE_OBJS) $(KEYDB_OBJ)
 onak-conf.o: onak-conf.c onak-conf.h
 	$(CC) $(CFLAGS) -DCONFIGFILE=\"@sysconfdir@/onak.conf\" \
 		-DDBFUNCS=keydb_@DBTYPE@_funcs -c onak-conf.c
+
+# HACK: onak-conf.o needs to be able to see keydb_@DBTYPE@_funcs, but
+# keydctl doesn't want to link against the DB stuff. To be fixed more cleanly.
+keydctl.o: keydctl.c keyd.h
+	$(CC) $(CFLAGS) -DDBFUNCS=keydb_@DBTYPE@_funcs -c keydctl.c
 
 onak-mail.pl: onak-mail.pl.in
 	sed 's:@CONFIG@:@sysconfdir@/onak.conf:g' < onak-mail.pl.in > onak-mail.pl
