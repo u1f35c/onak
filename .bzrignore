@@ -18,3 +18,4 @@ stripkey
 tags
 .depend
 autom4te.cache
+version.h

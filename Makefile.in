@@ -142,6 +142,7 @@ clean:
 	$(RM) $(PROGS) $(OBJS) Makefile.bak testparse maxpath *.core core \
 		gpgwww.o add.o lookup.o main.o maxpath.o onak.o sixdegrees \
 		sixdegrees.o splitkeys.o stripkey.o onak.conf keyd.o \
+		version.h \
 		$(foreach be,@BACKENDS@,keydb_$(be).o) *.so
 ifeq (x@KEYD@, xyes)
 	$(RM) keyd.o keydb_$(DBTYPE).o
@@ -151,7 +152,16 @@ distclean: clean
 	$(RM) -f Makefile .depend config.log config.status config.h
 	$(RM) -r autom4te.cache
 
-.depend: $(SRCS)
+version.h:
+	@echo '#include "config.h"' > version.h
+	@if [ -e .bzr ]; then \
+		echo "#define ONAK_VERSION PACKAGE_VERSION \"+bzr`bzr revno`\"" \
+		>> version.h; \
+	else \
+		echo "#define ONAK_VERSION PACKAGE_VERSION" >> version.h; \
+	fi
+
+.depend: $(SRCS) version.h
 	rm -f .depend
 	$(MAKEDEPEND) $(CFLAGS) $(SRCS) > .depend
 

@@ -17,7 +17,6 @@
 #include "charfuncs.h"
 #include "cleankey.h"
 #include "cleanup.h"
-#include "config.h"
 #include "getcgi.h"
 #include "keydb.h"
 #include "keyindex.h"
@@ -26,6 +25,7 @@
 #include "onak-conf.h"
 #include "parsekey.h"
 #include "photoid.h"
+#include "version.h"
 
 #define OP_UNKNOWN 0
 #define OP_GET     1
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 	}
 	if (!mrhkp) {
 		puts("<hr>");
-		puts("Produced by onak " PACKAGE_VERSION 
+		puts("Produced by onak " ONAK_VERSION 
 				" by Jonathan McDowell");
 		end_html();
 	}

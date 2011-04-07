@@ -14,7 +14,6 @@
 #include "armor.h"
 #include "charfuncs.h"
 #include "cleanup.h"
-#include "config.h"
 #include "getcgi.h"
 #include "hash.h"
 #include "keydb.h"
@@ -23,6 +22,7 @@
 #include "onak-conf.h"
 #include "parsekey.h"
 #include "stats.h"
+#include "version.h"
 
 #define OP_UNKNOWN 0
 #define OP_GET     1
@@ -190,7 +190,7 @@ int main(int argc, char *argv[])
 
 	if (op != OP_GET) {
 		puts("<HR>");
-		puts("Produced by gpgwww " PACKAGE_VERSION ", part of onak. "
+		puts("Produced by gpgwww " ONAK_VERSION ", part of onak. "
 			"<A HREF=\"mailto:noodles-onak@earth.li\">"
 			"Jonathan McDowell</A>");
 		end_html();

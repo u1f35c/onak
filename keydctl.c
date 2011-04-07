@@ -13,9 +13,9 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#include "config.h"
 #include "keyd.h"
 #include "onak-conf.h"
+#include "version.h"
 
 /* HACK: We need to stop onak-conf.o requiring this. */
 void *DBFUNCS = NULL;
@@ -147,7 +147,7 @@ static void keyd_status(void)
 
 static void usage(void)
 {
-	puts("keydctl " PACKAGE_VERSION " - control an onak keyd instance.\n");
+	puts("keydctl " ONAK_VERSION " - control an onak keyd instance.\n");
 	puts("Usage:\n");
 	puts("\tonak [options] <command> <parameters>\n");
 	puts("\tCommands:\n");

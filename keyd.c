@@ -19,7 +19,6 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#include "config.h"
 #include "charfuncs.h"
 #include "cleanup.h"
 #include "keyd.h"
@@ -30,6 +29,7 @@
 #include "mem.h"
 #include "onak-conf.h"
 #include "parsekey.h"
+#include "version.h"
 
 void daemonize(void)
 {
@@ -381,7 +381,7 @@ int sock_accept(int fd)
 
 static void usage(void)
 {
-	puts("keyd " PACKAGE_VERSION " - backend key serving daemon for the "
+	puts("keyd " ONAK_VERSION " - backend key serving daemon for the "
 		"onak PGP keyserver.\n");
 	puts("Usage:\n");
 	puts("\tkeyd [options]\n");
