@@ -17,7 +17,7 @@ AC_MSG_CHECKING(for libdb version in db.h)
 printf "#include <db.h>\nDB_VERSION_MAJOR DB_VERSION_MINOR\n" >conftest.c
 set `eval $ac_cpp conftest.c | egrep '^ *[[0-9]] *'`; v="$1"; vv="$2"
 AC_MSG_RESULT($v.$vv)
-if test "$v" -eq 4; then
+if test "$v" -ge 4; then
 	for db in "db-$v.$vv" "db$v.$vv" "db-$v" "db$v" "db"; do
 		AC_MSG_CHECKING(for db_create in lib$db)
 		oldLIBS="$LIBS"
