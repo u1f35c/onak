@@ -30,6 +30,11 @@
 #include "log.h"
 #include "wordlist.h"
 
+/* Hack: We should really dynamically allocate our path buffers */
+#ifndef PATH_MAX
+#define PATH_MAX 1024
+#endif
+
 static int keydb_lockfile_fd = -1;
 static bool keydb_lockfile_readonly;
 
@@ -54,19 +59,19 @@ static uint32_t calchash(uint8_t * ptr)
 }
 
 
-static void keypath(char *buffer, uint64_t _keyid)
+static void keypath(char *buffer, size_t length, uint64_t _keyid)
 {
 	uint64_t keyid = _keyid << 32;
-	snprintf(buffer, PATH_MAX, "%s/key/%02X/%02X/%08X/%016" PRIX64,
+	snprintf(buffer, length, "%s/key/%02X/%02X/%08X/%016" PRIX64,
 		 config.db_dir, (uint8_t) ((keyid >> 56) & 0xFF),
 		 (uint8_t) ((keyid >> 48) & 0xFF),
 		 (uint32_t) (keyid >> 32), _keyid);
 }
 
-static void keydir(char *buffer, uint64_t _keyid)
+static void keydir(char *buffer, size_t length, uint64_t _keyid)
 {
 	uint64_t keyid = _keyid << 32;
-	snprintf(buffer, PATH_MAX, "%s/key/%02X/%02X/%08X", config.db_dir,
+	snprintf(buffer, length, "%s/key/%02X/%02X/%08X", config.db_dir,
 		 (uint8_t) ((keyid >> 56) & 0xFF),
 		 (uint8_t) ((keyid >> 48) & 0xFF),
 		 (uint32_t) (keyid >> 32));
@@ -74,42 +79,46 @@ static void keydir(char *buffer, uint64_t _keyid)
 
 static void prove_path_to(uint64_t keyid, char *what)
 {
-	static char buffer[1024];
-	snprintf(buffer, PATH_MAX, "%s/%s", config.db_dir, what);
+	static char buffer[PATH_MAX];
+	snprintf(buffer, sizeof(buffer), "%s/%s", config.db_dir, what);
 	mkdir(buffer, 0777);
 
-	snprintf(buffer, PATH_MAX, "%s/%s/%02X", config.db_dir, what,
+	snprintf(buffer, sizeof(buffer), "%s/%s/%02X", config.db_dir, what,
 		 (uint8_t) ((keyid >> 24) & 0xFF));
 	mkdir(buffer, 0777);
 
-	snprintf(buffer, PATH_MAX, "%s/%s/%02X/%02X", config.db_dir, what,
+	snprintf(buffer, sizeof(buffer), "%s/%s/%02X/%02X", config.db_dir,
+		 what,
 		 (uint8_t) ((keyid >> 24) & 0xFF),
 		 (uint8_t) ((keyid >> 16) & 0xFF));
 	mkdir(buffer, 0777);
 
-	snprintf(buffer, PATH_MAX, "%s/%s/%02X/%02X/%08X", config.db_dir, what,
+	snprintf(buffer, sizeof(buffer), "%s/%s/%02X/%02X/%08X", config.db_dir,
+		 what,
 		 (uint8_t) ((keyid >> 24) & 0xFF),
 		 (uint8_t) ((keyid >> 16) & 0xFF), (uint32_t) (keyid));
 	mkdir(buffer, 0777);
 }
 
-static void wordpath(char *buffer, char *word, uint32_t hash, uint64_t keyid)
+static void wordpath(char *buffer, size_t length, char *word, uint32_t hash,
+		uint64_t keyid)
 {
-	snprintf(buffer, PATH_MAX, "%s/words/%02X/%02X/%08X/%s/%016" PRIX64,
+	snprintf(buffer, length, "%s/words/%02X/%02X/%08X/%s/%016" PRIX64,
 		 config.db_dir, (uint8_t) ((hash >> 24) & 0xFF),
 		 (uint8_t) ((hash >> 16) & 0xFF), hash, word, keyid);
 }
 
-static void worddir(char *buffer, char *word, uint32_t hash)
+static void worddir(char *buffer, size_t length, char *word, uint32_t hash)
 {
-	snprintf(buffer, PATH_MAX, "%s/words/%02X/%02X/%08X/%s", config.db_dir,
+	snprintf(buffer, length, "%s/words/%02X/%02X/%08X/%s", config.db_dir,
 		 (uint8_t) ((hash >> 24) & 0xFF),
 		 (uint8_t) ((hash >> 16) & 0xFF), hash, word);
 }
 
-static void subkeypath(char *buffer, uint64_t subkey, uint64_t keyid)
+static void subkeypath(char *buffer, size_t length, uint64_t subkey,
+		uint64_t keyid)
 {
-	snprintf(buffer, PATH_MAX, "%s/subkeys/%02X/%02X/%08X/%016" PRIX64,
+	snprintf(buffer, length, "%s/subkeys/%02X/%02X/%08X/%016" PRIX64,
 		 config.db_dir,
 		 (uint8_t) ((subkey >> 24) & 0xFF),
 		 (uint8_t) ((subkey >> 16) & 0xFF),
@@ -117,9 +126,9 @@ static void subkeypath(char *buffer, uint64_t subkey, uint64_t keyid)
 		 keyid);
 }
 
-static void subkeydir(char *buffer, uint64_t subkey)
+static void subkeydir(char *buffer, size_t length, uint64_t subkey)
 {
-	snprintf(buffer, PATH_MAX, "%s/subkeys/%02X/%02X/%08X",
+	snprintf(buffer, length, "%s/subkeys/%02X/%02X/%08X",
 		 config.db_dir,
 		 (uint8_t) ((subkey >> 24) & 0xFF),
 		 (uint8_t) ((subkey >> 16) & 0xFF),
@@ -137,7 +146,7 @@ static void fs_initdb(bool readonly)
 
 	keydb_lockfile_readonly = readonly;
 
-	snprintf(buffer, PATH_MAX, "%s/.lock", config.db_dir);
+	snprintf(buffer, sizeof(buffer), "%s/.lock", config.db_dir);
 
 	if (access(config.db_dir, R_OK | W_OK | X_OK) == -1) {
 		if (errno != ENOENT) {
@@ -215,7 +224,7 @@ static uint64_t fs_getfullkeyid(uint64_t keyid)
 	struct dirent *de = NULL;
 	uint64_t ret = 0;
 
-	keydir(buffer, keyid);
+	keydir(buffer, sizeof(buffer), keyid);
 
 	d = opendir(buffer);
 	if (d) {
@@ -229,7 +238,7 @@ static uint64_t fs_getfullkeyid(uint64_t keyid)
 	}
 
 	if (ret == 0) {
-		subkeydir(buffer, keyid);
+		subkeydir(buffer, sizeof(buffer), keyid);
 
 		d = opendir(buffer);
 		if (d) {
@@ -265,7 +274,7 @@ static int fs_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 	if ((keyid >> 32) == 0)
 		keyid = fs_getfullkeyid(keyid);
 
-	keypath(buffer, keyid);
+	keypath(buffer, sizeof(buffer), keyid);
 	if ((fd = open(buffer, O_RDONLY)) != -1) {
 		/* File is present, load it in... */
 		read_openpgp_stream(file_fetchchar, &fd, &packets, 0);
@@ -306,7 +315,7 @@ static int fs_store_key(struct openpgp_publickey *publickey, bool intrans,
 		fs_starttrans();
 
 	prove_path_to(keyid, "key");
-	keypath(buffer, keyid);
+	keypath(buffer, sizeof(buffer), keyid);
 
 	if ((fd =
 	     open(buffer, O_WRONLY | (update ? O_TRUNC : O_CREAT),
@@ -329,9 +338,10 @@ static int fs_store_key(struct openpgp_publickey *publickey, bool intrans,
 			uint32_t hash = calchash((uint8_t *) (wl->object));
 			prove_path_to(hash, "words");
 
-			worddir(wbuffer, wl->object, hash);
+			worddir(wbuffer, sizeof(wbuffer), wl->object, hash);
 			mkdir(wbuffer, 0777);
-			wordpath(wbuffer, wl->object, hash, keyid);
+			wordpath(wbuffer, sizeof(wbuffer), wl->object, hash,
+				keyid);
 			link(buffer, wbuffer);
 
 			wl = wl->next;
@@ -343,9 +353,10 @@ static int fs_store_key(struct openpgp_publickey *publickey, bool intrans,
 		while (subkeyids != NULL && subkeyids[i] != 0) {
 			prove_path_to(subkeyids[i], "subkeys");
 
-			subkeydir(wbuffer, subkeyids[i]);
+			subkeydir(wbuffer, sizeof(wbuffer), subkeyids[i]);
 			mkdir(wbuffer, 0777);
-			subkeypath(wbuffer, subkeyids[i], keyid);
+			subkeypath(wbuffer, sizeof(wbuffer), subkeyids[i],
+				keyid);
 			link(buffer, wbuffer);
 
 			i++;
@@ -393,7 +404,8 @@ static int fs_delete_key(uint64_t keyid, bool intrans)
 			uint32_t hash = calchash((uint8_t *) (wl->object));
 			prove_path_to(hash, "words");
 
-			wordpath(buffer, wl->object, hash, keyid);
+			wordpath(buffer, sizeof(buffer), wl->object, hash,
+				keyid);
 			unlink(buffer);
 
 			wl = wl->next;
@@ -404,7 +416,8 @@ static int fs_delete_key(uint64_t keyid, bool intrans)
 		while (subkeyids != NULL && subkeyids[i] != 0) {
 			prove_path_to(subkeyids[i], "subkeys");
 
-			subkeypath(buffer, subkeyids[i], keyid);
+			subkeypath(buffer, sizeof(buffer), subkeyids[i],
+				keyid);
 			unlink(buffer);
 
 			i++;
@@ -416,7 +429,7 @@ static int fs_delete_key(uint64_t keyid, bool intrans)
 
 	}
 
-	keypath(buffer, keyid);
+	keypath(buffer, sizeof(buffer), keyid);
 	unlink(buffer);
 
 	if (!intrans)
@@ -432,7 +445,7 @@ static struct ll *internal_get_key_by_word(char *word, struct ll *mct)
 	uint32_t hash = calchash((uint8_t *) (word));
 	struct dirent *de;
 
-	worddir(buffer, word, hash);
+	worddir(buffer, sizeof(buffer), word, hash);
 	d = opendir(buffer);
 	logthing(LOGTHING_DEBUG, "Scanning for word %s in dir %s", word,
 		 buffer);
