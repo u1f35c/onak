@@ -93,7 +93,7 @@ void dump_func(void *ctx, struct openpgp_publickey *key)
 }
 
 void usage(void) {
-	puts("onak " PACKAGE_VERSION " - an OpenPGP keyserver.\n");
+	puts("onak " ONAK_VERSION " - an OpenPGP keyserver.\n");
 	puts("Usage:\n");
 	puts("\tonak [options] <command> <parameters>\n");
 	puts("\tCommands:\n");
