@@ -21,7 +21,6 @@
 #include "charfuncs.h"
 #include "cleankey.h"
 #include "cleanup.h"
-#include "config.h"
 #include "keydb.h"
 #include "keyid.h"
 #include "keyindex.h"
@@ -32,6 +31,7 @@
 #include "onak-conf.h"
 #include "parsekey.h"
 #include "photoid.h"
+#include "version.h"
 
 void find_keys(char *search, uint64_t keyid, bool ishex,
 		bool fingerprint, bool exact, bool verbose)
