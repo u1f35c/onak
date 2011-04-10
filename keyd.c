@@ -17,6 +17,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "charfuncs.h"
@@ -30,6 +31,8 @@
 #include "onak-conf.h"
 #include "parsekey.h"
 #include "version.h"
+
+static struct keyd_stats *stats;
 
 void daemonize(void)
 {
@@ -150,6 +153,11 @@ int sock_do(int fd)
 	}
 	
 	if (ret == 0) {
+		if (cmd < KEYD_CMD_LAST) {
+			stats->command_stats[cmd]++;
+		} else {
+			stats->command_stats[KEYD_CMD_UNKNOWN]++;
+		}
 		switch (cmd) {
 		case KEYD_CMD_VERSION:
 			cmd = KEYD_REPLY_OK;
@@ -341,6 +349,14 @@ int sock_do(int fd)
 			ret = 1;
 			trytocleanup();
 			break;
+		case KEYD_CMD_STATS:
+			cmd = KEYD_REPLY_OK;
+			write(fd, &cmd, sizeof(cmd));
+			cmd = sizeof(*stats);
+			write(fd, &cmd, sizeof(cmd));
+			write(fd, stats,
+				sizeof(*stats));
+			break;
 		default:
 			logthing(LOGTHING_ERROR, "Got unknown command: %d",
 					cmd);
@@ -372,6 +388,7 @@ int sock_accept(int fd)
 	}
 
 	if (ret != -1) {
+		stats->connects++;
 		while (!sock_do(srv)) ;
 		sock_close(srv);
 	}
@@ -429,6 +446,15 @@ int main(int argc, char *argv[])
 	catchsignals();
 	signal(SIGPIPE, SIG_IGN);
 
+
+	stats = calloc(1, sizeof(*stats));
+	if (!stats) {
+		logthing(LOGTHING_ERROR,
+			"Couldn't allocate memory for stats structure.");
+		exit(EXIT_FAILURE);
+	}
+	stats->started = time(NULL);
+
 	snprintf(sockname, 1023, "%s/%s", config.db_dir, KEYD_SOCKET);
 	fd = sock_init(sockname);
 
@@ -448,6 +474,8 @@ int main(int argc, char *argv[])
 		sock_close(fd);
 		unlink(sockname);
 	}
+
+	free(stats);
 
 	cleanuplogthing();
 	cleanupconfig();

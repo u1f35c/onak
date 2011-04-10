@@ -24,6 +24,7 @@ enum keyd_ops {
 	KEYD_CMD_KEYITER,
 	KEYD_CMD_CLOSE,
 	KEYD_CMD_QUIT,
+	KEYD_CMD_STATS,
 	KEYD_CMD_LAST			/* Placeholder */
 };
 
@@ -33,5 +34,11 @@ enum keyd_reply {
 };
 
 static uint32_t keyd_version = 2;
+
+struct keyd_stats {
+	time_t started;
+	uint32_t connects;
+	uint32_t command_stats[KEYD_CMD_LAST];
+};
 
 #endif /* __KEYD_H__ */

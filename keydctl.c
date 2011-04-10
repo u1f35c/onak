@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -138,9 +139,36 @@ static void keyd_close(void)
 static void keyd_status(void)
 {
 	uint32_t reply;
+	struct keyd_stats stats;
 
 	keyd_do_command(KEYD_CMD_VERSION, &reply, sizeof(reply));
 	printf("Using keyd protocol version %d.\n", reply);
+
+	keyd_do_command(KEYD_CMD_STATS, &stats, sizeof(stats));
+	printf("keyd running since %s", ctime(&stats.started));
+	printf("%d client connections received\n", stats.connects);
+
+	printf("Command statistics:\n");
+	printf("  Version:          %d\n",
+		stats.command_stats[KEYD_CMD_VERSION]);
+	printf("  Get key:          %d\n", stats.command_stats[KEYD_CMD_GET]);
+	printf("  Store key:        %d\n",
+		stats.command_stats[KEYD_CMD_STORE]);
+	printf("  Delete key:       %d\n",
+		stats.command_stats[KEYD_CMD_DELETE]);
+	printf("  Search key:       %d\n",
+		stats.command_stats[KEYD_CMD_GETTEXT]);
+	printf("  Get full keyid:   %d\n",
+		stats.command_stats[KEYD_CMD_GETFULLKEYID]);
+	printf("  Iterate all keys: %d\n",
+		stats.command_stats[KEYD_CMD_KEYITER]);
+	printf("  Close:            %d\n",
+		stats.command_stats[KEYD_CMD_CLOSE]);
+	printf("  Quit:             %d\n", stats.command_stats[KEYD_CMD_QUIT]);
+	printf("  Get statistics:   %d\n",
+		stats.command_stats[KEYD_CMD_STATS]);
+	printf("  Unknown:          %d\n",
+		stats.command_stats[KEYD_CMD_UNKNOWN]);
 
 	return;
 }
