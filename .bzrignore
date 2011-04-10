@@ -9,12 +9,14 @@ lookup
 onak
 gpgwww
 keyd
+keydctl
 maxpath
 onak-mail.pl
 onak.conf
 sixdegrees
 splitkeys
 stripkey
+testparse
 tags
 .depend
 autom4te.cache
