@@ -10,7 +10,7 @@ Vcs-Bzr: http://www.earth.li/~noodles/bzr/onak/mainline
 
 Package: onak
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${perl:Depends}, adduser
 Recommends: apache2 | httpd
 Suggests: db-util
 Description: OpenPGP Key Server
