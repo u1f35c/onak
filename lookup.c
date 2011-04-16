@@ -164,20 +164,18 @@ int main(int argc, char *argv[])
 		switch (op) {
 		case OP_GET:
 			if (ishex) {
-				logthing(LOGTHING_NOTICE, 
-					"Getting keyid 0x%" PRIX64,
-					keyid);
 				result = config.dbbackend->fetch_key(keyid,
 					&publickey, false);
 			} else {
-				logthing(LOGTHING_NOTICE, 
-					"Getting key(s) for search text %s",
-					search);
 				result = config.dbbackend->fetch_key_text(
 					search,
 					&publickey);
 			}
 			if (result) {
+				logthing(LOGTHING_NOTICE, 
+					"Found %d key(s) for search %s",
+					result,
+					search);
 				puts("<pre>");
 				cleankeys(publickey);
 				flatten_publickey(publickey,
@@ -189,7 +187,8 @@ int main(int argc, char *argv[])
 				puts("</pre>");
 			} else {
 				logthing(LOGTHING_NOTICE,
-					"Failed to fetch key.");
+					"Failed to find key for search %s",
+					search);
 				puts("Key not found");
 			}
 			break;
