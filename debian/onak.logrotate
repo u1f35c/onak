@@ -1,0 +1,10 @@
+/var/log/onak.log
+{
+	create 644 onak adm
+	missingok
+	notifempty
+	rotate 4
+	weekly
+	compress
+	delaycompress
+}
