@@ -1,4 +1,4 @@
-onak (0.4.0) unstable; urgency=low
+onak (0.4.0-1) unstable; urgency=low
 
   * Only seed empty database for if we're using default config
   * Use generic db dependencies rather than 4.8 versioned ones.
