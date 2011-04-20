@@ -55,8 +55,7 @@ case "$1" in
 		1) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
 	esac
 	;;
-  restart)
-  force-reload)
+  restart|force-reload)
 	[ "$VERBOSE" != no ] && log_daemon_msg "Restarting $DESC" "$NAME"
 	/usr/bin/keydctl quit
 	start-stop-daemon --stop --oknodo --user onak --exec $DAEMON
