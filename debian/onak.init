@@ -55,11 +55,23 @@ case "$1" in
 		1) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
 	esac
 	;;
+  restart)
+  force-reload)
+	[ "$VERBOSE" != no ] && log_daemon_msg "Restarting $DESC" "$NAME"
+	/usr/bin/keydctl quit
+	start-stop-daemon --stop --oknodo --user onak --exec $DAEMON
+	start-stop-daemon --start --oknodo --user onak --chuid onak \
+		--exec $DAEMON
+	case "$?" in
+		0) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+		1) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+	esac
+	;;
   status)
        status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
        ;;
   *)
-	echo "Usage: $SCRIPTNAME {start|stop|status}" >&2
+	echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload|status}" >&2
 	exit 3
 	;;
 esac
