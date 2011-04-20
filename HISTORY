@@ -242,3 +242,26 @@
   #542187)
 * Change PostgreSQL backend to use PQescapeStringConn
 * Fix PostgreSQL backend key iteration
+
+0.4.0 - 19th April 2011
+
+* Fix delete_key function in keyd backend
+* Send close command when cleaning up keyd backend
+* Actually close the socket in keyd/the keyd backend
+* Update the copy of my key to my 4096R one
+* Update maxpath/sixdegrees to my "new" RSA key
+* Add -c option to specify keyd config file on command line
+* Make keyd background itself by default
+* Add use_keyd config file option to select keyd as the backend
+* Clean up remaining uses of %llX for printing keyids
+* Fix fs backend compilation/linking
+* Configure db4 locks according to maxkeys and actually check maxkeys
+* Explicitly use 32 bits for keyd socket commands
+* Log when we're doing a clean keyd shutdown
+* Add help text for keyd
+* Add keydctl for talking to keyd backend
+* Add the bzr version number to non release builds
+* Allow db4 backend to compile with later versions of Berkeley DB
+* Add a stats command to keyd
+* Clean up use of PATH_MAX in keydb_fs.c
+* Output details of key search after retrieval for pks/lookup

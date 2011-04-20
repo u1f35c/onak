@@ -1,3 +1,15 @@
+onak (0.4.0) unstable; urgency=low
+
+  * Only seed empty database for if we're using default config
+  * Use generic db dependencies rather than 4.8 versioned ones.
+    (Closes: #621426)
+  * Bump Debian Standards-Version to 3.9.2.0
+  * Add ${perl:Depends} to dependencies
+  * Add init.d file for keyd
+  * Add logrotate config snippet
+
+ -- Jonathan McDowell <noodles@earth.li>  Tue, 19 Apr 2011 21:59:28 -0700
+
 onak (0.3.8-1) unstable; urgency=low
 
   * New upstream release
