@@ -19,12 +19,12 @@
 #include "parsekey.h"
 #include "sendsync.h"
 
-int fd_putchar(void *ctx, size_t count, unsigned char *c)
+int fd_putchar(void *ctx, size_t count, void *c)
 {
 	int i;
 
 	for (i = 0; i < count; i++) {
-		fputc(c[i], ctx);
+		fputc(((char *) c )[i], ctx);
 	}
 	return 0;
 }

@@ -49,7 +49,7 @@ int debug_packet(struct openpgp_packet *packet);
  *	none of the other packets of the key will be read.
  */
 int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
-				unsigned char *c),
+				void *c),
 				void *ctx,
 				struct openpgp_packet_list **packets,
 				int maxnum);
@@ -64,7 +64,7 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
  *	packet stream from a linked list of packets.
  */
 int write_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
-						unsigned char *c),
+						void *c),
 				void *ctx,
 				struct openpgp_packet_list *packets);
 

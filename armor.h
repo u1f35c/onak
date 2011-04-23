@@ -21,7 +21,7 @@
  *	using putchar_func.
  */
 int armor_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
-						unsigned char *c),
+						void *c),
 				void *ctx,
 				struct openpgp_packet_list *packets);
 
@@ -36,7 +36,7 @@ int armor_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
  *	packets.
  */
 int dearmor_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
-					unsigned char *c),
+					void *c),
 				void *ctx,
 				struct openpgp_packet_list **packets);
 

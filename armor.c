@@ -77,7 +77,7 @@ struct armor_context {
 	int curoctet;
 	int count;
 	long crc24;
-	int (*putchar_func)(void *ctx, size_t count, unsigned char *c);
+	int (*putchar_func)(void *ctx, size_t count, void *c);
 	void *ctx;
 };
 
@@ -184,14 +184,14 @@ static int armor_putchar_int(void *ctx, unsigned char c)
 }
 
 
-static int armor_putchar(void *ctx, size_t count, unsigned char *c)
+static int armor_putchar(void *ctx, size_t count, void *c)
 {
 	int i;
 
 	log_assert(c != NULL);
 
 	for (i = 0; i < count; i++) {
-		armor_putchar_int(ctx, c[i]);
+		armor_putchar_int(ctx, ((char *) c)[i]);
 	}
 	
 	return 0;
@@ -210,7 +210,7 @@ struct dearmor_context {
 	int curoctet;
 	int count;
 	long crc24;
-	int (*getchar_func)(void *ctx, size_t count, unsigned char *c);
+	int (*getchar_func)(void *ctx, size_t count, void *c);
 	void *ctx;
 };
 
@@ -291,12 +291,12 @@ static int dearmor_getchar(void *ctx, unsigned char *c)
 	return (tmpc == 64);
 }
 
-static int dearmor_getchar_c(void *ctx, size_t count, unsigned char *c)
+static int dearmor_getchar_c(void *ctx, size_t count, void *c)
 {
 	int i, rc = 0;
 
 	for (i = 0; i < count && rc == 0; i++) {
-		rc = dearmor_getchar(ctx, &c[i]);
+		rc = dearmor_getchar(ctx, &((unsigned char *) c)[i]);
 	}
 
 	return rc;
@@ -312,7 +312,7 @@ static int dearmor_getchar_c(void *ctx, size_t count, unsigned char *c)
  *	using putchar_func.
  */
 int armor_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
-						unsigned char *c),
+						void *c),
 				void *ctx,
 				struct openpgp_packet_list *packets)
 {
@@ -352,7 +352,7 @@ int armor_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
  *	packets.
  */
 int dearmor_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
-						unsigned char *c),
+						void *c),
 				void *ctx,
 				struct openpgp_packet_list **packets)
 {

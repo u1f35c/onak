@@ -36,7 +36,7 @@ static PGconn *dbconn = NULL;
 /**
  *	keydb_fetchchar - Fetches a char from a file.
  */
-static int keydb_fetchchar(void *fd, size_t count, unsigned char *c)
+static int keydb_fetchchar(void *fd, size_t count, void *c)
 {
 	return (!lo_read(dbconn, *(int *) fd, (char *) c, count));
 }
@@ -44,7 +44,7 @@ static int keydb_fetchchar(void *fd, size_t count, unsigned char *c)
 /**
  *	keydb_putchar - Puts a char to a file.
  */
-static int keydb_putchar(void *fd, size_t count, unsigned char *c)
+static int keydb_putchar(void *fd, size_t count, void *c)
 {
 	return !(lo_write(dbconn, *(int *) fd, (char *) c, count));
 }
