@@ -21,11 +21,8 @@
 
 int fd_putchar(void *ctx, size_t count, void *c)
 {
-	int i;
+	fwrite(c, sizeof(char), count, ctx);
 
-	for (i = 0; i < count; i++) {
-		fputc(((char *) c )[i], ctx);
-	}
 	return 0;
 }
 
