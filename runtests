@@ -1,0 +1,41 @@
+#!/bin/sh
+set -e
+
+fail=0
+total=0
+
+if [ ! -e onak ]; then
+	echo "** onak binary doesn't exist, cannot run test suite" >&2
+	exit 1
+fi
+
+if [ -e t/db/ ]; then
+	rm -rf t/db/
+fi
+
+for t in libkeydb_*.so; do
+	backend=${t##libkeydb_}
+	backend=${backend%%.so}
+	if [ "`echo t/$backend-*`" != "t/$backend-*" ]; then
+		echo "* testing $backend backend"
+		(sed -e "s;DIR;`pwd`;" t/test-in.conf ; \
+			echo db_backend $backend) > t/test.conf
+		for t in t/$backend-*.t t/all-*.t; do
+			total=`expr $total + 1`
+			mkdir t/db/
+			if ! $t $backend; then
+				echo "test $t failed" >&2
+				fail=`expr $fail + 1`
+			fi
+			rm -rf t/db/
+		done
+		rm t/test.conf
+	fi
+done
+
+if [ "$fail" -gt 0 ]; then
+	echo "** failed $fail/$total tests" >&2
+	exit 1
+else
+	echo "** all tests succeeded"
+fi

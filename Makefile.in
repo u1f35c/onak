@@ -48,6 +48,9 @@ OBJS = stats.o cleankey.o $(CORE_OBJS) $(KEYDB_OBJ)
 all: .depend $(PROGS) testparse maxpath sixdegrees splitkeys onak.conf \
 	$(BACKENDS)
 
+test: onak $(BACKENDS)
+	@./runtests
+
 install: $(PROGS) onak.conf $(BACKENDS)
 	install -d $(DESTDIR)/@bindir@
 	install -d $(DESTDIR)/@libdir@/onak/backends
