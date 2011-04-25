@@ -25,11 +25,15 @@ int buffer_fetchchar(void *ctx, size_t count, void *c)
 	struct buffer_ctx *buf = NULL;
 	
 	buf = (struct buffer_ctx *) ctx;
+
+	if (buf->offset + count > buf->size) {
+		return 1;
+	}
 	
 	memcpy(c, &buf->buffer[buf->offset], count);
 	buf->offset += count;
 
-	return (((buf->offset) == (buf->size)) ? 1 : 0);
+	return 0;
 }
 
 /**
