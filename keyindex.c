@@ -184,6 +184,31 @@ void display_fingerprint(struct openpgp_publickey *key)
 	return;
 }
 
+void display_skshash(struct openpgp_publickey *key, bool html)
+{
+	int		i = 0;
+	struct skshash	hash;
+
+	get_skshash(key, &hash);
+	printf("      Key hash = ");
+	if (html) {
+		printf("<a href=\"lookup?op=hget&search=");
+		for (i = 0; i < sizeof(hash.hash); i++) {
+			printf("%02X", hash.hash[i]);
+		}
+		printf("\">");
+	}
+	for (i = 0; i < sizeof(hash.hash); i++) {
+		printf("%02X", hash.hash[i]);
+	}
+	if (html) {
+		printf("</a>");
+	}
+	printf("\n");
+
+	return;
+}
+
 /**
  *	key_index - List a set of OpenPGP keys.
  *	@keys: The keys to display.
@@ -195,7 +220,7 @@ void display_fingerprint(struct openpgp_publickey *key)
  *	of them. Useful for debugging or the keyserver Index function.
  */
 int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
-			bool html)
+			bool skshash, bool html)
 {
 	struct openpgp_signedpacket_list	*curuid = NULL;
 	struct tm				*created = NULL;
@@ -289,6 +314,9 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 				(html) ? txt2html(buf) : buf,
 				(html) ? "</a>" : "",
 				(keys->revoked) ? " *** REVOKED ***" : "");
+			if (skshash) {
+				display_skshash(keys, html);
+			}
 			if (fingerprint) {
 				display_fingerprint(keys);
 			}

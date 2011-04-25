@@ -34,7 +34,7 @@
 #include "version.h"
 
 void find_keys(char *search, uint64_t keyid, bool ishex,
-		bool fingerprint, bool exact, bool verbose)
+		bool fingerprint, bool skshash, bool exact, bool verbose)
 {
 	struct openpgp_publickey *publickey = NULL;
 	int count = 0;
@@ -45,7 +45,7 @@ void find_keys(char *search, uint64_t keyid, bool ishex,
 		count = config.dbbackend->fetch_key_text(search, &publickey);
 	}
 	if (publickey != NULL) {
-		key_index(publickey, verbose, fingerprint, false);
+		key_index(publickey, verbose, fingerprint, skshash, false);
 		free_publickey(publickey);
 	} else if (count == 0) {
 		puts("Key not found.");
@@ -128,10 +128,12 @@ int main(int argc, char *argv[])
 	bool				 update = false;
 	bool				 binary = false;
 	bool				 fingerprint = false;
+	bool				 skshash = false;
 	int				 optchar;
 	struct dump_ctx                  dumpstate;
+	struct skshash			 hash;
 
-	while ((optchar = getopt(argc, argv, "bc:fuv")) != -1 ) {
+	while ((optchar = getopt(argc, argv, "bc:fsuv")) != -1 ) {
 		switch (optchar) {
 		case 'b': 
 			binary = true;
@@ -141,6 +143,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'f': 
 			fingerprint = true;
+			break;
+		case 's': 
+			skshash = true;
 			break;
 		case 'u': 
 			update = true;
@@ -282,10 +287,10 @@ int main(int argc, char *argv[])
 		}
 		config.dbbackend->initdb(false);
 		if (!strcmp("index", argv[optind])) {
-			find_keys(search, keyid, ishex, fingerprint,
+			find_keys(search, keyid, ishex, fingerprint, skshash,
 					false, false);
 		} else if (!strcmp("vindex", argv[optind])) {
-			find_keys(search, keyid, ishex, fingerprint,
+			find_keys(search, keyid, ishex, fingerprint, skshash,
 					false, true);
 		} else if (!strcmp("getphoto", argv[optind])) {
 			if (!ishex) {
@@ -317,6 +322,30 @@ int main(int argc, char *argv[])
 					" You must supply a keyid.");
 			} else if (config.dbbackend->fetch_key(keyid, &keys,
 					false)) {
+				logthing(LOGTHING_INFO, "Got key.");
+				flatten_publickey(keys,
+						&packets,
+						&list_end);
+				free_publickey(keys);
+				if (binary) {
+					write_openpgp_stream(stdout_putchar,
+						NULL,
+						packets);
+				} else {
+					armor_openpgp_stream(stdout_putchar,
+						NULL,
+						packets);
+				}
+				free_packet_list(packets);
+				packets = NULL;
+			} else {
+				puts("Key not found");
+			}
+		} else if (!strcmp("hget", argv[optind])) {
+			if (!parse_skshash(search, &hash)) {
+				puts("Couldn't parse sks hash.");
+			} else if (config.dbbackend->fetch_key_skshash(&hash,
+					&keys)) {
 				logthing(LOGTHING_INFO, "Got key.");
 				flatten_publickey(keys,
 						&packets,

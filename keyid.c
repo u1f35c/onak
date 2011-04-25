@@ -6,6 +6,7 @@
  * Copyright 2002 Project Purple
  */
 
+#include <string.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
 
@@ -215,4 +216,33 @@ void get_skshash(struct openpgp_publickey *key, struct skshash *hash)
 
 	md5_finish_ctx(&md5_context, &hash->hash);
 	free_packet_list(packets);
+}
+
+uint8_t hexdigit(char c)
+{
+	if (c >= '0' && c <= '9')
+		return c - '0';
+	else if (c >= 'a' && c <= 'f')
+		return c - 'a' + 10;
+	else if (c >= 'A' && c <= 'F')
+		return c - 'A' + 10;
+	else
+		return 0;
+}
+
+int parse_skshash(char *search, struct skshash *hash)
+{
+	int i, len;
+
+	len = strlen(search);
+	if (len > 32) {
+		return 0;
+	}
+
+	for (i = 0; i < len; i += 2) {
+		hash->hash[i >> 1] = (hexdigit(search[i]) << 4) +
+				hexdigit(search[i + 1]);
+	}
+
+	return 1;
 }

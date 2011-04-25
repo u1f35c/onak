@@ -55,4 +55,16 @@ uint64_t get_packetid(struct openpgp_packet *packet);
  */
 void get_skshash(struct openpgp_publickey *publickey, struct skshash *hash);
 
+/**
+ *	parse_skshash - Parse a string into an SKS hash structure.
+ *	@search: The string representing the SKS hash.
+ *	@hash: A pointer to the structure to store the hash in.
+ *
+ *	Takes a string and tries to parse it as an SKS hash hex
+ *	representation. Puts the hash into the supplied structure
+ *	if successful. Returns 1 if we parsed something ok, 0 if
+ *	we failed.
+ */
+int parse_skshash(char *search, struct skshash *hash);
+
 #endif /* __KEYID_H__ */

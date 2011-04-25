@@ -18,13 +18,14 @@
  *	@keys: The keys to display.
  *      @verbose: Should we list sigs as well?
  *	@fingerprint: List the fingerprint?
+ *	@skshash: List the sks hash?
  *	@html: Should we tailor the output for HTML?
  *
  *	This function takes a list of OpenPGP public keys and displays an index
  *	of them. Useful for debugging or the keyserver Index function.
  */
 int key_index(struct openpgp_publickey *keys, bool verbose,
-		bool fingerprint, bool html);
+		bool fingerprint, bool skshash, bool html);
 
 /**
  *	mrkey_index - List a set of OpenPGP keys in the MRHKP format.

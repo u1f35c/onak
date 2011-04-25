@@ -19,6 +19,7 @@
 #include "cleanup.h"
 #include "getcgi.h"
 #include "keydb.h"
+#include "keyid.h"
 #include "keyindex.h"
 #include "log.h"
 #include "mem.h"
@@ -32,9 +33,11 @@
 #define OP_INDEX   2
 #define OP_VINDEX  3
 #define OP_PHOTO   4
+#define OP_HGET    5
 
 void find_keys(char *search, uint64_t keyid, bool ishex,
-		bool fingerprint, bool exact, bool verbose, bool mrhkp)
+		bool fingerprint, bool skshash, bool exact, bool verbose,
+		bool mrhkp)
 {
 	struct openpgp_publickey *publickey = NULL;
 	int count = 0;
@@ -49,7 +52,8 @@ void find_keys(char *search, uint64_t keyid, bool ishex,
 			printf("info:1:%d\n", count);
 			mrkey_index(publickey);
 		} else {
-			key_index(publickey, verbose, fingerprint, true);
+			key_index(publickey, verbose, fingerprint, skshash,
+				true);
 		}
 		free_publickey(publickey);
 	} else if (count == 0) {
@@ -78,6 +82,7 @@ int main(int argc, char *argv[])
 	int i;
 	int indx = 0;
 	bool fingerprint = false;
+	bool skshash = false;
 	bool exact = false;
 	bool ishex = false;
 	bool mrhkp = false;
@@ -88,12 +93,15 @@ int main(int argc, char *argv[])
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_packet_list *list_end = NULL;
 	int result;
+	struct skshash hash;
 
 	params = getcgivars(argc, argv);
 	for (i = 0; params != NULL && params[i] != NULL; i += 2) {
 		if (!strcmp(params[i], "op")) {
 			if (!strcmp(params[i+1], "get")) {
 				op = OP_GET;
+			} else if (!strcmp(params[i+1], "hget")) {
+				op = OP_HGET;
 			} else if (!strcmp(params[i+1], "index")) {
 				op = OP_INDEX;
 			} else if (!strcmp(params[i+1], "vindex")) {
@@ -117,6 +125,10 @@ int main(int argc, char *argv[])
 		} else if (!strcmp(params[i], "fingerprint")) {
 			if (!strcmp(params[i+1], "on")) {
 				fingerprint = true;
+			}
+		} else if (!strcmp(params[i], "hash")) {
+			if (!strcmp(params[i+1], "on")) {
+				skshash = true;
 			}
 		} else if (!strcmp(params[i], "exact")) {
 			if (!strcmp(params[i+1], "on")) {
@@ -163,7 +175,12 @@ int main(int argc, char *argv[])
 		config.dbbackend->initdb(false);
 		switch (op) {
 		case OP_GET:
-			if (ishex) {
+		case OP_HGET:
+			if (op == OP_HGET) {
+				parse_skshash(search, &hash);
+				result = config.dbbackend->fetch_key_skshash(
+					&hash, &publickey);
+			} else if (ishex) {
 				result = config.dbbackend->fetch_key(keyid,
 					&publickey, false);
 			} else {
@@ -193,12 +210,12 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case OP_INDEX:
-			find_keys(search, keyid, ishex, fingerprint, exact,
-					false, mrhkp);
+			find_keys(search, keyid, ishex, fingerprint, skshash,
+					exact, false, mrhkp);
 			break;
 		case OP_VINDEX:
-			find_keys(search, keyid, ishex, fingerprint, exact,
-					true, mrhkp);
+			find_keys(search, keyid, ishex, fingerprint, skshash,
+					exact, true, mrhkp);
 			break;
 		case OP_PHOTO:
 			if (config.dbbackend->fetch_key(keyid, &publickey,
