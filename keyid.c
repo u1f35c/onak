@@ -7,11 +7,15 @@
  */
 
 #include <sys/types.h>
+#include <arpa/inet.h>
 
 #include "keyid.h"
 #include "keystructs.h"
 #include "log.h"
+#include "parsekey.h"
 #include "md5.h"
+#include "mem.h"
+#include "merge.h"
 #include "sha1.h"
 
 
@@ -155,4 +159,60 @@ uint64_t get_packetid(struct openpgp_packet *packet)
 	}
 
 	return keyid;
+}
+
+static struct openpgp_packet_list *sortpackets(struct openpgp_packet_list
+							*packets)
+{
+	struct openpgp_packet_list *sorted, **cur, *next;
+
+	sorted = NULL;
+	while (packets != NULL) {
+		cur = &sorted;
+		while (*cur != NULL && compare_packets((*cur)->packet,
+				packets->packet) < 0) {
+			cur = &((*cur)->next);
+		}
+		next = *cur;
+		*cur = packets;
+		packets = packets->next;
+		(*cur)->next = next;
+	}
+
+	return sorted;
+}
+
+void get_skshash(struct openpgp_publickey *key, struct skshash *hash)
+{
+	struct openpgp_packet_list *packets = NULL, *list_end = NULL;
+	struct openpgp_packet_list *curpacket;
+	struct md5_ctx md5_context;
+	struct openpgp_publickey *next;
+	uint32_t tmp;
+
+	/*
+	 * We only want a single key, so clear any link to the next
+	 * one for the period during the flatten.
+	 */
+	next = key->next;
+	key->next = NULL;
+	flatten_publickey(key, &packets, &list_end);
+	key->next = next;
+	packets = sortpackets(packets);
+
+	md5_init_ctx(&md5_context);
+
+	for (curpacket = packets; curpacket != NULL;
+			curpacket = curpacket->next) {
+		tmp = htonl(curpacket->packet->tag);
+		md5_process_bytes(&tmp, sizeof(tmp), &md5_context);
+		tmp = htonl(curpacket->packet->length);
+		md5_process_bytes(&tmp, sizeof(tmp), &md5_context);
+		md5_process_bytes(curpacket->packet->data,
+				curpacket->packet->length,
+				&md5_context);
+	}
+
+	md5_finish_ctx(&md5_context, &hash->hash);
+	free_packet_list(packets);
 }

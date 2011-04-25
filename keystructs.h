@@ -104,4 +104,12 @@ struct stats_key {
 	bool revoked;
 };
 
+/**
+ *	struct skshash - holds an SKS key hash (md5 over sorted packet list)
+ *	@hash: The 128 bit MD5 hash of the sorted packet list from the key
+ */
+struct skshash {
+	uint8_t hash[16];
+};
+
 #endif /* __KEYSTRUCTS_H__ */

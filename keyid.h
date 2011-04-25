@@ -43,4 +43,16 @@ unsigned char *get_fingerprint(struct openpgp_packet *packet,
  */
 uint64_t get_packetid(struct openpgp_packet *packet);
 
+/**
+ *	get_skshash - Given a public key returns the SKS hash for it.
+ *	@publickey: The key to calculate the hash for.
+ *	@skshash: Hash structure to sort the result in.
+ *
+ *	This function returns the SKS hash for a given public key. This
+ *	is an MD5 hash over a sorted list of all of the packets that
+ *	make up the key. The caller should allocate the memory for the
+ *	hash.
+ */
+void get_skshash(struct openpgp_publickey *publickey, struct skshash *hash);
+
 #endif /* __KEYID_H__ */
