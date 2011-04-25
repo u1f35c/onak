@@ -5,6 +5,7 @@ config.log
 config.h
 config.h.in
 add
+hashquery
 lookup
 onak
 gpgwww

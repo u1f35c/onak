@@ -1,3 +1,9 @@
+onak (0.4.0-1+bzr) unstable; urgency=low
+
+  * Development build
+
+ -- Jonathan McDowell <noodles@earth.li>  Sun, 24 Apr 2011 16:42:15 -0700
+
 onak (0.4.0-1) unstable; urgency=low
 
   * Only seed empty database for if we're using default config
