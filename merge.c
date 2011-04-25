@@ -24,13 +24,26 @@
  *	@a: The first packet to compare.
  *	@b: The second packet to compare.
  *
- *	Takes 2 packets and returns true if they are the same and false
- *	otherwise.
+ *	Takes 2 packets and returns 0 if they are the same, -1 if a is
+ *      less than b, or 1 if a is greater than b.
  */
-bool compare_packets(struct openpgp_packet *a, struct openpgp_packet *b)
+int compare_packets(struct openpgp_packet *a, struct openpgp_packet *b)
 {
-	return (a->tag == b->tag && a->length == b->length &&
-		!memcmp(a->data, b->data, b->length));
+	int ret, len;
+
+	if (a->tag > b->tag) {
+		ret = 1;
+	} else if (b->tag > a->tag) {
+		ret = -1;
+	} else {
+		len = (a->length < b->length) ? a->length : b->length;
+		ret = memcmp(a->data, b->data, len);
+		if (ret == 0 && a->length != b->length) {
+			ret = (a->length < b->length) ? -1 : 1;
+		}
+	}
+
+	return ret;
 }
 
 /**
@@ -73,7 +86,7 @@ bool find_packet(struct openpgp_packet_list *packet_list,
 	bool found = false;
 
 	while (!found && packet_list != NULL) {
-		if (compare_packets(packet_list->packet, packet)) {
+		if (compare_packets(packet_list->packet, packet) == 0) {
 			found = true;
 		}
 		packet_list = packet_list -> next;
@@ -122,7 +135,7 @@ struct openpgp_signedpacket_list *find_signed_packet(
 	struct openpgp_signedpacket_list *found = NULL;
 
 	while (found == NULL && packet_list != NULL) {
-		if (compare_packets(packet_list->packet, packet)) {
+		if (compare_packets(packet_list->packet, packet) == 0) {
 			found = packet_list;
 		}
 		packet_list = packet_list -> next;
@@ -149,7 +162,7 @@ bool remove_signed_packet(struct openpgp_signedpacket_list **packet_list,
 	bool found = false;
 
 	for (cur = *packet_list; !found && (cur != NULL); cur = cur->next) {
-		if (compare_packets(cur->packet, packet)) {
+		if (compare_packets(cur->packet, packet) == 0) {
 			found = true;
 			if (prev == NULL) {
 				*packet_list = cur->next;
@@ -186,7 +199,7 @@ int merge_packet_sigs(struct openpgp_signedpacket_list *old,
 	struct openpgp_packet_list	*curpacket = NULL;
 	struct openpgp_packet_list	*nextpacket = NULL;
 
-	log_assert(compare_packets(old->packet, new->packet));
+	log_assert(compare_packets(old->packet, new->packet) == 0);
 
 	curpacket = new->sigs;
 	while (curpacket != NULL) {

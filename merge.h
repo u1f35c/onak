@@ -11,6 +11,16 @@
 #include "keystructs.h"
 
 /**
+ *	compare_packets - Check to see if 2 OpenPGP packets are the same.
+ *	@a: The first packet to compare.
+ *	@b: The second packet to compare.
+ *
+ *	Takes 2 packets and returns 0 if they are the same, -1 if a is
+ *      less than b, or 1 if a is greater than b.
+ */
+int compare_packets(struct openpgp_packet *a, struct openpgp_packet *b);
+
+/**
  *	merge_keys - Takes 2 public keys and merges them.
  *	@a: The old key. The merged key is returned in this structure.
  *	@b: The new key. The changed from old to new keys are returned in this
