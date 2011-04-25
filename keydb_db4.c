@@ -57,6 +57,11 @@ static DB *worddb = NULL;
 static DB *id32db = NULL;
 
 /**
+ *	skshashdb - our connection to the SKS hash database.
+ */
+static DB *skshashdb = NULL;
+
+/**
  *	txn - our current transaction id.
  */
 static DB_TXN *txn = NULL;
@@ -157,6 +162,10 @@ static void db4_cleanupdb(void)
 
 	if (dbenv != NULL) {
 		dbenv->txn_checkpoint(dbenv, 0, 0, 0);
+		if (skshashdb != NULL) {
+			skshashdb->close(skshashdb, 0);
+			skshashdb = NULL;
+		}
 		if (id32db != NULL) {
 			id32db->close(id32db, 0);
 			id32db = NULL;
@@ -246,6 +255,18 @@ static int db4_upgradedb(int numdb)
 	ret = db_create(&curdb, NULL, 0);
 	if (ret == 0) {
 		snprintf(buf, sizeof(buf) - 1, "%s/id32db", config.db_dir);
+		logthing(LOGTHING_DEBUG, "Upgrading %s", buf);
+		ret = curdb->upgrade(curdb, buf, 0);
+		curdb->close(curdb, 0);
+	} else {
+		logthing(LOGTHING_ERROR, "Error upgrading DB %s : %s",
+			buf,
+			db_strerror(ret));
+	}
+
+	ret = db_create(&curdb, NULL, 0);
+	if (ret == 0) {
+		snprintf(buf, sizeof(buf) - 1, "%s/skshashdb", config.db_dir);
 		logthing(LOGTHING_DEBUG, "Upgrading %s", buf);
 		ret = curdb->upgrade(curdb, buf, 0);
 		curdb->close(curdb, 0);
@@ -477,6 +498,27 @@ static void db4_initdb(bool readonly)
 					"Error opening id32 database: %s (%s)",
 					"id32db",
 					db_strerror(ret));
+		}
+	}
+
+	if (ret == 0) {
+		ret = db_create(&skshashdb, dbenv, 0);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL, "db_create: %s",
+					db_strerror(ret));
+		}
+	}
+
+	if (ret == 0) {
+		ret = skshashdb->open(skshashdb, txn, "skshashdb",
+				"skshashdb", DB_HASH,
+				flags,
+				0664);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL,
+				"Error opening skshash database: %s (%s)",
+				"skshashdb",
+				db_strerror(ret));
 		}
 	}
 
@@ -722,6 +764,45 @@ static int db4_fetch_key_text(const char *search,
 	return (numkeys);
 }
 
+static int db4_fetch_key_skshash(const struct skshash *hash,
+		struct openpgp_publickey **publickey)
+{
+	DBT       key, data;
+	DBC      *cursor = NULL;
+	uint64_t  keyid = 0;
+	int       ret = 0;
+
+	ret = skshashdb->cursor(skshashdb,
+			txn,
+			&cursor,
+			0);   /* flags */
+
+	memset(&key, 0, sizeof(key));
+	memset(&data, 0, sizeof(data));
+	key.data = (void *) hash->hash;
+	key.size = sizeof(hash->hash);
+	data.flags = DB_DBT_MALLOC;
+
+	ret = cursor->c_get(cursor,
+		&key,
+		&data,
+		DB_SET);
+
+	if (ret == 0) {
+		keyid = *(uint64_t *) data.data;
+
+		if (data.data != NULL) {
+			free(data.data);
+			data.data = NULL;
+		}
+	}
+
+	ret = cursor->c_close(cursor);
+	cursor = NULL;
+
+	return db4_fetch_key(keyid, publickey, false);
+}
+
 /**
  *	delete_key - Given a keyid delete the key from storage.
  *	@keyid: The keyid to delete.
@@ -745,6 +826,7 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 	struct ll *wordlist = NULL;
 	struct ll *curword  = NULL;
 	bool deadlock = false;
+	struct skshash hash;
 
 	if (!intrans) {
 		db4_starttrans();
@@ -912,6 +994,38 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 			free(subkeyids);
 			subkeyids = NULL;
 		}
+		ret = cursor->c_close(cursor);
+		cursor = NULL;
+
+	}
+
+	if (!deadlock) {
+		get_skshash(publickey, &hash);
+
+		memset(&key, 0, sizeof(key));
+		memset(&data, 0, sizeof(data));
+		key.data = hash.hash;
+		key.size = sizeof(hash.hash);
+		data.data = &keyid;
+		data.size = sizeof(keyid);
+
+		ret = cursor->c_get(cursor,
+			&key,
+			&data,
+			DB_GET_BOTH);
+
+		if (ret == 0) {
+			ret = cursor->c_del(cursor, 0);
+		}
+
+		if (ret != 0) {
+			logthing(LOGTHING_ERROR,
+				"Problem deleting skshash: %s",
+				db_strerror(ret));
+			if (ret == DB_LOCK_DEADLOCK) {
+				deadlock = true;
+			}
+		}
 
 		ret = cursor->c_close(cursor);
 		cursor = NULL;
@@ -966,6 +1080,7 @@ static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
 	struct ll *wordlist = NULL;
 	struct ll *curword  = NULL;
 	bool       deadlock = false;
+	struct skshash hash;
 
 	keyid = get_keyid(publickey);
 
@@ -1159,6 +1274,30 @@ static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
 		}
 	}
 
+	if (!deadlock) {
+		get_skshash(publickey, &hash);
+		memset(&key, 0, sizeof(key));
+		memset(&data, 0, sizeof(data));
+		key.data = hash.hash;
+		key.size = sizeof(hash.hash);
+		data.data = &keyid;
+		data.size = sizeof(keyid);
+
+		ret = skshashdb->put(skshashdb,
+			txn,
+			&key,
+			&data,
+			0);
+		if (ret != 0) {
+			logthing(LOGTHING_ERROR,
+				"Problem storing SKS hash: %s",
+				db_strerror(ret));
+			if (ret == DB_LOCK_DEADLOCK) {
+				deadlock = true;
+			}
+		}
+	}
+
 	if (!intrans) {
 		db4_endtrans();
 	}
@@ -1247,6 +1386,7 @@ struct dbfuncs keydb_db4_funcs = {
 	.endtrans		= db4_endtrans,
 	.fetch_key		= db4_fetch_key,
 	.fetch_key_text		= db4_fetch_key_text,
+	.fetch_key_skshash	= db4_fetch_key_skshash,
 	.store_key		= db4_store_key,
 	.update_keys		= generic_update_keys,
 	.delete_key		= db4_delete_key,

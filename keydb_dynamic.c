@@ -198,6 +198,23 @@ static int dynamic_fetch_key_text(const char *search,
 	return -1;
 }
 
+static int dynamic_fetch_key_skshash(const struct skshash *hash,
+		struct openpgp_publickey **publickey)
+{
+	if (loaded_backend == NULL) {
+		load_backend();
+	}
+	
+	if (loaded_backend != NULL) {
+		if (loaded_backend->fetch_key_skshash != NULL) {
+			return loaded_backend->fetch_key_skshash(hash,
+								publickey);
+		}
+	}
+
+	return -1;
+}
+
 static int dynamic_iterate_keys(void (*iterfunc)(void *ctx,
 		struct openpgp_publickey *key), void *ctx)
 {
@@ -487,6 +504,7 @@ struct dbfuncs keydb_dynamic_funcs = {
 	.endtrans		= dynamic_endtrans,
 	.fetch_key		= dynamic_fetch_key,
 	.fetch_key_text		= dynamic_fetch_key_text,
+	.fetch_key_skshash	= dynamic_fetch_key_skshash,
 	.store_key		= dynamic_store_key,
 	.update_keys		= dynamic_update_keys,
 	.delete_key		= dynamic_delete_key,

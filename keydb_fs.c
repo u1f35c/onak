@@ -126,6 +126,19 @@ static void subkeypath(char *buffer, size_t length, uint64_t subkey,
 		 keyid);
 }
 
+static void skshashpath(char *buffer, size_t length,
+		const struct skshash *hash)
+{
+	snprintf(buffer, length, "%s/skshash/%02X/%02X/%02X%02X%02X%02X/"
+		"%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
+		 config.db_dir,
+		 hash->hash[0], hash->hash[1],
+		 hash->hash[0], hash->hash[1], hash->hash[2], hash->hash[3],
+		 hash->hash[4], hash->hash[5], hash->hash[6], hash->hash[7],
+		 hash->hash[8], hash->hash[9], hash->hash[10], hash->hash[11],
+		 hash->hash[12], hash->hash[13], hash->hash[14],
+		 hash->hash[15]);
+}
 static void subkeydir(char *buffer, size_t length, uint64_t subkey)
 {
 	snprintf(buffer, length, "%s/subkeys/%02X/%02X/%08X",
@@ -307,7 +320,9 @@ static int fs_store_key(struct openpgp_publickey *publickey, bool intrans,
 	struct openpgp_publickey *next = NULL;
 	uint64_t keyid = get_keyid(publickey);
 	struct ll *wordlist = NULL, *wl = NULL;
+	struct skshash hash;
 	uint64_t *subkeyids = NULL;
+	uint32_t hashid;
 	int i = 0;
 
 
@@ -365,6 +380,13 @@ static int fs_store_key(struct openpgp_publickey *publickey, bool intrans,
 			free(subkeyids);
 			subkeyids = NULL;
 		}
+
+		get_skshash(publickey, &hash);
+		hashid = (hash.hash[0] << 24) + (hash.hash[1] << 16) +
+				(hash.hash[2] << 8) + hash.hash[3];
+		prove_path_to(hashid, "skshash");
+		skshashpath(wbuffer, sizeof(wbuffer), &hash);
+		link(buffer, wbuffer);
 	}
 
 	if (!intrans)
@@ -382,6 +404,7 @@ static int fs_delete_key(uint64_t keyid, bool intrans)
 	static char buffer[PATH_MAX];
 	int ret;
 	struct openpgp_publickey *pk = NULL;
+	struct skshash hash;
 	struct ll *wordlist = NULL, *wl = NULL;
 	uint64_t *subkeyids = NULL;
 	int i = 0;
@@ -427,6 +450,9 @@ static int fs_delete_key(uint64_t keyid, bool intrans)
 			subkeyids = NULL;
 		}
 
+		get_skshash(pk, &hash);
+		skshashpath(buffer, sizeof(buffer), &hash);
+		unlink(buffer);
 	}
 
 	keypath(buffer, sizeof(buffer), keyid);
@@ -537,6 +563,32 @@ static int fs_fetch_key_text(const char *search,
 }
 
 /**
+ *	fetch_key_skshash - Given an SKS hash fetch the key from storage.
+ *	@hash: The hash to fetch.
+ *	@publickey: A pointer to a structure to return the key in.
+ *	@intrans: If we're already in a transaction.
+ */
+static int fs_fetch_key_skshash(const struct skshash *hash,
+	      struct openpgp_publickey **publickey)
+{
+	static char buffer[PATH_MAX];
+	int ret = 0, fd;
+	struct openpgp_packet_list *packets = NULL;
+
+	skshashpath(buffer, sizeof(buffer), hash);
+	if ((fd = open(buffer, O_RDONLY)) != -1) {
+		read_openpgp_stream(file_fetchchar, &fd, &packets, 0);
+		parse_keys(packets, publickey);
+		free_packet_list(packets);
+		packets = NULL;
+		close(fd);
+		ret = 1;
+	}
+
+	return ret;
+}
+
+/**
  *	iterate_keys - call a function once for each key in the db.
  *	@iterfunc: The function to call.
  *	@ctx: A context pointer
@@ -568,6 +620,7 @@ struct dbfuncs keydb_fs_funcs = {
 	.endtrans		= fs_endtrans,
 	.fetch_key		= fs_fetch_key,
 	.fetch_key_text		= fs_fetch_key_text,
+	.fetch_key_skshash	= fs_fetch_key_skshash,
 	.store_key		= fs_store_key,
 	.update_keys		= generic_update_keys,
 	.delete_key		= fs_delete_key,

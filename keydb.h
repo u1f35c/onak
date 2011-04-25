@@ -105,6 +105,17 @@ struct dbfuncs {
 			struct openpgp_publickey **publickey);
 
 /**
+ *	fetch_key_skshash - Tries to find the keys from an SKS hash
+ *	@hash: The hash to search for.
+ *	@publickey: A pointer to a structure to return the key in.
+ *
+ *	This function looks for the key that is referenced by the supplied
+ *	SKS hash and returns it.
+ */
+	int (*fetch_key_skshash)(const struct skshash *hash,
+			struct openpgp_publickey **publickey);
+
+/**
  *	update_keys - Takes a list of public keys and updates them in the DB.
  *	@keys: The keys to update in the DB.
  *	@sendsync: If we should send a keysync mail.

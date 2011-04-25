@@ -352,6 +352,49 @@ static int keyd_fetch_key_text(const char *search,
 	return 0;
 }
 
+static int keyd_fetch_key_skshash(const struct skshash *hash,
+		struct openpgp_publickey **publickey)
+{
+	struct buffer_ctx           keybuf;
+	struct openpgp_packet_list *packets = NULL;
+	uint32_t                    cmd = KEYD_CMD_GETSKSHASH;
+	ssize_t                     bytes = 0;
+	ssize_t                     count = 0;
+
+	write(keyd_fd, &cmd, sizeof(cmd));
+	read(keyd_fd, &cmd, sizeof(cmd));
+	if (cmd == KEYD_REPLY_OK) {
+		write(keyd_fd, hash->hash, sizeof(hash->hash));
+		keybuf.offset = 0;
+		read(keyd_fd, &keybuf.size, sizeof(keybuf.size));
+		if (keybuf.size > 0) {
+			keybuf.buffer = malloc(keybuf.size);
+			bytes = count = 0;
+			logthing(LOGTHING_TRACE,
+					"Getting %d bytes of key data.",
+					keybuf.size);
+			while (bytes >= 0 && count < keybuf.size) {
+				bytes = read(keyd_fd, &keybuf.buffer[count],
+						keybuf.size - count);
+				logthing(LOGTHING_TRACE,
+						"Read %d bytes.", bytes);
+				count += bytes;
+			}
+			read_openpgp_stream(buffer_fetchchar, &keybuf,
+					&packets, 0);
+			parse_keys(packets, publickey);
+			free_packet_list(packets);
+			packets = NULL;
+			free(keybuf.buffer);
+			keybuf.buffer = NULL;
+			keybuf.size = 0;
+		}
+	}
+	
+	return (count > 0) ? 1 : 0;
+}
+
+
 /**
  *	getfullkeyid - Maps a 32bit key id to a 64bit one.
  *	@keyid: The 32bit keyid.
@@ -454,6 +497,7 @@ struct dbfuncs keydb_keyd_funcs = {
 	.endtrans		= keyd_endtrans,
 	.fetch_key		= keyd_fetch_key,
 	.fetch_key_text		= keyd_fetch_key_text,
+	.fetch_key_skshash	= keyd_fetch_key_skshash,
 	.store_key		= keyd_store_key,
 	.update_keys		= generic_update_keys,
 	.delete_key		= keyd_delete_key,

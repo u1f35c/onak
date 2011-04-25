@@ -140,6 +140,7 @@ int sock_do(int fd)
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_packet_list *list_end = NULL;
 	struct buffer_ctx storebuf;
+	struct skshash hash;
 
 	/*
 	 * Get the command from the client.
@@ -357,6 +358,53 @@ int sock_do(int fd)
 			write(fd, stats,
 				sizeof(*stats));
 			break;
+		case KEYD_CMD_GETSKSHASH:
+			cmd = KEYD_REPLY_OK;
+			write(fd, &cmd, sizeof(cmd));
+			bytes = read(fd, hash.hash, sizeof(hash.hash));
+			if (bytes != sizeof(hash.hash)) {
+				ret = 1;
+			}
+			storebuf.offset = 0;
+			if (ret == 0) {
+				logthing(LOGTHING_INFO,
+						"Fetching by hash"
+						", result: %d",
+						config.dbbackend->
+						fetch_key_skshash(&hash,
+							&key));
+				if (key != NULL) {
+					storebuf.size = 8192;
+					storebuf.buffer = malloc(8192);
+
+					flatten_publickey(key,
+							&packets,
+							&list_end);
+					write_openpgp_stream(buffer_putchar,
+							&storebuf,
+							packets);
+					logthing(LOGTHING_TRACE,
+							"Sending %d bytes.",
+							storebuf.offset);
+					write(fd, &storebuf.offset,
+						sizeof(storebuf.offset));
+					write(fd, storebuf.buffer,
+						storebuf.offset);
+
+					free(storebuf.buffer);
+					storebuf.buffer = NULL;
+					storebuf.size = storebuf.offset = 0;
+					free_packet_list(packets);
+					packets = list_end = NULL;
+					free_publickey(key);
+					key = NULL;
+				} else {
+					write(fd, &storebuf.offset,
+						sizeof(storebuf.offset));
+				}
+			}
+			break;
+
 		default:
 			logthing(LOGTHING_ERROR, "Got unknown command: %d",
 					cmd);
