@@ -190,9 +190,7 @@ int main(int argc, char *argv[])
 
 	if (op != OP_GET) {
 		puts("<HR>");
-		puts("Produced by gpgwww " ONAK_VERSION ", part of onak. "
-			"<A HREF=\"mailto:noodles-onak@earth.li\">"
-			"Jonathan McDowell</A>");
+		puts("Produced by gpgwww " ONAK_VERSION ", part of onak. ");
 		end_html();
 	}
 

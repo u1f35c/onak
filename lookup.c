@@ -243,8 +243,7 @@ int main(int argc, char *argv[])
 	}
 	if (!mrhkp) {
 		puts("<hr>");
-		puts("Produced by onak " ONAK_VERSION 
-				" by Jonathan McDowell");
+		puts("Produced by onak " ONAK_VERSION );
 		end_html();
 	}
 
