@@ -16,6 +16,7 @@
 #include "ll.h"
 #include "log.h"
 #include "mem.h"
+#include "openpgp.h"
 #include "parsekey.h"
 
 /**
@@ -45,7 +46,7 @@ int parse_keys(struct openpgp_packet_list *packets,
 
 	while (packets != NULL) {
 		switch (packets->packet->tag) {
-		case 2:
+		case OPENPGP_PACKET_SIGNATURE:
 			/*
 			 * It's a signature packet. Add it to either the public
 			 * key, to the current UID or the current subkey.
@@ -68,13 +69,15 @@ int parse_keys(struct openpgp_packet_list *packets,
 				 * if it's a revocation.
 				 */
 				if (packets->packet->data[0] == 3 &&
-					packets->packet->data[2] == 0x20) {
+					packets->packet->data[2] ==
+						OPENPGP_SIGTYPE_KEY_REV) {
 					/*
 					 * Type 3 key, 0x20 == revocation
 					 */
 					curkey->revoked = true;
 				} else if (packets->packet->data[0] == 4 &&
-					packets->packet->data[1] == 0x20) {
+					packets->packet->data[1] ==
+						OPENPGP_SIGTYPE_KEY_REV) {
 					/*
 					 * Type 4 key, 0x20 == revocation
 					 */
@@ -82,7 +85,7 @@ int parse_keys(struct openpgp_packet_list *packets,
 				}
 			}
 			break;
-		case 6:
+		case OPENPGP_PACKET_PUBLICKEY:
 			/*
 			 * It's a public key packet, so start a new key in our
 			 * list.
@@ -98,8 +101,8 @@ int parse_keys(struct openpgp_packet_list *packets,
 			curkey->publickey = packet_dup(packets->packet);
 			count++;
 			break;
-		case 13:
-		case 17:
+		case OPENPGP_PACKET_UID:
+		case OPENPGP_PACKET_UAT:
 			/*
 			 * It's a UID packet (or a photo id, which is similar).
 			 */
@@ -109,7 +112,7 @@ int parse_keys(struct openpgp_packet_list *packets,
 				uid,
 				packet_dup(packets->packet));
 			break;
-		case 14:
+		case OPENPGP_PACKET_PUBLICSUBKEY:
 			/*
 			 * It's a subkey packet.
 			 */
@@ -118,7 +121,7 @@ int parse_keys(struct openpgp_packet_list *packets,
 				subkey,
 				packet_dup(packets->packet));
 			break;
-		case 12:
+		case OPENPGP_PACKET_TRUST:
 		case 61:
 			/*
 			 * One of:
@@ -284,7 +287,8 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 			}
 
 			if (rc == 0) {
-				if (curpacket->packet->tag == 6) {
+				if (curpacket->packet->tag ==
+						OPENPGP_PACKET_PUBLICKEY) {
 					keys++;
 				}
 				curpacket->packet->data =

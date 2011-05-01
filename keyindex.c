@@ -20,6 +20,7 @@
 #include "keystructs.h"
 #include "log.h"
 #include "onak-conf.h"
+#include "openpgp.h"
 
 int list_sigs(struct openpgp_packet_list *sigs, bool html)
 {
@@ -78,13 +79,13 @@ int list_uids(uint64_t keyid, struct openpgp_signedpacket_list *uids,
 	int  imgindx = 0;
 
 	while (uids != NULL) {
-		if (uids->packet->tag == 13) {
+		if (uids->packet->tag == OPENPGP_PACKET_UID) {
 			snprintf(buf, 1023, "%.*s",
 				(int) uids->packet->length,
 				uids->packet->data);
 			printf("                                %s\n",
 				(html) ? txt2html(buf) : buf);
-		} else if (uids->packet->tag == 17) {
+		} else if (uids->packet->tag == OPENPGP_PACKET_UAT) {
 			printf("                                ");
 			if (html) {
 				printf("<img src=\"lookup?op=photo&search="
@@ -115,7 +116,7 @@ int list_subkeys(struct openpgp_signedpacket_list *subkeys, bool verbose,
 	int	 	length = 0;
 
 	while (subkeys != NULL) {
-		if (subkeys->packet->tag == 14) {
+		if (subkeys->packet->tag == OPENPGP_PACKET_PUBLICSUBKEY) {
 
 			created_time = (subkeys->packet->data[1] << 24) +
 					(subkeys->packet->data[2] << 16) +
@@ -143,8 +144,9 @@ int list_subkeys(struct openpgp_signedpacket_list *subkeys, bool verbose,
 		
 			printf("sub  %5d%c/%08X %04d/%02d/%02d\n",
 				length,
-				(type == 1) ? 'R' : ((type == 16) ? 'g' : 
-					((type == 17) ? 'D' : '?')),
+				(type == OPENPGP_PKALGO_RSA) ? 'R' :
+				((type == OPENPGP_PKALGO_ELGAMAL) ? 'g' :
+				((type == OPENPGP_PKALGO_DSA) ? 'D' : '?')),
 				(uint32_t) (get_packetid(subkeys->packet) &
 					    0xFFFFFFFF),
 				created->tm_year + 1900,
@@ -262,16 +264,16 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 		keyid = get_keyid(keys);
 
 		switch (type) {
-		case 1:
+		case OPENPGP_PKALGO_RSA:
 			typech = 'R';
 			break;
-		case 16:
+		case OPENPGP_PKALGO_ELGAMAL:
 			typech = 'g';
 			break;
-		case 17:
+		case OPENPGP_PKALGO_DSA:
 			typech = 'D';
 			break;
-		case 20:
+		case OPENPGP_PKALGO_ELGAMAL_SIGN:
 			typech = 'G';
 			break;
 		default:
@@ -301,7 +303,8 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 		}
 
 		curuid = keys->uids;
-		if (curuid != NULL && curuid->packet->tag == 13) {
+		if (curuid != NULL &&
+				curuid->packet->tag == OPENPGP_PACKET_UID) {
 			snprintf(buf, 1023, "%.*s",
 				(int) curuid->packet->length,
 				curuid->packet->data);
@@ -406,7 +409,7 @@ int mrkey_index(struct openpgp_publickey *keys)
 		for (curuid = keys->uids; curuid != NULL;
 			 curuid = curuid->next) {
 		
-			if (curuid->packet->tag == 13) {
+			if (curuid->packet->tag == OPENPGP_PACKET_UID) {
 				printf("uid:");
 				for (i = 0; i < (int) curuid->packet->length;
 						i++) {

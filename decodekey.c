@@ -16,6 +16,7 @@
 #include "keystructs.h"
 #include "ll.h"
 #include "log.h"
+#include "openpgp.h"
 
 /*
  *	parse_subpackets - Parse the subpackets of a Type 4 signature.
@@ -54,7 +55,7 @@ int parse_subpackets(unsigned char *data, uint64_t *keyid, time_t *creation)
 			packetlen = data[offset++];
 		}
 		switch (data[offset] & 0x7F) {
-		case 2:
+		case OPENPGP_SIGSUB_CREATION:
 			/*
 			 * Signature creation time.
 			 */
@@ -68,17 +69,17 @@ int parse_subpackets(unsigned char *data, uint64_t *keyid, time_t *creation)
 				*creation = data[offset + packetlen - 1];
 			}
 			break;
-		case 3:
+		case OPENPGP_SIGSUB_EXPIRY:
 			/*
 			 * Signature expiration time. Might want to output this?
 			 */
 			break;
-		case 6:
+		case OPENPGP_SIGSUB_REGEX:
 			/*
 			 * Regular expression for UIDs this sig is over.
 			 */
 			break;
-		case 16:
+		case OPENPGP_SIGSUB_ISSUER:
 			if (keyid != NULL) {
 				*keyid = data[offset+packetlen - 8];
 				*keyid <<= 8;
@@ -97,23 +98,23 @@ int parse_subpackets(unsigned char *data, uint64_t *keyid, time_t *creation)
 				*keyid += data[offset+packetlen - 1];
 			}
 			break;
-		case 20:
+		case OPENPGP_SIGSUB_NOTATION:
 			/*
 			 * Annotation data.
 			 */
 			break;
 
-		case 23:
+		case OPENPGP_SIGSUB_KEYSERVER:
 			/*
 			 * Key server preferences. Including no-modify.
 			 */
 			break;
-		case 25:
+		case OPENPGP_SIGSUB_PRIMARYUID:
 			/*
 			 * Primary UID.
 			 */
 			break;
-		case 26:
+		case OPENPGP_SIGSUB_POLICYURI:
 			/*
 			 * Policy URI.
 			 */
@@ -276,7 +277,7 @@ char **keyuids(struct openpgp_publickey *key, char **primary)
 		curuid = key->uids;
 		while (curuid != NULL) {
 			buf[0] = 0;
-			if (curuid->packet->tag == 13) {
+			if (curuid->packet->tag == OPENPGP_PACKET_UID) {
 				snprintf(buf, 1023, "%.*s",
 						(int) curuid->packet->length,
 						curuid->packet->data);

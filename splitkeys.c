@@ -17,6 +17,7 @@
 #include "log.h"
 #include "mem.h"
 #include "onak-conf.h"
+#include "openpgp.h"
 #include "parsekey.h"
 
 int main(int argc, char *argv[])
@@ -52,7 +53,8 @@ int main(int argc, char *argv[])
 				tmp = list_end;
 				list_end = list_end->next;
 				if (list_end->next == NULL &&
-					list_end->packet->tag == 6) {
+					list_end->packet->tag ==
+						OPENPGP_PACKET_PUBLICKEY) {
 					tmp->next = NULL;
 				}
 			}

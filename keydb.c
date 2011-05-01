@@ -23,6 +23,7 @@
 #include "keystructs.h"
 #include "mem.h"
 #include "merge.h"
+#include "openpgp.h"
 #include "parsekey.h"
 #include "sendsync.h"
 
@@ -42,7 +43,7 @@ char *generic_keyid2uid(uint64_t keyid)
 			publickey != NULL) {
 		curuid = publickey->uids;
 		while (curuid != NULL && buf[0] == 0) {
-			if (curuid->packet->tag == 13) {
+			if (curuid->packet->tag == OPENPGP_PACKET_UID) {
 				snprintf(buf, 1023, "%.*s",
 						(int) curuid->packet->length,
 						curuid->packet->data);
