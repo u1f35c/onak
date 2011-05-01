@@ -2,8 +2,7 @@
 #
 # onak-mail.pl - Mail processing interface for onak, an OpenPGP Keyserver.
 #
-# Written by Jonathan McDowell <noodles@earth.li>
-# Copyright 2002-2005 Project Purple
+# Copyright 2002-2005 Jonathan McDowell <noodles@earth.li>
 # Released under the GPL.
 #
 
