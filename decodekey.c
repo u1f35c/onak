@@ -82,14 +82,8 @@ int parse_subpackets(unsigned char *data, uint64_t *keyid, time_t *creation)
 				*creation = data[offset + packetlen - 1];
 			}
 			break;
-		case OPENPGP_SIGSUB_EXPIRY:
 			/*
 			 * Signature expiration time. Might want to output this?
-			 */
-			break;
-		case OPENPGP_SIGSUB_REGEX:
-			/*
-			 * Regular expression for UIDs this sig is over.
 			 */
 			break;
 		case OPENPGP_SIGSUB_ISSUER:
@@ -111,25 +105,23 @@ int parse_subpackets(unsigned char *data, uint64_t *keyid, time_t *creation)
 				*keyid += data[offset+packetlen - 1];
 			}
 			break;
+		case OPENPGP_SIGSUB_EXPIRY:
+		case OPENPGP_SIGSUB_EXPORTABLE:
+		case OPENPGP_SIGSUB_TRUSTSIG:
+		case OPENPGP_SIGSUB_REGEX:
+		case OPENPGP_SIGSUB_KEYEXPIRY:
+		case OPENPGP_SIGSUB_PREFSYM:
 		case OPENPGP_SIGSUB_NOTATION:
-			/*
-			 * Annotation data.
-			 */
-			break;
-
+		case OPENPGP_SIGSUB_PREFHASH:
+		case OPENPGP_SIGSUB_PREFCOMPRESS:
 		case OPENPGP_SIGSUB_KEYSERVER:
-			/*
-			 * Key server preferences. Including no-modify.
-			 */
-			break;
 		case OPENPGP_SIGSUB_PRIMARYUID:
-			/*
-			 * Primary UID.
-			 */
-			break;
 		case OPENPGP_SIGSUB_POLICYURI:
+		case OPENPGP_SIGSUB_KEYFLAGS:
 			/*
-			 * Policy URI.
+			 * Various subpacket types we know about, but don't
+			 * currently handle. Some are candidates for being
+			 * supported if we add signature checking support.
 			 */
 			break;
 		default:
