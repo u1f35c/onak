@@ -47,6 +47,17 @@ int compare_packets(struct openpgp_packet *a, struct openpgp_packet *b);
 int merge_keys(struct openpgp_publickey *a, struct openpgp_publickey *b);
 
 /**
+ *	find_packet - Checks to see if an OpenPGP packet exists in a list.
+ *	@packet_list: The list of packets to look in.
+ *	@packet: The packet to look for.
+ *
+ *	Walks through the packet_list checking to see if the packet given is
+ *	present in it. Returns true if it is.
+ */
+bool find_packet(struct openpgp_packet_list *packet_list,
+			struct openpgp_packet *packet);
+
+/**
  *	get_signed_packet - Gets a signed packet from a list.
  *	@packet_list: The list of packets to look in.
  *	@packet: The packet to look for.
