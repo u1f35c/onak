@@ -65,7 +65,7 @@ CHAR64LONG16 block[1];  /* use array to appear as a pointer */
      */
 CHAR64LONG16* block = (const CHAR64LONG16*)buffer;
 #endif
-    /* Copy context->state[] to working vars */
+    /* Copy ctx->state[] to working vars */
     a = state[0];
     b = state[1];
     c = state[2];
@@ -92,7 +92,7 @@ CHAR64LONG16* block = (const CHAR64LONG16*)buffer;
     R4(c,d,e,a,b,68); R4(b,c,d,e,a,69); R4(a,b,c,d,e,70); R4(e,a,b,c,d,71);
     R4(d,e,a,b,c,72); R4(c,d,e,a,b,73); R4(b,c,d,e,a,74); R4(a,b,c,d,e,75);
     R4(e,a,b,c,d,76); R4(d,e,a,b,c,77); R4(c,d,e,a,b,78); R4(b,c,d,e,a,79);
-    /* Add the working vars back into context.state[] */
+    /* Add the working vars back into ctx.state[] */
     state[0] += a;
     state[1] += b;
     state[2] += c;
@@ -103,53 +103,53 @@ CHAR64LONG16* block = (const CHAR64LONG16*)buffer;
 
 /* SHA1Init - Initialize new context */
 
-void SHA1Init(SHA1_CTX* context)
+void sha1_init(struct sha1_ctx *ctx)
 {
     /* SHA1 initialization constants */
-    context->state[0] = 0x67452301;
-    context->state[1] = 0xEFCDAB89;
-    context->state[2] = 0x98BADCFE;
-    context->state[3] = 0x10325476;
-    context->state[4] = 0xC3D2E1F0;
-    context->count[0] = context->count[1] = 0;
+    ctx->state[0] = 0x67452301;
+    ctx->state[1] = 0xEFCDAB89;
+    ctx->state[2] = 0x98BADCFE;
+    ctx->state[3] = 0x10325476;
+    ctx->state[4] = 0xC3D2E1F0;
+    ctx->count[0] = ctx->count[1] = 0;
 }
 
 
 /* Run your data through this. */
 
-void SHA1Update(SHA1_CTX* context, const unsigned char* data, u_int32_t len)
+void sha1_update(struct sha1_ctx *ctx, unsigned length, const uint8_t *data)
 {
 u_int32_t i;
 u_int32_t j;
 
-    j = context->count[0];
-    if ((context->count[0] += len << 3) < j)
-	context->count[1]++;
-    context->count[1] += (len>>29);
+    j = ctx->count[0];
+    if ((ctx->count[0] += length << 3) < j)
+	ctx->count[1]++;
+    ctx->count[1] += (length >> 29);
     j = (j >> 3) & 63;
-    if ((j + len) > 63) {
-        memcpy(&context->buffer[j], data, (i = 64-j));
-        SHA1Transform(context->state, context->buffer);
-        for ( ; i + 63 < len; i += 64) {
-            SHA1Transform(context->state, &data[i]);
+    if ((j + length) > 63) {
+        memcpy(&ctx->buffer[j], data, (i = 64-j));
+        SHA1Transform(ctx->state, ctx->buffer);
+        for ( ; i + 63 < length; i += 64) {
+            SHA1Transform(ctx->state, &data[i]);
         }
         j = 0;
     }
     else i = 0;
-    memcpy(&context->buffer[j], &data[i], len - i);
+    memcpy(&ctx->buffer[j], &data[i], length - i);
 }
 
 
 /* Add padding and return the message digest. */
 
-void SHA1Final(unsigned char digest[20], SHA1_CTX* context)
+void sha1_digest(struct sha1_ctx *ctx, unsigned length, uint8_t *digest)
 {
 unsigned i;
 unsigned char finalcount[8];
 unsigned char c;
 
 #if 0	/* untested "improvement" by DHR */
-    /* Convert context->count to a sequence of bytes
+    /* Convert ctx->count to a sequence of bytes
      * in finalcount.  Second element first, but
      * big-endian order within element.
      * But we do it all backwards.
@@ -158,7 +158,7 @@ unsigned char c;
 
     for (i = 0; i < 2; i++)
     {
-	u_int32_t t = context->count[i];
+	u_int32_t t = ctx->count[i];
 	int j;
 
 	for (j = 0; j < 4; t >>= 8, j++)
@@ -166,19 +166,19 @@ unsigned char c;
     }
 #else
     for (i = 0; i < 8; i++) {
-        finalcount[i] = (unsigned char)((context->count[(i >= 4 ? 0 : 1)]
+        finalcount[i] = (unsigned char)((ctx->count[(i >= 4 ? 0 : 1)]
          >> ((3-(i & 3)) * 8) ) & 255);  /* Endian independent */
     }
 #endif
     c = 0200;
-    SHA1Update(context, &c, 1);
-    while ((context->count[0] & 504) != 448) {
+    sha1_update(ctx, 1, &c);
+    while ((ctx->count[0] & 504) != 448) {
 	c = 0000;
-        SHA1Update(context, &c, 1);
+        sha1_update(ctx, 1, &c);
     }
-    SHA1Update(context, finalcount, 8);  /* Should cause a SHA1Transform() */
+    sha1_update(ctx, 8, finalcount);  /* Should cause a SHA1Transform() */
     for (i = 0; i < 20; i++) {
         digest[i] = (unsigned char)
-         ((context->state[i>>2] >> ((3-(i & 3)) * 8) ) & 255);
+         ((ctx->state[i>>2] >> ((3-(i & 3)) * 8) ) & 255);
     }
 }

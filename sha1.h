@@ -9,18 +9,18 @@
 #ifndef _SHA1_H
 # define _SHA1_H
 
+#include <stdint.h>
 #include <sys/types.h>
 
-typedef struct {
-  u_int32_t state[5];
-  u_int32_t count[2];
+struct sha1_ctx {
+  uint32_t state[5];
+  uint32_t count[2];
   unsigned char buffer[64];
-} SHA1_CTX;
+};
 
-void SHA1Transform(u_int32_t state[5], const unsigned char buffer[64]);
-void SHA1Init(SHA1_CTX* context);
-void SHA1Update(SHA1_CTX* context, const unsigned char* data, u_int32_t len);
-void SHA1Final(unsigned char digest[20], SHA1_CTX* context);
+void sha1_init(struct sha1_ctx *ctx);
+void sha1_update(struct sha1_ctx *ctx, unsigned length, const uint8_t *data);
+void sha1_digest(struct sha1_ctx *ctx, unsigned length, uint8_t *digest);
 
 # define SHA1_Transform SHA1Transform
 # define SHA1_Init SHA1Init

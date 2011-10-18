@@ -21,14 +21,21 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 
+#include "config.h"
 #include "keyid.h"
 #include "keystructs.h"
 #include "log.h"
 #include "parsekey.h"
-#include "md5.h"
 #include "mem.h"
 #include "merge.h"
+
+#ifdef HAVE_NETTLE
+#include <nettle/md5.h>
+#include <nettle/sha.h>
+#else
+#include "md5.h"
 #include "sha1.h"
+#endif
 
 
 /**
@@ -54,7 +61,7 @@ unsigned char *get_fingerprint(struct openpgp_packet *packet,
 	unsigned char *fingerprint,
 	size_t *len)
 {
-	SHA1_CTX sha_ctx;
+	struct sha1_ctx sha_ctx;
 	struct md5_ctx md5_context;
 	unsigned char c;
 	size_t         modlen, explen;
@@ -67,41 +74,40 @@ unsigned char *get_fingerprint(struct openpgp_packet *packet,
 	switch (packet->data[0]) {
 	case 2:
 	case 3:
-		md5_init_ctx(&md5_context);
+		md5_init(&md5_context);
 
 		/*
 		 * MD5 the modulus and exponent.
 		 */
 		modlen = ((packet->data[8] << 8) +
 			 packet->data[9] + 7) >> 3;
-		md5_process_bytes(&packet->data[10], modlen, &md5_context);
+		md5_update(&md5_context, modlen, &packet->data[10]);
 
 		explen = ((packet->data[10+modlen] << 8) +
 			 packet->data[11+modlen] + 7) >> 3;
-		md5_process_bytes(&packet->data[12 + modlen], explen,
-				&md5_context);
+		md5_update(&md5_context, explen, &packet->data[12 + modlen]);
 
-		md5_finish_ctx(&md5_context, fingerprint);
 		*len = 16;
+		md5_digest(&md5_context, *len, fingerprint);
 
 		break;
 
 	case 4:
-		SHA1Init(&sha_ctx);
+		sha1_init(&sha_ctx);
 		/*
 		 * TODO: Can this be 0x99? Are all public key packets old
 		 * format with 2 bytes of length data?
 		 */
 		c = 0x99;
-		SHA1Update(&sha_ctx, &c, sizeof(c));
+		sha1_update(&sha_ctx, sizeof(c), &c);
 		c = packet->length >> 8;
-		SHA1Update(&sha_ctx, &c, sizeof(c));
+		sha1_update(&sha_ctx, sizeof(c), &c);
 		c = packet->length & 0xFF;
-		SHA1Update(&sha_ctx, &c, sizeof(c));
-		SHA1Update(&sha_ctx, packet->data,
-			packet->length);
-		SHA1Final(fingerprint, &sha_ctx);
+		sha1_update(&sha_ctx, sizeof(c), &c);
+		sha1_update(&sha_ctx, packet->length,
+			packet->data);
 		*len = 20;
+		sha1_digest(&sha_ctx, *len, fingerprint);
 
 		break;
 	default:
@@ -212,20 +218,20 @@ void get_skshash(struct openpgp_publickey *key, struct skshash *hash)
 	key->next = next;
 	packets = sortpackets(packets);
 
-	md5_init_ctx(&md5_context);
+	md5_init(&md5_context);
 
 	for (curpacket = packets; curpacket != NULL;
 			curpacket = curpacket->next) {
 		tmp = htonl(curpacket->packet->tag);
-		md5_process_bytes(&tmp, sizeof(tmp), &md5_context);
+		md5_update(&md5_context, sizeof(tmp), (void *) &tmp);
 		tmp = htonl(curpacket->packet->length);
-		md5_process_bytes(&tmp, sizeof(tmp), &md5_context);
-		md5_process_bytes(curpacket->packet->data,
+		md5_update(&md5_context, sizeof(tmp), (void *) &tmp);
+		md5_update(&md5_context,
 				curpacket->packet->length,
-				&md5_context);
+				curpacket->packet->data);
 	}
 
-	md5_finish_ctx(&md5_context, &hash->hash);
+	md5_digest(&md5_context, 16, (uint8_t *) &hash->hash);
 	free_packet_list(packets);
 }
 

@@ -7,6 +7,10 @@ AC_PROG_CC
 
 AC_C_BIGENDIAN
 
+m4_include([m4/ax_lib_nettle.m4])
+
+AX_LIB_NETTLE(auto)
+
 dnl We should always have these backends available.
 backends="file fs keyd"
 
