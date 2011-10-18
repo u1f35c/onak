@@ -309,7 +309,7 @@ static void db4_initdb(bool readonly)
 	FILE      *numdb = NULL;
 	int        ret = 0;
 	int        i = 0;
-	u_int32_t  flags = 0;
+	uint32_t   flags = 0;
 	struct stat statbuf;
 	int        maxlocks;
 
