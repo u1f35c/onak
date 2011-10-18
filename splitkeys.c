@@ -36,7 +36,6 @@ int main(int argc, char *argv[])
 	struct openpgp_packet_list	*packets = NULL;
 	struct openpgp_packet_list	*list_end = NULL;
 	struct openpgp_packet_list	*tmp = NULL;
-	int				 result = 0;
 	int				 maxkeys = 10000;
 	int				 outfd = -1;
 	int				 count = 0;
@@ -56,7 +55,7 @@ int main(int argc, char *argv[])
 	initlogthing("splitkeys", config.logfile);
 
 	do {
-		result = read_openpgp_stream(stdin_getchar, NULL,
+		read_openpgp_stream(stdin_getchar, NULL,
 				 &packets, maxkeys);
 		if (packets != NULL) {
 			list_end = packets;

@@ -69,7 +69,6 @@ int getkeyspath(uint64_t have, uint64_t want, int count)
 	struct openpgp_packet_list *list_end = NULL;
 	struct stats_key *keyinfoa, *keyinfob, *curkey;
 	uint64_t fullhave, fullwant;
-	int rec;
 	int pathlen = 0;
 
 	fullhave = config.dbbackend->getfullkeyid(have);
@@ -93,7 +92,7 @@ int getkeyspath(uint64_t have, uint64_t want, int count)
 		 * Fill the tree info up.
 		 */
 		initcolour(true);
-		rec = findpath(keyinfoa, keyinfob);
+		findpath(keyinfoa, keyinfob);
 		keyinfob->parent = 0;
 		if (keyinfoa->colour == 0) {
 			pathlen = count;

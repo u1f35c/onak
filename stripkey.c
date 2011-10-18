@@ -47,7 +47,6 @@ int main(int argc, char** argv) {
   struct openpgp_signedpacket_list *uid = NULL;
   struct openpgp_packet_list *sig = NULL;
   struct openpgp_packet_list *prevsig = NULL;
-  int result = 0;
   uint64_t my_key = 0;
 
   if( argc > 1 )
@@ -57,11 +56,11 @@ int main(int argc, char** argv) {
   /* strip each key of everything but its pubkey component, uids and
    * selfsigs and revsigs on those selfsigs */
 
-  result = read_openpgp_stream( stdin_getchar, NULL, &packets, 0 );
-  result = parse_keys( packets, &keys );
+  read_openpgp_stream( stdin_getchar, NULL, &packets, 0 );
+  parse_keys( packets, &keys );
   free_packet_list(packets);
   packets = NULL;
-  result = cleankeys( keys );
+  cleankeys( keys );
   /* Iterate over the keys... */
   for( key = keys; key; key = key->next ) {
     uint64_t keyid = get_keyid( key );
