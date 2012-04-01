@@ -53,7 +53,7 @@ int list_sigs(struct openpgp_packet_list *sigs, bool html)
 		}
 		if (html && uid != NULL) {
 			printf("%s         <a href=\"lookup?op=get&"
-				"search=%016" PRIX64 "\">%08" PRIX64
+				"search=0x%016" PRIX64 "\">%08" PRIX64
 				"</a>             "
 				"<a href=\"lookup?op=vindex&search=0x%016"
 				PRIX64 "\">%s</a>\n",
@@ -297,7 +297,7 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 
 		if (html) {
 			printf("pub  %5d%c/<a href=\"lookup?op=get&"
-				"search=%016" PRIX64 "\">%08" PRIX64
+				"search=0x%016" PRIX64 "\">%08" PRIX64
 				"</a> %04d/%02d/%02d ",
 				length,
 				typech,
