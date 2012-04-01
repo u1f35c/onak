@@ -1,6 +1,7 @@
 onak (0.4.0-1+bzr) unstable; urgency=low
 
   * Development build
+  * Drop HISTORY file in /usr/share/doc; it's already present as changelog.gz
 
  -- Jonathan McDowell <noodles@earth.li>  Sun, 24 Apr 2011 16:42:15 -0700
 
