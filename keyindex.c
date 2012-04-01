@@ -189,10 +189,11 @@ void display_fingerprint(struct openpgp_publickey *key)
 			(i % 2 == 0)) {
 			printf(" ");
 		}
-		printf("%02X", fp[i]);
-		if ((i * 2) == length) {
+		if (length == 20 && (i * 2) == length) {
+			/* Extra space in the middle of a SHA1 fingerprint */
 			printf(" ");
 		}
+		printf("%02X", fp[i]);
 	}
 	printf("\n");
 
