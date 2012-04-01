@@ -288,7 +288,17 @@ int main(int argc, char *argv[])
 		}
 	} else if ((argc - optind) == 2) {
 		search = argv[optind+1];
-		if (search != NULL) {
+		if (search != NULL && strlen(search) == 42 &&
+				search[0] == '0' && search[1] == 'x') {
+			/*
+			 * Fingerprint. Truncate to last 64 bits for
+			 * now.
+			 */
+			keyid = strtoull(&search[26], &end, 16);
+			if (end != NULL && *end == 0) {
+				ishex = true;
+			}
+		} else if (search != NULL) {
 			keyid = strtoul(search, &end, 16);
 			if (*search != 0 &&
 					end != NULL &&
