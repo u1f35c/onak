@@ -887,7 +887,7 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 			worddb_data[ 8] = (keyid >> 24) & 0xFF;
 			worddb_data[ 9] = (keyid >> 16) & 0xFF;
 			worddb_data[10] = (keyid >>  8) & 0xFF;
-			worddb_data[11] = keyid & 0xFF; 
+			worddb_data[11] = keyid & 0xFF;
 
 			ret = cursor->c_get(cursor,
 				&key,
@@ -896,17 +896,14 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 
 			if (ret == 0) {
 				ret = cursor->c_del(cursor, 0);
-				if (ret != 0) {
-					logthing(LOGTHING_ERROR,
-						"Problem deleting word: %s",
-						db_strerror(ret));
-				}
 			}
 
 			if (ret != 0) {
 				logthing(LOGTHING_ERROR,
-					"Problem deleting word: %s",
-					db_strerror(ret));
+					"Problem deleting word: %s "
+					"(0x%016" PRIX64 ")",
+					db_strerror(ret),
+					keyid);
 				if (ret == DB_LOCK_DEADLOCK) {
 					deadlock = true;
 				}
@@ -951,17 +948,14 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 
 		if (ret == 0) {
 			ret = cursor->c_del(cursor, 0);
-			if (ret != 0) {
-				logthing(LOGTHING_ERROR,
-					"Problem deleting short keyid: %s",
-					db_strerror(ret));
-			}
 		}
 
 		if (ret != 0) {
 			logthing(LOGTHING_ERROR,
-				"Problem deleting short keyid: %s",
-				db_strerror(ret));
+				"Problem deleting short keyid: %s ",
+				"(0x%016" PRIX64 ")",
+				db_strerror(ret),
+				keyid);
 			if (ret == DB_LOCK_DEADLOCK) {
 				deadlock = true;
 			}
@@ -986,18 +980,14 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 
 			if (ret == 0) {
 				ret = cursor->c_del(cursor, 0);
-				if (ret != 0) {
-					logthing(LOGTHING_ERROR,
-						"Problem deleting short"
-						" keyid: %s",
-						db_strerror(ret));
-				}
 			}
 
 			if (ret != 0) {
 				logthing(LOGTHING_ERROR,
-					"Problem deleting short keyid: %s",
-					db_strerror(ret));
+					"Problem deleting short keyid: %s ",
+					"(0x%016" PRIX64 ")",
+					db_strerror(ret),
+					keyid);
 				if (ret == DB_LOCK_DEADLOCK) {
 					deadlock = true;
 				}
@@ -1037,8 +1027,10 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 
 		if (ret != 0) {
 			logthing(LOGTHING_ERROR,
-				"Problem deleting skshash: %s",
-				db_strerror(ret));
+				"Problem deleting skshash: %s ",
+				"(0x%016" PRIX64 ")",
+				db_strerror(ret),
+				keyid);
 			if (ret == DB_LOCK_DEADLOCK) {
 				deadlock = true;
 			}
