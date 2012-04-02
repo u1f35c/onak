@@ -1013,6 +1013,10 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 	}
 
 	if (!deadlock) {
+		ret = skshashdb->cursor(skshashdb,
+			txn,
+			&cursor,
+			0);   /* flags */
 		get_skshash(publickey, &hash);
 
 		memset(&key, 0, sizeof(key));
