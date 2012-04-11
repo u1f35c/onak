@@ -952,7 +952,7 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 
 		if (ret != 0) {
 			logthing(LOGTHING_ERROR,
-				"Problem deleting short keyid: %s ",
+				"Problem deleting short keyid: %s "
 				"(0x%016" PRIX64 ")",
 				db_strerror(ret),
 				keyid);
@@ -984,7 +984,7 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 
 			if (ret != 0) {
 				logthing(LOGTHING_ERROR,
-					"Problem deleting short keyid: %s ",
+					"Problem deleting short keyid: %s "
 					"(0x%016" PRIX64 ")",
 					db_strerror(ret),
 					keyid);
@@ -1027,7 +1027,7 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 
 		if (ret != 0) {
 			logthing(LOGTHING_ERROR,
-				"Problem deleting skshash: %s ",
+				"Problem deleting skshash: %s "
 				"(0x%016" PRIX64 ")",
 				db_strerror(ret),
 				keyid);
