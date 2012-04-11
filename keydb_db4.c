@@ -912,6 +912,42 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 		ret = cursor->c_close(cursor);
 		cursor = NULL;
 
+		ret = skshashdb->cursor(skshashdb,
+			txn,
+			&cursor,
+			0);   /* flags */
+		get_skshash(publickey, &hash);
+
+		memset(&key, 0, sizeof(key));
+		memset(&data, 0, sizeof(data));
+		key.data = hash.hash;
+		key.size = sizeof(hash.hash);
+		data.data = &keyid;
+		data.size = sizeof(keyid);
+
+		ret = cursor->c_get(cursor,
+			&key,
+			&data,
+			DB_GET_BOTH);
+
+		if (ret == 0) {
+			ret = cursor->c_del(cursor, 0);
+		}
+
+		if (ret != 0) {
+			logthing(LOGTHING_ERROR,
+				"Problem deleting skshash: %s "
+				"(0x%016" PRIX64 ")",
+				db_strerror(ret),
+				keyid);
+			if (ret == DB_LOCK_DEADLOCK) {
+				deadlock = true;
+			}
+		}
+
+		ret = cursor->c_close(cursor);
+		cursor = NULL;
+
 		/*
 		 * Free our UID and word lists.
 		 */
@@ -1000,44 +1036,6 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 		ret = cursor->c_close(cursor);
 		cursor = NULL;
 
-	}
-
-	if (!deadlock) {
-		ret = skshashdb->cursor(skshashdb,
-			txn,
-			&cursor,
-			0);   /* flags */
-		get_skshash(publickey, &hash);
-
-		memset(&key, 0, sizeof(key));
-		memset(&data, 0, sizeof(data));
-		key.data = hash.hash;
-		key.size = sizeof(hash.hash);
-		data.data = &keyid;
-		data.size = sizeof(keyid);
-
-		ret = cursor->c_get(cursor,
-			&key,
-			&data,
-			DB_GET_BOTH);
-
-		if (ret == 0) {
-			ret = cursor->c_del(cursor, 0);
-		}
-
-		if (ret != 0) {
-			logthing(LOGTHING_ERROR,
-				"Problem deleting skshash: %s "
-				"(0x%016" PRIX64 ")",
-				db_strerror(ret),
-				keyid);
-			if (ret == DB_LOCK_DEADLOCK) {
-				deadlock = true;
-			}
-		}
-
-		ret = cursor->c_close(cursor);
-		cursor = NULL;
 	}
 
 	if (!deadlock) {
