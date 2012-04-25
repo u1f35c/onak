@@ -212,11 +212,12 @@ my $tmpfile = sprintf "%s/%04d%02d%02d-%02d%02d%02d-%d.onak",
 			$time[1],
 			$time[0],
 			$$;
-open(MAILFILE, '>'.$tmpfile);
+open(MAILFILE, '>'.$tmpfile.'.tmp');
 while (<>) {
 	print MAILFILE $_;
 }
 close(MAILFILE);
+rename $tmpfile.".tmp", $tmpfile;
 
 #
 # Lock here to ensure that only one copy of us is processing the incoming
