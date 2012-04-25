@@ -152,7 +152,7 @@ clean:
 	$(RM) $(PROGS) $(OBJS) Makefile.bak testparse maxpath *.core core \
 		gpgwww.o add.o lookup.o main.o maxpath.o onak.o sixdegrees \
 		sixdegrees.o splitkeys.o stripkey.o onak.conf keyd.o \
-		keydctl.o version.h \
+		keydctl.o hashquery.o version.h \
 		$(foreach be,@BACKENDS@,keydb_$(be).o) *.so
 ifeq (x@KEYD@, xyes)
 	$(RM) keyd.o keydb_$(DBTYPE).o
