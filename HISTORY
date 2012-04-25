@@ -265,3 +265,24 @@
 * Add a stats command to keyd
 * Clean up use of PATH_MAX in keydb_fs.c
 * Output details of key search after retrieval for pks/lookup
+
+0.4.1 - 24th April 2012
+
+* Add basic testing infrastructure + initial tests
+* Change fd_write to use fwrite instead of fputc
+* Fix buffer_getchar to only error if we'd exceed the buffer size
+* Add support for calculating SKS style key hashes
+* Add support for key retrieval by SKS hash
+* Add support for displaying/retrieving by SKS hash to lookup and onak CLI
+* Add /pks/hashquery
+* Cleanup lookup/gpgwww trailers
+* Define OpenPGP constants and use them rather than magic numbers
+* Clean up file header copyrights
+* Add some more subpacket types to the list to ignore
+* Clean up "set but not used" GCC warnings
+* Use nettle for hashing when available rather than internal MD5/SHA1 routines
+* Add AC_PROG_CC_C99 to configure.ac
+* Fix display of SHA-1 fingerprints
+* Always put a leading 0x on keyids in HTML output links
+* Allow retrieval of key by full fingerprint
+* Add keyid to DB4 backend deletion error messages

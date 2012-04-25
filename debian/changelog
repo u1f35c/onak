@@ -1,9 +1,10 @@
-onak (0.4.0-1+bzr) unstable; urgency=low
+onak (0.4.1-1) unstable; urgency=low
 
-  * Development build
+  * New upstream release
+    * Fix onak-mail race condition. (Closes: #650557)
   * Drop HISTORY file in /usr/share/doc; it's already present as changelog.gz
 
- -- Jonathan McDowell <noodles@earth.li>  Sun, 24 Apr 2011 16:42:15 -0700
+ -- Jonathan McDowell <noodles@earth.li>  Tue, 24 Apr 2012 21:29:17 -0700
 
 onak (0.4.0-1) unstable; urgency=low
 
