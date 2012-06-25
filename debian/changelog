@@ -1,6 +1,7 @@
 onak (0.4.1-1+bzr) unstable; urgency=low
 
   * Development build
+  * Switch to source format 3.0 (quilt).
 
  -- Jonathan McDowell <noodles@earth.li>  Tue, 24 Apr 2012 21:54:17 -0700
 
