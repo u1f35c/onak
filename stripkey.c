@@ -83,8 +83,8 @@ int main(int argc, char** argv) {
         }
       }
     }
-    flatten_publickey( key, &packets, &list_end );
   }
+  flatten_publickey( keys, &packets, &list_end );
   write_openpgp_stream( stdout_putchar, NULL, packets );
   return 0;
 }
