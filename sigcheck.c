@@ -173,10 +173,11 @@ int check_packet_sighash(struct openpgp_publickey *key,
 				hashdata[i]);
 		}
 		sha224_digest(&sha224_context, SHA224_DIGEST_SIZE, hash);
+		break;
 #else
 		logthing(LOGTHING_INFO, "SHA224 support not available.");
+		return -1;
 #endif
-		break;
 	case OPENPGP_HASH_SHA256:
 #ifdef NETTLE_WITH_SHA256
 		sha256_init(&sha256_context);
@@ -185,10 +186,11 @@ int check_packet_sighash(struct openpgp_publickey *key,
 				hashdata[i]);
 		}
 		sha256_digest(&sha256_context, SHA256_DIGEST_SIZE, hash);
+		break;
 #else
 		logthing(LOGTHING_INFO, "SHA256 support not available.");
+		return -1;
 #endif
-		break;
 	case OPENPGP_HASH_SHA384:
 #ifdef NETTLE_WITH_SHA384
 		sha384_init(&sha384_context);
@@ -197,10 +199,11 @@ int check_packet_sighash(struct openpgp_publickey *key,
 				hashdata[i]);
 		}
 		sha384_digest(&sha384_context, SHA384_DIGEST_SIZE, hash);
+		break;
 #else
 		logthing(LOGTHING_INFO, "SHA384 support not available.");
+		return -1;
 #endif
-		break;
 	case OPENPGP_HASH_SHA512:
 #ifdef NETTLE_WITH_SHA512
 		sha512_init(&sha512_context);
@@ -209,10 +212,11 @@ int check_packet_sighash(struct openpgp_publickey *key,
 				hashdata[i]);
 		}
 		sha512_digest(&sha512_context, SHA512_DIGEST_SIZE, hash);
+		break;
 #else
 		logthing(LOGTHING_INFO, "SHA512 support not available.");
+		return -1;
 #endif
-		break;
 	default:
 		logthing(LOGTHING_ERROR, "Unsupported signature hash type %d",
 				hashtype);
