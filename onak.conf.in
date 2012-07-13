@@ -67,3 +67,8 @@ max_last 1
 ### will allow any size reply.
 
 max_reply_keys 128
+
+##
+## Verify signature hashes.
+##
+#check_sighash true

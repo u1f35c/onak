@@ -1,7 +1,7 @@
 /*
  * onak-conf.c - Routines related to runtime config.
  *
- * Copyright 2002 Jonathan McDowell <noodles@earth.li>
+ * Copyright 2002,2012 Jonathan McDowell <noodles@earth.li>
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -66,6 +66,8 @@ struct onak_config config = {
 	NULL,			/* backends_dir */
 
 	&DBFUNCS,		/* Default dbfuncs struct */
+
+	true,			/* Check packet sig hashes */
 };
 
 bool parsebool(char *str, bool fallback)
@@ -175,6 +177,9 @@ void readconfig(const char *configfile) {
 		} else if (!strncmp("use_keyd ", curline, 9)) {
 			config.use_keyd = parsebool(&curline[9],
 						config.use_keyd);
+		} else if (!strncmp("check_sighash ", curline, 9)) {
+			config.check_sighash = parsebool(&curline[9],
+						config.check_sighash);
 		} else {
 			logthing(LOGTHING_ERROR,
 				"Unknown config line: %s", curline);

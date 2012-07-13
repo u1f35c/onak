@@ -77,6 +77,8 @@ struct onak_config {
 	char *backends_dir;
 
 	struct dbfuncs *dbbackend;
+
+	bool check_sighash;
 };
 
 /*

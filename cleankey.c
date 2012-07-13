@@ -1,7 +1,7 @@
 /*
  * cleankey.c - Routines to look for common key problems and clean them up.
  *
- * Copyright 2004 Jonathan McDowell <noodles@earth.li>
+ * Copyright 2004,2012 Jonathan McDowell <noodles@earth.li>
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -23,9 +23,11 @@
 
 #include "cleankey.h"
 #include "keystructs.h"
+#include "log.h"
 #include "mem.h"
 #include "merge.h"
-#include "log.h"
+#include "onak-conf.h"
+#include "sigcheck.h"
 
 /**
  *	dedupuids - Merge duplicate uids on a key.
@@ -72,6 +74,65 @@ int dedupuids(struct openpgp_publickey *key)
 }
 
 /**
+ *	check_sighashes - Check that sig hashes are correct.
+ *	@key - the check to check the sig hashes of.
+ *
+ *	Given an OpenPGP key confirm that all of the sigs on it have the
+ *	appropriate 2 octet hash beginning, as stored as part of the sig.
+ *	This is a simple way to remove junk sigs and, for example, catches
+ *	subkey sig corruption as produced by old pksd implementations.
+ *	Any sig that has an incorrect hash is removed from the key. If the
+ *	hash cannot be checked (eg we don't support that hash type) we err
+ *	on the side of caution and keep it.
+ */
+int clean_sighashes(struct openpgp_publickey *key,
+		struct openpgp_packet *sigdata,
+		struct openpgp_packet_list **sigs)
+{
+	struct openpgp_packet_list *tmpsig;
+	int removed = 0;
+
+	while (*sigs != NULL) {
+		if (check_packet_sighash(key, sigdata, (*sigs)->packet) == 0) {
+			tmpsig = *sigs;
+			*sigs = (*sigs)->next;
+			tmpsig->next = NULL;
+			free_packet_list(tmpsig);
+			removed++;
+		} else {
+			sigs = &(*sigs)->next;
+		}
+	}
+
+	return removed;
+}
+
+int clean_list_sighashes(struct openpgp_publickey *key,
+			struct openpgp_signedpacket_list *siglist)
+{
+	int removed = 0;
+
+	while (siglist != NULL) {
+		removed += clean_sighashes(key, siglist->packet,
+			&siglist->sigs);
+		siglist = siglist->next;
+	}
+
+	return removed;
+}
+
+int clean_key_sighashes(struct openpgp_publickey *key)
+{
+	int removed;
+
+	removed = clean_sighashes(key, NULL, &key->sigs);
+	removed += clean_list_sighashes(key, key->uids);
+	removed += clean_list_sighashes(key, key->subkeys);
+
+	return removed;
+}
+
+/**
  *	cleankeys - Apply all available cleaning options on a list of keys.
  *	@keys: The list of keys to clean.
  *
@@ -81,10 +142,14 @@ int dedupuids(struct openpgp_publickey *key)
  */
 int cleankeys(struct openpgp_publickey *keys)
 {
-	int changed = 0;
+	int changed = 0, count;
 
 	while (keys != NULL) {
-		if (dedupuids(keys) > 0) {
+		count = dedupuids(keys);
+		if (config.check_sighash) {
+			count += clean_key_sighashes(keys);
+		}
+		if (count > 0) {
 			changed++;
 		}
 		keys = keys->next;
