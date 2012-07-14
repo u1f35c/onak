@@ -1,5 +1,6 @@
-/*
- * onak-conf.h - Routines related to runtime config.
+/**
+ * @file onak-conf.h
+ * @brief Routines related to runtime config.
  *
  * Copyright 2002 Jonathan McDowell <noodles@earth.li>
  *
@@ -22,81 +23,82 @@
 
 #include "keydb.h"
 
-/*
- *	struct onak_config - Runtime configuration for onak.
- *	@maxkeys: The maximum number of keys a query should return.
- *	@thissite: Our email address that servers sync with.
- *	@adminemail: The email address of the server admin.
- *	@mta: The mta to invoke to send sync mails.
- *	@syncsites: A linked list of sites we sync with.
+/**
+ * @brief Runtime configuration for onak.
  *
- * 	@db_dir: The path to the directory containing the database files.
- * 
- *	@pg_dbhost: The host that Postgres is running on.
- *	@pg_dbname: The database name.
- *	@pg_dbuser: The user we should connect as.
- *	@pg_dbpass: The password for the user.
- *
- *	This structure holds various runtime configuration options for onak. It
- *	will eventually be populated from the config file.
+ * This structure holds various runtime configuration options for onak. It
+ * will eventually be populated from the config file.
  */
 struct onak_config {
 	/*
 	 * Generic options.
 	 */
+	/** The maximum number of keys a query should return. */
 	int maxkeys;
+	/** Our email address that servers sync with. */
 	char *thissite;
+	/** The email address of the server admin. */
 	char *adminemail;
+	/** The mta to invoke to send sync mails. */
 	char *mta;
+	/** List of email address for sites we sync with via email */
 	struct ll *syncsites;
+	/** A linked list of sites we sync with. */
 	char *logfile;
 
-	/*
-	 * Set if we're using keyd as the backend.
-	 */
+	/** Set if we're using keyd as the backend. */
 	bool use_keyd;
 
 	/*
 	 * Options for any database backend that needs a directory, be it the
 	 * file, db2 or db3 options.
 	 */
+	/** The path to the directory containing the database files. */
 	char *db_dir;
 	
 	/*
 	 * Options for the Postgres backend.
 	 */
+	/** The host that Postgres is running on. */
 	char *pg_dbhost;
+	/** The database name. */
 	char *pg_dbname;
+	/** The user we should connect as. */
 	char *pg_dbuser;
+	/** The password for the user. */
 	char *pg_dbpass;
 
 	/*
 	 * Options for the dynamic backend.
 	 */
+	/** Name of the DB backend we're using */
 	char *db_backend;
+	/** Directory where backend .so files can be found */
 	char *backends_dir;
 
+	/** Pointer to the function table for our loaded DB backend */
 	struct dbfuncs *dbbackend;
 
+	/** Should we verify signature hashes match? */
 	bool check_sighash;
 };
 
-/*
- *	config - The variable containing our runtime config.
+/**
+ * @brief The variable containing our runtime config.
  */
 extern struct onak_config config;
 
-/*
- *	readconfig - read the onak config.
- *	@configfile - the config file to read.
+/**
+ * @brief read the onak config.
+ * @param configfile the config file to read.
  *
- *	Read in our config file. If config file is NULL read in the compile
- *	time default.
+ * Read in our config file. If config file is NULL read in the compile
+ * time default.
  */
 void readconfig(const char *configfile);
 
-/*
- *	cleanupconfig - clean up the config when we're shutting down.
+/**
+ * @brief clean up the config when we're shutting down.
  */
 void cleanupconfig(void);
 

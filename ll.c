@@ -120,15 +120,6 @@ unsigned long llsize(struct ll *curll)
 	return count;
 }
 
-/**
- *	llfree - Frees a linked list.
- *	@curll: The list to free.
- *	@objectfree: A pointer to a free function for the object.
- *
- * 	Walks through a list and free it. If a function is provided for
- * 	objectfree then it's called for each element to free them, if it's NULL
- * 	just the list is freed.
- */
 void llfree(struct ll *curll, void (*objectfree) (void *object))
 {
 	struct ll *nextll;

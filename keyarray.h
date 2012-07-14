@@ -1,5 +1,6 @@
-/*
- * keyarray.h - routines to maintain a sorted array of keyids.
+/**
+ * @file keyarray.h
+ * @brief Routines to maintain a sorted array of keyids.
  *
  * Copyright 2004 Jonathan McDowell <noodles@earth.li>
  *
@@ -23,14 +24,43 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+/**
+ * @brief A sorted array of keyids
+ *
+ * Holds a sorted list of keyids, with room for growth - has details of both
+ * the total size of the array as well as the current number of elements.
+ */
 struct keyarray {
+	/** The array of key ids */
 	uint64_t *keys;
+	/** Number of key ids in the array */
 	size_t count;
+	/** Total size of the array */
 	size_t size;
 };
 
+/**
+ * @brief Given a key array figure out of a key id is present
+ * @param array Pointer to the key array
+ * @param key The keyid to look for
+ */
 bool array_find(struct keyarray *array, uint64_t key);
+
+/**
+ * @brief Free a key array
+ * @param array Pointer to the key array to free
+ */
 void array_free(struct keyarray *array);
+
+/**
+ * @brief Add a keyid to a key array
+ * @param array Pointer to the key array
+ * @param key The keyid to add
+ *
+ * Checks if the key already exists in the key array and if not adds it.
+ * Returns true if the key was added, false if it was found to be already
+ * present.
+ */
 bool array_add(struct keyarray *array, uint64_t key);
 
 #endif /* __KEYARRAY_H__ */

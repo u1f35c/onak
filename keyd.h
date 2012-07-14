@@ -1,5 +1,6 @@
-/*
- * keyd.h - Public API for keyd.
+/**
+ * @file keyd.h
+ * @brief Public API for keyd.
  *
  * Copyright 2004,2011 Jonathan McDowell <noodles@earth.li>
  *
@@ -13,7 +14,7 @@
  * more details.
  *
  * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc., 51
+  * this program; if not, write to the Free Software Foundation, Inc., 51
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
@@ -22,8 +23,14 @@
 
 #include <stdint.h>
 
+/**
+ * @brief The name of the keyd Unix domain socket
+ */
 #define KEYD_SOCKET "keyd.sock"
 
+/**
+ * @brief keyd commands
+ */
 enum keyd_ops {
 	KEYD_CMD_UNKNOWN = 0,
 	KEYD_CMD_VERSION = 1,
@@ -40,16 +47,28 @@ enum keyd_ops {
 	KEYD_CMD_LAST			/* Placeholder */
 };
 
+/**
+ * @brief Reply codes for keyd commands
+ */
 enum keyd_reply {
 	KEYD_REPLY_OK = 0,
 	KEYD_REPLY_UNKNOWN_CMD = 1
 };
 
-static uint32_t keyd_version = 3;
+/**
+ * @brief Version of the keyd protocol currently supported
+ */
+static const uint32_t keyd_version = 3;
 
+/**
+ * @brief Response structure for the @a KEYD_CMD_STATS response
+ */
 struct keyd_stats {
+	/** Unix time of when the keyd daemon was started */
 	time_t started;
+	/** Number of connects we've seen to keyd */
 	uint32_t connects;
+	/** Count of the number of times each command has been used */
 	uint32_t command_stats[KEYD_CMD_LAST];
 };
 

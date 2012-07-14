@@ -1,5 +1,6 @@
-/*
- * keystructs.h - Structures for OpenPGP keys
+/**
+ * @file keystructs.h
+ * @brief Structures for OpenPGP keys
  *
  * Copyright 2002 Jonathan McDowell <noodles@earth.li>
  *
@@ -27,99 +28,104 @@
 #include "ll.h"
 
 /**
- *	struct openpgp_packet - Stores an OpenPGP packet.
- *	@tag: The packet tag (ie type).
- *	@newformat: Indicates if this is a new format packet.
- *	@length: The length of the packet.
- *	@data: The actual packet
+ * @brief Stores an OpenPGP packet.
  *
- *	This structure holds any form of OpenPGP packet with minimum common
- *	details decoded out.
+ * This structure holds any form of OpenPGP packet with minimum common
+ * details decoded out.
  */
 struct openpgp_packet {
+	/** The packet tag (i.e. type). */
 	unsigned int tag;
+	/** Indicates if this is a new format packet. */
 	bool newformat;
+	/** The length of the packet. */
 	size_t length;
+	/** The actual packet data. */
 	unsigned char *data;
 };
 
 /**
- *	struct openpgp_packet_list - A linked list of OpenPGP packets.
- *	@packet: The actual packet structure.
- *	@next: A pointer to the next packet in the list.
+ * @brief A linked list of OpenPGP packets.
  *
- *	This structure is used to hold a linked list of packets, for example
- *	all the signatures of a public key's UID.
+ * This structure is used to hold a linked list of packets, for example
+ * all the signatures of a public key's UID.
  */
 struct openpgp_packet_list {
+	/** The actual packet structure. */
 	struct openpgp_packet *packet;
+	/** A pointer to the next packet in the list. */
 	struct openpgp_packet_list *next;
 };
 
 /**
- *	struct openpgp_signedpacket_list - A packet with signatures.
- *	@uid: The OpenPGP packet that's signed.
- *	@sigs: A list of sigs for the packet.
- *	@next: A pointer to the next packet with signatures.
+ * @brief A packet with signatures.
  *
- *	This structure holds an OpenPGP packet along with signatures that are
- *	over this packet. It also links to the next signed packet. It's usually
- *	used to hold a UID or subkey with their associated signatures.
+ * This structure holds an OpenPGP packet along with signatures that are
+ * over this packet. It also links to the next signed packet. It's usually
+ * used to hold a UID or subkey with their associated signatures.
  */
 struct openpgp_signedpacket_list {
+	/** The OpenPGP packet that's signed. */
 	struct openpgp_packet *packet;
+	/** A linked list of sigs for the packet. */
 	struct openpgp_packet_list *sigs;
+	/** Pointer to the last sig in the sigs linked list */
 	struct openpgp_packet_list *last_sig;
+	/** A pointer to the next packet with signatures. */
 	struct openpgp_signedpacket_list *next;
 };
 
 /**
- *	struct openpgp_publickey - An OpenPGP public key complete with sigs.
- *	@publickey: The OpenPGP packet for the public key.
- *	@revoked: True if the key is revoked.
- *	@sigs: Any signatures directly on the publickey packet.
- *	@uids: The list of UIDs with signatures for this key.
- *	@subkeys: The list of subkeys with signatures for this key.
- *	@next: The next public key.
+ * @brief An OpenPGP public key complete with sigs.
  */
 struct openpgp_publickey {
+	/** The OpenPGP packet for the public key. */
 	struct openpgp_packet			*publickey;
+	/** True if the key is revoked. */
 	bool					 revoked;
+	/** Any signatures directly on the @a publickey packet. */
 	struct openpgp_packet_list		*sigs;
+	/** Pointer to the end of the @a sigs list */
 	struct openpgp_packet_list		*last_sig;
+	/** The list of UIDs with signatures for this key. */
 	struct openpgp_signedpacket_list	*uids;
+	/** Pointer to the end of the @a uids list */
 	struct openpgp_signedpacket_list	*last_uid;
+	/** The list of subkeys with signatures for this key. */
 	struct openpgp_signedpacket_list	*subkeys;
+	/** Pointer to the end of the @a subkey list */
 	struct openpgp_signedpacket_list	*last_subkey;
+	/** The next public key. */
 	struct openpgp_publickey		*next;
 };
 
 /**
- *	struct stats_key - holds key details suitable for doing stats on.
- *	@keyid: The keyid.
- *	@colour: Used for marking during DFS/BFS.
- *	@parent: The key that lead us to this one for DFS/BFS.
- *	@sigs: A linked list of the signatures on this key.
- *	@gotsigs: A bool indicating if we've initialized the sigs element yet.
- *	@disabled: If we shouldn't consider the key in calculations.
- *	@revoked: If the key is revoked (and shouldn't be considered).
+ * @brief Holds key details suitable for doing stats on.
  */
 struct stats_key {
+	/** The keyid. */
 	uint64_t keyid;
+	/** Used for marking during DFS/BFS. */
 	int colour;
+	/** The key that lead us to this one for DFS/BFS. */
 	uint64_t parent;
+	/** A linked list of the signatures on this key. */
 	struct ll *sigs;
+	/** A linked list of the keys this key signs. */
 	struct ll *signs;
+	/** A bool indicating if we've initialized the sigs element yet. */
 	bool gotsigs;
+	/** If we shouldn't consider the key in calculations. */
 	bool disabled;
+	/** If the key is revoked (and shouldn't be considered). */
 	bool revoked;
 };
 
 /**
- *	struct skshash - holds an SKS key hash (md5 over sorted packet list)
- *	@hash: The 128 bit MD5 hash of the sorted packet list from the key
+ * @brief Holds an SKS key hash (md5 over sorted packet list)
  */
 struct skshash {
+	/** The 128 bit MD5 hash of the sorted packet list from the key */
 	uint8_t hash[16];
 };
 

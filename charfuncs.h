@@ -1,5 +1,6 @@
-/*
- * charfuncs.h - Routines for dealing with character streams.
+/**
+ * @file charfuncs.h
+ * @brief Routines for dealing with character streams.
  *
  * Copyright 2002 Jonathan McDowell <noodles@earth.li>
  *
@@ -23,54 +24,54 @@
 #include <stdlib.h>
 
 /**
- *	buffer_ctx - Shared with CGI buffer stuff...
- *	@buffer: The data buffer.
- *	@offset: Our current position in the buffer.
- *	@size: The size of the data buffer.
+ * @brief Shared with CGI buffer stuff...
  */
 struct buffer_ctx {
+	/** The data buffer. */
 	char *buffer;
+	/** Our current position in the buffer. */
 	size_t offset;
+	/** The size of the data buffer. */
 	size_t size;
 };
 
 /**
- *	buffer_fetchchar - Fetches a char from a buffer.
- *	@ctx: Our buffer context structure.
- *	@count: The number of characters to get from the buffer.
- *	@c: Where to put the characters retrieved.
+ * @brief Fetches a char from a buffer.
+ * @param ctx Our buffer context structure.
+ * @param count The number of characters to get from the buffer.
+ * @param c Where to put the characters retrieved.
  */
 int buffer_fetchchar(void *ctx, size_t count, void *c);
 
 /**
- *	buffer_putchar - Puts a char to a buffer.
- *	@ctx: Our buffer context structure.
- *	@count: The number of characters to put into the buffer.
- *	@c: The characters to add to the buffer.
+ * @brief Puts a char to a buffer.
+ * @param ctx Our buffer context structure.
+ * @param count The number of characters to put into the buffer.
+ * @param c The characters to add to the buffer.
  *
- *	Adds characters to the buffer references by the buffer context. If we
- *	fill it then we double the size of the current buffer and then add the
- *	rest.
+ * Adds characters to the buffer references by the buffer context. If we
+ * fill it then we double the size of the current buffer and then add the
+ * rest.
  */
 int buffer_putchar(void *ctx, size_t count, void *c);
 
 /**
- *	file_fetchchar - Fetches a char from a file.
+ * @brief Fetches a char from a file.
  */
 int file_fetchchar(void *fd, size_t count, void *c);
 
 /**
- *	file_putchar - Puts a char to a file.
+ * @brief Puts a char to a file.
  */
 int file_putchar(void *fd, size_t count, void *c);
 
 /**
- *	stdin_getchar - Gets a char from stdin.
+ * @brief Gets a char from stdin.
  */
 int stdin_getchar(void *ctx, size_t count, void *c);
 
 /**
- *	stdout_putchar - Puts a char to stdout.
+ * @brief Puts a char to stdout.
  */
 int stdout_putchar(void *ctx, size_t count, void *c);
 

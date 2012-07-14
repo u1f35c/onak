@@ -68,11 +68,19 @@ void find_keys(char *search, uint64_t keyid, bool ishex,
 	}
 }
 
+/**
+ * @brief Context for the keyserver dumping function
+ */
 struct dump_ctx {
+	/** Keys we've dumped so far to this file */
 	int count;
+	/** Maximum keys to dump per file */
 	int maxcount;
+	/** File descriptor for the current dump file */
 	int fd;
+	/** Number of the current dump file */
 	int filenum;
+	/** Base filename to use for dump files */
 	char *filebase;
 };
 

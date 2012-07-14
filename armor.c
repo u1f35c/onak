@@ -1,5 +1,6 @@
-/*
- * armor.c - Routines to (de)armor OpenPGP packet streams.
+/**
+ * @file armor.c
+ * @brief Routines to (de)armor OpenPGP packet streams.
  *
  * Copyright 2002-2004, 2011 Jonathan McDowell <noodles@earth.li>
  *
@@ -26,9 +27,18 @@
 #include "parsekey.h"
 #include "version.h"
 
+/**
+ * @brief Line length we'll use for armored output
+ */
 #define ARMOR_WIDTH 64
 
+/**
+ * @brief CRC24 initialisation value
+ */
 #define CRC24_INIT 0xb704ceL
+/**
+ * @brief CRC24 polynomial value
+ */
 #define CRC24_POLY 0x1864cfbL
 
 /**
@@ -76,19 +86,20 @@ static unsigned char decode64(unsigned char c) {
 }
 
 /**
- *	@lastoctet: The last octet we got.
- *	@curoctet: The current octet we're expecting (0, 1 or 2).
- *	@count: The number of octets we've seen.
- *	@crc24: A running CRC24 of the data we've seen.
- *	@putchar_func: The function to output a character.
- *	@ctx: Context for putchar_func.
+ * @brief Holds the context of an ongoing ASCII armor operation
  */
 struct armor_context {
+	/** The last octet we got. */
 	unsigned char lastoctet;
+	/** The current octet we're expecting (0, 1 or 2). */
 	int curoctet;
+	/** The number of octets we've seen. */
 	int count;
+	/** A running CRC24 of the data we've seen. */
 	long crc24;
+	/** The function to output a character. */
 	int (*putchar_func)(void *ctx, size_t count, void *c);
+	/** Context for putchar_func. */
 	void *ctx;
 };
 
@@ -209,19 +220,20 @@ static int armor_putchar(void *ctx, size_t count, void *c)
 }
 
 /**
- *	@lastoctet: The last octet we got.
- *	@curoctet: The current octet we're expecting (0, 1 or 2).
- *	@count: The number of octets we've seen.
- *	@crc24: A running CRC24 of the data we've seen.
- *	@putchar_func: The function to output a character.
- *	@ctx: Context for putchar_func.
+ * @brief Holds the context of an ongoing ASCII dearmor operation
  */
 struct dearmor_context {
+	/** The last octet we got. */
 	unsigned char lastoctet;
+	/** The current octet we're expecting (0, 1 or 2). */
 	int curoctet;
+	/** The number of octets we've seen. */
 	int count;
+	/** A running CRC24 of the data we've seen. */
 	long crc24;
+	/** The function to get the next character. */
 	int (*getchar_func)(void *ctx, size_t count, void *c);
+	/** Context for getchar_func. */
 	void *ctx;
 };
 
@@ -313,15 +325,6 @@ static int dearmor_getchar_c(void *ctx, size_t count, void *c)
 	return rc;
 }
 
-/**
- *	armor_openpgp_stream - Takes a list of OpenPGP packets and armors it.
- *	@putchar_func: The function to output the next armor character.
- *	@ctx: The context pointer for putchar_func.
- *	@packets: The list of packets to output.
- *
- *	This function ASCII armors a list of OpenPGP packets and outputs it
- *	using putchar_func.
- */
 int armor_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
 						void *c),
 				void *ctx,
@@ -352,16 +355,6 @@ int armor_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
 	return 0;
 }
 
-/**
- *	dearmor_openpgp_stream - Reads & decodes an ACSII armored OpenPGP msg.
- *	@getchar_func: The function to get the next character from the stream.
- *	@ctx: The context pointer for getchar_func.
- *	@packets: The list of packets.
- *
- *	This function uses getchar_func to read characters from an ASCII
- *	armored OpenPGP stream and outputs the data as a linked list of
- *	packets.
- */
 int dearmor_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 						void *c),
 				void *ctx,

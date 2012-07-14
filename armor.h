@@ -1,5 +1,6 @@
-/*
- * armor.h - Routines to (de)armor OpenPGP packet streams.
+/**
+ * @file armor.h
+ * @brief Routines to (de)armor OpenPGP packet streams.
  *
  * Copyright 2002-2004, 2011 Jonathan McDowell <noodles@earth.li>
  *
@@ -23,13 +24,13 @@
 #include "keystructs.h"
 
 /**
- *	armor_openpgp_stream - Takes a list of OpenPGP packets and armors it.
- *	@putchar_func: The function to output the next armor character.
- *	@ctx: The context pointer for putchar_func.
- *	@packets: The list of packets to output.
+ * @brief Takes a list of OpenPGP packets and armors it.
+ * @param putchar_func The function to output the next armor character.
+ * @param ctx The context pointer for putchar_func.
+ * @param packets The list of packets to output.
  *
- *	This function ASCII armors a list of OpenPGP packets and outputs it
- *	using putchar_func.
+ * This function ASCII armors a list of OpenPGP packets and outputs it
+ * using putchar_func.
  */
 int armor_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
 						void *c),
@@ -37,14 +38,14 @@ int armor_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
 				struct openpgp_packet_list *packets);
 
 /**
- *	dearmor_openpgp_stream - Reads & decodes an ACSII armored OpenPGP msg.
- *	@getchar_func: The function to get the next character from the stream.
- *	@ctx: The context pointer for getchar_func.
- *	@packets: The list of packets.
+ * @brief Reads & decodes an ACSII armored OpenPGP msg.
+ * @param getchar_func The function to get the next character from the stream.
+ * @param ctx The context pointer for getchar_func.
+ * @param packets The list of packets.
  *
- *	This function uses getchar_func to read characters from an ASCII
- *	armored OpenPGP stream and outputs the data as a linked list of
- *	packets.
+ * This function uses getchar_func to read characters from an ASCII
+ * armored OpenPGP stream and outputs the data as a linked list of
+ * packets.
  */
 int dearmor_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 					void *c),

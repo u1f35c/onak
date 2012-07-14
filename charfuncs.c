@@ -25,8 +25,8 @@
 
 #include "charfuncs.h"
 
-/**
- *	buffer_fetchchar - Fetches a char from a buffer.
+/*
+ * Fetches a char from a buffer.
  *	@ctx: Our buffer context structure.
  *	@count: The number of characters to get from the buffer.
  *	@c: Where to put the characters retrieved.
@@ -47,7 +47,7 @@ int buffer_fetchchar(void *ctx, size_t count, void *c)
 	return 0;
 }
 
-/**
+/*
  *	buffer_putchar - Puts a char to a buffer.
  *	@ctx: Our buffer context structure.
  *	@count: The number of characters to put into the buffer.
@@ -78,32 +78,32 @@ int buffer_putchar(void *ctx, size_t count, void *c)
 	return 1;
 }
 
-/**
- *	file_fetchchar - Fetches a char from a file.
+/*
+ * Fetches a char from a file.
  */
 int file_fetchchar(void *fd, size_t count, void *c)
 {
 	return !(read( *(int *) fd, c, count));
 }
 
-/**
- *	file_putchar - Puts a char to a file.
+/*
+ * Puts a char to a file.
  */
 int file_putchar(void *fd, size_t count, void *c)
 {
 	return !(write( *(int *) fd, c, count));
 }
 
-/**
- *	stdin_getchar - Gets a char from stdin.
+/*
+ * Gets a char from stdin.
  */
 int stdin_getchar(void *ctx, size_t count, void *c)
 {
 	return (fread(c, 1, count, stdin) != count);
 }
 
-/**
- *	stdout_putchar - Puts a char to stdout.
+/*
+ * Puts a char to stdout.
  */
 int stdout_putchar(void *ctx, size_t count, void *c)
 {
