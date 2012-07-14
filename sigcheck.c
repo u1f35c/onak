@@ -57,7 +57,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 	uint8_t keyheader[3];
 	uint8_t packetheader[5];
 	uint8_t v4trailer[6];
-	uint8_t hash[20];
+	uint8_t hash[64];
 	uint8_t *hashdata[8];
 	size_t hashlen[8];
 	int chunks, i;
