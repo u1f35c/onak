@@ -22,3 +22,6 @@ tags
 .depend
 autom4te.cache
 version.h
+*.o
+*.so
+docs
