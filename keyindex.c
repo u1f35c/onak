@@ -158,7 +158,7 @@ int list_subkeys(struct openpgp_signedpacket_list *subkeys, bool verbose,
 			printf("sub  %5d%c/%08X %04d/%02d/%02d\n",
 				length,
 				(type == OPENPGP_PKALGO_RSA) ? 'R' :
-				((type == OPENPGP_PKALGO_ELGAMAL) ? 'g' :
+				((type == OPENPGP_PKALGO_ELGAMAL_ENC) ? 'g' :
 				((type == OPENPGP_PKALGO_DSA) ? 'D' : '?')),
 				(uint32_t) (get_packetid(subkeys->packet) &
 					    0xFFFFFFFF),
@@ -281,7 +281,7 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 		case OPENPGP_PKALGO_RSA:
 			typech = 'R';
 			break;
-		case OPENPGP_PKALGO_ELGAMAL:
+		case OPENPGP_PKALGO_ELGAMAL_ENC:
 			typech = 'g';
 			break;
 		case OPENPGP_PKALGO_DSA:
