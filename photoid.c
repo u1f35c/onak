@@ -25,7 +25,7 @@
 #include "keyid.h"
 #include "keyindex.h"
 #include "keystructs.h"
-#include "log.h"
+#include "onak.h"
 #include "photoid.h"
 
 /**
@@ -40,16 +40,15 @@
  * 	photo id NULL is returned. The returned data pointer refers to the key
  * 	data supplied rather than a copy of it.
  */
-int getphoto(struct openpgp_publickey *key, int index, unsigned char **photo,
-		size_t *length)
+onak_status_t getphoto(struct openpgp_publickey *key, int index,
+		unsigned char **photo, size_t *length)
 {
 	struct openpgp_signedpacket_list *curuid = NULL;
 	int                               i = 0;
 	int                               j = 0;
 
-	log_assert(key != NULL);
-	log_assert(photo != NULL);
-	log_assert(length != NULL);
+	if (key == NULL || photo == NULL || length == NULL)
+		return ONAK_E_INVALID_PARAM;
 
 	*photo = NULL;
 	
@@ -76,8 +75,6 @@ int getphoto(struct openpgp_publickey *key, int index, unsigned char **photo,
 					*length <<= 8;
 					*length += curuid->packet->data[j++];
 				}
-				logthing(LOGTHING_DEBUG, "Got photo, size %d",
-						*length);
 				j++;
 				*length -= 17;
 				*photo = &(curuid->packet->data[j+16]);
@@ -88,5 +85,5 @@ int getphoto(struct openpgp_publickey *key, int index, unsigned char **photo,
 		curuid = curuid->next;
 	}
 
-	return (*photo != NULL);
+	return *photo == NULL ? ONAK_E_NOT_FOUND : ONAK_E_OK;
 }

@@ -32,6 +32,7 @@
 #include "keyindex.h"
 #include "keystructs.h"
 #include "log.h"
+#include "onak.h"
 #include "onak-conf.h"
 #include "openpgp.h"
 
@@ -127,6 +128,7 @@ int list_subkeys(struct openpgp_signedpacket_list *subkeys, bool verbose,
 	time_t		created_time = 0;
 	int	 	type = 0;
 	int	 	length = 0;
+	uint64_t	keyid = 0;
 
 	while (subkeys != NULL) {
 		if (subkeys->packet->tag == OPENPGP_PACKET_PUBLICSUBKEY) {
@@ -154,14 +156,17 @@ int list_subkeys(struct openpgp_signedpacket_list *subkeys, bool verbose,
 					"Unknown key type: %d",
 					subkeys->packet->data[0]);
 			}
-		
+
+			if (get_packetid(subkeys->packet,
+					&keyid) != ONAK_E_OK) {
+				logthing(LOGTHING_ERROR, "Couldn't get keyid.");
+			}
 			printf("sub  %5d%c/%08X %04d/%02d/%02d\n",
 				length,
 				(type == OPENPGP_PKALGO_RSA) ? 'R' :
 				((type == OPENPGP_PKALGO_ELGAMAL_ENC) ? 'g' :
 				((type == OPENPGP_PKALGO_DSA) ? 'D' : '?')),
-				(uint32_t) (get_packetid(subkeys->packet) &
-					    0xFFFFFFFF),
+				(uint32_t) (keyid & 0xFFFFFFFF),
 				created->tm_year + 1900,
 				created->tm_mon + 1,
 				created->tm_mday);
@@ -275,7 +280,9 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 				keys->publickey->data[0]);
 		}
 		
-		keyid = get_keyid(keys);
+		if (get_keyid(keys, &keyid) != ONAK_E_OK) {
+			logthing(LOGTHING_ERROR, "Couldn't get keyid.");
+		}
 
 		switch (type) {
 		case OPENPGP_PKALGO_RSA:
@@ -381,6 +388,7 @@ int mrkey_index(struct openpgp_publickey *keys)
 	size_t					 fplength = 0;
 	unsigned char				 fp[20];
 	int					 c;
+	uint64_t				 keyid;
 
 	while (keys != NULL) {
 		created_time = (keys->publickey->data[1] << 24) +
@@ -393,7 +401,10 @@ int mrkey_index(struct openpgp_publickey *keys)
 		switch (keys->publickey->data[0]) {
 		case 2:
 		case 3:
-			printf("%016" PRIX64, get_keyid(keys));
+			if (get_keyid(keys, &keyid) != ONAK_E_OK) {
+				logthing(LOGTHING_ERROR, "Couldn't get keyid");
+			}
+			printf("%016" PRIX64, keyid);
 			type = keys->publickey->data[7];
 			length = (keys->publickey->data[8] << 8) +
 					keys->publickey->data[9];

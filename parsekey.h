@@ -21,6 +21,7 @@
 #define __PARSEKEY_H__
 
 #include "keystructs.h"
+#include "onak.h"
 
 /**
  *	parse_keys - Process a stream of packets for public keys + sigs.
@@ -59,7 +60,7 @@ int debug_packet(struct openpgp_packet *packet);
  *	then only the public key component of the last key will be returned,
  *	none of the other packets of the key will be read.
  */
-int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
+onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 				void *c),
 				void *ctx,
 				struct openpgp_packet_list **packets,
@@ -74,7 +75,7 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
  *	This function uses putchar_func to write characters to an OpenPGP
  *	packet stream from a linked list of packets.
  */
-int write_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
+onak_status_t write_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
 						void *c),
 				void *ctx,
 				struct openpgp_packet_list *packets);

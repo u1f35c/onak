@@ -34,7 +34,7 @@
  * 	photo id NULL is returned. The returned data pointer refers to the key
  * 	data supplied rather than a copy of it.
  */
-int getphoto(struct openpgp_publickey *key, int index, unsigned char **photo,
-		size_t *length);
+onak_status_t getphoto(struct openpgp_publickey *key, int index,
+		unsigned char **photo, size_t *length);
 
 #endif /* __PHOTOID_H__ */

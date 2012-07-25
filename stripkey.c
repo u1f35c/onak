@@ -63,7 +63,8 @@ int main(int argc, char** argv) {
   cleankeys( keys );
   /* Iterate over the keys... */
   for( key = keys; key; key = key->next ) {
-    uint64_t keyid = get_keyid( key );
+    uint64_t keyid;
+    get_keyid( key, &keyid );
     for( uid = key->uids; uid; uid = uid->next ) {
       REPEATTHISUID: 
       for( sig = uid->sigs, prevsig = NULL; 

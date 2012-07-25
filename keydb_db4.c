@@ -1089,7 +1089,7 @@ static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
 	bool       deadlock = false;
 	struct skshash hash;
 
-	keyid = get_keyid(publickey);
+	get_keyid(publickey, &keyid);
 
 	if (!intrans) {
 		db4_starttrans();

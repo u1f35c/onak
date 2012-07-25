@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
 				size_t         length = 0;
 
 				if (getphoto(publickey, indx, &photo,
-						&length)) {
+						&length) == ONAK_E_OK) {
 					fwrite(photo,
 							1,
 							length,

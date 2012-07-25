@@ -22,7 +22,6 @@
 
 #include "armor.h"
 #include "keystructs.h"
-#include "log.h"
 #include "onak-conf.h"
 #include "parsekey.h"
 #include "version.h"
@@ -56,7 +55,7 @@ static unsigned char encode64(unsigned char c) {
 	} else if (c == 63) {
 		c = '/';
 	} else {
-		log_assert(c < 64);
+		c = '?';
 	}
 
 	return c;
@@ -165,7 +164,6 @@ static int armor_putchar_int(void *ctx, unsigned char c)
 	unsigned char t;
 	int i;
 
-	log_assert(ctx != NULL);
 	state = (struct armor_context *) ctx;
 
 	switch (state->curoctet++) {
@@ -210,7 +208,6 @@ static int armor_putchar(void *ctx, size_t count, void *c)
 {
 	int i;
 
-	log_assert(c != NULL);
 
 	for (i = 0; i < count; i++) {
 		armor_putchar_int(ctx, ((char *) c)[i]);
@@ -269,7 +266,6 @@ static int dearmor_getchar(void *ctx, unsigned char *c)
 	unsigned char tmpc;
 	int i;
 
-	log_assert(ctx != NULL);
 	state = (struct dearmor_context *) ctx;
 	*c = 0;
 	

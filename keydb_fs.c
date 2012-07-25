@@ -329,13 +329,14 @@ static int fs_store_key(struct openpgp_publickey *publickey, bool intrans,
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_packet_list *list_end = NULL;
 	struct openpgp_publickey *next = NULL;
-	uint64_t keyid = get_keyid(publickey);
+	uint64_t keyid;
 	struct ll *wordlist = NULL, *wl = NULL;
 	struct skshash hash;
 	uint64_t *subkeyids = NULL;
 	uint32_t hashid;
 	int i = 0;
 
+	get_keyid(publickey, &keyid);
 
 	if (!intrans)
 		fs_starttrans();

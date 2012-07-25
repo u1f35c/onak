@@ -327,13 +327,20 @@ int merge_keys(struct openpgp_publickey *a, struct openpgp_publickey *b)
 	struct openpgp_packet_list	*curpacket = NULL; 
 	struct openpgp_packet_list	*lastpacket = NULL;
 	struct openpgp_packet_list	*nextpacket = NULL;
+	uint64_t keya, keyb;
 
 	if (a == NULL || b == NULL) {
 		/*
 		 * Do nothing.
 		 */
-		rc = 1;
-	} else if (get_keyid(a) != get_keyid(b)) {
+		return 1;
+	}
+
+	if (get_keyid(a, &keya) != ONAK_E_OK) {
+		return 1;
+	} else if (get_keyid(b, &keyb) != ONAK_E_OK) {
+		return 1;
+	} else if (keya != keyb) {
 		/*
 		 * Key IDs are different.
 		 */

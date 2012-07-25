@@ -23,7 +23,6 @@
 
 #include "keystructs.h"
 #include "ll.h"
-#include "log.h"
 #include "mem.h"
 
 /**
@@ -38,7 +37,8 @@ struct openpgp_packet *packet_dup(struct openpgp_packet *packet)
 {
 	struct openpgp_packet *newpacket = NULL;
 
-	log_assert(packet != NULL);
+	if (packet == NULL)
+		return NULL;
 
 	newpacket = malloc(sizeof (struct openpgp_packet));
 	if (newpacket != NULL) {
@@ -70,9 +70,6 @@ void packet_list_add(struct openpgp_packet_list **list,
 		struct openpgp_packet_list **list_end,
 		struct openpgp_packet_list *packet_list)
 {
-	log_assert(list != NULL);
-	log_assert(list_end != NULL);
-
 	for (; packet_list != NULL; packet_list = packet_list->next) {
 		ADD_PACKET_TO_LIST((*list_end),
 				packet_dup(packet_list->packet));
@@ -92,8 +89,6 @@ void packet_list_add(struct openpgp_packet_list **list,
  *	including the data part.
  */
 void free_packet(struct openpgp_packet *packet) {
-	log_assert(packet != NULL);
-
 	if (packet->data != NULL) {
 		free(packet->data);
 		packet->data = NULL;

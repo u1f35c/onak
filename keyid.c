@@ -24,7 +24,7 @@
 #include "config.h"
 #include "keyid.h"
 #include "keystructs.h"
-#include "log.h"
+#include "onak.h"
 #include "parsekey.h"
 #include "mem.h"
 #include "merge.h"
@@ -42,22 +42,22 @@
  *	get_keyid - Given a public key returns the keyid.
  *	@publickey: The key to calculate the id for.
  */
-uint64_t get_keyid(struct openpgp_publickey *publickey)
+onak_status_t get_keyid(struct openpgp_publickey *publickey, uint64_t *keyid)
 {
-	return (get_packetid(publickey->publickey));
+	return (get_packetid(publickey->publickey, keyid));
 }
 
 /**
  *	get_fingerprint - Given a public key returns the fingerprint.
  *	@publickey: The key to calculate the id for.
- *	@fingerprint: The fingerprint (must be at least 20 bytes of space). 
+ *	@fingerprint: The fingerprint (must be at least 20 bytes of space).
  *	@len: The length of the returned fingerprint.
  *
  *	This function returns the fingerprint for a given public key. As Type 3
  *	fingerprints are 16 bytes and Type 4 are 20 the len field indicates
  *	which we've returned.
  */
-unsigned char *get_fingerprint(struct openpgp_packet *packet,
+onak_status_t get_fingerprint(struct openpgp_packet *packet,
 	unsigned char *fingerprint,
 	size_t *len)
 {
@@ -66,8 +66,10 @@ unsigned char *get_fingerprint(struct openpgp_packet *packet,
 	unsigned char c;
 	size_t         modlen, explen;
 
-	log_assert(fingerprint != NULL);
-	log_assert(len != NULL);
+	if (fingerprint == NULL)
+		return ONAK_E_INVALID_PARAM;
+	if (len == NULL)
+		return ONAK_E_INVALID_PARAM;
 
 	*len = 0;
 
@@ -111,11 +113,10 @@ unsigned char *get_fingerprint(struct openpgp_packet *packet,
 
 		break;
 	default:
-		logthing(LOGTHING_ERROR, "Unknown key type: %d",
-				packet->data[0]);
+		return ONAK_E_UNKNOWN_VER;
 	}
 
-	return fingerprint;
+	return ONAK_E_OK;
 }
 
 
@@ -123,15 +124,15 @@ unsigned char *get_fingerprint(struct openpgp_packet *packet,
  *	get_packetid - Given a PGP packet returns the keyid.
  *	@packet: The packet to calculate the id for.
  */
-uint64_t get_packetid(struct openpgp_packet *packet)
+onak_status_t get_packetid(struct openpgp_packet *packet, uint64_t *keyid)
 {
-	uint64_t	keyid = 0;
 	int		offset = 0;
 	int		i = 0;
 	size_t		length = 0;
 	unsigned char	buff[20];
 
-	log_assert(packet != NULL);
+	if (packet == NULL)
+		return ONAK_E_INVALID_PARAM;
 
 	switch (packet->data[0]) {
 	case 2:
@@ -145,38 +146,34 @@ uint64_t get_packetid(struct openpgp_packet *packet)
 			packet->data[9];
 		offset = ((offset + 7) / 8) + 2;
 
-		for (keyid = 0, i = 0; i < 8; i++) {
-			keyid <<= 8;
-			keyid += packet->data[offset++];
+		for (*keyid = 0, i = 0; i < 8; i++) {
+			*keyid <<= 8;
+			*keyid += packet->data[offset++];
 		}
 		/*
-		 * Check for an RSA key; if not then log but accept anyway.
+		 * Check for an RSA key; if not return an error.
 		 * 1 == RSA
 		 * 2 == RSA Encrypt-Only
 		 * 3 == RSA Sign-Only
 		 */
 		if (packet->data[7] < 1 || packet->data[7] > 3) {
-			logthing(LOGTHING_NOTICE,
-				"Type 2 or 3 key, but not RSA: %llx (type %d)",
-				keyid,
-				packet->data[7]);
+			return ONAK_E_INVALID_PKT;
 		}
 		break;
 	case 4:
 		get_fingerprint(packet, buff, &length);
 		
-		for (keyid = 0, i = 12; i < 20; i++) {
-			keyid <<= 8;
-			keyid += buff[i];
+		for (*keyid = 0, i = 12; i < 20; i++) {
+			*keyid <<= 8;
+			*keyid += buff[i];
 		}
 
 		break;
 	default:
-		logthing(LOGTHING_ERROR, "Unknown key type: %d",
-				packet->data[0]);
+		return ONAK_E_UNKNOWN_VER;
 	}
 
-	return keyid;
+	return ONAK_E_OK;
 }
 
 static struct openpgp_packet_list *sortpackets(struct openpgp_packet_list
@@ -200,7 +197,7 @@ static struct openpgp_packet_list *sortpackets(struct openpgp_packet_list
 	return sorted;
 }
 
-void get_skshash(struct openpgp_publickey *key, struct skshash *hash)
+onak_status_t get_skshash(struct openpgp_publickey *key, struct skshash *hash)
 {
 	struct openpgp_packet_list *packets = NULL, *list_end = NULL;
 	struct openpgp_packet_list *curpacket;
@@ -233,6 +230,8 @@ void get_skshash(struct openpgp_publickey *key, struct skshash *hash)
 
 	md5_digest(&md5_context, 16, (uint8_t *) &hash->hash);
 	free_packet_list(packets);
+
+	return ONAK_E_OK;
 }
 
 uint8_t hexdigit(char c)

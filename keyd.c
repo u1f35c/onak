@@ -78,15 +78,17 @@ void iteratefunc(void *ctx, struct openpgp_publickey *key)
 	struct buffer_ctx           storebuf;
 	int                         ret = 0;
 	int                         *fd = (int *) ctx;
+	uint64_t                    keyid;
 
 	if (key != NULL) {
 		storebuf.offset = 0;
 		storebuf.size = 8192;
 		storebuf.buffer = malloc(8192);
 
+		get_keyid(key, &keyid);
 		logthing(LOGTHING_TRACE,
 				"Iterating over 0x%016" PRIX64 ".",
-				get_keyid(key));
+				keyid);
 
 		flatten_publickey(key,
 				&packets,

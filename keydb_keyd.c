@@ -274,7 +274,7 @@ static int keyd_store_key(struct openpgp_publickey *publickey, bool intrans,
 	uint32_t                    cmd = KEYD_CMD_STORE;
 	uint64_t                    keyid;
 
-	keyid = get_keyid(publickey);
+	get_keyid(publickey, &keyid);
 	
 	if (update) {
 		keyd_delete_key(keyid, false);

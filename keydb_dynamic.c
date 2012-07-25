@@ -393,7 +393,7 @@ static uint64_t dynamic_getfullkeyid(uint64_t keyid)
 	if (keyid < 0x100000000LL) {
 		dynamic_fetch_key(keyid, &publickey, false);
 		if (publickey != NULL) {
-			keyid = get_keyid(publickey);
+			get_keyid(publickey, &keyid);
 			free_publickey(publickey);
 			publickey = NULL;
 		} else {
@@ -422,6 +422,7 @@ static int dynamic_update_keys(struct openpgp_publickey **keys, bool sendsync)
 	struct openpgp_publickey *prev = NULL;
 	int newkeys = 0;
 	bool intrans;
+	uint64_t keyid;
 	
 	if (loaded_backend == NULL) {
 		load_backend();
@@ -435,10 +436,11 @@ static int dynamic_update_keys(struct openpgp_publickey **keys, bool sendsync)
 
 	for (curkey = *keys; curkey != NULL; curkey = curkey->next) {
 		intrans = dynamic_starttrans();
+		get_keyid(curkey, &keyid);
 		logthing(LOGTHING_INFO,
 			"Fetching key 0x%" PRIX64 ", result: %d",
-			get_keyid(curkey),
-			dynamic_fetch_key(get_keyid(curkey), &oldkey, intrans));
+			keyid,
+			dynamic_fetch_key(keyid, &oldkey, intrans));
 
 		/*
 		 * If we already have the key stored in the DB then merge it

@@ -25,8 +25,8 @@
 #include "keyid.h"
 #include "keystructs.h"
 #include "ll.h"
-#include "log.h"
 #include "mem.h"
+#include "onak.h"
 #include "openpgp.h"
 #include "parsekey.h"
 
@@ -62,7 +62,8 @@ int parse_keys(struct openpgp_packet_list *packets,
 			 * It's a signature packet. Add it to either the public
 			 * key, to the current UID or the current subkey.
 			 */
-			log_assert(curkey != NULL);
+			if (curkey == NULL)
+				return ONAK_E_INVALID_PARAM;
 			if (curkey->subkeys != NULL) {
 				ADD_PACKET_TO_LIST_END(curkey->last_subkey,
 					sig,
@@ -117,8 +118,10 @@ int parse_keys(struct openpgp_packet_list *packets,
 			/*
 			 * It's a UID packet (or a photo id, which is similar).
 			 */
-			log_assert(curkey != NULL);
-			log_assert(curkey->subkeys == NULL);
+			if (curkey == NULL)
+				return ONAK_E_INVALID_PARAM;
+			if (curkey->subkeys != NULL)
+				return ONAK_E_INVALID_PARAM;
 			ADD_PACKET_TO_LIST_END(curkey,
 				uid,
 				packet_dup(packets->packet));
@@ -127,7 +130,8 @@ int parse_keys(struct openpgp_packet_list *packets,
 			/*
 			 * It's a subkey packet.
 			 */
-			log_assert(curkey != NULL);
+			if (curkey == NULL)
+				return ONAK_E_INVALID_PARAM;
 			ADD_PACKET_TO_LIST_END(curkey,
 				subkey,
 				packet_dup(packets->packet));
@@ -142,9 +146,8 @@ int parse_keys(struct openpgp_packet_list *packets,
 			 */
 			break;
 		default:
-			logthing(LOGTHING_ERROR,
-					"Unsupported packet type: %d",
-					packets->packet->tag);
+			/* Unsupported packet. Do what? Ignore for now. */
+			break;
 		}
 		packets = packets->next;
 	}
@@ -181,7 +184,7 @@ int debug_packet(struct openpgp_packet *packet)
  *	packet stream and reads the packets into a linked list of packets
  *	ready for parsing as a public key or whatever.
  */
-int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
+onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 				void *c),
 				void *ctx,
 				struct openpgp_packet_list **packets,
@@ -189,11 +192,13 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 {
 	unsigned char			 curchar = 0;
 	struct openpgp_packet_list	*curpacket = NULL;
-	int				 rc = 0;
+	onak_status_t			 rc = ONAK_E_OK;
 	int				 keys = 0;
 	bool				 inpacket = false;
 
-	log_assert(packets != NULL);
+	if (packets == NULL)
+		return ONAK_E_INVALID_PARAM;
+
 	curpacket = *packets;
 	if (curpacket != NULL) {
 		while (curpacket->next != NULL) {
@@ -240,9 +245,7 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 					curpacket->packet->length += 192;
 				} else if (curpacket->packet->length > 223 &&
 					curpacket->packet->length < 255) {
-					logthing(LOGTHING_NOTICE,
-						"Partial length;"
-						" not supported.");
+					return ONAK_E_UNSUPPORTED_FEATURE;
 				} else if (curpacket->packet->length == 255) {
 					/*
 					 * 5 byte length; ie 255 followed by 3
@@ -288,11 +291,9 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 					curpacket->packet->length += curchar;
 					break;
 				case 3:
-					logthing(LOGTHING_ERROR,
-						"Unsupported length type 3.");
+					rc = ONAK_E_UNSUPPORTED_FEATURE;
 					curpacket->packet->length = 0;
 					curpacket->packet->data = NULL;
-					rc = -1;
 					break;
 				}
 			}
@@ -306,10 +307,7 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 					malloc(curpacket->packet->length *
 					sizeof(unsigned char));
 				if (curpacket->packet->data == NULL) {
-					logthing(LOGTHING_ERROR, 
-						"Can't allocate memory for "
-						"packet!");
-					rc = -1;
+					rc = ONAK_E_NOMEM;
 				} else {
 					rc = getchar_func(ctx,
 						curpacket->packet->length,
@@ -318,9 +316,7 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 			}
 			inpacket = false;
 		} else {
-			logthing(LOGTHING_ERROR, "Unexpected character: 0x%X",
-				curchar);
-			rc = 1;
+			rc = ONAK_E_INVALID_PKT;
 		}
 	}
 
@@ -336,7 +332,7 @@ int read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
  *	This function uses putchar_func to write characters to an OpenPGP
  *	packet stream from a linked list of packets.
  */
-int write_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
+onak_status_t write_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
 						void *c),
 				void *ctx,
 				struct openpgp_packet_list *packets)
@@ -364,8 +360,6 @@ int write_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
 				putchar_func(ctx, 1, &curchar);
 			} else if (packets->packet->length > 8382 &&
 				packets->packet->length < 0xFFFFFFFF) {
-				logthing(LOGTHING_DEBUG,
-					"Writing 5 byte length");
 				curchar = 255;
 				putchar_func(ctx, 1, &curchar);
 				
@@ -385,8 +379,7 @@ int write_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
 				curchar &= 0xFF;
 				putchar_func(ctx, 1, &curchar);
 			} else {
-				logthing(LOGTHING_ERROR,
-					"Unsupported new format length.");
+				return ONAK_E_UNSUPPORTED_FEATURE;
 			}
 		} else {
 			curchar |= (packets->packet->tag << 2);
@@ -419,7 +412,8 @@ int write_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
 				packets->packet->data);
 		packets = packets->next;
 	}
-	return 0;
+
+	return ONAK_E_OK;
 }
 
 /**

@@ -330,7 +330,8 @@ int main(int argc, char *argv[])
 				unsigned char *photo = NULL;
 				size_t         length = 0;
 
-				if (getphoto(keys, 0, &photo, &length)) {
+				if (getphoto(keys, 0, &photo,
+						&length) == ONAK_E_OK) {
 					fwrite(photo,
 						1,
 						length,

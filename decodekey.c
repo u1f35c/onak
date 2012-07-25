@@ -315,13 +315,13 @@ uint64_t *keysubkeys(struct openpgp_publickey *key)
 	struct openpgp_signedpacket_list *cursubkey = NULL;
 	uint64_t                         *subkeys = NULL;
 	int                               count = 0;
-        
+
 	if (key != NULL && key->subkeys != NULL) {
 		subkeys = malloc((spsize(key->subkeys) + 1) *
 				sizeof (uint64_t));
 		cursubkey = key->subkeys;
 		while (cursubkey != NULL) {
-			subkeys[count++] = get_packetid(cursubkey->packet);
+			get_packetid(cursubkey->packet, &subkeys[count++]);
 			cursubkey = cursubkey -> next;
 		}
 		subkeys[count] = 0;

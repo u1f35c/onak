@@ -128,9 +128,11 @@ static int file_store_key(struct openpgp_publickey *publickey, bool intrans,
 	struct openpgp_publickey *next = NULL;
 	char keyfile[1024];
 	int fd = -1;
+	uint64_t keyid;
 
+	get_keyid(publickey, &keyid);
 	snprintf(keyfile, 1023, "%s/0x%" PRIX64, config.db_dir,
-			get_keyid(publickey) & 0xFFFFFFFF);
+			keyid & 0xFFFFFFFF);
 	fd = open(keyfile, O_WRONLY | O_CREAT, 0664); // | O_EXLOCK);
 
 	if (fd > -1) {

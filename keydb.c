@@ -162,7 +162,7 @@ uint64_t generic_getfullkeyid(uint64_t keyid)
 	if (keyid < 0x100000000LL) {
 		config.dbbackend->fetch_key(keyid, &publickey, false);
 		if (publickey != NULL) {
-			keyid = get_keyid(publickey);
+			get_keyid(publickey, &keyid);
 			free_publickey(publickey);
 			publickey = NULL;
 		} else {
@@ -193,13 +193,15 @@ int generic_update_keys(struct openpgp_publickey **keys, bool sendsync)
 	struct openpgp_publickey *prev = NULL;
 	int newkeys = 0;
 	bool intrans;
+	uint64_t keyid;
 
 	for (curkey = *keys; curkey != NULL; curkey = curkey->next) {
 		intrans = config.dbbackend->starttrans();
+		get_keyid(curkey, &keyid);
 		logthing(LOGTHING_INFO,
 			"Fetching key 0x%" PRIX64 ", result: %d",
-			get_keyid(curkey),
-			config.dbbackend->fetch_key(get_keyid(curkey), &oldkey,
+			keyid,
+			config.dbbackend->fetch_key(keyid, &oldkey,
 					intrans));
 
 		/*
