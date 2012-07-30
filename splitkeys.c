@@ -25,9 +25,7 @@
 
 #include "charfuncs.h"
 #include "keystructs.h"
-#include "log.h"
 #include "mem.h"
-#include "onak-conf.h"
 #include "openpgp.h"
 #include "parsekey.h"
 
@@ -50,9 +48,6 @@ int main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 	}
-
-	readconfig(NULL);
-	initlogthing("splitkeys", config.logfile);
 
 	do {
 		read_openpgp_stream(stdin_getchar, NULL,
@@ -82,9 +77,6 @@ int main(int argc, char *argv[])
 			count++;
 		}
 	} while (packets != NULL);
-
-	cleanuplogthing();
-	cleanupconfig();
 
 	return 0;
 }
