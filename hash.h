@@ -22,6 +22,7 @@
 
 #include "keystructs.h"
 #include "ll.h"
+#include "stats.h"
 
 #define HASHSIZE 1024
 #define HASHMASK 0x3FF

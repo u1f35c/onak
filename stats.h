@@ -33,8 +33,29 @@ key_getsigns - get the keys a key signs. */
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "keystructs.h"
 #include "ll.h"
+
+/**
+ * @brief Holds key details suitable for doing stats on.
+ */
+struct stats_key {
+	/** The keyid. */
+	uint64_t keyid;
+	/** Used for marking during DFS/BFS. */
+	int colour;
+	/** The key that lead us to this one for DFS/BFS. */
+	uint64_t parent;
+	/** A linked list of the signatures on this key. */
+	struct ll *sigs;
+	/** A linked list of the keys this key signs. */
+	struct ll *signs;
+	/** A bool indicating if we've initialized the sigs element yet. */
+	bool gotsigs;
+	/** If we shouldn't consider the key in calculations. */
+	bool disabled;
+	/** If the key is revoked (and shouldn't be considered). */
+	bool revoked;
+};
 
 /**
  *	initcolour - Clear the key graph ready for use.

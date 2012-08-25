@@ -21,6 +21,7 @@
 #define __MEM_H_
 
 #include "keystructs.h"
+#include "stats.h"
 
 /**
  *	packet_dup - duplicate an OpenPGP packet.

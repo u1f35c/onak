@@ -25,6 +25,7 @@
 #include "keystructs.h"
 #include "ll.h"
 #include "mem.h"
+#include "stats.h"
 
 /**
  *	hashtable - the hash table array.
