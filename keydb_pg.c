@@ -369,11 +369,14 @@ static int pg_store_key(struct openpgp_publickey *publickey, bool intrans,
 	char *primary = NULL;
 	char *safeuid = NULL;
 	int i;
+	uint64_t keyid;
 
 	if (!intrans) {
 		result = PQexec(dbconn, "BEGIN");
 		PQclear(result);
 	}
+
+	get_keyid(publickey, &keyid);
 
 	/*
 	 * Delete the key if we already have it.
@@ -384,7 +387,7 @@ static int pg_store_key(struct openpgp_publickey *publickey, bool intrans,
 	 * it definitely needs updated.
 	 */
 	if (update) {
-		pg_delete_key(get_keyid(publickey), true);
+		pg_delete_key(keyid, true);
 	}
 
 	next = publickey->next;
@@ -406,7 +409,7 @@ static int pg_store_key(struct openpgp_publickey *publickey, bool intrans,
 	snprintf(statement, 1023, 
 			"INSERT INTO onak_keys (keyid, keydata) VALUES "
 			"('%" PRIX64 "', '%d')", 
-			get_keyid(publickey),
+			keyid,
 			key_oid);
 	result = PQexec(dbconn, statement);
 
@@ -429,7 +432,7 @@ static int pg_store_key(struct openpgp_publickey *publickey, bool intrans,
 					"INSERT INTO onak_uids "
 					"(keyid, uid, pri) "
 					"VALUES	('%" PRIX64 "', '%s', '%c')",
-					get_keyid(publickey),
+					keyid,
 					safeuid,
 					(uids[i] == primary) ? 't' : 'f');
 				result = PQexec(dbconn, statement);
@@ -464,7 +467,7 @@ static int pg_store_key(struct openpgp_publickey *publickey, bool intrans,
 				"INSERT INTO onak_sigs (signer, signee) "
 				"VALUES ('%" PRIX64 "', '%" PRIX64 "')",
 				sig_keyid(packets->packet),
-				get_keyid(publickey));
+				keyid);
 			result = PQexec(dbconn, statement);
 			PQclear(result);
 		}
