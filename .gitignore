@@ -25,3 +25,6 @@ version.h
 *.o
 *.so
 docs
+cscope.files
+cscope.out
+TAGS

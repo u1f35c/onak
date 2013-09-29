@@ -153,6 +153,7 @@ clean:
 		gpgwww.o add.o lookup.o main.o maxpath.o onak.o sixdegrees \
 		sixdegrees.o splitkeys.o stripkey.o onak.conf keyd.o \
 		keydctl.o hashquery.o version.h \
+		TAGS cscope.out cscope.files \
 		$(foreach be,@BACKENDS@,keydb_$(be).o) *.so
 ifeq (x@KEYD@, xyes)
 	$(RM) keyd.o keydb_$(DBTYPE).o
