@@ -13,7 +13,8 @@ if [ "$1" = "configure" ]; then
     #
     if grep -q "^db_dir /var/lib/onak" /etc/onak.conf &&
             grep -q "^db_backend db4" /etc/onak.conf &&
-            [ ! -e /var/lib/onak/num_keydb ]; then
+            [ ! -e /var/lib/onak/num_keydb -a \
+                -e /usr/share/doc/onak/noodles.key ]; then
         zcat /usr/share/doc/onak/noodles.key | onak -b add
     fi
 
