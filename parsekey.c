@@ -137,7 +137,7 @@ int parse_keys(struct openpgp_packet_list *packets,
 				packet_dup(packets->packet));
 			break;
 		case OPENPGP_PACKET_TRUST:
-		case 61:
+		case OPENPGP_PACKET_COMMENT:
 			/*
 			 * One of:
 			 *
