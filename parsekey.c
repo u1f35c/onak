@@ -191,7 +191,7 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 				int maxnum)
 {
 	unsigned char			 curchar = 0;
-	struct openpgp_packet_list	*curpacket = NULL;
+	struct openpgp_packet_list	*curpacket = NULL, **packetend = NULL;
 	onak_status_t			 rc = ONAK_E_OK;
 	int				 keys = 0;
 	bool				 inpacket = false;
@@ -216,10 +216,12 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 			inpacket = true;
 			if (curpacket != NULL) {
 				curpacket->next = malloc(sizeof (*curpacket));
+				packetend = &curpacket->next;
 				curpacket = curpacket->next;
 			} else {
 				*packets = curpacket =
 					malloc(sizeof (*curpacket));
+				packetend = packets;
 			}
 			memset(curpacket, 0, sizeof(*curpacket));
 			curpacket->packet =
@@ -245,7 +247,9 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 					curpacket->packet->length += 192;
 				} else if (curpacket->packet->length > 223 &&
 					curpacket->packet->length < 255) {
-					return ONAK_E_UNSUPPORTED_FEATURE;
+					free(curpacket->packet);
+					curpacket->packet = NULL;
+					rc = ONAK_E_UNSUPPORTED_FEATURE;
 				} else if (curpacket->packet->length == 255) {
 					/*
 					 * 5 byte length; ie 255 followed by 3
@@ -292,8 +296,8 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 					break;
 				case 3:
 					rc = ONAK_E_UNSUPPORTED_FEATURE;
-					curpacket->packet->length = 0;
-					curpacket->packet->data = NULL;
+					free(curpacket->packet);
+					curpacket->packet = NULL;
 					break;
 				}
 			}
@@ -318,6 +322,12 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 		} else {
 			rc = ONAK_E_INVALID_PKT;
 		}
+	}
+
+	/* Trim the last packet if it doesn't actually exist */
+	if (packetend != NULL && (*packetend)->packet == NULL) {
+		free(*packetend);
+		*packetend = NULL;
 	}
 
 	return (rc);

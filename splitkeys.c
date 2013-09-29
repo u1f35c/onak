@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 					tmp->next = NULL;
 				}
 			}
-			if (tmp->next != NULL) {
+			if (tmp != NULL && tmp->next != NULL) {
 				list_end = NULL;
 			}
 
