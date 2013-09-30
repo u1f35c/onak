@@ -68,6 +68,7 @@ AC_DEFUN([AX_LIB_NETTLE],[
         AX_CHECK_NETTLE_ALGO([MD2],[md2_digest])
         AX_CHECK_NETTLE_ALGO([MD4],[md4_digest])
         AX_CHECK_NETTLE_ALGO([MD5],[md5_digest])
+        AX_CHECK_NETTLE_ALGO([RIPEMD160],[ripemd160_digest])
         AX_CHECK_NETTLE_ALGO([SHA1],[sha1_digest])
         AX_CHECK_NETTLE_ALGO([SHA224],[sha224_digest])
         AX_CHECK_NETTLE_ALGO([SHA256],[sha256_digest])

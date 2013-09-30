@@ -27,6 +27,7 @@
 
 #ifdef HAVE_NETTLE
 #include <nettle/md5.h>
+#include <nettle/ripemd160.h>
 #include <nettle/sha.h>
 #else
 #include "md5.h"
@@ -42,6 +43,9 @@ int check_packet_sighash(struct openpgp_publickey *key,
 	size_t siglen, unhashedlen;
 	struct sha1_ctx sha1_context;
 	struct md5_ctx md5_context;
+#ifdef NETTLE_WITH_RIPEMD160
+	struct ripemd160_ctx ripemd160_context;
+#endif
 #ifdef NETTLE_WITH_SHA224
 	struct sha224_ctx sha224_context;
 #endif
@@ -165,6 +169,19 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		}
 		sha1_digest(&sha1_context, 20, hash);
 		break;
+	case OPENPGP_HASH_RIPEMD160:
+#ifdef NETTLE_WITH_RIPEMD160
+		ripemd160_init(&ripemd160_context);
+		for (i = 0; i < chunks; i++) {
+			ripemd160_update(&ripemd160_context, hashlen[i],
+				hashdata[i]);
+		}
+		ripemd160_digest(&ripemd160_context, RIPEMD160_DIGEST_SIZE,
+			hash);
+#else
+		logthing(LOGTHING_INFO, "RIPEMD160 support not available.");
+		return -1;
+#endif
 	case OPENPGP_HASH_SHA224:
 #ifdef NETTLE_WITH_SHA224
 		sha224_init(&sha224_context);
