@@ -15,6 +15,8 @@ AX_LIB_NETTLE(auto)
 dnl We should always have these backends available.
 backends="file fs keyd"
 
+LIBCURL_CHECK_CONFIG(,,[have_libcurl="yes" backends="$backends hkp"],have_libcurl="no")
+
 AC_CHECK_LIB(pq, PQsetdbLogin,[have_libpq="yes" backends="$backends pg"],have_libpq="no")
 
 AC_CHECK_HEADER(db.h, have_db_h="yes", have_db_h="no")

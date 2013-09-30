@@ -3,7 +3,7 @@ Section: net
 Priority: optional
 Maintainer: Jonathan McDowell <noodles@earth.li>
 Uploaders: Ross Burton <ross@debian.org>
-Build-Depends: debhelper (>= 7), cdbs, libdb-dev, nettle-dev
+Build-Depends: debhelper (>= 7), cdbs, libdb-dev, nettle-dev, libcurl4-gnutls-dev | libcurl-dev
 Standards-Version: 3.9.2.0
 Homepage: http://www.earth.li/projectpurple/progs/onak.html
 Vcs-Bzr: http://www.earth.li/~noodles/bzr/onak/mainline

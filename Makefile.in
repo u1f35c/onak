@@ -11,6 +11,7 @@ DBTYPE = @DBTYPE@
 #
 LIBS = @LIBS@ @NETTLE_LIBS@
 DB4LIBS = @DB4LIBS@
+CURLLIBS = @LIBCURL@
 #MAKEDEPEND = makedepend -f- -- 
 MAKEDEPEND = $(CC) -MM
 prefix ?= @prefix@
@@ -83,6 +84,9 @@ keydctl: keydctl.o onak-conf.o ll.o log.o
 
 libkeydb_db4.so: keydb_db4.o $(CORE_OBJS)
 	$(CC) -shared $(DB4LIBS) -o libkeydb_db4.so keydb_db4.o $(CORE_OBJS)
+
+libkeydb_hkp.so: keydb_hkp.o $(CORE_OBJS)
+	$(CC) -shared $(CURLLIBS) -o libkeydb_hkp.so keydb_hkp.o $(CORE_OBJS)
 
 libkeydb_pg.so: keydb_pg.o $(CORE_OBJS)
 	$(CC) -shared $(PQLIBS) -o libkeydb_pg.so keydb_pg.o $(CORE_OBJS)
