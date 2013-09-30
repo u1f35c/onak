@@ -16,7 +16,8 @@ MAKEDEPEND = $(CC) -MM
 prefix ?= @prefix@
 exec_prefix ?= @exec_prefix@
 
-PROGS = add lookup hashquery gpgwww onak splitkeys onak-mail.pl stripkey
+PROGS = add lookup hashquery gpgwww onak splitkeys onak-mail.pl stripkey \
+	wotsap
 CORE_OBJS = armor.o charfuncs.o decodekey.o getcgi.o hash.o marshal.o \
 	keyid.o keyindex.o ll.o mem.o onak-conf.o parsekey.o sigcheck.o \
 	log.o photoid.o wordlist.o cleanup.o merge.o sendsync.o keyarray.o
@@ -49,7 +50,7 @@ endif
 OBJS = stats.o cleankey.o $(CORE_OBJS) $(KEYDB_OBJ)
 
 all: .depend $(PROGS) testparse maxpath sixdegrees splitkeys onak.conf \
-	$(BACKENDS)
+	wotsap $(BACKENDS)
 
 test: onak $(BACKENDS)
 	@./runtests
@@ -105,6 +106,10 @@ sixdegrees: sixdegrees.o $(OBJS)
 	$(CC) $(LDFLAGS) -o sixdegrees sixdegrees.o $(OBJS) $(LIBS) \
 		$(PROGS_LDFLAGS_EXTRA)
 
+wotsap: wotsap.o $(OBJS)
+	$(CC) $(LDFLAGS) -o wotsap wotsap.o $(OBJS) $(LIBS) \
+		$(PROGS_LDFLAGS_EXTRA)
+
 stripkey: stripkey.o $(OBJS)
 	$(CC) $(LDFLAGS) -o stripkey stripkey.o $(OBJS) $(LIBS) \
 		$(PROGS_LDFLAGS_EXTRA)
@@ -152,7 +157,7 @@ clean:
 	$(RM) $(PROGS) $(OBJS) Makefile.bak testparse maxpath *.core core \
 		gpgwww.o add.o lookup.o main.o maxpath.o onak.o sixdegrees \
 		sixdegrees.o splitkeys.o stripkey.o onak.conf keyd.o \
-		keydctl.o hashquery.o version.h \
+		keydctl.o hashquery.o wotsap.o version.h \
 		TAGS cscope.out cscope.files \
 		$(foreach be,@BACKENDS@,keydb_$(be).o) *.so
 ifeq (x@KEYD@, xyes)
