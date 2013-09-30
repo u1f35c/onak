@@ -17,6 +17,7 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -83,7 +84,18 @@ void findmaxpath(unsigned long max)
 
 int main(int argc, char *argv[])
 {
-	readconfig(NULL);
+	int optchar;
+	char *configfile = NULL;
+
+	while ((optchar = getopt(argc, argv, "c:")) != -1 ) {
+		switch (optchar) {
+		case 'c':
+			configfile = strdup(optarg);
+			break;
+		}
+	}
+
+	readconfig(configfile);
 	initlogthing("maxpath", config.logfile);
 	config.dbbackend->initdb(true);
 	inithash();

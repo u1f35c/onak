@@ -17,8 +17,10 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "hash.h"
 #include "keydb.h"
@@ -132,13 +134,23 @@ void sixdegrees(uint64_t keyid)
 
 int main(int argc, char *argv[])
 {
+	int optchar;
+	char *configfile = NULL;
 	uint64_t keyid = 0x2DA8B985;
 
-	if (argc == 2) {
-		keyid = strtoll(argv[1], NULL, 16);
+	while ((optchar = getopt(argc, argv, "c:")) != -1 ) {
+		switch (optchar) {
+		case 'c':
+			configfile = strdup(optarg);
+			break;
+		}
 	}
 
-	readconfig(NULL);
+	if (optind < argc) {
+		keyid = strtoll(argv[optind], NULL, 16);
+	}
+
+	readconfig(configfile);
 	initlogthing("sixdegrees", config.logfile);
 	config.dbbackend->initdb(true);
 	inithash();
