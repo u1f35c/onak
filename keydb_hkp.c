@@ -31,6 +31,7 @@
 #include "mem.h"
 #include "onak-conf.h"
 #include "parsekey.h"
+#include "version.h"
 
 static CURL *curl = NULL;
 
@@ -43,6 +44,11 @@ static void hkp_initdb(bool readonly)
 {
 	curl_global_init(CURL_GLOBAL_DEFAULT);
 	curl = curl_easy_init();
+	if (curl == NULL) {
+		logthing(LOGTHING_CRITICAL, "Could not initialize CURL.");
+		exit(EXIT_FAILURE);
+	}
+	curl_easy_setopt(curl, CURLOPT_USERAGENT, "onak/" ONAK_VERSION);
 }
 
 /**
