@@ -190,7 +190,7 @@ static void usage(void)
 {
 	puts("keydctl " ONAK_VERSION " - control an onak keyd instance.\n");
 	puts("Usage:\n");
-	puts("\tonak [options] <command> <parameters>\n");
+	puts("\tkeydctl [options] <command> <parameters>\n");
 	puts("\tCommands:\n");
 	puts("\tcheck    - check if keyd is running");
 	puts("\tquit     - request that keyd cleanly shuts down");
