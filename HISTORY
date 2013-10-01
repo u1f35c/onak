@@ -286,3 +286,15 @@
 * Always put a leading 0x on keyids in HTML output links
 * Allow retrieval of key by full fingerprint
 * Add keyid to DB4 backend deletion error messages
+
+0.4.2 - 1st October 2013
+
+* Add support for RIPEMD160, SHA224, SHA384 & SHA512 when available
+* Fix stripkeys to output all the keys at the end rather as it goes along
+* Add support for checking signature hashes
+* Use Doxygen for some initial code documentation generation
+* Cleanup code in preparation for a separate libonak for general PGP bits
+* Prevent read_openpgp_stream from returning empty packages + causing crashes
+* Allow maxpath + splitkeys to take a -c option to specify the config file
+* Add wotsap tool to generate data files for wotsap
+* Add HKP backend to allow onak to be used as a proxying keyserver

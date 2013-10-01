@@ -1,13 +1,14 @@
-onak (0.4.1-1+bzr) unstable; urgency=low
+onak (0.4.2-1) unstable; urgency=low
 
-  * Development build
+  * New upstream release
+    * Prevent splitkeys crash with malformed key input. (Closes: #716350)
   * Switch to source format 3.0 (quilt).
   * Only seed initial database if key file is available. (Closes: #710665)
   * Bump Debian Standards-Version to 3.9.4.0
     * Update year in copyright file
   * Updated Vcs fields to point to git repository
 
- -- Jonathan McDowell <noodles@earth.li>  Tue, 24 Apr 2012 21:54:17 -0700
+ -- Jonathan McDowell <noodles@earth.li>  Tue, 01 Oct 2013 11:56:55 +0100
 
 onak (0.4.1-1) unstable; urgency=low
 

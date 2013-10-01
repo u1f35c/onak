@@ -1,5 +1,5 @@
-onak 0.4.1
-Copyright 2003-2012 Jonathan McDowell
+onak 0.4.2
+Copyright 2003-2013 Jonathan McDowell
 http://www.earth.li/projectpurple/progs/onak.html
 
 
@@ -62,7 +62,7 @@ should live; by default it'll be PREFIX/etc/onak.conf.
 
 Backends:
 
-Currently there is support for 5 different database backends:
+Currently there is support for 6 different database backends:
 
 * file
   The original backend. Very simple and ideal for testing. Stores each
@@ -92,6 +92,10 @@ Currently there is support for 5 different database backends:
   libraries and supports the full range of operations (such as text and
   subkey searching). Needs a good filesystem to get good performance
   though as it creates many, many files and links.
+
+* hkp
+  A proxying backend. No keys are stored locally; all fetch and store
+  requests are forwarded to the provided keyserver.
 
 
 Other keyservers:
@@ -138,12 +142,14 @@ onak lives at:
 
 http://www.earth.li/projectpurple/progs/onak.html
 
-Development is carried out using arch; you can access the repository
+Development is carried out using git; you can access the repository
 with something like:
 
-tla register-archive noodles@earth.li--2004-laptop \
-	http://www.earth.li/~noodles/arch/
-tla get -A noodles@earth.li--2004-laptop onak--mainline--0.3
+git clone git://the.earth.li/onak.git
+
+or it can be browsed via gitweb at:
+
+http://the.earth.li/gitweb/?p=onak.git;a=summary
 
 
 License:
