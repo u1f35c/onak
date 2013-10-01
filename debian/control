@@ -6,7 +6,8 @@ Uploaders: Ross Burton <ross@debian.org>
 Build-Depends: debhelper (>= 7), cdbs, libdb-dev, nettle-dev, libcurl4-gnutls-dev | libcurl-dev
 Standards-Version: 3.9.4.0
 Homepage: http://www.earth.li/projectpurple/progs/onak.html
-Vcs-Bzr: http://www.earth.li/~noodles/bzr/onak/mainline
+Vcs-Browser: http://the.earth.li/gitweb/?p=onak.git;a=summary
+Vcs-Git: git://the.earth.li/onak.git
 
 Package: onak
 Architecture: any
