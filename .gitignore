@@ -21,6 +21,7 @@ testparse
 wotsap
 tags
 .depend
+aclocal.m4
 autom4te.cache
 version.h
 *.o
