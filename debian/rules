@@ -5,12 +5,4 @@ DEB_CONFIGURE_EXTRA_FLAGS += --enable-backend=dynamic
 CFLAGS += -std=gnu99
 
 %:
-	dh "$@"
-
-override_dh_clean:
-	rm -f config.log configure config.h.in aclocal.m4
-	dh_clean
-
-override_dh_auto_configure:
-	autoreconf
-	dh_auto_configure -- ${DEB_CONFIGURE_EXTRA_FLAGS}
+	dh "$@" --with autoreconf
