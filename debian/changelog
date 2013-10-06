@@ -1,3 +1,9 @@
+onak (0.4.2-1+git) unstable; urgency=low
+
+  * Development build
+
+ -- Jonathan McDowell <noodles@earth.li>  Sun, 06 Oct 2013 13:18:38 +0100
+
 onak (0.4.2-1) unstable; urgency=low
 
   * New upstream release
