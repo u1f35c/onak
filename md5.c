@@ -54,10 +54,7 @@ static const unsigned char fillbuf[64] = { 0x80, 0 /* , 0, 0, ...  */ };
    It is assumed that LEN % 64 == 0.  */
 
 void
-md5_process_block (buffer, len, ctx)
-     const void *buffer;
-     size_t len;
-     struct md5_ctx *ctx;
+md5_process_block(const void *buffer, size_t len, struct md5_ctx *ctx)
 {
   uint32_t correct_words[16];
   const uint32_t *words = buffer;
@@ -231,9 +228,7 @@ md5_init(struct md5_ctx *ctx)
    IMPORTANT: On some systems it is required that RESBUF is correctly
    aligned for a 32 bits value.  */
 void
-md5_read_ctx (ctx, resbuf)
-    const struct md5_ctx *ctx;
-    void *resbuf;
+md5_read_ctx(const struct md5_ctx *ctx, void *resbuf)
 {
   ((uint32_t *) resbuf)[0] = SWAP (ctx->A);
   ((uint32_t *) resbuf)[1] = SWAP (ctx->B);
