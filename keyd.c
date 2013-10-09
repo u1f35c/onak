@@ -43,6 +43,9 @@
 #include "parsekey.h"
 #include "version.h"
 
+/* Maximum number of clients we're prepared to accept at once */
+#define MAX_CLIENTS 16
+
 static struct keyd_stats *stats;
 
 void daemonize(void)
@@ -124,7 +127,7 @@ int sock_init(const char *sockname)
 
 	fd = socket(PF_UNIX, SOCK_STREAM, 0);
 	if (fd != -1) {
-		ret = fcntl(fd, F_SETFD, 1);
+		ret = fcntl(fd, F_SETFD, FD_CLOEXEC);
 	}
 
 	if (ret != -1) {
@@ -445,16 +448,14 @@ int sock_accept(int fd)
 	socklen = sizeof(sock);
 	srv = accept(fd, (struct sockaddr *) &sock, &socklen);
 	if (srv != -1) {
-		ret = fcntl(srv, F_SETFD, 1);
+		ret = fcntl(srv, F_SETFD, FD_CLOEXEC);
 	}
 
 	if (ret != -1) {
 		stats->connects++;
-		while (!sock_do(srv)) ;
-		sock_close(srv);
 	}
 
-	return 1;
+	return (srv);
 }
 
 static void usage(void)
@@ -472,7 +473,7 @@ static void usage(void)
 
 int main(int argc, char *argv[])
 {
-	int fd = -1;
+	int fd = -1, maxfd, i, clients[MAX_CLIENTS];
 	fd_set rfds;
 	char sockname[1024];
 	char *configfile = NULL;
@@ -522,14 +523,56 @@ int main(int argc, char *argv[])
 	if (fd != -1) {
 		FD_ZERO(&rfds);
 		FD_SET(fd, &rfds);
+		maxfd = fd;
+		memset(clients, -1, sizeof (clients));
 
 		config.dbbackend->initdb(false);
 
 		logthing(LOGTHING_NOTICE, "Accepting connections.");
-		while (!cleanup() && select(fd + 1, &rfds, NULL, NULL, NULL) != -1) {
-			logthing(LOGTHING_INFO, "Accepted connection.");
-			sock_accept(fd);
+		while (!cleanup() && select(maxfd + 1, &rfds, NULL, NULL, NULL) != -1) {
+			/*
+			 * Deal with existing clients first; if we're at our
+			 * connection limit then processing them might free
+			 * things up and let us accept the next client below.
+			 */
+			for (i = 0; i < MAX_CLIENTS; i++) {
+				if (clients[i] != -1 &&
+						FD_ISSET(clients[i], &rfds)) {
+					logthing(LOGTHING_DEBUG,
+						"Handling connection for client %d.", i);
+					if (sock_do(clients[i])) {
+						sock_close(clients[i]);
+						clients[i] = -1;
+						logthing(LOGTHING_DEBUG,
+							"Closed connection for client %d.", i);
+					}
+				}
+			}
+			/*
+			 * Check if we have a new incoming connection to accept.
+			 */
+			if (FD_ISSET(fd, &rfds)) {
+				for (i = 0; i < MAX_CLIENTS; i++) {
+					if (clients[i] == -1) {
+						break;
+					}
+				}
+				if (i < MAX_CLIENTS) {
+					logthing(LOGTHING_INFO,
+						"Accepted connection %d.", i);
+					clients[i] = sock_accept(fd);
+				}
+			}
+			FD_ZERO(&rfds);
 			FD_SET(fd, &rfds);
+			maxfd = fd;
+			for (i = 0; i < MAX_CLIENTS; i++) {
+				if (clients[i] != -1) {
+					FD_SET(clients[i], &rfds);
+					maxfd = (maxfd > clients[i]) ?
+							maxfd : clients[i];
+				}
+			}
 		}
 		config.dbbackend->cleanupdb();
 		sock_close(fd);
