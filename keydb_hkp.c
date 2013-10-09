@@ -35,6 +35,61 @@
 
 static CURL *curl = NULL;
 
+static char hkpbase[1024];
+
+static int hkp_parse_url(const char *url)
+{
+	char proto[6], host[256];
+	unsigned int port;
+	int matched;
+	int ret = 1;
+
+	proto[0] = host[0] = 0;
+	port = 0;
+
+	matched = sscanf(url, "%5[a-z]://%256[a-zA-Z0-9.]:%u", proto, host,
+			&port);
+	if (matched < 2) {
+		proto[0] = 0;
+		matched = sscanf(url, "%256[a-zA-Z0-9.]:%u", host, &port);
+	}
+
+	if (host[0] == 0) {
+		logthing(LOGTHING_CRITICAL, "Couldn't parse HKP host: %s",
+			url);
+		ret = 0;
+		goto out;
+	}
+
+	if (proto[0] == 0 || !strcmp(proto, "hkp")) {
+		if (port == 0) {
+			port = 11371;
+		}
+		snprintf(hkpbase, sizeof(hkpbase),
+			"http://%s:%u/pks", host, port);
+	} else if (!strcmp(proto, "hkps")) {
+		if (port == 0) {
+			port = 11372;
+		}
+		snprintf(hkpbase, sizeof(hkpbase),
+			"https://%s:%u/pks", host, port);
+	} else if (strcmp(proto, "http") && strcmp(proto, "https")) {
+		logthing(LOGTHING_CRITICAL, "Unknown HKP protocol: %s",
+			proto);
+		ret = 0;
+		goto out;
+	} else if (port == 0) {
+		snprintf(hkpbase, sizeof(hkpbase),
+			"%s://%s/pks", proto, host);
+	} else {
+		snprintf(hkpbase, sizeof(hkpbase),
+			"%s://%s:%u/pks", proto, host, port);
+	}
+
+out:
+	return ret;
+}
+
 /**
  *	initdb - Initialize the key database.
  *
@@ -42,6 +97,9 @@ static CURL *curl = NULL;
  */
 static void hkp_initdb(bool readonly)
 {
+	if (!hkp_parse_url(config.db_dir)) {
+		exit(EXIT_FAILURE);
+	}
 	curl_global_init(CURL_GLOBAL_DEFAULT);
 	curl = curl_easy_init();
 	if (curl == NULL) {
@@ -101,8 +159,8 @@ static int hkp_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 	buf.buffer = malloc(8192);
 
 	snprintf(keyurl, sizeof(keyurl),
-			"http://%s:11371/pks/lookup?op=get&search=0x%08" PRIX64,
-			config.db_dir, keyid);
+			"%s/lookup?op=get&search=0x%08" PRIX64,
+			hkpbase, keyid);
 
 	curl_easy_setopt(curl, CURLOPT_URL, keyurl);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
@@ -152,8 +210,8 @@ static int hkp_fetch_key_text(const char *search,
 	buf.buffer = malloc(8192);
 
 	snprintf(keyurl, sizeof(keyurl),
-			"http://%s:11371/pks/lookup?op=get&search=%s",
-			config.db_dir, search);
+			"%s/lookup?op=get&search=%s",
+			hkpbase, search);
 
 	curl_easy_setopt(curl, CURLOPT_URL, keyurl);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
@@ -206,9 +264,7 @@ static int hkp_store_key(struct openpgp_publickey *publickey, bool intrans,
 	addform = curl_easy_escape(curl, buf.buffer, buf.offset);
 	addform[7] = '=';
 
-	snprintf(keyurl, sizeof(keyurl),
-			"http://%s:11371/pks/add",
-			config.db_dir);
+	snprintf(keyurl, sizeof(keyurl), "%s/add", hkpbase);
 
 	curl_easy_setopt(curl, CURLOPT_URL, keyurl);
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, addform);
