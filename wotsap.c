@@ -139,12 +139,16 @@ static void wotsap(uint64_t keyid, char *dir)
 		sigcount = 0;
 		while (sigll != NULL) {
 			addkey = (struct stats_key *) sigll->object;
-			if (addkey->colour == 0) {
+			if (addkey->colour == 0 && !addkey->revoked) {
 				uid = config.dbbackend->keyid2uid(addkey->keyid);
 				if (uid != NULL) {
-					addkey->colour = ++curidx;
-					pending = lladdend(pending, addkey);
-					output_key(names, keys, addkey->keyid);
+					/* Force it to be loaded so we know if it's revoked */
+					config.dbbackend->cached_getkeysigs(addkey->keyid);
+					if (!addkey->revoked) {
+						addkey->colour = ++curidx;
+						pending = lladdend(pending, addkey);
+						output_key(names, keys, addkey->keyid);
+					}
 				}
 			}
 			if (addkey->colour != 0) {
