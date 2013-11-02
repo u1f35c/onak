@@ -275,6 +275,7 @@ int sock_do(int fd)
 					write(fd, &storebuf.offset,
 						sizeof(storebuf.offset));
 				}
+				free(search);
 			}
 			break;
 		case KEYD_CMD_STORE:

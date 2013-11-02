@@ -220,6 +220,7 @@ int main(int argc, char *argv[])
 	configfile = NULL;
 
 	if ((argc - optind) < 1) {
+		cleanupconfig();
 		usage();
 	} else if (!strcmp("check", argv[optind])) {
 		/* Just do the connect and close quietly */
@@ -235,9 +236,11 @@ int main(int argc, char *argv[])
 		keyd_do_command(KEYD_CMD_QUIT, NULL, 0);
 		keyd_close();
 	} else {
+		cleanupconfig();
 		usage();
 	}
 
+	cleanupconfig();
 
 	exit(EXIT_SUCCESS);
 }
