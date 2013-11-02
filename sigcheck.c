@@ -20,6 +20,7 @@
 #include <stdint.h>
 
 #include "config.h"
+#include "keyid.h"
 #include "keystructs.h"
 #include "log.h"
 #include "openpgp.h"
@@ -65,6 +66,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 	uint8_t *hashdata[8];
 	size_t hashlen[8];
 	int chunks, i;
+	uint64_t keyid;
 
 	keyheader[0] = 0x99;
 	keyheader[1] = key->publickey->length >> 8;
@@ -149,8 +151,10 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		sighash = &sig->data[siglen + unhashedlen + 2];
 		break;
 	default:
-		logthing(LOGTHING_ERROR, "Unknown signature version %d",
-				sig->data[0]);
+		get_keyid(key, &keyid);
+		logthing(LOGTHING_ERROR,
+			"Unknown signature version %d on 0x%016" PRIX64,
+			sig->data[0], keyid);
 		return -1;
 	}
 
@@ -235,8 +239,11 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		return -1;
 #endif
 	default:
-		logthing(LOGTHING_ERROR, "Unsupported signature hash type %d",
-				hashtype);
+		get_keyid(key, &keyid);
+		logthing(LOGTHING_ERROR,
+			"Unsupported signature hash type %d on 0x%016" PRIX64,
+			hashtype,
+			keyid);
 		return -1;
 	}
 
