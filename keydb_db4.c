@@ -75,6 +75,11 @@ static DB *id32db = NULL;
 static DB *skshashdb = NULL;
 
 /**
+ *	subkeydb - our connection to the subkey ID lookup database.
+ */
+static DB *subkeydb = NULL;
+
+/**
  *	txn - our current transaction id.
  */
 static DB_TXN *txn = NULL;
@@ -175,6 +180,10 @@ static void db4_cleanupdb(void)
 
 	if (dbenv != NULL) {
 		dbenv->txn_checkpoint(dbenv, 0, 0, 0);
+		if (subkeydb != NULL) {
+			subkeydb->close(subkeydb, 0);
+			subkeydb = NULL;
+		}
 		if (skshashdb != NULL) {
 			skshashdb->close(skshashdb, 0);
 			skshashdb = NULL;
@@ -280,6 +289,18 @@ static int db4_upgradedb(int numdb)
 	ret = db_create(&curdb, NULL, 0);
 	if (ret == 0) {
 		snprintf(buf, sizeof(buf) - 1, "%s/skshashdb", config.db_dir);
+		logthing(LOGTHING_DEBUG, "Upgrading %s", buf);
+		ret = curdb->upgrade(curdb, buf, 0);
+		curdb->close(curdb, 0);
+	} else {
+		logthing(LOGTHING_ERROR, "Error upgrading DB %s : %s",
+			buf,
+			db_strerror(ret));
+	}
+
+	ret = db_create(&curdb, NULL, 0);
+	if (ret == 0) {
+		snprintf(buf, sizeof(buf) - 1, "%s/subkeydb", config.db_dir);
 		logthing(LOGTHING_DEBUG, "Upgrading %s", buf);
 		ret = curdb->upgrade(curdb, buf, 0);
 		curdb->close(curdb, 0);
@@ -535,6 +556,27 @@ static void db4_initdb(bool readonly)
 		}
 	}
 
+	if (ret == 0) {
+		ret = db_create(&subkeydb, dbenv, 0);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL, "db_create: %s",
+					db_strerror(ret));
+		}
+	}
+
+	if (ret == 0) {
+		ret = subkeydb->open(subkeydb, txn, "subkeydb", "subkeydb",
+				DB_HASH,
+				flags,
+				0664);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL,
+				"Error opening subkey database: %s (%s)",
+				"subkeydb",
+				db_strerror(ret));
+		}
+	}
+
 	if (txn != NULL) {
 		db4_endtrans();
 	}
@@ -641,7 +683,41 @@ static int db4_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 			&key,
 			&data,
 			0); /* flags*/
-	
+
+	if (ret == DB_NOTFOUND) {
+		/* If we didn't find the key ID see if it's a subkey ID */
+		memset(&key, 0, sizeof(key));
+		memset(&data, 0, sizeof(data));
+		data.size = 0;
+		data.data = NULL;
+		key.size = sizeof(keyid);
+		key.data = &keyid;
+
+		ret = subkeydb->get(subkeydb,
+			txn,
+			&key,
+			&data,
+			0); /* flags*/
+
+		if (ret == 0) {
+			/* We got a subkey match; retrieve the actual key */
+			keyid = *(uint64_t *) data.data;
+
+			memset(&key, 0, sizeof(key));
+			memset(&data, 0, sizeof(data));
+			data.size = 0;
+			data.data = NULL;
+			key.size = sizeof(keyid);
+			key.data = &keyid;
+
+			ret = keydb(keyid)->get(keydb(keyid),
+				txn,
+				&key,
+				&data,
+				0); /* flags*/
+		}
+	}
+
 	if (ret == 0) {
 		fetchbuf.buffer = data.data;
 		fetchbuf.offset = 0;
@@ -1000,6 +1076,21 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 		subkeyids = keysubkeys(publickey);
 		i = 0;
 		while (subkeyids != NULL && subkeyids[i] != 0) {
+			memset(&key, 0, sizeof(key));
+			key.data = &subkeyids[i];
+			key.size = sizeof(subkeyids[i]);
+			subkeydb->del(subkeydb, txn, &key, 0);
+			if (ret != 0) {
+				logthing(LOGTHING_ERROR,
+					"Problem deleting subkey id: %s "
+					"(0x%016" PRIX64 ")",
+					db_strerror(ret),
+					keyid);
+				if (ret == DB_LOCK_DEADLOCK) {
+					deadlock = true;
+				}
+			}
+
 			shortkeyid = subkeyids[i++] & 0xFFFFFFFF;
 
 			memset(&key, 0, sizeof(key));
@@ -1252,6 +1343,29 @@ static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
 		subkeyids = keysubkeys(publickey);
 		i = 0;
 		while (subkeyids != NULL && subkeyids[i] != 0) {
+			/* Store the subkey ID -> main key ID mapping */
+			memset(&key, 0, sizeof(key));
+			memset(&data, 0, sizeof(data));
+			key.data = &subkeyids[i];
+			key.size = sizeof(subkeyids[i]);
+			data.data = &keyid;
+			data.size = sizeof(keyid);
+
+			ret = subkeydb->put(subkeydb,
+				txn,
+				&key,
+				&data,
+				0);
+			if (ret != 0) {
+				logthing(LOGTHING_ERROR,
+					"Problem storing subkey keyid: %s",
+					db_strerror(ret));
+				if (ret == DB_LOCK_DEADLOCK) {
+					deadlock = true;
+				}
+			}
+
+			/* Store the short subkey ID -> main key ID mapping */
 			shortkeyid = subkeyids[i++] & 0xFFFFFFFF;
 
 			memset(&key, 0, sizeof(key));
