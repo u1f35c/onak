@@ -376,7 +376,10 @@ static int pg_store_key(struct openpgp_publickey *publickey, bool intrans,
 		PQclear(result);
 	}
 
-	get_keyid(publickey, &keyid);
+	if (get_keyid(publickey, &keyid) != ONAK_E_OK) {
+		logthing(LOGTHING_ERROR, "Couldn't find key ID for key.");
+		return 0;
+	}
 
 	/*
 	 * Delete the key if we already have it.

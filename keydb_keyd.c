@@ -274,7 +274,10 @@ static int keyd_store_key(struct openpgp_publickey *publickey, bool intrans,
 	uint32_t                    cmd = KEYD_CMD_STORE;
 	uint64_t                    keyid;
 
-	get_keyid(publickey, &keyid);
+	if (get_keyid(publickey, &keyid) != ONAK_E_OK) {
+		logthing(LOGTHING_ERROR, "Couldn't find key ID for key.");
+		return 0;
+	}
 	
 	if (update) {
 		keyd_delete_key(keyid, false);

@@ -336,7 +336,10 @@ static int fs_store_key(struct openpgp_publickey *publickey, bool intrans,
 	uint32_t hashid;
 	int i = 0;
 
-	get_keyid(publickey, &keyid);
+	if (get_keyid(publickey, &keyid) != ONAK_E_OK) {
+		logthing(LOGTHING_ERROR, "Couldn't find key ID for key.");
+		return 0;
+	}
 
 	if (!intrans)
 		fs_starttrans();

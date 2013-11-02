@@ -1180,7 +1180,10 @@ static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
 	bool       deadlock = false;
 	struct skshash hash;
 
-	get_keyid(publickey, &keyid);
+	if (get_keyid(publickey, &keyid) != ONAK_E_OK) {
+		logthing(LOGTHING_ERROR, "Couldn't find key ID for key.");
+		return 0;
+	}
 
 	if (!intrans) {
 		db4_starttrans();

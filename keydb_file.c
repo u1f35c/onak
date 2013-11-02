@@ -130,7 +130,10 @@ static int file_store_key(struct openpgp_publickey *publickey, bool intrans,
 	int fd = -1;
 	uint64_t keyid;
 
-	get_keyid(publickey, &keyid);
+	if (get_keyid(publickey, &keyid) != ONAK_E_OK) {
+		logthing(LOGTHING_ERROR, "Couldn't find key ID for key.");
+		return 0;
+	}
 	snprintf(keyfile, 1023, "%s/0x%" PRIX64, config.db_dir,
 			keyid & 0xFFFFFFFF);
 	fd = open(keyfile, O_WRONLY | O_CREAT, 0664); // | O_EXLOCK);
