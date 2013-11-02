@@ -91,25 +91,6 @@ out:
 }
 
 /**
- *	initdb - Initialize the key database.
- *
- *	We initialize CURL here.
- */
-static void hkp_initdb(bool readonly)
-{
-	if (!hkp_parse_url(config.db_dir)) {
-		exit(EXIT_FAILURE);
-	}
-	curl_global_init(CURL_GLOBAL_DEFAULT);
-	curl = curl_easy_init();
-	if (curl == NULL) {
-		logthing(LOGTHING_CRITICAL, "Could not initialize CURL.");
-		exit(EXIT_FAILURE);
-	}
-	curl_easy_setopt(curl, CURLOPT_USERAGENT, "onak/" ONAK_VERSION);
-}
-
-/**
  *	cleanupdb - De-initialize the key database.
  *
  *	We cleanup CURL here.
@@ -121,6 +102,38 @@ static void hkp_cleanupdb(void)
 		curl = NULL;
 	}
 	curl_global_cleanup();
+}
+
+/**
+ *	initdb - Initialize the key database.
+ *
+ *	We initialize CURL here.
+ */
+static void hkp_initdb(bool readonly)
+{
+	curl_version_info_data *curl_info;
+
+	if (!hkp_parse_url(config.db_dir)) {
+		exit(EXIT_FAILURE);
+	}
+	curl_global_init(CURL_GLOBAL_DEFAULT);
+	curl = curl_easy_init();
+	if (curl == NULL) {
+		logthing(LOGTHING_CRITICAL, "Could not initialize CURL.");
+		exit(EXIT_FAILURE);
+	}
+	curl_easy_setopt(curl, CURLOPT_USERAGENT, "onak/" ONAK_VERSION);
+
+	if (strncmp(hkpbase, "https://", 8) == 0) {
+		curl_info = curl_version_info(CURLVERSION_NOW);
+		if (! (curl_info->features & CURL_VERSION_SSL)) {
+			logthing(LOGTHING_CRITICAL,
+				"CURL lacks SSL support; cannot use HKP url: %s",
+				hkpbase);
+			hkp_cleanupdb();
+			exit(EXIT_FAILURE);
+		}
+	}
 }
 
 /**
