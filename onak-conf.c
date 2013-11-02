@@ -92,10 +92,28 @@ void readconfig(const char *configfile) {
 	FILE *conffile;
 	char  curline[1024];
 	int   i;
+	char *dir, *conf;
+	size_t len;
 
 	curline[1023] = 0;
 	if (configfile == NULL) {
-		conffile = fopen(CONFIGFILE, "r");
+		conffile = NULL;
+		if ((dir = getenv("XDG_CONFIG_HOME")) != NULL) {
+			len = strlen(dir) + 1 + 9 + 1; /* dir + / + onak.conf + NUL */
+			conf = malloc(len);
+			snprintf(conf, len, "%s/onak.conf", dir);
+			conffile = fopen(conf, "r");
+			free(conf);
+		} else if ((dir = getenv("HOME")) != NULL) {
+			len = strlen(dir) + 18 + 1; /* dir + /.config/onak.conf + NUL */
+			conf = malloc(len);
+			snprintf(conf, len, "%s/.config/onak.conf", dir);
+			conffile = fopen(conf, "r");
+			free(conf);
+		}
+		if (conffile == NULL) {
+			conffile = fopen(CONFIGFILE, "r");
+		}
 	} else {
 		conffile = fopen(configfile, "r");
 	}
