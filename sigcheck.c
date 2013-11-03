@@ -182,6 +182,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		}
 		ripemd160_digest(&ripemd160_context, RIPEMD160_DIGEST_SIZE,
 			hash);
+		break;
 #else
 		logthing(LOGTHING_INFO, "RIPEMD160 support not available.");
 		return -1;
