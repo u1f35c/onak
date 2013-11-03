@@ -31,6 +31,7 @@
 
 #ifdef HAVE_NETTLE
 #include <nettle/md5.h>
+#include <nettle/ripemd160.h>
 #include <nettle/sha.h>
 #else
 #include "md5.h"
@@ -130,6 +131,10 @@ onak_status_t get_packetid(struct openpgp_packet *packet, uint64_t *keyid)
 	int		i = 0;
 	size_t		length = 0;
 	unsigned char	buff[20];
+#ifdef NETTLE_WITH_RIPEMD160
+	struct ripemd160_ctx ripemd160_context;
+	uint8_t		data;
+#endif
 
 	if (packet == NULL)
 		return ONAK_E_INVALID_PARAM;
@@ -137,6 +142,46 @@ onak_status_t get_packetid(struct openpgp_packet *packet, uint64_t *keyid)
 	switch (packet->data[0]) {
 	case 2:
 	case 3:
+		/*
+		 * Old versions of GnuPG would put Elgamal keys inside
+		 * a V3 key structure, then generate the keyid using
+		 * RIPED160.
+		 */
+#ifdef NETTLE_WITH_RIPEMD160
+		if (packet->data[7] == 16) {
+			ripemd160_init(&ripemd160_context);
+			data = 0x99;
+			ripemd160_update(&ripemd160_context, 1, &data);
+			data = packet->length >> 8;
+			ripemd160_update(&ripemd160_context, 1, &data);
+			data = packet->length & 0xFF;
+			ripemd160_update(&ripemd160_context, 1, &data);
+			ripemd160_update(&ripemd160_context,
+				packet->length,
+				packet->data);
+
+			ripemd160_digest(&ripemd160_context,
+				RIPEMD160_DIGEST_SIZE,
+				buff);
+
+			for (*keyid = 0, i = 12; i < 20; i++) {
+				*keyid <<= 8;
+				*keyid += buff[i];
+			}
+
+			return ONAK_E_OK;
+		}
+#endif
+		/*
+		 * Check for an RSA key; if not return an error.
+		 * 1 == RSA
+		 * 2 == RSA Encrypt-Only
+		 * 3 == RSA Sign-Only
+		 */
+		if (packet->data[7] < 1 || packet->data[7] > 3) {
+			return ONAK_E_INVALID_PKT;
+		}
+
 		/*
 		 * For a type 2 or 3 key the keyid is the last 64 bits of the
 		 * public modulus n, which is stored as an MPI from offset 8
@@ -149,15 +194,6 @@ onak_status_t get_packetid(struct openpgp_packet *packet, uint64_t *keyid)
 		for (*keyid = 0, i = 0; i < 8; i++) {
 			*keyid <<= 8;
 			*keyid += packet->data[offset++];
-		}
-		/*
-		 * Check for an RSA key; if not return an error.
-		 * 1 == RSA
-		 * 2 == RSA Encrypt-Only
-		 * 3 == RSA Sign-Only
-		 */
-		if (packet->data[7] < 1 || packet->data[7] > 3) {
-			return ONAK_E_INVALID_PKT;
 		}
 		break;
 	case 4:
