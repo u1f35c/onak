@@ -76,6 +76,68 @@ char pkalgo2char(uint8_t algo)
 	return typech;
 }
 
+/*
+ * Given a public key/subkey packet return the key length.
+ */
+unsigned int keylength(struct openpgp_packet *keydata)
+{
+	unsigned int length;
+
+	switch (keydata->data[0]) {
+	case 2:
+	case 3:
+		length = (keydata->data[8] << 8) +
+				keydata->data[9];
+		break;
+	case 4:
+		switch (keydata->data[5]) {
+		case OPENPGP_PKALGO_EC:
+		case OPENPGP_PKALGO_ECDSA:
+			/* Elliptic curve key size is based on OID */
+			if ((keydata->data[6] == 8) &&
+					(keydata->data[7] == 0x2A) &&
+					(keydata->data[8] == 0x86) &&
+					(keydata->data[9] == 0x48) &&
+					(keydata->data[10] == 0xCE) &&
+					(keydata->data[11] == 0x3D) &&
+					(keydata->data[12] == 0x03) &&
+					(keydata->data[13] == 0x01) &&
+					(keydata->data[14] == 0x07)) {
+				length = 256;
+			} else if ((keydata->data[6] == 5) &&
+					(keydata->data[7] == 0x2B) &&
+					(keydata->data[8] == 0x81) &&
+					(keydata->data[9] == 0x04) &&
+					(keydata->data[10] == 0x00) &&
+					(keydata->data[11] == 0x22)) {
+				length = 384;
+			} else if ((keydata->data[6] == 5) &&
+					(keydata->data[7] == 0x2B) &&
+					(keydata->data[8] == 0x81) &&
+					(keydata->data[9] == 0x04) &&
+					(keydata->data[10] == 0x00) &&
+					(keydata->data[11] == 0x23)) {
+				length = 521;
+			} else {
+				logthing(LOGTHING_ERROR,
+					"Unknown elliptic curve size");
+				length = 0;
+			}
+			break;
+		default:
+			length = (keydata->data[6] << 8) +
+				keydata->data[7];
+		}
+		break;
+	default:
+		logthing(LOGTHING_ERROR, "Unknown key version: %d",
+			keydata->data[0]);
+		length = 0;
+	}
+
+	return length;
+}
+
 int list_sigs(struct openpgp_packet_list *sigs, bool html)
 {
 	char *uid = NULL;
@@ -183,19 +245,16 @@ int list_subkeys(struct openpgp_signedpacket_list *subkeys, bool verbose,
 			case 2:
 			case 3:
 				type = subkeys->packet->data[7];
-				length = (subkeys->packet->data[8] << 8) +
-					subkeys->packet->data[9];
 				break;
 			case 4:
 				type = subkeys->packet->data[5];
-				length = (subkeys->packet->data[6] << 8) +
-					subkeys->packet->data[7];
 				break;
 			default:
 				logthing(LOGTHING_ERROR,
 					"Unknown key type: %d",
 					subkeys->packet->data[0]);
 			}
+			length = keylength(subkeys->packet);
 
 			if (get_packetid(subkeys->packet,
 					&keyid) != ONAK_E_OK) {
@@ -304,19 +363,16 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 		case 2:
 		case 3:
 			type = keys->publickey->data[7];
-			length = (keys->publickey->data[8] << 8) +
-					keys->publickey->data[9];
 			break;
 		case 4:
 			type = keys->publickey->data[5];
-			length = (keys->publickey->data[6] << 8) +
-					keys->publickey->data[7];
 			break;
 		default:
 			logthing(LOGTHING_ERROR, "Unknown key type: %d",
 				keys->publickey->data[0]);
 		}
-		
+		length = keylength(keys->publickey);
+
 		if (get_keyid(keys, &keyid) != ONAK_E_OK) {
 			logthing(LOGTHING_ERROR, "Couldn't get keyid.");
 		}
@@ -425,8 +481,6 @@ int mrkey_index(struct openpgp_publickey *keys)
 			}
 			printf("%016" PRIX64, keyid);
 			type = keys->publickey->data[7];
-			length = (keys->publickey->data[8] << 8) +
-					keys->publickey->data[9];
 			break;
 		case 4:
 			(void) get_fingerprint(keys->publickey, fp, &fplength);
@@ -436,13 +490,12 @@ int mrkey_index(struct openpgp_publickey *keys)
 			}
 
 			type = keys->publickey->data[5];
-			length = (keys->publickey->data[6] << 8) +
-					keys->publickey->data[7];
 			break;
 		default:
 			logthing(LOGTHING_ERROR, "Unknown key type: %d",
 				keys->publickey->data[0]);
 		}
+		length = keylength(keys->publickey);
 
 		printf(":%d:%d:%ld::%s\n",
 			type,
