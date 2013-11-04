@@ -36,6 +36,46 @@
 #include "onak-conf.h"
 #include "openpgp.h"
 
+/*
+ * Convert a Public Key algorithm to its single character representation.
+ */
+char pkalgo2char(uint8_t algo)
+{
+	char typech;
+
+	switch (algo) {
+	case OPENPGP_PKALGO_DSA:
+		typech = 'D';
+		break;
+	case OPENPGP_PKALGO_ECDSA:
+		typech = 'E';
+		break;
+	case OPENPGP_PKALGO_EC:
+		typech = 'e';
+		break;
+	case OPENPGP_PKALGO_ELGAMAL_SIGN:
+		typech = 'G';
+		break;
+	case OPENPGP_PKALGO_ELGAMAL_ENC:
+		typech = 'g';
+		break;
+	case OPENPGP_PKALGO_RSA:
+		typech = 'R';
+		break;
+	case OPENPGP_PKALGO_RSA_ENC:
+		typech = 'r';
+		break;
+	case OPENPGP_PKALGO_RSA_SIGN:
+		typech = 's';
+		break;
+	default:
+		typech = '?';
+		break;
+	}
+
+	return typech;
+}
+
 int list_sigs(struct openpgp_packet_list *sigs, bool html)
 {
 	char *uid = NULL;
@@ -163,9 +203,7 @@ int list_subkeys(struct openpgp_signedpacket_list *subkeys, bool verbose,
 			}
 			printf("sub  %5d%c/%08X %04d/%02d/%02d\n",
 				length,
-				(type == OPENPGP_PKALGO_RSA) ? 'R' :
-				((type == OPENPGP_PKALGO_ELGAMAL_ENC) ? 'g' :
-				((type == OPENPGP_PKALGO_DSA) ? 'D' : '?')),
+				pkalgo2char(type),
 				(uint32_t) (keyid & 0xFFFFFFFF),
 				created->tm_year + 1900,
 				created->tm_mon + 1,
@@ -247,7 +285,6 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 	struct tm				*created = NULL;
 	time_t					 created_time = 0;
 	int					 type = 0;
-	char					 typech;
 	int					 length = 0;
 	char					 buf[1024];
 	uint64_t				 keyid;
@@ -284,30 +321,12 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 			logthing(LOGTHING_ERROR, "Couldn't get keyid.");
 		}
 
-		switch (type) {
-		case OPENPGP_PKALGO_RSA:
-			typech = 'R';
-			break;
-		case OPENPGP_PKALGO_ELGAMAL_ENC:
-			typech = 'g';
-			break;
-		case OPENPGP_PKALGO_DSA:
-			typech = 'D';
-			break;
-		case OPENPGP_PKALGO_ELGAMAL_SIGN:
-			typech = 'G';
-			break;
-		default:
-			typech = '?';
-			break;
-		}
-
 		if (html) {
 			printf("pub  %5d%c/<a href=\"lookup?op=get&"
 				"search=0x%016" PRIX64 "\">%08" PRIX64
 				"</a> %04d/%02d/%02d ",
 				length,
-				typech,
+				pkalgo2char(type),
 				keyid,
 				keyid & 0xFFFFFFFF,
 				created->tm_year + 1900,
@@ -316,7 +335,7 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 		} else {
 			printf("pub  %5d%c/%08" PRIX64 " %04d/%02d/%02d ",
 				length,
-				typech,
+				pkalgo2char(type),
 				keyid & 0xFFFFFFFF,
 				created->tm_year + 1900,
 				created->tm_mon + 1,
