@@ -285,7 +285,8 @@ static uint64_t fs_getfullkeyid(uint64_t keyid)
  *	@publickey: A pointer to a structure to return the key in.
  *	@intrans: If we're already in a transaction.
  */
-static int fs_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
+static int fs_fetch_key_id(uint64_t keyid,
+	      struct openpgp_publickey **publickey,
 	      bool intrans)
 {
 	static char buffer[PATH_MAX];
@@ -430,7 +431,7 @@ static int fs_delete_key(uint64_t keyid, bool intrans)
 	if (!intrans)
 		fs_starttrans();
 
-	ret = fs_fetch_key(keyid, &pk, true);
+	ret = fs_fetch_key_id(keyid, &pk, true);
 
 	if (ret) {
 		logthing(LOGTHING_DEBUG, "Wordlist for key %016" PRIX64,
@@ -563,7 +564,7 @@ static int fs_fetch_key_text(const char *search,
 	while (wl) {
 		logthing(LOGTHING_DEBUG, "Adding key: %s", wl->object);
 		addedkeys +=
-		    fs_fetch_key(strtoull(wl->object, NULL, 16), publickey,
+		    fs_fetch_key_id(strtoull(wl->object, NULL, 16), publickey,
 			      false);
 		if (addedkeys >= config.maxkeys)
 			break;
@@ -626,6 +627,7 @@ static int fs_iterate_keys(void (*iterfunc)(void *ctx,
 #define NEED_KEYID2UID 1
 #define NEED_GETKEYSIGS 1
 #define NEED_UPDATEKEYS 1
+#define NEED_GET_FP 1
 #include "keydb.c"
 
 struct dbfuncs keydb_fs_funcs = {
@@ -633,7 +635,8 @@ struct dbfuncs keydb_fs_funcs = {
 	.cleanupdb		= fs_cleanupdb,
 	.starttrans		= fs_starttrans,
 	.endtrans		= fs_endtrans,
-	.fetch_key		= fs_fetch_key,
+	.fetch_key_id		= fs_fetch_key_id,
+	.fetch_key_fp		= generic_fetch_key_fp,
 	.fetch_key_text		= fs_fetch_key_text,
 	.fetch_key_skshash	= fs_fetch_key_skshash,
 	.store_key		= fs_store_key,

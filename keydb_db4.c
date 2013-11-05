@@ -641,7 +641,7 @@ static uint64_t db4_getfullkeyid(uint64_t keyid)
 }
 
 /**
- *	fetch_key - Given a keyid fetch the key from storage.
+ *	fetch_key_id - Given a keyid fetch the key from storage.
  *	@keyid: The keyid to fetch.
  *	@publickey: A pointer to a structure to return the key in.
  *	@intrans: If we're already in a transaction.
@@ -652,7 +652,8 @@ static uint64_t db4_getfullkeyid(uint64_t keyid)
  *	in and then parse_keys() to parse the packets into a publickey
  *	structure.
  */
-static int db4_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
+static int db4_fetch_key_id(uint64_t keyid,
+		struct openpgp_publickey **publickey,
 		bool intrans)
 {
 	struct openpgp_packet_list *packets = NULL;
@@ -840,7 +841,7 @@ static int db4_fetch_key_text(const char *search,
 	
 	db4_starttrans();
 	for (i = 0; i < keylist.count; i++) {
-		numkeys += db4_fetch_key(keylist.keys[i],
+		numkeys += db4_fetch_key_id(keylist.keys[i],
 			publickey,
 			true);
 	}
@@ -889,7 +890,7 @@ static int db4_fetch_key_skshash(const struct skshash *hash,
 	ret = cursor->c_close(cursor);
 	cursor = NULL;
 
-	return db4_fetch_key(keyid, publickey, false);
+	return db4_fetch_key_id(keyid, publickey, false);
 }
 
 /**
@@ -921,7 +922,7 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 		db4_starttrans();
 	}
 
-	db4_fetch_key(keyid, &publickey, true);
+	db4_fetch_key_id(keyid, &publickey, true);
 
 	/*
 	 * Walk through the uids removing the words from the worddb.
@@ -1501,6 +1502,7 @@ static int db4_iterate_keys(void (*iterfunc)(void *ctx,
 #define NEED_GETKEYSIGS 1
 #define NEED_KEYID2UID 1
 #define NEED_UPDATEKEYS 1
+#define NEED_GET_FP 1
 #include "keydb.c"
 
 struct dbfuncs keydb_db4_funcs = {
@@ -1508,7 +1510,8 @@ struct dbfuncs keydb_db4_funcs = {
 	.cleanupdb		= db4_cleanupdb,
 	.starttrans		= db4_starttrans,
 	.endtrans		= db4_endtrans,
-	.fetch_key		= db4_fetch_key,
+	.fetch_key_id		= db4_fetch_key_id,
+	.fetch_key_fp		= generic_fetch_key_fp,
 	.fetch_key_text		= db4_fetch_key_text,
 	.fetch_key_skshash	= db4_fetch_key_skshash,
 	.store_key		= db4_store_key,

@@ -50,7 +50,7 @@ char *generic_keyid2uid(uint64_t keyid)
 	char buf[1024];
 
 	buf[0]=0;
-	if (config.dbbackend->fetch_key(keyid, &publickey, false) &&
+	if (config.dbbackend->fetch_key_id(keyid, &publickey, false) &&
 			publickey != NULL) {
 		curuid = publickey->uids;
 		while (curuid != NULL && buf[0] == 0) {
@@ -88,7 +88,7 @@ struct ll *generic_getkeysigs(uint64_t keyid, bool *revoked)
 	struct openpgp_signedpacket_list *uids = NULL;
 	struct openpgp_publickey *publickey = NULL;
 
-	config.dbbackend->fetch_key(keyid, &publickey, false);
+	config.dbbackend->fetch_key_id(keyid, &publickey, false);
 	
 	if (publickey != NULL) {
 		for (uids = publickey->uids; uids != NULL; uids = uids->next) {
@@ -160,7 +160,7 @@ uint64_t generic_getfullkeyid(uint64_t keyid)
 	struct openpgp_publickey *publickey = NULL;
 
 	if (keyid < 0x100000000LL) {
-		config.dbbackend->fetch_key(keyid, &publickey, false);
+		config.dbbackend->fetch_key_id(keyid, &publickey, false);
 		if (publickey != NULL) {
 			get_keyid(publickey, &keyid);
 			free_publickey(publickey);
@@ -201,7 +201,7 @@ int generic_update_keys(struct openpgp_publickey **keys, bool sendsync)
 		logthing(LOGTHING_INFO,
 			"Fetching key 0x%" PRIX64 ", result: %d",
 			keyid,
-			config.dbbackend->fetch_key(keyid, &oldkey,
+			config.dbbackend->fetch_key_id(keyid, &oldkey,
 					intrans));
 
 		/*
@@ -249,3 +249,30 @@ int generic_update_keys(struct openpgp_publickey **keys, bool sendsync)
 	return newkeys;
 }
 #endif /* NEED_UPDATEKEYS */
+
+#ifdef NEED_GET_FP
+static int generic_fetch_key_fp(uint8_t *fp, size_t fpsize,
+               struct openpgp_publickey **publickey, bool intrans)
+{
+	uint64_t keyid;
+	int i;
+
+	if (fpsize > MAX_FINGERPRINT_LEN) {
+		return 0;
+	}
+
+	/*
+	 * We assume if the backend is using this function it's not storing
+	 * anything bigger than the 64 bit key ID and just truncate the
+	 * fingerprint to get that value. This doesn't work for v3 keys,
+	 * but there's no way to map from v3 fingerprint to v3 key ID so
+	 * if the backend can't do it we're going to fail anyway.
+	 */
+	keyid = 0;
+	for (i = (fpsize - 8); i < fpsize; i++) {
+		keyid = (keyid << 8) + fp[i];
+	}
+
+	return config.dbbackend->fetch_key_id(keyid, publickey, intrans);
+}
+#endif

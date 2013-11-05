@@ -187,12 +187,13 @@ static void keyd_endtrans(void)
  *
  *      TODO: What about keyid collisions? Should we use fingerprint instead?
  */
-static int keyd_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
+static int keyd_fetch_key_id(uint64_t keyid,
+		struct openpgp_publickey **publickey,
 		bool intrans)
 {
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
-	uint32_t                    cmd = KEYD_CMD_GET;
+	uint32_t                    cmd = KEYD_CMD_GET_ID;
 	ssize_t                     bytes = 0;
 	ssize_t                     count = 0;
 
@@ -225,7 +226,57 @@ static int keyd_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
 			keybuf.size = 0;
 		}
 	}
-	
+
+	return (count > 0) ? 1 : 0;
+}
+
+static int keyd_fetch_key_fp(uint8_t *fp, size_t fpsize,
+		struct openpgp_publickey **publickey,
+		bool intrans)
+{
+	struct buffer_ctx           keybuf;
+	struct openpgp_packet_list *packets = NULL;
+	uint32_t                    cmd = KEYD_CMD_GET_FP;
+	ssize_t                     bytes = 0;
+	ssize_t                     count = 0;
+	uint8_t                     size;
+
+	if (fpsize > MAX_FINGERPRINT_LEN) {
+		return 0;
+	}
+
+	write(keyd_fd, &cmd, sizeof(cmd));
+	read(keyd_fd, &cmd, sizeof(cmd));
+	if (cmd == KEYD_REPLY_OK) {
+		size = fpsize;
+		write(keyd_fd, &size, sizeof(size));
+		write(keyd_fd, fp, size);
+		keybuf.offset = 0;
+		read(keyd_fd, &keybuf.size, sizeof(keybuf.size));
+		if (keybuf.size > 0) {
+			keybuf.buffer = malloc(keybuf.size);
+			bytes = count = 0;
+			logthing(LOGTHING_TRACE,
+					"Getting %d bytes of key data.",
+					keybuf.size);
+			while (bytes >= 0 && count < keybuf.size) {
+				bytes = read(keyd_fd, &keybuf.buffer[count],
+						keybuf.size - count);
+				logthing(LOGTHING_TRACE,
+						"Read %d bytes.", bytes);
+				count += bytes;
+			}
+			read_openpgp_stream(buffer_fetchchar, &keybuf,
+					&packets, 0);
+			parse_keys(packets, publickey);
+			free_packet_list(packets);
+			packets = NULL;
+			free(keybuf.buffer);
+			keybuf.buffer = NULL;
+			keybuf.size = 0;
+		}
+	}
+
 	return (count > 0) ? 1 : 0;
 }
 
@@ -325,7 +376,7 @@ static int keyd_fetch_key_text(const char *search,
 {
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
-	uint32_t                    cmd = KEYD_CMD_GETTEXT;
+	uint32_t                    cmd = KEYD_CMD_GET_TEXT;
 	ssize_t                     bytes = 0;
 	ssize_t                     count = 0;
 
@@ -371,7 +422,7 @@ static int keyd_fetch_key_skshash(const struct skshash *hash,
 {
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
-	uint32_t                    cmd = KEYD_CMD_GETSKSHASH;
+	uint32_t                    cmd = KEYD_CMD_GET_SKSHASH;
 	ssize_t                     bytes = 0;
 	ssize_t                     count = 0;
 
@@ -509,7 +560,8 @@ struct dbfuncs keydb_keyd_funcs = {
 	.cleanupdb		= keyd_cleanupdb,
 	.starttrans		= keyd_starttrans,
 	.endtrans		= keyd_endtrans,
-	.fetch_key		= keyd_fetch_key,
+	.fetch_key_id		= keyd_fetch_key_id,
+	.fetch_key_fp		= keyd_fetch_key_fp,
 	.fetch_key_text		= keyd_fetch_key_text,
 	.fetch_key_skshash	= keyd_fetch_key_skshash,
 	.store_key		= keyd_store_key,

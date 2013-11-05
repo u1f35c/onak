@@ -104,7 +104,7 @@ int getkeyspath(uint64_t have, uint64_t want, int count)
 			curkey = findinhash(keyinfoa->parent);
 			while (curkey != NULL && curkey->keyid != 0) {
 	    			if (curkey->keyid != fullwant &&
-						config.dbbackend->fetch_key(
+						config.dbbackend->fetch_key_id(
 						curkey->keyid,
 						&publickey, false)) {
 	      				flatten_publickey(publickey,
@@ -125,7 +125,7 @@ int getkeyspath(uint64_t have, uint64_t want, int count)
 	/*
 	 * Add the destination key to the list of returned keys.
 	 */
-	if (config.dbbackend->fetch_key(fullwant, &publickey, false)) {
+	if (config.dbbackend->fetch_key_id(fullwant, &publickey, false)) {
 		flatten_publickey(publickey,
 				&packets,
 				&list_end);

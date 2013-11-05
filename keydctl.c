@@ -164,13 +164,16 @@ static void keyd_status(void)
 	printf("Command statistics:\n");
 	printf("  Version:          %d\n",
 		stats.command_stats[KEYD_CMD_VERSION]);
-	printf("  Get key:          %d\n", stats.command_stats[KEYD_CMD_GET]);
+	printf("  Get key by ID:    %d\n",
+		stats.command_stats[KEYD_CMD_GET_ID]);
+	printf("  Get key by FP:    %d\n",
+		stats.command_stats[KEYD_CMD_GET_FP]);
 	printf("  Store key:        %d\n",
 		stats.command_stats[KEYD_CMD_STORE]);
 	printf("  Delete key:       %d\n",
 		stats.command_stats[KEYD_CMD_DELETE]);
 	printf("  Search key:       %d\n",
-		stats.command_stats[KEYD_CMD_GETTEXT]);
+		stats.command_stats[KEYD_CMD_GET_TEXT]);
 	printf("  Get full keyid:   %d\n",
 		stats.command_stats[KEYD_CMD_GETFULLKEYID]);
 	printf("  Iterate all keys: %d\n",

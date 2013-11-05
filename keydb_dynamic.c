@@ -147,21 +147,41 @@ static void dynamic_endtrans()
 	}
 }
 
-static int dynamic_fetch_key(uint64_t keyid,
+static int dynamic_fetch_key_id(uint64_t keyid,
 		struct openpgp_publickey **publickey, bool intrans)
 {
 	if (loaded_backend == NULL) {
 		load_backend();
 	}
-	
+
 	if (loaded_backend != NULL) {
-		if (loaded_backend->fetch_key != NULL) {
-			return loaded_backend->fetch_key(keyid,publickey,intrans);
+		if (loaded_backend->fetch_key_id != NULL) {
+			return loaded_backend->fetch_key_id(keyid,
+				publickey, intrans);
 		}
 	}
 
 	return -1;
 }
+
+static int dynamic_fetch_key_fp(uint8_t *fp, size_t fpsize,
+		struct openpgp_publickey **publickey, bool intrans)
+{
+	if (loaded_backend == NULL) {
+		load_backend();
+	}
+
+	if (loaded_backend != NULL) {
+		if (loaded_backend->fetch_key_id != NULL) {
+			return loaded_backend->fetch_key_fp(fp, fpsize,
+				publickey, intrans);
+		}
+	}
+
+	return -1;
+}
+
+
 
 static int dynamic_store_key(struct openpgp_publickey *publickey, bool intrans,
 		bool update)
@@ -264,7 +284,8 @@ static char *dynamic_keyid2uid(uint64_t keyid)
 	}
 	
 	buf[0]=0;
-	if (dynamic_fetch_key(keyid, &publickey, false) && publickey != NULL) {
+	if (dynamic_fetch_key_id(keyid, &publickey, false) &&
+			publickey != NULL) {
 		curuid = publickey->uids;
 		while (curuid != NULL && buf[0] == 0) {
 			if (curuid->packet->tag == OPENPGP_PACKET_UID) {
@@ -309,7 +330,7 @@ static struct ll *dynamic_getkeysigs(uint64_t keyid, bool *revoked)
 		}
 	}
 
-	dynamic_fetch_key(keyid, &publickey, false);
+	dynamic_fetch_key_id(keyid, &publickey, false);
 	
 	if (publickey != NULL) {
 		for (uids = publickey->uids; uids != NULL; uids = uids->next) {
@@ -391,7 +412,7 @@ static uint64_t dynamic_getfullkeyid(uint64_t keyid)
 	}
 
 	if (keyid < 0x100000000LL) {
-		dynamic_fetch_key(keyid, &publickey, false);
+		dynamic_fetch_key_id(keyid, &publickey, false);
 		if (publickey != NULL) {
 			get_keyid(publickey, &keyid);
 			free_publickey(publickey);
@@ -440,7 +461,7 @@ static int dynamic_update_keys(struct openpgp_publickey **keys, bool sendsync)
 		logthing(LOGTHING_INFO,
 			"Fetching key 0x%" PRIX64 ", result: %d",
 			keyid,
-			dynamic_fetch_key(keyid, &oldkey, intrans));
+			dynamic_fetch_key_id(keyid, &oldkey, intrans));
 
 		/*
 		 * If we already have the key stored in the DB then merge it
@@ -516,7 +537,8 @@ struct dbfuncs keydb_dynamic_funcs = {
 	.cleanupdb		= dynamic_cleanupdb,
 	.starttrans		= dynamic_starttrans,
 	.endtrans		= dynamic_endtrans,
-	.fetch_key		= dynamic_fetch_key,
+	.fetch_key_id		= dynamic_fetch_key_id,
+	.fetch_key_fp		= dynamic_fetch_key_fp,
 	.fetch_key_text		= dynamic_fetch_key_text,
 	.fetch_key_skshash	= dynamic_fetch_key_skshash,
 	.store_key		= dynamic_store_key,

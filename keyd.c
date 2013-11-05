@@ -151,6 +151,7 @@ int sock_do(int fd)
 	ssize_t  count = 0;
 	int	 ret = 0;
 	uint64_t keyid = 0;
+	uint8_t  fp[MAX_FINGERPRINT_LEN];
 	char     *search = NULL;
 	struct openpgp_publickey *key = NULL;
 	struct openpgp_packet_list *packets = NULL;
@@ -183,7 +184,7 @@ int sock_do(int fd)
 			write(fd, &cmd, sizeof(cmd));
 			write(fd, &keyd_version, sizeof(keyd_version));
 			break;
-		case KEYD_CMD_GET:
+		case KEYD_CMD_GET_ID:
 			cmd = KEYD_REPLY_OK;
 			write(fd, &cmd, sizeof(cmd));
 			bytes = read(fd, &keyid, sizeof(keyid));
@@ -197,7 +198,8 @@ int sock_do(int fd)
 						", result: %d",
 						keyid,
 						config.dbbackend->
-						fetch_key(keyid, &key, false));
+						fetch_key_id(keyid,
+							&key, false));
 				if (key != NULL) {
 					storebuf.size = 8192;
 					storebuf.buffer = malloc(8192);
@@ -229,7 +231,56 @@ int sock_do(int fd)
 				}
 			}
 			break;
-		case KEYD_CMD_GETTEXT:
+		case KEYD_CMD_GET_FP:
+			cmd = KEYD_REPLY_OK;
+			write(fd, &cmd, sizeof(cmd));
+			read(fd, &bytes, 1);
+			if (bytes > MAX_FINGERPRINT_LEN) {
+				ret = 1;
+			} else {
+				read(fd, fp, bytes);
+			}
+			storebuf.offset = 0;
+			if (ret == 0) {
+				logthing(LOGTHING_INFO,
+						"Fetching by fingerprint"
+						", result: %d",
+						config.dbbackend->
+						fetch_key_fp(fp, bytes,
+							&key, false));
+				if (key != NULL) {
+					storebuf.size = 8192;
+					storebuf.buffer = malloc(8192);
+
+					flatten_publickey(key,
+							&packets,
+							&list_end);
+					write_openpgp_stream(buffer_putchar,
+							&storebuf,
+							packets);
+					logthing(LOGTHING_TRACE,
+							"Sending %d bytes.",
+							storebuf.offset);
+					write(fd, &storebuf.offset,
+						sizeof(storebuf.offset));
+					write(fd, storebuf.buffer,
+						storebuf.offset);
+
+					free(storebuf.buffer);
+					storebuf.buffer = NULL;
+					storebuf.size = storebuf.offset = 0;
+					free_packet_list(packets);
+					packets = list_end = NULL;
+					free_publickey(key);
+					key = NULL;
+				} else {
+					write(fd, &storebuf.offset,
+						sizeof(storebuf.offset));
+				}
+			}
+			break;
+
+		case KEYD_CMD_GET_TEXT:
 			cmd = KEYD_REPLY_OK;
 			write(fd, &cmd, sizeof(cmd));
 			bytes = read(fd, &count, sizeof(count));
@@ -375,7 +426,7 @@ int sock_do(int fd)
 			write(fd, stats,
 				sizeof(*stats));
 			break;
-		case KEYD_CMD_GETSKSHASH:
+		case KEYD_CMD_GET_SKSHASH:
 			cmd = KEYD_REPLY_OK;
 			write(fd, &cmd, sizeof(cmd));
 			bytes = read(fd, hash.hash, sizeof(hash.hash));

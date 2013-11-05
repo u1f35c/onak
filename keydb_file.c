@@ -76,7 +76,7 @@ static void file_endtrans(void)
 }
 
 /**
- *	fetch_key - Given a keyid fetch the key from storage.
+ *	fetch_key_id - Given a keyid fetch the key from storage.
  *	@keyid: The keyid to fetch.
  *	@publickey: A pointer to a structure to return the key in.
  *	@intrans: If we're already in a transaction.
@@ -87,7 +87,8 @@ static void file_endtrans(void)
  *	in and then parse_keys() to parse the packets into a publickey
  *	structure.
  */
-static int file_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
+static int file_fetch_key_id(uint64_t keyid,
+		struct openpgp_publickey **publickey,
 		bool intrans)
 {
 	struct openpgp_packet_list *packets = NULL;
@@ -253,6 +254,7 @@ static int file_iterate_keys(void (*iterfunc)(void *ctx,
 #define NEED_GETKEYSIGS 1
 #define NEED_GETFULLKEYID 1
 #define NEED_UPDATEKEYS 1
+#define NEED_GET_FP 1
 #include "keydb.c"
 
 struct dbfuncs keydb_file_funcs = {
@@ -260,7 +262,8 @@ struct dbfuncs keydb_file_funcs = {
 	.cleanupdb		= file_cleanupdb,
 	.starttrans		= file_starttrans,
 	.endtrans		= file_endtrans,
-	.fetch_key		= file_fetch_key,
+	.fetch_key_id		= file_fetch_key_id,
+	.fetch_key_fp		= generic_fetch_key_fp,
 	.fetch_key_text		= file_fetch_key_text,
 	.store_key		= file_store_key,
 	.update_keys		= generic_update_keys,

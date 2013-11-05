@@ -147,73 +147,11 @@ static size_t hkp_curl_recv_data(void *buffer, size_t size, size_t nmemb,
 	return (nmemb * size);
 }
 
-/**
- *	fetch_key - Given a keyid fetch the key from storage.
- *	@keyid: The keyid to fetch.
- *	@publickey: A pointer to a structure to return the key in.
- *	@intrans: If we're already in a transaction.
- *
- *	We use the hex representation of the keyid as the filename to fetch the
- *	key from. The key is stored in the file as a binary OpenPGP stream of
- *	packets, so we can just use read_openpgp_stream() to read the packets
- *	in and then parse_keys() to parse the packets into a publickey
- *	structure.
- */
-static int hkp_fetch_key(uint64_t keyid, struct openpgp_publickey **publickey,
+static int hkp_fetch_key_url(char *url,
+		struct openpgp_publickey **publickey,
 		bool intrans)
 {
 	struct openpgp_packet_list *packets = NULL;
-	char keyurl[1024];
-	CURLcode res;
-	struct buffer_ctx buf;
-
-	buf.offset = 0;
-	buf.size = 8192;
-	buf.buffer = malloc(8192);
-
-	snprintf(keyurl, sizeof(keyurl),
-			"%s/lookup?op=get&search=0x%08" PRIX64,
-			hkpbase, keyid);
-
-	curl_easy_setopt(curl, CURLOPT_URL, keyurl);
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
-			hkp_curl_recv_data);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buf);
-	res = curl_easy_perform(curl);
-
-	if (res == 0) {
-		buf.offset = 0;
-		dearmor_openpgp_stream(buffer_fetchchar, &buf, &packets);
-		parse_keys(packets, publickey);
-		free_packet_list(packets);
-		packets = NULL;
-	} else {
-		logthing(LOGTHING_ERROR, "Couldn't find key: %s (%d)",
-			curl_easy_strerror(res), res);
-	}
-
-	free(buf.buffer);
-	buf.offset = buf.size = 0;
-	buf.buffer = NULL;
-
-	return (res == 0) ? 1 : 0;
-}
-
-/**
- *	fetch_key_text - Tries to find the keys that contain the supplied text.
- *	@search: The text to search for.
- *	@publickey: A pointer to a structure to return the key in.
- *
- *	This function searches for the supplied text and returns the keys that
- *	contain it.
- *
- *	TODO: Write for flat file access. Some sort of grep?
- */
-static int hkp_fetch_key_text(const char *search,
-		struct openpgp_publickey **publickey)
-{
-	struct openpgp_packet_list *packets = NULL;
-	char keyurl[1024];
 	CURLcode res;
 	struct buffer_ctx buf;
 	int count = 0;
@@ -222,11 +160,7 @@ static int hkp_fetch_key_text(const char *search,
 	buf.size = 8192;
 	buf.buffer = malloc(8192);
 
-	snprintf(keyurl, sizeof(keyurl),
-			"%s/lookup?op=get&search=%s",
-			hkpbase, search);
-
-	curl_easy_setopt(curl, CURLOPT_URL, keyurl);
+	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
 			hkp_curl_recv_data);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buf);
@@ -248,6 +182,72 @@ static int hkp_fetch_key_text(const char *search,
 	buf.buffer = NULL;
 
 	return count;
+}
+
+/**
+ *	hkp_fetch_key_id - Given a keyid fetch the key from HKP server.
+ */
+static int hkp_fetch_key_id(uint64_t keyid,
+		struct openpgp_publickey **publickey,
+		bool intrans)
+{
+	char keyurl[1024];
+
+	snprintf(keyurl, sizeof(keyurl),
+			"%s/lookup?op=get&search=0x%08" PRIX64,
+			hkpbase, keyid);
+
+	return (hkp_fetch_key_url(keyurl, publickey, intrans));
+}
+
+/**
+ *	hkp_fetch_key_fp - Given a fingerprint fetch the key from HKP server.
+ */
+static int hkp_fetch_key_fp(uint8_t *fp, size_t fpsize,
+		struct openpgp_publickey **publickey,
+		bool intrans)
+{
+	char keyurl[1024];
+	int i, ofs;
+
+	if (fpsize > MAX_FINGERPRINT_LEN) {
+		return 0;
+	}
+
+	ofs = snprintf(keyurl, sizeof(keyurl),
+			"%s/lookup?op=get&search=0x", hkpbase);
+
+	if ((ofs + fpsize * 2 + 1)> sizeof(keyurl)) {
+		return 0;
+	}
+
+	for (i = 0; i < fpsize; i++) {
+		ofs += sprintf(&keyurl[ofs], "%02X", fp[i]);
+	}
+
+	return (hkp_fetch_key_url(keyurl, publickey, intrans));
+}
+
+/**
+ *	fetch_key_text - Tries to find the keys that contain the supplied text.
+ *	@search: The text to search for.
+ *	@publickey: A pointer to a structure to return the key in.
+ *
+ *	This function searches for the supplied text and returns the keys that
+ *	contain it.
+ *
+ *	TODO: Write for flat file access. Some sort of grep?
+ */
+static int hkp_fetch_key_text(const char *search,
+		struct openpgp_publickey **publickey)
+{
+	char keyurl[1024];
+
+	snprintf(keyurl, sizeof(keyurl),
+			"%s/lookup?op=get&search=%s",
+			hkpbase, search);
+
+	return (hkp_fetch_key_url(keyurl, publickey, false));
 }
 
 /**
@@ -361,7 +361,8 @@ struct dbfuncs keydb_hkp_funcs = {
 	.cleanupdb		= hkp_cleanupdb,
 	.starttrans		= hkp_starttrans,
 	.endtrans		= hkp_endtrans,
-	.fetch_key		= hkp_fetch_key,
+	.fetch_key_id		= hkp_fetch_key_id,
+	.fetch_key_fp		= hkp_fetch_key_fp,
 	.fetch_key_text		= hkp_fetch_key_text,
 	.store_key		= hkp_store_key,
 	.update_keys		= generic_update_keys,

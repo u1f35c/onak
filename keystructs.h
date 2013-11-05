@@ -27,6 +27,9 @@
 
 #include "ll.h"
 
+/* v3 MD5 fingerprint is 16 characters, v4 SHA-1 fingerprint is 20 */
+#define MAX_FINGERPRINT_LEN 20
+
 /**
  * @brief Stores an OpenPGP packet.
  *

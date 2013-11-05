@@ -46,15 +46,19 @@
 #define OP_PHOTO   4
 #define OP_HGET    5
 
-void find_keys(char *search, uint64_t keyid, bool ishex,
-		bool fingerprint, bool skshash, bool exact, bool verbose,
-		bool mrhkp)
+void find_keys(char *search, uint64_t keyid, uint8_t *fp, size_t fpsize,
+		bool ishex, bool isfp, bool fingerprint, bool skshash,
+		bool exact, bool verbose, bool mrhkp)
 {
 	struct openpgp_publickey *publickey = NULL;
 	int count = 0;
 
 	if (ishex) {
-		count = config.dbbackend->fetch_key(keyid, &publickey, false);
+		count = config.dbbackend->fetch_key_id(keyid, &publickey,
+				false);
+	} else if (isfp) {
+		count = config.dbbackend->fetch_key_fp(fp, fpsize, &publickey,
+				false);
 	} else {
 		count = config.dbbackend->fetch_key_text(search, &publickey);
 	}
@@ -86,6 +90,19 @@ void find_keys(char *search, uint64_t keyid, bool ishex,
 	}
 }
 
+static uint8_t hex2bin(char c)
+{
+	if (c >= '0' && c <= '9') {
+		return (c - '0');
+	} else if (c >= 'a' && c <= 'f') {
+		return (c - 'a' + 10);
+	} else if (c >= 'A' && c <= 'F') {
+		return (c - 'A' + 10);
+	}
+
+	return 255;
+}
+
 int main(int argc, char *argv[])
 {
 	char **params = NULL;
@@ -96,8 +113,10 @@ int main(int argc, char *argv[])
 	bool skshash = false;
 	bool exact = false;
 	bool ishex = false;
+	bool isfp = false;
 	bool mrhkp = false;
 	uint64_t keyid = 0;
+	uint8_t fp[MAX_FINGERPRINT_LEN];
 	char *search = NULL;
 	char *end = NULL;
 	struct openpgp_publickey *publickey = NULL;
@@ -125,14 +144,12 @@ int main(int argc, char *argv[])
 			params[i+1] = NULL;
 			if (search != NULL && strlen(search) == 42 &&
 					search[0] == '0' && search[1] == 'x') {
-				/*
-				 * Fingerprint. Truncate to last 64 bits for
-				 * now.
-				 */
-				keyid = strtoull(&search[26], &end, 16);
-				if (end != NULL && *end == 0) {
-					ishex = true;
+				for (i = 0; i < MAX_FINGERPRINT_LEN; i++) {
+					fp[i] = (hex2bin(search[2 + i * 2])
+								<< 4) +
+						hex2bin(search[3 + i * 2]);
 				}
+				isfp = true;
 			} else if (search != NULL) {
 				keyid = strtoull(search, &end, 16);
 				if (*search != 0 &&
@@ -202,8 +219,11 @@ int main(int argc, char *argv[])
 				result = config.dbbackend->fetch_key_skshash(
 					&hash, &publickey);
 			} else if (ishex) {
-				result = config.dbbackend->fetch_key(keyid,
+				result = config.dbbackend->fetch_key_id(keyid,
 					&publickey, false);
+			} else if (isfp) {
+				result = config.dbbackend->fetch_key_fp(fp,
+					MAX_FINGERPRINT_LEN, &publickey, false);
 			} else {
 				result = config.dbbackend->fetch_key_text(
 					search,
@@ -231,16 +251,25 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case OP_INDEX:
-			find_keys(search, keyid, ishex, fingerprint, skshash,
+			find_keys(search, keyid, fp, MAX_FINGERPRINT_LEN,
+					ishex, isfp, fingerprint, skshash,
 					exact, false, mrhkp);
 			break;
 		case OP_VINDEX:
-			find_keys(search, keyid, ishex, fingerprint, skshash,
+			find_keys(search, keyid, fp, MAX_FINGERPRINT_LEN,
+					ishex, isfp, fingerprint, skshash,
 					exact, true, mrhkp);
 			break;
 		case OP_PHOTO:
-			if (config.dbbackend->fetch_key(keyid, &publickey,
-					false)) {
+			if (isfp) {
+				config.dbbackend->fetch_key_fp(fp,
+					MAX_FINGERPRINT_LEN,
+					&publickey, false);
+			} else {
+				config.dbbackend->fetch_key_id(keyid,
+					&publickey, false);
+			}
+			if (publickey != NULL) {
 				unsigned char *photo = NULL;
 				size_t         length = 0;
 

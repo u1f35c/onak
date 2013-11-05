@@ -44,14 +44,19 @@
 #include "photoid.h"
 #include "version.h"
 
-void find_keys(char *search, uint64_t keyid, bool ishex,
-		bool fingerprint, bool skshash, bool exact, bool verbose)
+void find_keys(char *search, uint64_t keyid, uint8_t *fp, bool ishex,
+		bool isfp, bool fingerprint, bool skshash, bool exact,
+		bool verbose)
 {
 	struct openpgp_publickey *publickey = NULL;
 	int count = 0;
 
 	if (ishex) {
-		count = config.dbbackend->fetch_key(keyid, &publickey, false);
+		count = config.dbbackend->fetch_key_id(keyid, &publickey,
+				false);
+	} else if (isfp) {
+		count = config.dbbackend->fetch_key_fp(fp, MAX_FINGERPRINT_LEN,
+				&publickey, false);
 	} else {
 		count = config.dbbackend->fetch_key_text(search, &publickey);
 	}
@@ -111,6 +116,19 @@ void dump_func(void *ctx, struct openpgp_publickey *key)
 	return;
 }
 
+static uint8_t hex2bin(char c)
+{
+	if (c >= '0' && c <= '9') {
+		return (c - '0');
+	} else if (c >= 'a' && c <= 'f') {
+		return (c - 'a' + 10);
+	} else if (c >= 'A' && c <= 'F') {
+		return (c - 'A' + 10);
+	}
+
+	return 255;
+}
+
 void usage(void) {
 	puts("onak " ONAK_VERSION " - an OpenPGP keyserver.\n");
 	puts("Usage:\n");
@@ -142,7 +160,10 @@ int main(int argc, char *argv[])
 	char				*search = NULL;
 	char				*end = NULL;
 	uint64_t			 keyid = 0;
+	uint8_t				 fp[MAX_FINGERPRINT_LEN];
+	int				 i;
 	bool				 ishex = false;
+	bool				 isfp = false;
 	bool				 verbose = false;
 	bool				 update = false;
 	bool				 binary = false;
@@ -298,14 +319,11 @@ int main(int argc, char *argv[])
 		search = argv[optind+1];
 		if (search != NULL && strlen(search) == 42 &&
 				search[0] == '0' && search[1] == 'x') {
-			/*
-			 * Fingerprint. Truncate to last 64 bits for
-			 * now.
-			 */
-			keyid = strtoull(&search[26], &end, 16);
-			if (end != NULL && *end == 0) {
-				ishex = true;
+			for (i = 0; i < MAX_FINGERPRINT_LEN; i++) {
+				fp[i] = (hex2bin(search[2 + i * 2]) << 4) +
+						hex2bin(search[3 + i * 2]);
 			}
+			isfp = true;
 		} else if (search != NULL) {
 			keyid = strtoul(search, &end, 16);
 			if (*search != 0 &&
@@ -316,16 +334,18 @@ int main(int argc, char *argv[])
 		}
 		config.dbbackend->initdb(false);
 		if (!strcmp("index", argv[optind])) {
-			find_keys(search, keyid, ishex, fingerprint, skshash,
+			find_keys(search, keyid, fp, ishex, isfp,
+					fingerprint, skshash,
 					false, false);
 		} else if (!strcmp("vindex", argv[optind])) {
-			find_keys(search, keyid, ishex, fingerprint, skshash,
+			find_keys(search, keyid, fp, ishex, isfp,
+					fingerprint, skshash,
 					false, true);
 		} else if (!strcmp("getphoto", argv[optind])) {
 			if (!ishex) {
 				puts("Can't get a key on uid text."
 					" You must supply a keyid.");
-			} else if (config.dbbackend->fetch_key(keyid, &keys,
+			} else if (config.dbbackend->fetch_key_id(keyid, &keys,
 					false)) {
 				unsigned char *photo = NULL;
 				size_t         length = 0;
@@ -347,11 +367,17 @@ int main(int argc, char *argv[])
 					config.dbbackend->getfullkeyid(keyid),
 					false);
 		} else if (!strcmp("get", argv[optind])) {
-			if (!ishex) {
+			if (!(ishex || isfp)) {
 				puts("Can't get a key on uid text."
-					" You must supply a keyid.");
-			} else if (config.dbbackend->fetch_key(keyid, &keys,
-					false)) {
+					" You must supply a keyid / "
+					"fingerprint.");
+			} else if ((isfp &&
+					config.dbbackend->fetch_key_fp(fp,
+						MAX_FINGERPRINT_LEN,
+						&keys, false)) ||
+					(ishex &&
+					config.dbbackend->fetch_key_id(keyid,
+						&keys, false))) {
 				logthing(LOGTHING_INFO, "Got key.");
 				flatten_publickey(keys,
 						&packets,

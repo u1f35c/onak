@@ -34,16 +34,17 @@
 enum keyd_ops {
 	KEYD_CMD_UNKNOWN = 0,
 	KEYD_CMD_VERSION = 1,
-	KEYD_CMD_GET,
+	KEYD_CMD_GET_ID,
 	KEYD_CMD_STORE,
 	KEYD_CMD_DELETE,
-	KEYD_CMD_GETTEXT,
+	KEYD_CMD_GET_TEXT,
 	KEYD_CMD_GETFULLKEYID,
 	KEYD_CMD_KEYITER,
 	KEYD_CMD_CLOSE,
 	KEYD_CMD_QUIT,
 	KEYD_CMD_STATS,
-	KEYD_CMD_GETSKSHASH,
+	KEYD_CMD_GET_SKSHASH,
+	KEYD_CMD_GET_FP,
 	KEYD_CMD_LAST			/* Placeholder */
 };
 
@@ -58,7 +59,7 @@ enum keyd_reply {
 /**
  * @brief Version of the keyd protocol currently supported
  */
-static const uint32_t keyd_version = 3;
+static const uint32_t keyd_version = 4;
 
 /**
  * @brief Response structure for the @a KEYD_CMD_STATS response

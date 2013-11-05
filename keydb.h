@@ -75,7 +75,23 @@ struct dbfuncs {
  *
  * TODO: What about keyid collisions? Should we use fingerprint instead?
  */
-	int (*fetch_key)(uint64_t keyid, struct openpgp_publickey **publickey,
+	int (*fetch_key_id)(uint64_t keyid,
+			struct openpgp_publickey **publickey,
+			bool intrans);
+
+/**
+ * @brief Given a fingerprint fetch the key from storage.
+ * @param fp The fingerprint to fetch.
+ * @param fpsize Number of bytes in the fingerprint (16 for v3, 20 for v4)
+ * @param publickey A pointer to a structure to return the key in.
+ * @param intrans  If we're already in a transaction.
+ *
+ * This function returns a public key from whatever storage mechanism we
+ * are using.
+ */
+	int (*fetch_key_fp)(uint8_t *fp,
+			size_t fpsize,
+			struct openpgp_publickey **publickey,
 			bool intrans);
 
 /**
