@@ -76,4 +76,17 @@ char **keyuids(struct openpgp_publickey *key, char **primary);
  */
 uint64_t *keysubkeys(struct openpgp_publickey *key);
 
+/**
+ *	parse_subpackets - Parse the subpackets of a Type 4 signature.
+ *	@data: The subpacket data.
+ *	@keyid: A pointer to where we should return the keyid.
+ *	@creationtime: A pointer to where we should return the creation time.
+ *
+ *	This function parses the subkey data of a Type 4 signature and fills
+ *	in the supplied variables. It also returns the length of the data
+ *	processed. If the value of any piece of data is not desired a NULL
+ *	can be passed instead of a pointer to a storage area for that value.
+ */
+int parse_subpackets(unsigned char *data, uint64_t *keyid, time_t *creation);
+
 #endif

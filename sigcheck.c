@@ -20,6 +20,7 @@
 #include <stdint.h>
 
 #include "config.h"
+#include "decodekey.h"
 #include "keyid.h"
 #include "keystructs.h"
 #include "log.h"
@@ -107,6 +108,32 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		break;
 	case 4:
 		hashtype = sig->data[3];
+
+		/* Check to see if this is an X509 based signature */
+		if (sig->data[2] == 0 || sig->data[2] == 100) {
+			size_t len;
+
+			keyid = 0;
+			len = parse_subpackets(&sig->data[4], &keyid, NULL);
+			if (keyid == 0 &&
+					/* No unhashed data */
+					sig->data[4 + len] == 0 &&
+					sig->data[5 + len] == 0 &&
+					/* Dummy 0 checksum */
+					sig->data[6 + len] == 0 &&
+					sig->data[7 + len] == 0 &&
+					/* Dummy MPI of 1 */
+					sig->data[8 + len] == 0 &&
+					sig->data[9 + len] == 1 &&
+					sig->data[10 + len] == 1) {
+				get_keyid(key, &keyid);
+				logthing(LOGTHING_DEBUG,
+					"Skipping X509 signature on 0x%016"
+					PRIX64,
+					keyid);
+				return -1;
+			}
+		}
 
 		if (packet != NULL) {
 			if (packet->tag == OPENPGP_PACKET_PUBLICSUBKEY) {
