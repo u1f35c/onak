@@ -34,6 +34,7 @@
 #include "md5.h"
 #include "sha1.h"
 #endif
+#include "sha1x.h"
 
 int check_packet_sighash(struct openpgp_publickey *key,
 			struct openpgp_packet *packet,
@@ -43,6 +44,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 	uint8_t *sighash;
 	size_t siglen, unhashedlen;
 	struct sha1_ctx sha1_context;
+	struct sha1x_ctx sha1x_context;
 	struct md5_ctx md5_context;
 #ifdef NETTLE_WITH_RIPEMD160
 	struct ripemd160_ctx ripemd160_context;
@@ -187,6 +189,13 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		logthing(LOGTHING_INFO, "RIPEMD160 support not available.");
 		return -1;
 #endif
+	case OPENPGP_HASH_SHA1X:
+		sha1x_init(&sha1x_context);
+		for (i = 0; i < chunks; i++) {
+			sha1x_update(&sha1x_context, hashlen[i], hashdata[i]);
+		}
+		sha1x_digest(&sha1x_context, 20, hash);
+		break;
 	case OPENPGP_HASH_SHA224:
 #ifdef NETTLE_WITH_SHA224
 		sha224_init(&sha224_context);
