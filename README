@@ -75,12 +75,6 @@ Currently there is support for 6 different database backends:
   with a large number of keys. This may well be due to my use of it - if
   you can help speed it up info would be appreciated.
 
-* db2 (Berkeley libdb2)
-  Only added to provide the ability to run the pathfinder with a key
-  database produced by pksd. Currently only supports pulling keys out by
-  keyid - no key updating or searching by key test. Found to be
-  tempramental and prone to deadlock in the db2 library.
-
 * db4 (Berkeley libdb4)
   The currently preferred backend. Supports the full range of functions
   like the pg backend but is considerably faster. Also easier to setup

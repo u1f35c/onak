@@ -6,7 +6,7 @@ CC = @CC@
 CFLAGS += @CFLAGS@ -Wall -pedantic -fPIC
 # Uncomment to enable profiling.
 LDFLAGS += @LDFLAGS@
-# Can be "pg" for Postgresql, "file" for flat files or "db2" for pksd db2 style.
+# Can be "pg" for Postgresql, "file" for flat files or "db4" for Berkeley DB.
 DBTYPE = @DBTYPE@
 #
 LIBS = @LIBS@ @NETTLE_LIBS@

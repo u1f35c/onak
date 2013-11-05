@@ -51,7 +51,7 @@ struct onak_config {
 
 	/*
 	 * Options for any database backend that needs a directory, be it the
-	 * file, db2 or db3 options.
+	 * file, fs or db4 options.
 	 */
 	/** The path to the directory containing the database files. */
 	char *db_dir;

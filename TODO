@@ -20,5 +20,3 @@
 * Test library?
 * Full email interface support (ADD, INDEX etc)
 * More comments.
-* Look at db2 backend - is it db2's fault? (Well, deadlock in that the library
-  probably is...). Pull some of the DB3 stuff across for completeness.
