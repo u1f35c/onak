@@ -249,7 +249,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 	}
 
 	logthing(LOGTHING_DEBUG, "Hash type: %d, %d chunks, "
-		"calculated: %02X%02X / actual: %02X%02X\n",
+		"calculated: %02X%02X / actual: %02X%02X",
 		hashtype, chunks,
 		hash[0], hash[1], sighash[0], sighash[1]);
 
