@@ -27,7 +27,7 @@ void sha1_digest(struct sha1_ctx *ctx, unsigned length, uint8_t *digest);
 # define SHA1_Update SHA1Update
 # define SHA1_Final SHA1Final
 
-# define SHA_DIGEST_LENGTH 20
+# define SHA1_DIGEST_SIZE 20
 
 #endif
 
