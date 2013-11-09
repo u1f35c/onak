@@ -34,26 +34,196 @@
 #include "parsekey.h"
 #include "sendsync.h"
 
-static struct dbfuncs *loaded_backend = NULL;
-static void *backend_handle;
+struct onak_dynamic_dbctx {
+	struct onak_dbctx *loadeddbctx;
+	void              *backend_handle;
+};
 
-static bool close_backend(void)
+static bool dynamic_starttrans(struct onak_dbctx *dbctx)
 {
-	loaded_backend = NULL;
-	dlclose(backend_handle);
-	backend_handle = NULL;
+	struct onak_dynamic_dbctx *privctx =
+			(struct onak_dynamic_dbctx *) dbctx->priv;
 
-	return true;
+	return privctx->loadeddbctx->starttrans(privctx->loadeddbctx);
 }
 
-static bool load_backend(void)
+static void dynamic_endtrans(struct onak_dbctx *dbctx)
 {
-	char *soname = NULL;
-	char *funcsname = NULL;
+	struct onak_dynamic_dbctx *privctx =
+			(struct onak_dynamic_dbctx *) dbctx->priv;
 
-	if (loaded_backend != NULL) {
-		close_backend();
-		loaded_backend = NULL;
+	privctx->loadeddbctx->endtrans(privctx->loadeddbctx);
+}
+
+static int dynamic_fetch_key_id(struct onak_dbctx *dbctx, uint64_t keyid,
+		struct openpgp_publickey **publickey, bool intrans)
+{
+	struct onak_dynamic_dbctx *privctx =
+			(struct onak_dynamic_dbctx *) dbctx->priv;
+
+	return privctx->loadeddbctx->fetch_key_id(privctx->loadeddbctx, keyid,
+			publickey, intrans);
+}
+
+static int dynamic_fetch_key_fp(struct onak_dbctx *dbctx,
+		uint8_t *fp, size_t fpsize,
+		struct openpgp_publickey **publickey, bool intrans)
+{
+	struct onak_dynamic_dbctx *privctx =
+			(struct onak_dynamic_dbctx *) dbctx->priv;
+
+	return privctx->loadeddbctx->fetch_key_fp(privctx->loadeddbctx,
+			fp, fpsize, publickey, intrans);
+}
+
+static int dynamic_fetch_key_text(struct onak_dbctx *dbctx,
+		const char *search,
+		struct openpgp_publickey **publickey)
+{
+	struct onak_dynamic_dbctx *privctx =
+			(struct onak_dynamic_dbctx *) dbctx->priv;
+
+	return privctx->loadeddbctx->fetch_key_text(privctx->loadeddbctx,
+			search, publickey);
+}
+
+static int dynamic_fetch_key_skshash(struct onak_dbctx *dbctx,
+		const struct skshash *hash,
+		struct openpgp_publickey **publickey)
+{
+	struct onak_dynamic_dbctx *privctx =
+			(struct onak_dynamic_dbctx *) dbctx->priv;
+
+	return privctx->loadeddbctx->fetch_key_skshash(privctx->loadeddbctx,
+			hash, publickey);
+}
+
+static int dynamic_store_key(struct onak_dbctx *dbctx,
+		struct openpgp_publickey *publickey, bool intrans,
+		bool update)
+{
+	struct onak_dynamic_dbctx *privctx =
+			(struct onak_dynamic_dbctx *) dbctx->priv;
+
+	return privctx->loadeddbctx->store_key(privctx->loadeddbctx,
+			publickey, intrans, update);
+}
+
+static int dynamic_delete_key(struct onak_dbctx *dbctx, uint64_t keyid,
+		bool intrans)
+{
+	struct onak_dynamic_dbctx *privctx =
+			(struct onak_dynamic_dbctx *) dbctx->priv;
+
+	return privctx->loadeddbctx->delete_key(privctx->loadeddbctx,
+			keyid, intrans);
+}
+
+static int dynamic_update_keys(struct onak_dbctx *dbctx,
+		struct openpgp_publickey **keys, bool sendsync)
+{
+	struct onak_dynamic_dbctx *privctx =
+			(struct onak_dynamic_dbctx *) dbctx->priv;
+
+	return privctx->loadeddbctx->update_keys(privctx->loadeddbctx,
+			keys, sendsync);
+}
+
+static struct ll *dynamic_getkeysigs(struct onak_dbctx *dbctx,
+		uint64_t keyid, bool *revoked)
+{
+	struct onak_dynamic_dbctx *privctx =
+			(struct onak_dynamic_dbctx *) dbctx->priv;
+
+	return privctx->loadeddbctx->getkeysigs(privctx->loadeddbctx,
+			keyid, revoked);
+}
+
+static struct ll *dynamic_cached_getkeysigs(struct onak_dbctx *dbctx,
+		uint64_t keyid)
+{
+	struct onak_dynamic_dbctx *privctx =
+			(struct onak_dynamic_dbctx *) dbctx->priv;
+
+	return privctx->loadeddbctx->cached_getkeysigs(privctx->loadeddbctx,
+			keyid);
+}
+
+static char *dynamic_keyid2uid(struct onak_dbctx *dbctx,
+			uint64_t keyid)
+{
+	struct onak_dynamic_dbctx *privctx =
+			(struct onak_dynamic_dbctx *) dbctx->priv;
+
+	return privctx->loadeddbctx->keyid2uid(privctx->loadeddbctx,
+			keyid);
+}
+
+static uint64_t dynamic_getfullkeyid(struct onak_dbctx *dbctx,
+		uint64_t keyid)
+{
+	struct onak_dynamic_dbctx *privctx =
+			(struct onak_dynamic_dbctx *) dbctx->priv;
+
+	return privctx->loadeddbctx->getfullkeyid(privctx->loadeddbctx, keyid);
+}
+
+static int dynamic_iterate_keys(struct onak_dbctx *dbctx,
+		void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
+		void *ctx)
+{
+	struct onak_dynamic_dbctx *privctx =
+			(struct onak_dynamic_dbctx *) dbctx->priv;
+
+	return privctx->loadeddbctx->iterate_keys(privctx->loadeddbctx,
+			iterfunc, ctx);
+}
+
+static void dynamic_cleanupdb(struct onak_dbctx *dbctx)
+{
+	struct onak_dynamic_dbctx *privctx =
+			(struct onak_dynamic_dbctx *) dbctx->priv;
+
+	if (privctx->loadeddbctx != NULL) {
+		if (privctx->loadeddbctx->cleanupdb != NULL) {
+			privctx->loadeddbctx->cleanupdb(privctx->loadeddbctx);
+			privctx->loadeddbctx = NULL;
+		}
+	}
+
+	if (privctx->backend_handle != NULL) {
+		dlclose(privctx->backend_handle);
+		privctx->backend_handle = NULL;
+	}
+
+	if (dbctx->priv != NULL) {
+		free(dbctx->priv);
+		dbctx->priv = NULL;
+	}
+
+	if (dbctx != NULL) {
+		free(dbctx);
+	}
+}
+
+struct onak_dbctx *keydb_dynamic_init(bool readonly)
+{
+	struct onak_dbctx *dbctx;
+	char *soname;
+	char *initname;
+	struct onak_dbctx *(*backend_init)(bool);
+	struct onak_dynamic_dbctx *privctx;
+
+	dbctx = malloc(sizeof(struct onak_dbctx));
+
+	if (dbctx == NULL) {
+		return NULL;
+	}
+
+	dbctx->priv = privctx = malloc(sizeof(struct onak_dynamic_dbctx));
+	if (dbctx->priv == NULL) {
+		free(dbctx);
+		return (NULL);
 	}
 
 	if (config.use_keyd) {
@@ -83,11 +253,11 @@ static bool load_backend(void)
 		sprintf(soname, "%s/libkeydb_%s.so", config.backends_dir,
 			config.db_backend);
 	}
-		
+
 	logthing(LOGTHING_INFO, "Loading dynamic backend: %s", soname);
 
-	backend_handle = dlopen(soname, RTLD_LAZY);
-	if (backend_handle == NULL) {
+	privctx->backend_handle = dlopen(soname, RTLD_LAZY);
+	if (privctx->backend_handle == NULL) {
 		logthing(LOGTHING_CRITICAL,
 				"Failed to open handle to library '%s': %s",
 				soname, dlerror());
@@ -96,16 +266,16 @@ static bool load_backend(void)
 		exit(EXIT_FAILURE);
 	}
 
-	funcsname = malloc(strlen(config.db_backend)
+	initname = malloc(strlen(config.db_backend)
 			+ strlen("keydb_")
-			+ strlen("_funcs")
+			+ strlen("_init")
 			+ 1);
-	sprintf(funcsname, "keydb_%s_funcs", config.db_backend);
+	sprintf(initname, "keydb_%s_init", config.db_backend);
 
-	loaded_backend = dlsym(backend_handle, funcsname);
-	free(funcsname);
+	*(void **) (&backend_init) = dlsym(privctx->backend_handle, initname);
+	free(initname);
 
-	if (loaded_backend == NULL) {
+	if (backend_init == NULL) {
 		logthing(LOGTHING_CRITICAL,
 				"Failed to find dbfuncs structure in library "
 				"'%s' : %s", soname, dlerror());
@@ -116,437 +286,25 @@ static bool load_backend(void)
 	free(soname);
 	soname = NULL;
 
-	return true;
+	privctx->loadeddbctx = backend_init(readonly);
+
+	if (privctx->loadeddbctx != NULL) {
+		dbctx->cleanupdb = dynamic_cleanupdb;
+		dbctx->starttrans = dynamic_starttrans;
+		dbctx->endtrans = dynamic_endtrans;
+		dbctx->fetch_key_id = dynamic_fetch_key_id;
+		dbctx->fetch_key_fp = dynamic_fetch_key_fp;
+		dbctx->fetch_key_text = dynamic_fetch_key_text;
+		dbctx->fetch_key_skshash = dynamic_fetch_key_skshash;
+		dbctx->store_key = dynamic_store_key;
+		dbctx->update_keys = dynamic_update_keys;
+		dbctx->delete_key = dynamic_delete_key;
+		dbctx->getkeysigs = dynamic_getkeysigs;
+		dbctx->cached_getkeysigs = dynamic_cached_getkeysigs;
+		dbctx->keyid2uid = dynamic_keyid2uid;
+		dbctx->getfullkeyid = dynamic_getfullkeyid;
+		dbctx->iterate_keys = dynamic_iterate_keys;
+	}
+
+	return dbctx;
 }
-
-static bool dynamic_starttrans()
-{
-	if (loaded_backend == NULL) {
-		load_backend();
-	}
-	
-	if (loaded_backend != NULL) {
-		if (loaded_backend->starttrans != NULL) {
-			return loaded_backend->starttrans();
-		}
-	}
-
-	return false;
-}
-
-static void dynamic_endtrans()
-{
-	if (loaded_backend == NULL) {
-		load_backend();
-	}
-	
-	if (loaded_backend != NULL) {
-		if (loaded_backend->endtrans != NULL) {
-			loaded_backend->endtrans();
-		}
-	}
-}
-
-static int dynamic_fetch_key_id(uint64_t keyid,
-		struct openpgp_publickey **publickey, bool intrans)
-{
-	if (loaded_backend == NULL) {
-		load_backend();
-	}
-
-	if (loaded_backend != NULL) {
-		if (loaded_backend->fetch_key_id != NULL) {
-			return loaded_backend->fetch_key_id(keyid,
-				publickey, intrans);
-		}
-	}
-
-	return -1;
-}
-
-static int dynamic_fetch_key_fp(uint8_t *fp, size_t fpsize,
-		struct openpgp_publickey **publickey, bool intrans)
-{
-	if (loaded_backend == NULL) {
-		load_backend();
-	}
-
-	if (loaded_backend != NULL) {
-		if (loaded_backend->fetch_key_id != NULL) {
-			return loaded_backend->fetch_key_fp(fp, fpsize,
-				publickey, intrans);
-		}
-	}
-
-	return -1;
-}
-
-
-
-static int dynamic_store_key(struct openpgp_publickey *publickey, bool intrans,
-		bool update)
-{
-	if (loaded_backend == NULL) {
-		load_backend();
-	}
-	
-	if (loaded_backend != NULL) {
-		if (loaded_backend->store_key != NULL) {
-			return loaded_backend->store_key(publickey,intrans,update);
-		}
-	}
-
-	return -1;
-}
-
-static int dynamic_delete_key(uint64_t keyid, bool intrans)
-{
-	if (loaded_backend == NULL) {
-		load_backend();
-	}
-	
-	if (loaded_backend != NULL) {
-		if (loaded_backend->delete_key != NULL) {
-			return loaded_backend->delete_key(keyid, intrans);
-		}
-	}
-
-	return -1;
-}
-
-static int dynamic_fetch_key_text(const char *search,
-		struct openpgp_publickey **publickey)
-{
-	if (loaded_backend == NULL) {
-		load_backend();
-	}
-	
-	if (loaded_backend != NULL) {
-		if (loaded_backend->fetch_key_text != NULL) {
-			return loaded_backend->fetch_key_text(search, publickey);
-		}
-	}
-
-	return -1;
-}
-
-static int dynamic_fetch_key_skshash(const struct skshash *hash,
-		struct openpgp_publickey **publickey)
-{
-	if (loaded_backend == NULL) {
-		load_backend();
-	}
-	
-	if (loaded_backend != NULL) {
-		if (loaded_backend->fetch_key_skshash != NULL) {
-			return loaded_backend->fetch_key_skshash(hash,
-								publickey);
-		}
-	}
-
-	return -1;
-}
-
-static int dynamic_iterate_keys(void (*iterfunc)(void *ctx,
-		struct openpgp_publickey *key), void *ctx)
-{
-	if (loaded_backend == NULL) {
-		load_backend();
-	}
-	
-	if (loaded_backend != NULL) {
-		if (loaded_backend->iterate_keys != NULL) {
-			return loaded_backend->iterate_keys(iterfunc, ctx);
-		}
-	}
-
-	return -1;
-}
-
-/**
- *	keyid2uid - Takes a keyid and returns the primary UID for it.
- *	@keyid: The keyid to lookup.
- */
-static char *dynamic_keyid2uid(uint64_t keyid)
-{
-	struct openpgp_publickey *publickey = NULL;
-	struct openpgp_signedpacket_list *curuid = NULL;
-	char buf[1024];
-
-	if (loaded_backend == NULL) {
-		load_backend();
-	}
-	
-	if (loaded_backend != NULL) {
-		if (loaded_backend->keyid2uid != NULL) {
-			return loaded_backend->keyid2uid(keyid);
-		}
-	}
-	
-	buf[0]=0;
-	if (dynamic_fetch_key_id(keyid, &publickey, false) &&
-			publickey != NULL) {
-		curuid = publickey->uids;
-		while (curuid != NULL && buf[0] == 0) {
-			if (curuid->packet->tag == OPENPGP_PACKET_UID) {
-				snprintf(buf, 1023, "%.*s",
-						(int) curuid->packet->length,
-						curuid->packet->data);
-			}
-			curuid = curuid -> next;
-		}
-		free_publickey(publickey);
-	}
-
-	if (buf[0] == 0) {
-		return NULL;
-	} else {
-		return strdup(buf);
-	}
-}
-
-/**
- *	getkeysigs - Gets a linked list of the signatures on a key.
- *	@keyid: The keyid to get the sigs for.
- *	@revoked: Is the key revoked?
- *
- *	This function gets the list of signatures on a key. Used for key 
- *	indexing and doing stats bits. If revoked is non-NULL then if the key
- *	is revoked it's set to true.
- */
-static struct ll *dynamic_getkeysigs(uint64_t keyid, bool *revoked)
-{
-	struct ll *sigs = NULL;
-	struct openpgp_signedpacket_list *uids = NULL;
-	struct openpgp_publickey *publickey = NULL;
-	
-	if ( loaded_backend == NULL ) {
-		load_backend();
-	}
-	
-	if (loaded_backend != NULL) {
-		if (loaded_backend->getkeysigs != NULL) {
-			return loaded_backend->getkeysigs(keyid,revoked);
-		}
-	}
-
-	dynamic_fetch_key_id(keyid, &publickey, false);
-	
-	if (publickey != NULL) {
-		for (uids = publickey->uids; uids != NULL; uids = uids->next) {
-			sigs = keysigs(sigs, uids->sigs);
-		}
-		if (revoked != NULL) {
-			*revoked = publickey->revoked;
-		}
-		free_publickey(publickey);
-	}
-
-	return sigs;
-}
-
-/**
- *	cached_getkeysigs - Gets the signatures on a key.
- *	@keyid: The key we want the signatures for.
- *	
- *	This function gets the signatures on a key. It's the same as the
- *	getkeysigs function above except we use the hash module to cache the
- *	data so if we need it again it's already loaded.
- */
-static struct ll *dynamic_cached_getkeysigs(uint64_t keyid)
-{
-	struct stats_key *key = NULL;
-	struct stats_key *signedkey = NULL;
-	struct ll        *cursig = NULL;
-	bool		  revoked = false;
-
-	if (keyid == 0)  {
-		return NULL;
-	}
-	
-	if (loaded_backend == NULL) {
-		load_backend();
-	}
-	
-	if (loaded_backend != NULL) {
-		if (loaded_backend->cached_getkeysigs != NULL) {
-			return loaded_backend->cached_getkeysigs(keyid);
-		}
-	}
-
-	key = createandaddtohash(keyid);
-
-	if (key->gotsigs == false) {
-		key->sigs = dynamic_getkeysigs(key->keyid, &revoked);
-		key->revoked = revoked;
-		for (cursig = key->sigs; cursig != NULL;
-				cursig = cursig->next) {
-			signedkey = (struct stats_key *) cursig->object;
-			signedkey->signs = lladd(signedkey->signs, key);
-		}
-		key->gotsigs = true;
-	}
-
-	return key->sigs;
-}
-
-/**
- *	getfullkeyid - Maps a 32bit key id to a 64bit one.
- *	@keyid: The 32bit keyid.
- *
- *	This function maps a 32bit key id to the full 64bit one. It returns the
- *	full keyid. If the key isn't found a keyid of 0 is returned.
- */
-static uint64_t dynamic_getfullkeyid(uint64_t keyid)
-{
-	struct openpgp_publickey *publickey = NULL;
-
-	if (loaded_backend == NULL) {
-		load_backend();
-	}
-	
-	if (loaded_backend != NULL) {
-		if (loaded_backend->getfullkeyid != NULL) {
-			return loaded_backend->getfullkeyid(keyid);
-		}
-	}
-
-	if (keyid < 0x100000000LL) {
-		dynamic_fetch_key_id(keyid, &publickey, false);
-		if (publickey != NULL) {
-			get_keyid(publickey, &keyid);
-			free_publickey(publickey);
-			publickey = NULL;
-		} else {
-			keyid = 0;
-		}
-	}
-	
-	return keyid;
-}
-
-/**
- *	update_keys - Takes a list of public keys and updates them in the DB.
- *	@keys: The keys to update in the DB.
- *	@sendsync: Should we send a sync mail to our peers.
- *
- *	Takes a list of keys and adds them to the database, merging them with
- *	the key in the database if it's already present there. The key list is
- *	update to contain the minimum set of updates required to get from what
- *	we had before to what we have now (ie the set of data that was added to
- *	the DB). Returns the number of entirely new keys added.
- */
-static int dynamic_update_keys(struct openpgp_publickey **keys, bool sendsync)
-{
-	struct openpgp_publickey *curkey = NULL;
-	struct openpgp_publickey *oldkey = NULL;
-	struct openpgp_publickey *prev = NULL;
-	int newkeys = 0;
-	bool intrans;
-	uint64_t keyid;
-	
-	if (loaded_backend == NULL) {
-		load_backend();
-	}
-	
-	if (loaded_backend != NULL) {
-		if (loaded_backend->update_keys != NULL) {
-			return loaded_backend->update_keys(keys, sendsync);
-		}
-	}
-
-	for (curkey = *keys; curkey != NULL; curkey = curkey->next) {
-		intrans = dynamic_starttrans();
-		get_keyid(curkey, &keyid);
-		logthing(LOGTHING_INFO,
-			"Fetching key 0x%" PRIX64 ", result: %d",
-			keyid,
-			dynamic_fetch_key_id(keyid, &oldkey, intrans));
-
-		/*
-		 * If we already have the key stored in the DB then merge it
-		 * with the new one that's been supplied. Otherwise the key
-		 * we've just got is the one that goes in the DB and also the
-		 * one that we send out.
-		 */
-		if (oldkey != NULL) {
-			merge_keys(oldkey, curkey);
-			if (curkey->sigs == NULL &&
-					curkey->uids == NULL &&
-					curkey->subkeys == NULL) {
-				if (prev == NULL) {
-					*keys = curkey->next;
-				} else {
-					prev->next = curkey->next;
-					curkey->next = NULL;
-					free_publickey(curkey);
-					curkey = prev;
-				}
-			} else {
-				prev = curkey;
-				logthing(LOGTHING_INFO,
-					"Merged key; storing updated key.");
-				dynamic_store_key(oldkey, intrans, true);
-			}
-			free_publickey(oldkey);
-			oldkey = NULL;
-		
-		} else {
-			logthing(LOGTHING_INFO,
-				"Storing completely new key.");
-			dynamic_store_key(curkey, intrans, false);
-			newkeys++;
-		}
-		dynamic_endtrans();
-		intrans = false;
-	}
-
-	if (sendsync && keys != NULL) {
-		sendkeysync(*keys);
-	}
-
-	return newkeys;
-}
-
-static void dynamic_initdb(bool readonly)
-{
-	if (loaded_backend == NULL) {
-		load_backend();
-	}
-
-	if (loaded_backend != NULL) {
-		if (loaded_backend->initdb != NULL) {
-			loaded_backend->initdb(readonly);
-		}
-	}
-}
-
-static void dynamic_cleanupdb(void)
-{
-	if (loaded_backend != NULL) {
-		if (loaded_backend->cleanupdb != NULL) {
-			loaded_backend->cleanupdb();
-		}
-	}
-
-	close_backend();
-}
-
-struct dbfuncs keydb_dynamic_funcs = {
-	.initdb			= dynamic_initdb,
-	.cleanupdb		= dynamic_cleanupdb,
-	.starttrans		= dynamic_starttrans,
-	.endtrans		= dynamic_endtrans,
-	.fetch_key_id		= dynamic_fetch_key_id,
-	.fetch_key_fp		= dynamic_fetch_key_fp,
-	.fetch_key_text		= dynamic_fetch_key_text,
-	.fetch_key_skshash	= dynamic_fetch_key_skshash,
-	.store_key		= dynamic_store_key,
-	.update_keys		= dynamic_update_keys,
-	.delete_key		= dynamic_delete_key,
-	.getkeysigs		= dynamic_getkeysigs,
-	.cached_getkeysigs	= dynamic_cached_getkeysigs,
-	.keyid2uid		= dynamic_keyid2uid,
-	.getfullkeyid		= dynamic_getfullkeyid,
-	.iterate_keys		= dynamic_iterate_keys,
-};

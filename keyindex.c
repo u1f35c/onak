@@ -138,7 +138,8 @@ unsigned int keylength(struct openpgp_packet *keydata)
 	return length;
 }
 
-int list_sigs(struct openpgp_packet_list *sigs, bool html)
+int list_sigs(struct onak_dbctx *dbctx,
+		struct openpgp_packet_list *sigs, bool html)
 {
 	char *uid = NULL;
 	uint64_t sigid = 0;
@@ -146,7 +147,7 @@ int list_sigs(struct openpgp_packet_list *sigs, bool html)
 
 	while (sigs != NULL) {
 		sigid = sig_keyid(sigs->packet);
-		uid = config.dbbackend->keyid2uid(sigid);
+		uid = dbctx->keyid2uid(dbctx, sigid);
 		if (sigs->packet->data[0] == 4 &&
 				sigs->packet->data[1] == 0x30) {
 			/* It's a Type 4 sig revocation */
@@ -188,7 +189,8 @@ int list_sigs(struct openpgp_packet_list *sigs, bool html)
 	return 0;
 }
 
-int list_uids(uint64_t keyid, struct openpgp_signedpacket_list *uids,
+int list_uids(struct onak_dbctx *dbctx,
+		uint64_t keyid, struct openpgp_signedpacket_list *uids,
 		bool verbose, bool html)
 {
 	char buf[1024];
@@ -215,7 +217,7 @@ int list_uids(uint64_t keyid, struct openpgp_signedpacket_list *uids,
 			}
 		}
 		if (verbose) {
-			list_sigs(uids->sigs, html);
+			list_sigs(dbctx, uids->sigs, html);
 		}
 		uids = uids->next;
 	}
@@ -223,7 +225,8 @@ int list_uids(uint64_t keyid, struct openpgp_signedpacket_list *uids,
 	return 0;
 }
 
-int list_subkeys(struct openpgp_signedpacket_list *subkeys, bool verbose,
+int list_subkeys(struct onak_dbctx *dbctx,
+		struct openpgp_signedpacket_list *subkeys, bool verbose,
 		bool html)
 {
 	struct tm	*created = NULL;
@@ -270,7 +273,7 @@ int list_subkeys(struct openpgp_signedpacket_list *subkeys, bool verbose,
 
 		}
 		if (verbose) {
-			list_sigs(subkeys->sigs, html);
+			list_sigs(dbctx, subkeys->sigs, html);
 		}
 		subkeys = subkeys->next;
 	}
@@ -337,7 +340,8 @@ void display_skshash(struct openpgp_publickey *key, bool html)
  *	This function takes a list of OpenPGP public keys and displays an index
  *	of them. Useful for debugging or the keyserver Index function.
  */
-int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
+int key_index(struct onak_dbctx *dbctx,
+		struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 			bool skshash, bool html)
 {
 	struct openpgp_signedpacket_list	*curuid = NULL;
@@ -420,7 +424,7 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 				display_fingerprint(keys);
 			}
 			if (verbose) {
-				list_sigs(curuid->sigs, html);
+				list_sigs(dbctx, curuid->sigs, html);
 			}
 			curuid = curuid->next;
 		} else {
@@ -431,9 +435,9 @@ int key_index(struct openpgp_publickey *keys, bool verbose, bool fingerprint,
 			}
 		}
 
-		list_uids(keyid, curuid, verbose, html);
+		list_uids(dbctx, keyid, curuid, verbose, html);
 		if (verbose) {
-			list_subkeys(keys->subkeys, verbose, html);
+			list_subkeys(dbctx, keys->subkeys, verbose, html);
 		}
 
 		keys = keys->next;

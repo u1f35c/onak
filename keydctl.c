@@ -32,7 +32,7 @@
 #include "version.h"
 
 /* HACK: We need to stop onak-conf.o requiring this. */
-void *DBFUNCS = NULL;
+void *DBINIT = NULL;
 
 static int keyd_fd = -1;
 static int verbose = 0;

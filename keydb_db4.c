@@ -44,53 +44,24 @@
 
 #define DB4_UPGRADE_FILE "db_upgrade.lck"
 
-/**
- *	dbenv - our database environment.
- */
-static DB_ENV *dbenv = NULL;
+struct onak_db4_dbctx {
+	DB_ENV *dbenv;	/* The database environment context */
+	int numdbs;	/* Number of data databases in use */
+	DB **dbconns;	/* Connections to the key data databases */
+	DB *worddb;	/* Connection to the word lookup database */
+	DB *id32db;	/* Connection to the 32 bit ID lookup database */
+	DB *skshashdb;	/* Connection to the SKS hash database */
+	DB *subkeydb;	/* Connection to the subkey ID lookup database */
+	DB_TXN *txn;	/* Our current transaction ID */
+};
 
-/**
- *	numdb - The number of database files we have.
- */
-static int numdbs = 16;
-
-/**
- *	dbconn - our connections to the key database files.
- */
-static DB **dbconns = NULL;
-
-/**
- *	worddb - our connection to the word database.
- */
-static DB *worddb = NULL;
-
-/**
- *	id32db - our connection to the 32bit ID database.
- */
-static DB *id32db = NULL;
-
-/**
- *	skshashdb - our connection to the SKS hash database.
- */
-static DB *skshashdb = NULL;
-
-/**
- *	subkeydb - our connection to the subkey ID lookup database.
- */
-static DB *subkeydb = NULL;
-
-/**
- *	txn - our current transaction id.
- */
-static DB_TXN *txn = NULL;
-
-DB *keydb(uint64_t keyid)
+DB *keydb(struct onak_db4_dbctx *privctx, uint64_t keyid)
 {
 	uint64_t keytrun;
 
 	keytrun = keyid >> 8;
 
-	return(dbconns[keytrun % numdbs]);
+	return(privctx->dbconns[keytrun % privctx->numdbs]);
 }
 
 /**
@@ -122,16 +93,17 @@ static void db4_errfunc(const DB_ENV *edbenv, const char *errpfx,
  *	operations on the database to help speed it all up, or if we want
  *	something to only succeed if all relevant operations are successful.
  */
-static bool db4_starttrans(void)
+static bool db4_starttrans(struct onak_dbctx *dbctx)
 {
+	struct onak_db4_dbctx *privctx = (struct onak_db4_dbctx *) dbctx->priv;
 	int ret;
 
-	log_assert(dbenv != NULL);
-	log_assert(txn == NULL);
+	log_assert(privctx->dbenv != NULL);
+	log_assert(privctx->txn == NULL);
 
-	ret = dbenv->txn_begin(dbenv,
+	ret = privctx->dbenv->txn_begin(privctx->dbenv,
 		NULL, /* No parent transaction */
-		&txn,
+		&privctx->txn,
 		0);
 	if (ret != 0) {
 		logthing(LOGTHING_CRITICAL,
@@ -148,14 +120,15 @@ static bool db4_starttrans(void)
  *
  *	Ends a transaction.
  */
-static void db4_endtrans(void)
+static void db4_endtrans(struct onak_dbctx *dbctx)
 {
+	struct onak_db4_dbctx *privctx = (struct onak_db4_dbctx *) dbctx->priv;
 	int ret;
 
-	log_assert(dbenv != NULL);
-	log_assert(txn != NULL);
+	log_assert(privctx->dbenv != NULL);
+	log_assert(privctx->txn != NULL);
 
-	ret = txn->commit(txn,
+	ret = privctx->txn->commit(privctx->txn,
 		0);
 	if (ret != 0) {
 		logthing(LOGTHING_CRITICAL,
@@ -163,50 +136,9 @@ static void db4_endtrans(void)
 				db_strerror(ret));
 		exit(1);
 	}
-	txn = NULL;
+	privctx->txn = NULL;
 
 	return;
-}
-
-/**
- *	cleanupdb - De-initialize the key database.
- *
- *	This function should be called upon program exit to allow the DB to
- *	cleanup after itself.
- */
-static void db4_cleanupdb(void)
-{
-	int i = 0;
-
-	if (dbenv != NULL) {
-		dbenv->txn_checkpoint(dbenv, 0, 0, 0);
-		if (subkeydb != NULL) {
-			subkeydb->close(subkeydb, 0);
-			subkeydb = NULL;
-		}
-		if (skshashdb != NULL) {
-			skshashdb->close(skshashdb, 0);
-			skshashdb = NULL;
-		}
-		if (id32db != NULL) {
-			id32db->close(id32db, 0);
-			id32db = NULL;
-		}
-		if (worddb != NULL) {
-			worddb->close(worddb, 0);
-			worddb = NULL;
-		}
-		for (i = 0; i < numdbs; i++) {
-			if (dbconns[i] != NULL) {
-				dbconns[i]->close(dbconns[i], 0);
-				dbconns[i] = NULL;
-			}
-		}
-		free(dbconns);
-		dbconns = NULL;
-		dbenv->close(dbenv, 0);
-		dbenv = NULL;
-	}
 }
 
 /**
@@ -216,7 +148,7 @@ static void db4_cleanupdb(void)
  *	we're running with a newer version of db4 than the database was
  *	created with.
  */
-static int db4_upgradedb(int numdb)
+static int db4_upgradedb(struct onak_db4_dbctx *privctx)
 {
 	DB *curdb = NULL;
 	int ret;
@@ -243,11 +175,11 @@ static int db4_upgradedb(int numdb)
 	close(lockfile_fd);
 
 	logthing(LOGTHING_NOTICE, "Upgrading DB4 database");
-	ret = db_env_create(&dbenv, 0);
-	dbenv->set_errcall(dbenv, &db4_errfunc);
-	dbenv->remove(dbenv, config.db_dir, 0);
-	dbenv = NULL;
-	for (i = 0; i < numdb; i++) {
+	ret = db_env_create(&privctx->dbenv, 0);
+	privctx->dbenv->set_errcall(privctx->dbenv, &db4_errfunc);
+	privctx->dbenv->remove(privctx->dbenv, config.db_dir, 0);
+	privctx->dbenv = NULL;
+	for (i = 0; i < privctx->numdbs; i++) {
 		ret = db_create(&curdb, NULL, 0);
 		if (ret == 0) {
 			snprintf(buf, sizeof(buf) - 1, "%s/keydb.%d.db",
@@ -318,296 +250,23 @@ static int db4_upgradedb(int numdb)
 }
 
 /**
- *	initdb - Initialize the key database.
- *
- *	This function should be called before any of the other functions in
- *	this file are called in order to allow the DB to be initialized ready
- *	for access.
- */
-static void db4_initdb(bool readonly)
-{
-	char       buf[1024];
-	FILE      *numdb = NULL;
-	int        ret = 0;
-	int        i = 0;
-	uint32_t   flags = 0;
-	struct stat statbuf;
-	int        maxlocks;
-
-	snprintf(buf, sizeof(buf) - 1, "%s/%s", config.db_dir,
-			DB4_UPGRADE_FILE);
-	ret = stat(buf, &statbuf);
-	while ((ret == 0) || (errno != ENOENT)) {
-		if (ret != 0) {
-			logthing(LOGTHING_CRITICAL, "Couldn't stat upgrade "
-				"lock file: %s (%d)", strerror(errno), ret);
-			exit(1);
-		}
-		logthing(LOGTHING_DEBUG, "DB4 upgrade in progress; waiting.");
-		sleep(5);
-		ret = stat(buf, &statbuf);
-	}
-	ret = 0;
-
-	snprintf(buf, sizeof(buf) - 1, "%s/num_keydb", config.db_dir);
-	numdb = fopen(buf, "r");
-	if (numdb != NULL) {
-		if (fgets(buf, sizeof(buf), numdb) != NULL) {
-			numdbs = atoi(buf);
-		}
-		fclose(numdb);
-	} else if (!readonly) {
-		logthing(LOGTHING_ERROR, "Couldn't open num_keydb: %s",
-				strerror(errno));
-		numdb = fopen(buf, "w");
-		if (numdb != NULL) {
-			fprintf(numdb, "%d", numdbs);
-			fclose(numdb);
-		} else {
-			logthing(LOGTHING_ERROR,
-				"Couldn't write num_keydb: %s",
-				strerror(errno));
-		}
-	}
-
-	dbconns = calloc(numdbs, sizeof (DB *));
-	if (dbconns == NULL) {
-		logthing(LOGTHING_CRITICAL,
-				"Couldn't allocate memory for dbconns");
-		ret = 1;
-	}
-
-	if (ret == 0) {
-		ret = db_env_create(&dbenv, 0);
-		if (ret != 0) {
-			logthing(LOGTHING_CRITICAL,
-				"db_env_create: %s", db_strerror(ret));
-		}
-	}
-
-	/*
-	 * Up the number of locks we're allowed at once. We base this on
-	 * the maximum number of keys we're going to return.
-	 */
-	maxlocks = config.maxkeys * 16;
-	if (maxlocks < 1000) {
-		maxlocks = 1000;
-	}
-	dbenv->set_lk_max_locks(dbenv, maxlocks);
-	dbenv->set_lk_max_objects(dbenv, maxlocks);
-
-	/*
-	 * Enable deadlock detection so that we don't block indefinitely on
-	 * anything. What we really want is simple 2 state locks, but I'm not
-	 * sure how to make the standard DB functions do that yet.
-	 */
-	if (ret == 0) {
-		dbenv->set_errcall(dbenv, &db4_errfunc);
-		ret = dbenv->set_lk_detect(dbenv, DB_LOCK_DEFAULT);
-		if (ret != 0) {
-			logthing(LOGTHING_CRITICAL,
-				"db_env_create: %s", db_strerror(ret));
-		}
-	}
-
-	if (ret == 0) {
-		ret = dbenv->open(dbenv, config.db_dir,
-				DB_INIT_LOG | DB_INIT_MPOOL | DB_INIT_LOCK |
-				DB_INIT_TXN |
-				DB_CREATE,
-				0);
-#ifdef DB_VERSION_MISMATCH
-		if (ret == DB_VERSION_MISMATCH) {
-			dbenv->close(dbenv, 0);
-			dbenv = NULL;
-			ret = db4_upgradedb(numdbs);
-			if (ret == 0) {
-				ret = db_env_create(&dbenv, 0);
-			}
-			if (ret == 0) {
-				dbenv->set_errcall(dbenv, &db4_errfunc);
-				dbenv->set_lk_detect(dbenv, DB_LOCK_DEFAULT);
-				ret = dbenv->open(dbenv, config.db_dir,
-					DB_INIT_LOG | DB_INIT_MPOOL |
-					DB_INIT_LOCK | DB_INIT_TXN |
-					DB_CREATE | DB_RECOVER,
-					0);
-
-				if (ret == 0) {
-					dbenv->txn_checkpoint(dbenv,
-							0,
-							0,
-							DB_FORCE);
-				}
-			}
-		}
-#endif
-		if (ret != 0) {
-			logthing(LOGTHING_CRITICAL,
-					"Error opening db environment: %s (%s)",
-					config.db_dir,
-					db_strerror(ret));
-			dbenv->close(dbenv, 0);
-			dbenv = NULL;
-		}
-	}
-
-	if (ret == 0) {
-		db4_starttrans();
-
-		for (i = 0; !ret && i < numdbs; i++) {
-			ret = db_create(&dbconns[i], dbenv, 0);
-			if (ret != 0) {
-				logthing(LOGTHING_CRITICAL,
-					"db_create: %s", db_strerror(ret));
-			}
-
-			if (ret == 0) {
-				snprintf(buf, 1023, "keydb.%d.db", i);
-				flags = DB_CREATE;
-				if (readonly) {
-					flags = DB_RDONLY;
-				}
-				ret = dbconns[i]->open(dbconns[i],
-						txn,
-						buf,
-						"keydb",
-						DB_HASH,
-						flags,
-						0664);
-				if (ret != 0) {
-					logthing(LOGTHING_CRITICAL,
-						"Error opening key database:"
-						" %s (%s)",
-						buf,
-						db_strerror(ret));
-				}
-			}
-		}
-
-	}
-
-	if (ret == 0) {
-		ret = db_create(&worddb, dbenv, 0);
-		if (ret != 0) {
-			logthing(LOGTHING_CRITICAL, "db_create: %s",
-					db_strerror(ret));
-		}
-	}
-
-	if (ret == 0) {
-		ret = worddb->set_flags(worddb, DB_DUP);
-	}
-
-	if (ret == 0) {
-		ret = worddb->open(worddb, txn, "worddb", "worddb", DB_BTREE,
-				flags,
-				0664);
-		if (ret != 0) {
-			logthing(LOGTHING_CRITICAL,
-					"Error opening word database: %s (%s)",
-					"worddb",
-					db_strerror(ret));
-		}
-	}
-
-	if (ret == 0) {
-		ret = db_create(&id32db, dbenv, 0);
-		if (ret != 0) {
-			logthing(LOGTHING_CRITICAL, "db_create: %s",
-					db_strerror(ret));
-		}
-	}
-
-	if (ret == 0) {
-		ret = id32db->set_flags(id32db, DB_DUP);
-	}
-
-	if (ret == 0) {
-		ret = id32db->open(id32db, txn, "id32db", "id32db", DB_HASH,
-				flags,
-				0664);
-		if (ret != 0) {
-			logthing(LOGTHING_CRITICAL,
-					"Error opening id32 database: %s (%s)",
-					"id32db",
-					db_strerror(ret));
-		}
-	}
-
-	if (ret == 0) {
-		ret = db_create(&skshashdb, dbenv, 0);
-		if (ret != 0) {
-			logthing(LOGTHING_CRITICAL, "db_create: %s",
-					db_strerror(ret));
-		}
-	}
-
-	if (ret == 0) {
-		ret = skshashdb->open(skshashdb, txn, "skshashdb",
-				"skshashdb", DB_HASH,
-				flags,
-				0664);
-		if (ret != 0) {
-			logthing(LOGTHING_CRITICAL,
-				"Error opening skshash database: %s (%s)",
-				"skshashdb",
-				db_strerror(ret));
-		}
-	}
-
-	if (ret == 0) {
-		ret = db_create(&subkeydb, dbenv, 0);
-		if (ret != 0) {
-			logthing(LOGTHING_CRITICAL, "db_create: %s",
-					db_strerror(ret));
-		}
-	}
-
-	if (ret == 0) {
-		ret = subkeydb->open(subkeydb, txn, "subkeydb", "subkeydb",
-				DB_HASH,
-				flags,
-				0664);
-		if (ret != 0) {
-			logthing(LOGTHING_CRITICAL,
-				"Error opening subkey database: %s (%s)",
-				"subkeydb",
-				db_strerror(ret));
-		}
-	}
-
-	if (txn != NULL) {
-		db4_endtrans();
-	}
-
-	if (ret != 0) {
-		db4_cleanupdb();
-		logthing(LOGTHING_CRITICAL,
-				"Error opening database; exiting");
-		exit(EXIT_FAILURE);
-	}
-	
-	return;
-}
-
-/**
  *	getfullkeyid - Maps a 32bit key id to a 64bit one.
  *	@keyid: The 32bit keyid.
  *
  *	This function maps a 32bit key id to the full 64bit one. It returns the
  *	full keyid. If the key isn't found a keyid of 0 is returned.
  */
-static uint64_t db4_getfullkeyid(uint64_t keyid)
+static uint64_t db4_getfullkeyid(struct onak_dbctx *dbctx, uint64_t keyid)
 {
+	struct onak_db4_dbctx *privctx = (struct onak_db4_dbctx *) dbctx->priv;
 	DBT       key, data;
 	DBC      *cursor = NULL;
 	uint32_t  shortkeyid = 0;
 	int       ret = 0;
 
 	if (keyid < 0x100000000LL) {
-		ret = id32db->cursor(id32db,
-				txn,
+		ret = privctx->id32db->cursor(privctx->id32db,
+				privctx->txn,
 				&cursor,
 				0);   /* flags */
 
@@ -636,7 +295,7 @@ static uint64_t db4_getfullkeyid(uint64_t keyid)
 		ret = cursor->c_close(cursor);
 		cursor = NULL;
 	}
-	
+
 	return keyid;
 }
 
@@ -652,10 +311,11 @@ static uint64_t db4_getfullkeyid(uint64_t keyid)
  *	in and then parse_keys() to parse the packets into a publickey
  *	structure.
  */
-static int db4_fetch_key_id(uint64_t keyid,
+static int db4_fetch_key_id(struct onak_dbctx *dbctx, uint64_t keyid,
 		struct openpgp_publickey **publickey,
 		bool intrans)
 {
+	struct onak_db4_dbctx *privctx = (struct onak_db4_dbctx *) dbctx->priv;
 	struct openpgp_packet_list *packets = NULL;
 	DBT key, data;
 	int ret = 0;
@@ -663,7 +323,7 @@ static int db4_fetch_key_id(uint64_t keyid,
 	struct buffer_ctx fetchbuf;
 
 	if (keyid < 0x100000000LL) {
-		keyid = db4_getfullkeyid(keyid);
+		keyid = db4_getfullkeyid(dbctx, keyid);
 	}
 
 	memset(&key, 0, sizeof(key));
@@ -676,11 +336,11 @@ static int db4_fetch_key_id(uint64_t keyid,
 	key.data = &keyid;
 
 	if (!intrans) {
-		db4_starttrans();
+		db4_starttrans(dbctx);
 	}
 
-	ret = keydb(keyid)->get(keydb(keyid),
-			txn,
+	ret = keydb(privctx, keyid)->get(keydb(privctx, keyid),
+			privctx->txn,
 			&key,
 			&data,
 			0); /* flags*/
@@ -694,8 +354,8 @@ static int db4_fetch_key_id(uint64_t keyid,
 		key.size = sizeof(keyid);
 		key.data = &keyid;
 
-		ret = subkeydb->get(subkeydb,
-			txn,
+		ret = privctx->subkeydb->get(privctx->subkeydb,
+			privctx->txn,
 			&key,
 			&data,
 			0); /* flags*/
@@ -711,8 +371,8 @@ static int db4_fetch_key_id(uint64_t keyid,
 			key.size = sizeof(keyid);
 			key.data = &keyid;
 
-			ret = keydb(keyid)->get(keydb(keyid),
-				txn,
+			ret = keydb(privctx, keyid)->get(keydb(privctx, keyid),
+				privctx->txn,
 				&key,
 				&data,
 				0); /* flags*/
@@ -736,7 +396,7 @@ static int db4_fetch_key_id(uint64_t keyid,
 	}
 
 	if (!intrans) {
-		db4_endtrans();
+		db4_endtrans(dbctx);
 	}
 
 	return (numkeys);
@@ -755,9 +415,10 @@ int worddb_cmp(const void *d1, const void *d2)
  *	This function searches for the supplied text and returns the keys that
  *	contain it.
  */
-static int db4_fetch_key_text(const char *search,
+static int db4_fetch_key_text(struct onak_dbctx *dbctx, const char *search,
 		struct openpgp_publickey **publickey)
 {
+	struct onak_db4_dbctx *privctx = (struct onak_db4_dbctx *) dbctx->priv;
 	DBC *cursor = NULL;
 	DBT key, data;
 	int ret;
@@ -776,10 +437,10 @@ static int db4_fetch_key_text(const char *search,
 	wordlist = makewordlist(wordlist, searchtext);
 
 	for (curword = wordlist; curword != NULL; curword = curword->next) {
-		db4_starttrans();
+		db4_starttrans(dbctx);
 
-		ret = worddb->cursor(worddb,
-				txn,
+		ret = privctx->worddb->cursor(privctx->worddb,
+				privctx->txn,
 				&cursor,
 				0);   /* flags */
 
@@ -830,7 +491,7 @@ static int db4_fetch_key_text(const char *search,
 		ret = cursor->c_close(cursor);
 		cursor = NULL;
 		firstpass = 0;
-		db4_endtrans();
+		db4_endtrans(dbctx);
 	}
 	llfree(wordlist, NULL);
 	wordlist = NULL;
@@ -838,10 +499,10 @@ static int db4_fetch_key_text(const char *search,
 	if (keylist.count > config.maxkeys) {
 		keylist.count = config.maxkeys;
 	}
-	
-	db4_starttrans();
+
+	db4_starttrans(dbctx);
 	for (i = 0; i < keylist.count; i++) {
-		numkeys += db4_fetch_key_id(keylist.keys[i],
+		numkeys += db4_fetch_key_id(dbctx, keylist.keys[i],
 			publickey,
 			true);
 	}
@@ -849,21 +510,23 @@ static int db4_fetch_key_text(const char *search,
 	free(searchtext);
 	searchtext = NULL;
 
-	db4_endtrans();
-	
+	db4_endtrans(dbctx);
+
 	return (numkeys);
 }
 
-static int db4_fetch_key_skshash(const struct skshash *hash,
+static int db4_fetch_key_skshash(struct onak_dbctx *dbctx,
+		const struct skshash *hash,
 		struct openpgp_publickey **publickey)
 {
+	struct onak_db4_dbctx *privctx = (struct onak_db4_dbctx *) dbctx->priv;
 	DBT       key, data;
 	DBC      *cursor = NULL;
 	uint64_t  keyid = 0;
 	int       ret = 0;
 
-	ret = skshashdb->cursor(skshashdb,
-			txn,
+	ret = privctx->skshashdb->cursor(privctx->skshashdb,
+			privctx->txn,
 			&cursor,
 			0);   /* flags */
 
@@ -890,7 +553,7 @@ static int db4_fetch_key_skshash(const struct skshash *hash,
 	ret = cursor->c_close(cursor);
 	cursor = NULL;
 
-	return db4_fetch_key_id(keyid, publickey, false);
+	return db4_fetch_key_id(dbctx, keyid, publickey, false);
 }
 
 /**
@@ -901,8 +564,10 @@ static int db4_fetch_key_skshash(const struct skshash *hash,
  *	This function deletes a public key from whatever storage mechanism we
  *	are using. Returns 0 if the key existed.
  */
-static int db4_delete_key(uint64_t keyid, bool intrans)
+static int db4_delete_key(struct onak_dbctx *dbctx,
+		uint64_t keyid, bool intrans)
 {
+	struct onak_db4_dbctx *privctx = (struct onak_db4_dbctx *) dbctx->priv;
 	struct openpgp_publickey *publickey = NULL;
 	DBT key, data;
 	DBC *cursor = NULL;
@@ -919,10 +584,10 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 	struct skshash hash;
 
 	if (!intrans) {
-		db4_starttrans();
+		db4_starttrans(dbctx);
 	}
 
-	db4_fetch_key_id(keyid, &publickey, true);
+	db4_fetch_key_id(dbctx, keyid, &publickey, true);
 
 	/*
 	 * Walk through the uids removing the words from the worddb.
@@ -934,9 +599,9 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 		for (i = 0; ret == 0 && uids[i] != NULL; i++) {
 			wordlist = makewordlist(wordlist, uids[i]);
 		}
-				
-		ret = worddb->cursor(worddb,
-			txn,
+
+		ret = privctx->worddb->cursor(privctx->worddb,
+			privctx->txn,
 			&cursor,
 			0);   /* flags */
 
@@ -989,8 +654,8 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 		ret = cursor->c_close(cursor);
 		cursor = NULL;
 
-		ret = skshashdb->cursor(skshashdb,
-			txn,
+		ret = privctx->skshashdb->cursor(privctx->skshashdb,
+			privctx->txn,
 			&cursor,
 			0);   /* flags */
 		get_skshash(publickey, &hash);
@@ -1040,8 +705,8 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 	}
 
 	if (!deadlock) {
-		ret = id32db->cursor(id32db,
-			txn,
+		ret = privctx->id32db->cursor(privctx->id32db,
+			privctx->txn,
 			&cursor,
 			0);   /* flags */
 
@@ -1080,7 +745,8 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 			memset(&key, 0, sizeof(key));
 			key.data = &subkeyids[i];
 			key.size = sizeof(subkeyids[i]);
-			subkeydb->del(subkeydb, txn, &key, 0);
+			privctx->subkeydb->del(privctx->subkeydb,
+					privctx->txn, &key, 0);
 			if (ret != 0) {
 				logthing(LOGTHING_ERROR,
 					"Problem deleting subkey id: %s "
@@ -1134,14 +800,14 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
 		key.data = &keyid;
 		key.size = sizeof(keyid);
 
-		keydb(keyid)->del(keydb(keyid),
-				txn,
+		keydb(privctx, keyid)->del(keydb(privctx, keyid),
+				privctx->txn,
 				&key,
 				0); /* flags */
 	}
 
 	if (!intrans) {
-		db4_endtrans();
+		db4_endtrans(dbctx);
 	}
 
 	return deadlock ? (-1) : (ret == DB_NOTFOUND);
@@ -1159,9 +825,11 @@ static int db4_delete_key(uint64_t keyid, bool intrans)
  *	the file. If update is true then we delete the old key first, otherwise
  *	we trust that it doesn't exist.
  */
-static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
+static int db4_store_key(struct onak_dbctx *dbctx,
+		struct openpgp_publickey *publickey, bool intrans,
 		bool update)
 {
+	struct onak_db4_dbctx *privctx = (struct onak_db4_dbctx *) dbctx->priv;
 	struct     openpgp_packet_list *packets = NULL;
 	struct     openpgp_packet_list *list_end = NULL;
 	struct     openpgp_publickey *next = NULL;
@@ -1187,7 +855,7 @@ static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
 	}
 
 	if (!intrans) {
-		db4_starttrans();
+		db4_starttrans(dbctx);
 	}
 
 	/*
@@ -1199,7 +867,7 @@ static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
 	 * it definitely needs updated.
 	 */
 	if (update) {
-		deadlock = (db4_delete_key(keyid, true) == -1);
+		deadlock = (db4_delete_key(dbctx, keyid, true) == -1);
 	}
 
 	/*
@@ -1211,10 +879,10 @@ static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
 		flatten_publickey(publickey, &packets, &list_end);
 		publickey->next = next;
 
-		storebuf.offset = 0; 
+		storebuf.offset = 0;
 		storebuf.size = 8192;
 		storebuf.buffer = malloc(8192);
-	
+
 		write_openpgp_stream(buffer_putchar, &storebuf, packets);
 
 		/*
@@ -1228,8 +896,8 @@ static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
 		data.size = storebuf.offset;
 		data.data = storebuf.buffer;
 
-		ret = keydb(keyid)->put(keydb(keyid),
-				txn,
+		ret = keydb(privctx, keyid)->put(keydb(privctx, keyid),
+				privctx->txn,
 				&key,
 				&data,
 				0); /* flags*/
@@ -1245,8 +913,8 @@ static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
 		free(storebuf.buffer);
 		storebuf.buffer = NULL;
 		storebuf.size = 0;
-		storebuf.offset = 0; 
-	
+		storebuf.offset = 0;
+
 		free_packet_list(packets);
 		packets = NULL;
 	}
@@ -1286,9 +954,9 @@ static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
 			worddb_data[ 8] = (keyid >> 24) & 0xFF;
 			worddb_data[ 9] = (keyid >> 16) & 0xFF;
 			worddb_data[10] = (keyid >>  8) & 0xFF;
-			worddb_data[11] = keyid & 0xFF; 
-			ret = worddb->put(worddb,
-				txn,
+			worddb_data[11] = keyid & 0xFF;
+			ret = privctx->worddb->put(privctx->worddb,
+				privctx->txn,
 				&key,
 				&data,
 				0);
@@ -1328,8 +996,8 @@ static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
 		data.data = &keyid;
 		data.size = sizeof(keyid);
 
-		ret = id32db->put(id32db,
-			txn,
+		ret = privctx->id32db->put(privctx->id32db,
+			privctx->txn,
 			&key,
 			&data,
 			0);
@@ -1355,8 +1023,8 @@ static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
 			data.data = &keyid;
 			data.size = sizeof(keyid);
 
-			ret = subkeydb->put(subkeydb,
-				txn,
+			ret = privctx->subkeydb->put(privctx->subkeydb,
+				privctx->txn,
 				&key,
 				&data,
 				0);
@@ -1379,8 +1047,8 @@ static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
 			data.data = &keyid;
 			data.size = sizeof(keyid);
 
-			ret = id32db->put(id32db,
-				txn,
+			ret = privctx->id32db->put(privctx->id32db,
+				privctx->txn,
 				&key,
 				&data,
 				0);
@@ -1408,8 +1076,8 @@ static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
 		data.data = &keyid;
 		data.size = sizeof(keyid);
 
-		ret = skshashdb->put(skshashdb,
-			txn,
+		ret = privctx->skshashdb->put(privctx->skshashdb,
+			privctx->txn,
 			&key,
 			&data,
 			0);
@@ -1424,7 +1092,7 @@ static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
 	}
 
 	if (!intrans) {
-		db4_endtrans();
+		db4_endtrans(dbctx);
 	}
 
 	return deadlock ? -1 : 0 ;
@@ -1441,9 +1109,11 @@ static int db4_store_key(struct openpgp_publickey *publickey, bool intrans,
  *
  *	Returns the number of keys we iterated over.
  */
-static int db4_iterate_keys(void (*iterfunc)(void *ctx,
-		struct openpgp_publickey *key),	void *ctx)
+static int db4_iterate_keys(struct onak_dbctx *dbctx,
+		void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
+		void *ctx)
 {
+	struct onak_db4_dbctx *privctx = (struct onak_db4_dbctx *) dbctx->priv;
 	DBT                         dbkey, data;
 	DBC                        *cursor = NULL;
 	int                         ret = 0;
@@ -1453,8 +1123,8 @@ static int db4_iterate_keys(void (*iterfunc)(void *ctx,
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_publickey   *key = NULL;
 
-	for (i = 0; i < numdbs; i++) {
-		ret = dbconns[i]->cursor(dbconns[i],
+	for (i = 0; i < privctx->numdbs; i++) {
+		ret = privctx->dbconns[i]->cursor(privctx->dbconns[i],
 			NULL,
 			&cursor,
 			0);   /* flags */
@@ -1471,12 +1141,12 @@ static int db4_iterate_keys(void (*iterfunc)(void *ctx,
 			parse_keys(packets, &key);
 
 			iterfunc(ctx, key);
-			
+
 			free_publickey(key);
 			key = NULL;
 			free_packet_list(packets);
 			packets = NULL;
-			
+
 			memset(&dbkey, 0, sizeof(dbkey));
 			memset(&data, 0, sizeof(data));
 			ret = cursor->c_get(cursor, &dbkey, &data,
@@ -1492,7 +1162,7 @@ static int db4_iterate_keys(void (*iterfunc)(void *ctx,
 		ret = cursor->c_close(cursor);
 		cursor = NULL;
 	}
-	
+
 	return numkeys;
 }
 
@@ -1505,21 +1175,363 @@ static int db4_iterate_keys(void (*iterfunc)(void *ctx,
 #define NEED_GET_FP 1
 #include "keydb.c"
 
-struct dbfuncs keydb_db4_funcs = {
-	.initdb			= db4_initdb,
-	.cleanupdb		= db4_cleanupdb,
-	.starttrans		= db4_starttrans,
-	.endtrans		= db4_endtrans,
-	.fetch_key_id		= db4_fetch_key_id,
-	.fetch_key_fp		= generic_fetch_key_fp,
-	.fetch_key_text		= db4_fetch_key_text,
-	.fetch_key_skshash	= db4_fetch_key_skshash,
-	.store_key		= db4_store_key,
-	.update_keys		= generic_update_keys,
-	.delete_key		= db4_delete_key,
-	.getkeysigs		= generic_getkeysigs,
-	.cached_getkeysigs	= generic_cached_getkeysigs,
-	.keyid2uid		= generic_keyid2uid,
-	.getfullkeyid		= db4_getfullkeyid,
-	.iterate_keys		= db4_iterate_keys,
-};
+/**
+ *	cleanupdb - De-initialize the key database.
+ *
+ *	This function should be called upon program exit to allow the DB to
+ *	cleanup after itself.
+ */
+static void db4_cleanupdb(struct onak_dbctx *dbctx)
+{
+	struct onak_db4_dbctx *privctx = (struct onak_db4_dbctx *) dbctx->priv;
+	int i = 0;
+
+	if (privctx->dbenv != NULL) {
+		privctx->dbenv->txn_checkpoint(privctx->dbenv, 0, 0, 0);
+		if (privctx->subkeydb != NULL) {
+			privctx->subkeydb->close(privctx->subkeydb, 0);
+			privctx->subkeydb = NULL;
+		}
+		if (privctx->skshashdb != NULL) {
+			privctx->skshashdb->close(privctx->skshashdb, 0);
+			privctx->skshashdb = NULL;
+		}
+		if (privctx->id32db != NULL) {
+			privctx->id32db->close(privctx->id32db, 0);
+			privctx->id32db = NULL;
+		}
+		if (privctx->worddb != NULL) {
+			privctx->worddb->close(privctx->worddb, 0);
+			privctx->worddb = NULL;
+		}
+		for (i = 0; i < privctx->numdbs; i++) {
+			if (privctx->dbconns[i] != NULL) {
+				privctx->dbconns[i]->close(privctx->dbconns[i],
+						0);
+				privctx->dbconns[i] = NULL;
+			}
+		}
+		free(privctx->dbconns);
+		privctx->dbconns = NULL;
+		privctx->dbenv->close(privctx->dbenv, 0);
+		privctx->dbenv = NULL;
+	}
+
+	free(privctx);
+	dbctx->priv = NULL;
+	free(dbctx);
+}
+
+/**
+ *	initdb - Initialize the key database.
+ *
+ *	This function should be called before any of the other functions in
+ *	this file are called in order to allow the DB to be initialized ready
+ *	for access.
+ */
+struct onak_dbctx *keydb_db4_init(bool readonly)
+{
+	char       buf[1024];
+	FILE      *numdb = NULL;
+	int        ret = 0;
+	int        i = 0;
+	uint32_t   flags = 0;
+	struct stat statbuf;
+	int        maxlocks;
+	struct onak_dbctx *dbctx;
+	struct onak_db4_dbctx *privctx;
+
+	dbctx = malloc(sizeof(*dbctx));
+	if (dbctx == NULL) {
+		return NULL;
+	}
+	dbctx->priv = privctx = calloc(1, sizeof(*privctx));
+	if (privctx == NULL) {
+		free(dbctx);
+		return NULL;
+	}
+
+	/* Default to 16 key data DBs */
+	privctx->numdbs = 16;
+
+	snprintf(buf, sizeof(buf) - 1, "%s/%s", config.db_dir,
+			DB4_UPGRADE_FILE);
+	ret = stat(buf, &statbuf);
+	while ((ret == 0) || (errno != ENOENT)) {
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL, "Couldn't stat upgrade "
+				"lock file: %s (%d)", strerror(errno), ret);
+			exit(1);
+		}
+		logthing(LOGTHING_DEBUG, "DB4 upgrade in progress; waiting.");
+		sleep(5);
+		ret = stat(buf, &statbuf);
+	}
+	ret = 0;
+
+	snprintf(buf, sizeof(buf) - 1, "%s/num_keydb", config.db_dir);
+	numdb = fopen(buf, "r");
+	if (numdb != NULL) {
+		if (fgets(buf, sizeof(buf), numdb) != NULL) {
+			privctx->numdbs = atoi(buf);
+		}
+		fclose(numdb);
+	} else if (!readonly) {
+		logthing(LOGTHING_ERROR, "Couldn't open num_keydb: %s",
+				strerror(errno));
+		numdb = fopen(buf, "w");
+		if (numdb != NULL) {
+			fprintf(numdb, "%d", privctx->numdbs);
+			fclose(numdb);
+		} else {
+			logthing(LOGTHING_ERROR,
+				"Couldn't write num_keydb: %s",
+				strerror(errno));
+		}
+	}
+
+	privctx->dbconns = calloc(privctx->numdbs, sizeof (DB *));
+	if (privctx->dbconns == NULL) {
+		logthing(LOGTHING_CRITICAL,
+				"Couldn't allocate memory for dbconns");
+		ret = 1;
+	}
+
+	if (ret == 0) {
+		ret = db_env_create(&privctx->dbenv, 0);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL,
+				"db_env_create: %s", db_strerror(ret));
+		}
+	}
+
+	/*
+	 * Up the number of locks we're allowed at once. We base this on
+	 * the maximum number of keys we're going to return.
+	 */
+	maxlocks = config.maxkeys * 16;
+	if (maxlocks < 1000) {
+		maxlocks = 1000;
+	}
+	privctx->dbenv->set_lk_max_locks(privctx->dbenv, maxlocks);
+	privctx->dbenv->set_lk_max_objects(privctx->dbenv, maxlocks);
+
+	/*
+	 * Enable deadlock detection so that we don't block indefinitely on
+	 * anything. What we really want is simple 2 state locks, but I'm not
+	 * sure how to make the standard DB functions do that yet.
+	 */
+	if (ret == 0) {
+		privctx->dbenv->set_errcall(privctx->dbenv, &db4_errfunc);
+		ret = privctx->dbenv->set_lk_detect(privctx->dbenv, DB_LOCK_DEFAULT);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL,
+				"db_env_create: %s", db_strerror(ret));
+		}
+	}
+
+	if (ret == 0) {
+		ret = privctx->dbenv->open(privctx->dbenv, config.db_dir,
+				DB_INIT_LOG | DB_INIT_MPOOL | DB_INIT_LOCK |
+				DB_INIT_TXN |
+				DB_CREATE,
+				0);
+#ifdef DB_VERSION_MISMATCH
+		if (ret == DB_VERSION_MISMATCH) {
+			privctx->dbenv->close(privctx->dbenv, 0);
+			privctx->dbenv = NULL;
+			ret = db4_upgradedb(privctx);
+			if (ret == 0) {
+				ret = db_env_create(&privctx->dbenv, 0);
+			}
+			if (ret == 0) {
+				privctx->dbenv->set_errcall(privctx->dbenv,
+					&db4_errfunc);
+				privctx->dbenv->set_lk_detect(privctx->dbenv,
+					DB_LOCK_DEFAULT);
+				ret = privctx->dbenv->open(privctx->dbenv,
+					config.db_dir,
+					DB_INIT_LOG | DB_INIT_MPOOL |
+					DB_INIT_LOCK | DB_INIT_TXN |
+					DB_CREATE | DB_RECOVER,
+					0);
+
+				if (ret == 0) {
+					privctx->dbenv->txn_checkpoint(
+							privctx->dbenv,
+							0,
+							0,
+							DB_FORCE);
+				}
+			}
+		}
+#endif
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL,
+					"Error opening db environment: %s (%s)",
+					config.db_dir,
+					db_strerror(ret));
+			privctx->dbenv->close(privctx->dbenv, 0);
+			privctx->dbenv = NULL;
+		}
+	}
+
+	if (ret == 0) {
+		db4_starttrans(dbctx);
+
+		for (i = 0; !ret && i < privctx->numdbs; i++) {
+			ret = db_create(&privctx->dbconns[i],
+					privctx->dbenv, 0);
+			if (ret != 0) {
+				logthing(LOGTHING_CRITICAL,
+					"db_create: %s", db_strerror(ret));
+			}
+
+			if (ret == 0) {
+				snprintf(buf, 1023, "keydb.%d.db", i);
+				flags = DB_CREATE;
+				if (readonly) {
+					flags = DB_RDONLY;
+				}
+				ret = privctx->dbconns[i]->open(
+						privctx->dbconns[i],
+						privctx->txn,
+						buf,
+						"keydb",
+						DB_HASH,
+						flags,
+						0664);
+				if (ret != 0) {
+					logthing(LOGTHING_CRITICAL,
+						"Error opening key database:"
+						" %s (%s)",
+						buf,
+						db_strerror(ret));
+				}
+			}
+		}
+	}
+
+	if (ret == 0) {
+		ret = db_create(&privctx->worddb, privctx->dbenv, 0);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL, "db_create: %s",
+					db_strerror(ret));
+		}
+	}
+
+	if (ret == 0) {
+		ret = privctx->worddb->set_flags(privctx->worddb, DB_DUP);
+	}
+
+	if (ret == 0) {
+		ret = privctx->worddb->open(privctx->worddb, privctx->txn,
+				"worddb", "worddb", DB_BTREE,
+				flags,
+				0664);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL,
+					"Error opening word database: %s (%s)",
+					"worddb",
+					db_strerror(ret));
+		}
+	}
+
+	if (ret == 0) {
+		ret = db_create(&privctx->id32db, privctx->dbenv, 0);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL, "db_create: %s",
+					db_strerror(ret));
+		}
+	}
+
+	if (ret == 0) {
+		ret = privctx->id32db->set_flags(privctx->id32db, DB_DUP);
+	}
+
+	if (ret == 0) {
+		ret = privctx->id32db->open(privctx->id32db, privctx->txn,
+				"id32db", "id32db", DB_HASH,
+				flags,
+				0664);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL,
+					"Error opening id32 database: %s (%s)",
+					"id32db",
+					db_strerror(ret));
+		}
+	}
+
+	if (ret == 0) {
+		ret = db_create(&privctx->skshashdb, privctx->dbenv, 0);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL, "db_create: %s",
+					db_strerror(ret));
+		}
+	}
+
+	if (ret == 0) {
+		ret = privctx->skshashdb->open(privctx->skshashdb, privctx->txn,
+				"skshashdb",
+				"skshashdb", DB_HASH,
+				flags,
+				0664);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL,
+				"Error opening skshash database: %s (%s)",
+				"skshashdb",
+				db_strerror(ret));
+		}
+	}
+
+	if (ret == 0) {
+		ret = db_create(&privctx->subkeydb, privctx->dbenv, 0);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL, "db_create: %s",
+					db_strerror(ret));
+		}
+	}
+
+	if (ret == 0) {
+		ret = privctx->subkeydb->open(privctx->subkeydb, privctx->txn,
+				"subkeydb", "subkeydb",
+				DB_HASH,
+				flags,
+				0664);
+		if (ret != 0) {
+			logthing(LOGTHING_CRITICAL,
+				"Error opening subkey database: %s (%s)",
+				"subkeydb",
+				db_strerror(ret));
+		}
+	}
+
+	if (privctx->txn != NULL) {
+		db4_endtrans(dbctx);
+	}
+
+	if (ret != 0) {
+		db4_cleanupdb(dbctx);
+		logthing(LOGTHING_CRITICAL,
+				"Error opening database; exiting");
+		exit(EXIT_FAILURE);
+	}
+
+	dbctx->cleanupdb		= db4_cleanupdb;
+	dbctx->starttrans		= db4_starttrans;
+	dbctx->endtrans			= db4_endtrans;
+	dbctx->fetch_key_id		= db4_fetch_key_id;
+	dbctx->fetch_key_fp		= generic_fetch_key_fp;
+	dbctx->fetch_key_text		= db4_fetch_key_text;
+	dbctx->fetch_key_skshash	= db4_fetch_key_skshash;
+	dbctx->store_key		= db4_store_key;
+	dbctx->update_keys		= generic_update_keys;
+	dbctx->delete_key		= db4_delete_key;
+	dbctx->getkeysigs		= generic_getkeysigs;
+	dbctx->cached_getkeysigs	= generic_cached_getkeysigs;
+	dbctx->keyid2uid		= generic_keyid2uid;
+	dbctx->getfullkeyid		= db4_getfullkeyid;
+	dbctx->iterate_keys		= db4_iterate_keys;
+
+	return dbctx;
+}

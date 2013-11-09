@@ -66,7 +66,8 @@ void initcolour(bool parent)
  *	key we have. It returns as soon as a path is found or when we run out
  *	of keys; whichever comes sooner.
  */
-unsigned long findpath(struct stats_key *have, struct stats_key *want)
+unsigned long findpath(struct onak_dbctx *dbctx,
+		struct stats_key *have, struct stats_key *want)
 {
 	struct ll *keys = NULL;
 	struct ll *oldkeys = NULL;
@@ -80,7 +81,7 @@ unsigned long findpath(struct stats_key *have, struct stats_key *want)
 	oldkeys = keys;
 
 	while ((!cleanup()) && keys != NULL && have->colour == 0) {
-		sigs = config.dbbackend->cached_getkeysigs(((struct stats_key *)
+		sigs = dbctx->cached_getkeysigs(dbctx, ((struct stats_key *)
 					keys->object)->keyid);
 		while ((!cleanup()) && sigs != NULL && have->colour == 0) {
 			/*
@@ -132,7 +133,8 @@ unsigned long findpath(struct stats_key *have, struct stats_key *want)
  *	key we have. It returns as soon as a path is found or when we run out
  *	of keys; whichever comes sooner.
  */
-void dofindpath(uint64_t have, uint64_t want, bool html, int count)
+void dofindpath(struct onak_dbctx *dbctx,
+		uint64_t have, uint64_t want, bool html, int count)
 {
 	struct stats_key *keyinfoa, *keyinfob, *curkey;
 	uint64_t fullhave, fullwant;
@@ -140,14 +142,14 @@ void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 	int pathnum;
 	char *uid;
 
-	fullhave = config.dbbackend->getfullkeyid(have);
-	fullwant = config.dbbackend->getfullkeyid(want);
+	fullhave = dbctx->getfullkeyid(dbctx, have);
+	fullwant = dbctx->getfullkeyid(dbctx, want);
 
 	/*
 	 * Make sure the keys we have and want are in the cache.
 	 */
-	(void) config.dbbackend->cached_getkeysigs(fullhave);
-	(void) config.dbbackend->cached_getkeysigs(fullwant);
+	(void) dbctx->cached_getkeysigs(dbctx, fullhave);
+	(void) dbctx->cached_getkeysigs(dbctx, fullwant);
 
 	if ((keyinfoa = findinhash(fullhave)) == NULL) {
 		printf("Couldn't find key 0x%016" PRIX64 ".\n", have);
@@ -165,7 +167,7 @@ void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 		 * Fill the tree info up.
 		 */
 		initcolour(true);
-		rec = findpath(keyinfoa, keyinfob);
+		rec = findpath(dbctx, keyinfoa, keyinfob);
 		keyinfob->parent = 0;
 
 		printf("%s%d nodes examined. %ld elements in the hash%s\n",
@@ -193,7 +195,7 @@ void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 				html ? "<BR>" : "");
 			curkey = keyinfoa;
 			while (curkey != NULL && curkey->keyid != 0) {
-				uid = config.dbbackend->keyid2uid(
+				uid = dbctx->keyid2uid(dbctx,
 						curkey->keyid);
 				if (html && uid == NULL) {
 					printf("<a href=\"lookup?op=get&search="
@@ -255,7 +257,7 @@ void dofindpath(uint64_t have, uint64_t want, bool html, int count)
 
 
 
-struct stats_key *furthestkey(struct stats_key *have)
+struct stats_key *furthestkey(struct onak_dbctx *dbctx, struct stats_key *have)
 {
 	unsigned long count = 0;
 	unsigned long curdegree = 0;
@@ -274,7 +276,7 @@ struct stats_key *furthestkey(struct stats_key *have)
 	curll = lladd(NULL, have);
 
 	while (curll != NULL) {
-		sigs = config.dbbackend->cached_getkeysigs(((struct stats_key *)
+		sigs = dbctx->cached_getkeysigs(dbctx, ((struct stats_key *)
 				curll->object)->keyid);
 		while (sigs != NULL) {
 			if (((struct stats_key *) sigs->object)->colour == 0) {

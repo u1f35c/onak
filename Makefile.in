@@ -142,12 +142,12 @@ onak: onak.o cleankey.o $(CORE_OBJS) $(KEYDB_OBJ)
 
 onak-conf.o: onak-conf.c onak-conf.h
 	$(CC) $(CFLAGS) -DCONFIGFILE=\"@sysconfdir@/onak.conf\" \
-		-DDBFUNCS=keydb_@DBTYPE@_funcs -c onak-conf.c
+		-DDBINIT=keydb_@DBTYPE@_init -c onak-conf.c
 
 # HACK: onak-conf.o needs to be able to see keydb_@DBTYPE@_funcs, but
 # keydctl doesn't want to link against the DB stuff. To be fixed more cleanly.
 keydctl.o: keydctl.c keyd.h
-	$(CC) $(CFLAGS) -DDBFUNCS=keydb_@DBTYPE@_funcs -c keydctl.c
+	$(CC) $(CFLAGS) -DDBINIT=keydb_@DBTYPE@_init -c keydctl.c
 
 onak-mail.pl: onak-mail.pl.in
 	sed 's:@CONFIG@:@sysconfdir@/onak.conf:g' < onak-mail.pl.in > onak-mail.pl

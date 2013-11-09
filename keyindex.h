@@ -22,6 +22,7 @@
 
 #include <stdbool.h>
 
+#include "keydb.h"
 #include "keystructs.h"
 
 /**
@@ -35,7 +36,8 @@
  *	This function takes a list of OpenPGP public keys and displays an index
  *	of them. Useful for debugging or the keyserver Index function.
  */
-int key_index(struct openpgp_publickey *keys, bool verbose,
+int key_index(struct onak_dbctx *dbctx,
+		struct openpgp_publickey *keys, bool verbose,
 		bool fingerprint, bool skshash, bool html);
 
 /**

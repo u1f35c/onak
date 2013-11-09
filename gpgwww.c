@@ -62,7 +62,8 @@ int parsecgistuff(char **cgiparams, uint64_t *from, uint64_t *to)
 	return op;
 }
 
-int getkeyspath(uint64_t have, uint64_t want, int count)
+int getkeyspath(struct onak_dbctx *dbctx,
+		uint64_t have, uint64_t want, int count)
 {
 	struct openpgp_publickey *publickey = NULL;
 	struct openpgp_packet_list *packets = NULL;
@@ -71,14 +72,14 @@ int getkeyspath(uint64_t have, uint64_t want, int count)
 	uint64_t fullhave, fullwant;
 	int pathlen = 0;
 
-	fullhave = config.dbbackend->getfullkeyid(have);
-	fullwant = config.dbbackend->getfullkeyid(want);
+	fullhave = dbctx->getfullkeyid(dbctx, have);
+	fullwant = dbctx->getfullkeyid(dbctx, want);
 
 	/*
 	 * Make sure the keys we have and want are in the cache.
 	 */
-	config.dbbackend->cached_getkeysigs(fullhave);
-	config.dbbackend->cached_getkeysigs(fullwant);
+	dbctx->cached_getkeysigs(dbctx, fullhave);
+	dbctx->cached_getkeysigs(dbctx, fullwant);
 
 	if ((keyinfoa = findinhash(fullhave)) == NULL) {
 		return 1;
@@ -92,7 +93,7 @@ int getkeyspath(uint64_t have, uint64_t want, int count)
 		 * Fill the tree info up.
 		 */
 		initcolour(true);
-		findpath(keyinfoa, keyinfob);
+		findpath(dbctx, keyinfoa, keyinfob);
 		keyinfob->parent = 0;
 		if (keyinfoa->colour == 0) {
 			pathlen = count;
@@ -104,7 +105,7 @@ int getkeyspath(uint64_t have, uint64_t want, int count)
 			curkey = findinhash(keyinfoa->parent);
 			while (curkey != NULL && curkey->keyid != 0) {
 	    			if (curkey->keyid != fullwant &&
-						config.dbbackend->fetch_key_id(
+						dbctx->fetch_key_id(dbctx,
 						curkey->keyid,
 						&publickey, false)) {
 	      				flatten_publickey(publickey,
@@ -125,7 +126,7 @@ int getkeyspath(uint64_t have, uint64_t want, int count)
 	/*
 	 * Add the destination key to the list of returned keys.
 	 */
-	if (config.dbbackend->fetch_key_id(fullwant, &publickey, false)) {
+	if (dbctx->fetch_key_id(dbctx, fullwant, &publickey, false)) {
 		flatten_publickey(publickey,
 				&packets,
 				&list_end);
@@ -145,6 +146,7 @@ int main(int argc, char *argv[])
 	char     **cgiparams = NULL;	/* Our CGI parameter block */
 	uint64_t   from = 0, to = 0;
 	int        op = OP_UNKNOWN;
+	struct onak_dbctx *dbctx;
 
 	cgiparams = getcgivars(argc, argv);
 
@@ -181,7 +183,7 @@ int main(int argc, char *argv[])
 	readconfig(NULL);
 	initlogthing("gpgwww", config.logfile);
 	catchsignals();
-	config.dbbackend->initdb(true);
+	dbctx = config.dbinit(true);
 	inithash();
 	logthing(LOGTHING_NOTICE, "Looking for path from 0x%016" PRIX64
 			" to 0x%016"
@@ -189,12 +191,12 @@ int main(int argc, char *argv[])
 			from,
 			to);
 	if (op == OP_GET) {
-		getkeyspath(from, to, 3);
+		getkeyspath(dbctx, from, to, 3);
 	} else {
-		dofindpath(from, to, true, 3);
+		dofindpath(dbctx, from, to, true, 3);
 	}
 	destroyhash();
-	config.dbbackend->cleanupdb();
+	dbctx->cleanupdb(dbctx);
 	cleanuplogthing();
 	cleanupconfig();
 

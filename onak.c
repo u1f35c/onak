@@ -44,7 +44,8 @@
 #include "photoid.h"
 #include "version.h"
 
-void find_keys(char *search, uint64_t keyid, uint8_t *fp, bool ishex,
+void find_keys(struct onak_dbctx *dbctx,
+		char *search, uint64_t keyid, uint8_t *fp, bool ishex,
 		bool isfp, bool fingerprint, bool skshash, bool exact,
 		bool verbose)
 {
@@ -52,16 +53,17 @@ void find_keys(char *search, uint64_t keyid, uint8_t *fp, bool ishex,
 	int count = 0;
 
 	if (ishex) {
-		count = config.dbbackend->fetch_key_id(keyid, &publickey,
+		count = dbctx->fetch_key_id(dbctx, keyid, &publickey,
 				false);
 	} else if (isfp) {
-		count = config.dbbackend->fetch_key_fp(fp, MAX_FINGERPRINT_LEN,
+		count = dbctx->fetch_key_fp(dbctx, fp, MAX_FINGERPRINT_LEN,
 				&publickey, false);
 	} else {
-		count = config.dbbackend->fetch_key_text(search, &publickey);
+		count = dbctx->fetch_key_text(dbctx, search, &publickey);
 	}
 	if (publickey != NULL) {
-		key_index(publickey, verbose, fingerprint, skshash, false);
+		key_index(dbctx, publickey, verbose, fingerprint, skshash,
+			false);
 		free_publickey(publickey);
 	} else if (count == 0) {
 		puts("Key not found.");
@@ -172,6 +174,7 @@ int main(int argc, char *argv[])
 	int				 optchar;
 	struct dump_ctx                  dumpstate;
 	struct skshash			 hash;
+	struct onak_dbctx		*dbctx;
 
 	while ((optchar = getopt(argc, argv, "bc:fsuv")) != -1 ) {
 		switch (optchar) {
@@ -204,17 +207,17 @@ int main(int argc, char *argv[])
 	if ((argc - optind) < 1) {
 		usage();
 	} else if (!strcmp("dump", argv[optind])) {
-		config.dbbackend->initdb(true);
+		dbctx = config.dbinit(true);
 		dumpstate.count = dumpstate.filenum = 0;
 		dumpstate.maxcount = 100000;
 		dumpstate.fd = -1;
 		dumpstate.filebase = "keydump.%d.pgp";
-		config.dbbackend->iterate_keys(dump_func, &dumpstate);
+		dbctx->iterate_keys(dbctx, dump_func, &dumpstate);
 		if (dumpstate.fd != -1) {
 			close(dumpstate.fd);
 			dumpstate.fd = -1;
 		}
-		config.dbbackend->cleanupdb();
+		dbctx->cleanupdb(dbctx);
 	} else if (!strcmp("add", argv[optind])) {
 		if (binary) {
 			result = read_openpgp_stream(stdin_getchar, NULL,
@@ -235,9 +238,9 @@ int main(int argc, char *argv[])
 			logthing(LOGTHING_INFO, "%d keys cleaned.",
 					result);
 
-			config.dbbackend->initdb(false);
+			dbctx = config.dbinit(false);
 			logthing(LOGTHING_NOTICE, "Got %d new keys.",
-					config.dbbackend->update_keys(&keys,
+					dbctx->update_keys(dbctx, &keys,
 					false));
 			if (keys != NULL && update) {
 				flatten_publickey(keys,
@@ -255,7 +258,7 @@ int main(int argc, char *argv[])
 				free_packet_list(packets);
 				packets = NULL;
 			}
-			config.dbbackend->cleanupdb();
+			dbctx->cleanupdb(dbctx);
 		} else {
 			rc = 1;
 			logthing(LOGTHING_NOTICE, "No keys read.");
@@ -332,20 +335,20 @@ int main(int argc, char *argv[])
 				ishex = true;
 			}
 		}
-		config.dbbackend->initdb(false);
+		dbctx = config.dbinit(false);
 		if (!strcmp("index", argv[optind])) {
-			find_keys(search, keyid, fp, ishex, isfp,
+			find_keys(dbctx, search, keyid, fp, ishex, isfp,
 					fingerprint, skshash,
 					false, false);
 		} else if (!strcmp("vindex", argv[optind])) {
-			find_keys(search, keyid, fp, ishex, isfp,
+			find_keys(dbctx, search, keyid, fp, ishex, isfp,
 					fingerprint, skshash,
 					false, true);
 		} else if (!strcmp("getphoto", argv[optind])) {
 			if (!ishex) {
 				puts("Can't get a key on uid text."
 					" You must supply a keyid.");
-			} else if (config.dbbackend->fetch_key_id(keyid, &keys,
+			} else if (dbctx->fetch_key_id(dbctx, keyid, &keys,
 					false)) {
 				unsigned char *photo = NULL;
 				size_t         length = 0;
@@ -363,8 +366,8 @@ int main(int argc, char *argv[])
 				puts("Key not found");
 			}
 		} else if (!strcmp("delete", argv[optind])) {
-			config.dbbackend->delete_key(
-					config.dbbackend->getfullkeyid(keyid),
+			dbctx->delete_key(dbctx,
+					dbctx->getfullkeyid(dbctx, keyid),
 					false);
 		} else if (!strcmp("get", argv[optind])) {
 			if (!(ishex || isfp)) {
@@ -372,11 +375,11 @@ int main(int argc, char *argv[])
 					" You must supply a keyid / "
 					"fingerprint.");
 			} else if ((isfp &&
-					config.dbbackend->fetch_key_fp(fp,
+					dbctx->fetch_key_fp(dbctx, fp,
 						MAX_FINGERPRINT_LEN,
 						&keys, false)) ||
 					(ishex &&
-					config.dbbackend->fetch_key_id(keyid,
+					dbctx->fetch_key_id(dbctx, keyid,
 						&keys, false))) {
 				logthing(LOGTHING_INFO, "Got key.");
 				flatten_publickey(keys,
@@ -400,7 +403,7 @@ int main(int argc, char *argv[])
 		} else if (!strcmp("hget", argv[optind])) {
 			if (!parse_skshash(search, &hash)) {
 				puts("Couldn't parse sks hash.");
-			} else if (config.dbbackend->fetch_key_skshash(&hash,
+			} else if (dbctx->fetch_key_skshash(dbctx, &hash,
 					&keys)) {
 				logthing(LOGTHING_INFO, "Got key.");
 				flatten_publickey(keys,
@@ -422,7 +425,7 @@ int main(int argc, char *argv[])
 				puts("Key not found");
 			}
 		}
-		config.dbbackend->cleanupdb();
+		dbctx->cleanupdb(dbctx);
 	} else {
 		usage();
 	}

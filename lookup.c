@@ -46,7 +46,8 @@
 #define OP_PHOTO   4
 #define OP_HGET    5
 
-void find_keys(char *search, uint64_t keyid, uint8_t *fp, size_t fpsize,
+void find_keys(struct onak_dbctx *dbctx,
+		char *search, uint64_t keyid, uint8_t *fp, size_t fpsize,
 		bool ishex, bool isfp, bool fingerprint, bool skshash,
 		bool exact, bool verbose, bool mrhkp)
 {
@@ -54,21 +55,21 @@ void find_keys(char *search, uint64_t keyid, uint8_t *fp, size_t fpsize,
 	int count = 0;
 
 	if (ishex) {
-		count = config.dbbackend->fetch_key_id(keyid, &publickey,
+		count = dbctx->fetch_key_id(dbctx, keyid, &publickey,
 				false);
 	} else if (isfp) {
-		count = config.dbbackend->fetch_key_fp(fp, fpsize, &publickey,
+		count = dbctx->fetch_key_fp(dbctx, fp, fpsize, &publickey,
 				false);
 	} else {
-		count = config.dbbackend->fetch_key_text(search, &publickey);
+		count = dbctx->fetch_key_text(dbctx, search, &publickey);
 	}
 	if (publickey != NULL) {
 		if (mrhkp) {
 			printf("info:1:%d\n", count);
 			mrkey_index(publickey);
 		} else {
-			key_index(publickey, verbose, fingerprint, skshash,
-				true);
+			key_index(dbctx, publickey, verbose, fingerprint,
+				skshash, true);
 		}
 		free_publickey(publickey);
 	} else if (count == 0) {
@@ -124,6 +125,7 @@ int main(int argc, char *argv[])
 	struct openpgp_packet_list *list_end = NULL;
 	int result;
 	struct skshash hash;
+	struct onak_dbctx *dbctx;
 
 	params = getcgivars(argc, argv);
 	for (i = 0; params != NULL && params[i] != NULL; i += 2) {
@@ -210,22 +212,22 @@ int main(int argc, char *argv[])
 		readconfig(NULL);
 		initlogthing("lookup", config.logfile);
 		catchsignals();
-		config.dbbackend->initdb(false);
+		dbctx = config.dbinit(false);
 		switch (op) {
 		case OP_GET:
 		case OP_HGET:
 			if (op == OP_HGET) {
 				parse_skshash(search, &hash);
-				result = config.dbbackend->fetch_key_skshash(
+				result = dbctx->fetch_key_skshash(dbctx,
 					&hash, &publickey);
 			} else if (ishex) {
-				result = config.dbbackend->fetch_key_id(keyid,
+				result = dbctx->fetch_key_id(dbctx, keyid,
 					&publickey, false);
 			} else if (isfp) {
-				result = config.dbbackend->fetch_key_fp(fp,
+				result = dbctx->fetch_key_fp(dbctx, fp,
 					MAX_FINGERPRINT_LEN, &publickey, false);
 			} else {
-				result = config.dbbackend->fetch_key_text(
+				result = dbctx->fetch_key_text(dbctx,
 					search,
 					&publickey);
 			}
@@ -251,22 +253,22 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case OP_INDEX:
-			find_keys(search, keyid, fp, MAX_FINGERPRINT_LEN,
+			find_keys(dbctx, search, keyid, fp, MAX_FINGERPRINT_LEN,
 					ishex, isfp, fingerprint, skshash,
 					exact, false, mrhkp);
 			break;
 		case OP_VINDEX:
-			find_keys(search, keyid, fp, MAX_FINGERPRINT_LEN,
+			find_keys(dbctx, search, keyid, fp, MAX_FINGERPRINT_LEN,
 					ishex, isfp, fingerprint, skshash,
 					exact, true, mrhkp);
 			break;
 		case OP_PHOTO:
 			if (isfp) {
-				config.dbbackend->fetch_key_fp(fp,
+				dbctx->fetch_key_fp(dbctx, fp,
 					MAX_FINGERPRINT_LEN,
 					&publickey, false);
 			} else {
-				config.dbbackend->fetch_key_id(keyid,
+				dbctx->fetch_key_id(dbctx, keyid,
 					&publickey, false);
 			}
 			if (publickey != NULL) {
@@ -287,7 +289,7 @@ int main(int argc, char *argv[])
 		default:
 			puts("Unknown operation!");
 		}
-		config.dbbackend->cleanupdb();
+		dbctx->cleanupdb(dbctx);
 		cleanuplogthing();
 		cleanupconfig();
 	}

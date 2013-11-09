@@ -27,26 +27,16 @@
 #include "ll.h"
 
 /**
- * @brief All of the functions a DB backend exports.
+ * @brief Context for a database backend
  */
-struct dbfuncs {
-/**
- * @brief Initialize the key database.
- * @param readonly If we'll only be reading the DB, not writing to it.
- *
- * This function should be called before any of the other functions in
- * this file are called in order to allow the DB to be initialized ready
- * for access.
- */
-	void (*initdb)(bool readonly);
-
+struct onak_dbctx {
 /**
  * @brief De-initialize the key database.
  *
  * This function should be called upon program exit to allow the DB to
  * cleanup after itself.
  */
-	void (*cleanupdb)(void);
+	void (*cleanupdb)(struct onak_dbctx *);
 
 /**
  * @brief Start a transaction.
@@ -55,14 +45,14 @@ struct dbfuncs {
  * operations on the database to help speed it all up, or if we want
  * something to only succeed if all relevant operations are successful.
  */
-	bool (*starttrans)(void);
+	bool (*starttrans)(struct onak_dbctx *);
 
 /**
  * @brief End a transaction.
  *
  * Ends a transaction.
  */
-	void (*endtrans)(void);
+	void (*endtrans)(struct onak_dbctx *);
 
 /**
  * @brief Given a keyid fetch the key from storage.
@@ -75,7 +65,8 @@ struct dbfuncs {
  *
  * TODO: What about keyid collisions? Should we use fingerprint instead?
  */
-	int (*fetch_key_id)(uint64_t keyid,
+	int (*fetch_key_id)(struct onak_dbctx *,
+			uint64_t keyid,
 			struct openpgp_publickey **publickey,
 			bool intrans);
 
@@ -89,7 +80,8 @@ struct dbfuncs {
  * This function returns a public key from whatever storage mechanism we
  * are using.
  */
-	int (*fetch_key_fp)(uint8_t *fp,
+	int (*fetch_key_fp)(struct onak_dbctx *,
+			uint8_t *fp,
 			size_t fpsize,
 			struct openpgp_publickey **publickey,
 			bool intrans);
@@ -107,7 +99,8 @@ struct dbfuncs {
  *
  * TODO: Do we store multiple keys of the same id? Or only one and replace it?
  */
-	int (*store_key)(struct openpgp_publickey *publickey, bool intrans,
+	int (*store_key)(struct onak_dbctx *,
+			struct openpgp_publickey *publickey, bool intrans,
 			bool update);
 
 /**
@@ -118,7 +111,7 @@ struct dbfuncs {
  * This function deletes a public key from whatever storage mechanism we
  * are using. Returns 0 if the key existed.
  */
-	int (*delete_key)(uint64_t keyid, bool intrans);
+	int (*delete_key)(struct onak_dbctx *, uint64_t keyid, bool intrans);
 
 /**
  * @brief Trys to find the keys that contain the supplied text.
@@ -128,7 +121,7 @@ struct dbfuncs {
  * This function searches for the supplied text and returns the keys that
  * contain it.
  */
-	int (*fetch_key_text)(const char *search,
+	int (*fetch_key_text)(struct onak_dbctx *, const char *search,
 			struct openpgp_publickey **publickey);
 
 /**
@@ -139,7 +132,8 @@ struct dbfuncs {
  * This function looks for the key that is referenced by the supplied
  * SKS hash and returns it.
  */
-	int (*fetch_key_skshash)(const struct skshash *hash,
+	int (*fetch_key_skshash)(struct onak_dbctx *,
+			const struct skshash *hash,
 			struct openpgp_publickey **publickey);
 
 /**
@@ -156,7 +150,8 @@ struct dbfuncs {
  * If sendsync is true then we send out a keysync mail to our sync peers
  * with the update.
  */
-	int (*update_keys)(struct openpgp_publickey **keys, bool sendsync);
+	int (*update_keys)(struct onak_dbctx *,
+			struct openpgp_publickey **keys, bool sendsync);
 
 /**
  * @brief Takes a keyid and returns the primary UID for it.
@@ -165,7 +160,7 @@ struct dbfuncs {
  * This function returns a UID for the given key. Returns NULL if the key
  * isn't found.
  */
-	char * (*keyid2uid)(uint64_t keyid);
+	char * (*keyid2uid)(struct onak_dbctx *, uint64_t keyid);
 
 /**
  * @brief Gets a linked list of the signatures on a key.
@@ -176,7 +171,8 @@ struct dbfuncs {
  * indexing and doing stats bits. If revoked is non-NULL then if the key
  * is revoked it's set to true.
  */
-	struct ll * (*getkeysigs)(uint64_t keyid, bool *revoked);
+	struct ll * (*getkeysigs)(struct onak_dbctx *,
+			uint64_t keyid, bool *revoked);
 
 /**
  * @brief Gets the signatures on a key.
@@ -185,7 +181,8 @@ struct dbfuncs {
  * This function gets the signatures on a key. It's the same as the
  * getkeysigs function above except we use the hash module to cache the
  */
-	struct ll * (*cached_getkeysigs)(uint64_t keyid);
+	struct ll * (*cached_getkeysigs)(struct onak_dbctx *,
+			uint64_t keyid);
 
 /**
  * @brief Maps a 32 bit key id to a 64 bit one.
@@ -194,7 +191,7 @@ struct dbfuncs {
  * This function maps a 32 bit key id to the full 64 bit one. It returns the
  * full keyid. If the key isn't found a keyid of 0 is returned.
  */
-	uint64_t (*getfullkeyid)(uint64_t keyid);
+	uint64_t (*getfullkeyid)(struct onak_dbctx *, uint64_t keyid);
 
 /**
  * @brief call a function once for each key in the db.
@@ -207,8 +204,14 @@ struct dbfuncs {
  *
  * Returns the number of keys we iterated over.
  */
-	int (*iterate_keys)(void (*iterfunc)(void *ctx,
+	int (*iterate_keys)(struct onak_dbctx *,
+			void (*iterfunc)(void *ctx,
 			struct openpgp_publickey *key),	void *ctx);
+
+/**
+ * @brief Private backend context information.
+ */
+	void *priv;
 };
 
 #endif /* __KEYDB_H__ */

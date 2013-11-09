@@ -62,16 +62,17 @@ static struct ll *sortkeyll(struct ll *keys)
 	return newll;
 }
 
-static void output_key(FILE *names, FILE *keys, uint64_t keyid)
+static void output_key(struct onak_dbctx *dbctx,
+		FILE *names, FILE *keys, uint64_t keyid)
 {
-	fprintf(names, "%s\n", config.dbbackend->keyid2uid(keyid));
+	fprintf(names, "%s\n", dbctx->keyid2uid(dbctx, keyid));
 	fprintf(keys, "%c%c%c%c", (int) (keyid >> 24) & 0xFF,
 			(int) (keyid >> 16) & 0xFF,
 			(int) (keyid >>  8) & 0xFF,
 			(int) (keyid      ) & 0xFF);
 }
 
-static void wotsap(uint64_t keyid, char *dir)
+static void wotsap(struct onak_dbctx *dbctx, uint64_t keyid, char *dir)
 {
 	struct ll *pending, *sigll, *sigsave;
 	uint32_t curidx = 0;
@@ -125,29 +126,31 @@ static void wotsap(uint64_t keyid, char *dir)
 	}
 	free(tmppath);
 
-	config.dbbackend->cached_getkeysigs(keyid);
+	dbctx->cached_getkeysigs(dbctx, keyid);
 	curkey = findinhash(keyid);
 	curkey->colour = ++curidx;
 	pending = lladd(NULL, curkey);
 
-	output_key(names, keys, curkey->keyid);
+	output_key(dbctx, names, keys, curkey->keyid);
 
 	while (pending != NULL) {
 		curkey = (struct stats_key *) pending->object;
-		sigll = config.dbbackend->cached_getkeysigs(curkey->keyid);
+		sigll = dbctx->cached_getkeysigs(dbctx, curkey->keyid);
 		sigsave = sigll = sortkeyll(sigll);
 		sigcount = 0;
 		while (sigll != NULL) {
 			addkey = (struct stats_key *) sigll->object;
 			if (addkey->colour == 0 && !addkey->revoked) {
-				uid = config.dbbackend->keyid2uid(addkey->keyid);
+				uid = dbctx->keyid2uid(dbctx, addkey->keyid);
 				if (uid != NULL) {
 					/* Force it to be loaded so we know if it's revoked */
-					config.dbbackend->cached_getkeysigs(addkey->keyid);
+					dbctx->cached_getkeysigs(dbctx,
+							addkey->keyid);
 					if (!addkey->revoked) {
 						addkey->colour = ++curidx;
 						pending = lladdend(pending, addkey);
-						output_key(names, keys, addkey->keyid);
+						output_key(dbctx, names, keys,
+							addkey->keyid);
 					}
 				}
 			}
@@ -184,6 +187,7 @@ int main(int argc, char *argv[])
 	int optchar;
 	char *configfile = NULL, *dir = NULL;
 	uint64_t keyid = 0x2DA8B985;
+	struct onak_dbctx *dbctx;
 
 	while ((optchar = getopt(argc, argv, "c:")) != -1 ) {
 		switch (optchar) {
@@ -199,11 +203,16 @@ int main(int argc, char *argv[])
 
 	readconfig(configfile);
 	initlogthing("wotsap", config.logfile);
-	config.dbbackend->initdb(true);
-	inithash();
-	wotsap(config.dbbackend->getfullkeyid(keyid), dir ? dir : ".");
-	destroyhash();
-	config.dbbackend->cleanupdb();
+	dbctx = config.dbinit(true);
+	if (dbctx != NULL) {
+		inithash();
+		wotsap(dbctx, dbctx->getfullkeyid(dbctx, keyid),
+			dir ? dir : ".");
+		destroyhash();
+		dbctx->cleanupdb(dbctx);
+	} else {
+		fprintf(stderr, "Couldn't initialize key database.\n");
+	}
 	cleanuplogthing();
 	cleanupconfig();
 }

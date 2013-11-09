@@ -30,7 +30,8 @@
 #include "onak-conf.h"
 #include "stats.h"
 
-unsigned long countdegree(struct stats_key *have, bool sigs, int maxdegree)
+unsigned long countdegree(struct onak_dbctx *dbctx,
+		struct stats_key *have, bool sigs, int maxdegree)
 {
 	unsigned long     count = 0, curdegree = 0;
 	struct ll        *curll, *nextll, *sigll, *tmp;
@@ -43,7 +44,7 @@ unsigned long countdegree(struct stats_key *have, bool sigs, int maxdegree)
 
 	while (curll != NULL && curdegree <= maxdegree) {
 		if (sigs) {
-			sigll = config.dbbackend->cached_getkeysigs(
+			sigll = dbctx->cached_getkeysigs(dbctx,
 				((struct stats_key *)
 				curll->object)->keyid);
 		} else {
@@ -89,21 +90,21 @@ unsigned long countdegree(struct stats_key *have, bool sigs, int maxdegree)
 	return count;
 }
 
-void sixdegrees(uint64_t keyid)
+void sixdegrees(struct onak_dbctx *dbctx, uint64_t keyid)
 {
 	struct stats_key *keyinfo;
 	int loop;
 	long degree;
 	char *uid;
 
-	config.dbbackend->cached_getkeysigs(keyid);
+	dbctx->cached_getkeysigs(dbctx, keyid);
 
 	if ((keyinfo = findinhash(keyid)) == NULL) {
 		printf("Couldn't find key 0x%016" PRIX64 ".\n", keyid);
 		return;
 	}
 
-	uid = config.dbbackend->keyid2uid(keyinfo->keyid);
+	uid = dbctx->keyid2uid(dbctx, keyinfo->keyid);
 	printf("Six degrees for 0x%016" PRIX64 " (%s):\n", keyinfo->keyid,
 			uid);
 	free(uid);
@@ -118,16 +119,16 @@ void sixdegrees(uint64_t keyid)
 	 * if it's signed by the key we're looking at.
 	 */
 	initcolour(false);
-	degree = countdegree(keyinfo, true, 7);
+	degree = countdegree(dbctx, keyinfo, true, 7);
 
 	puts("\t\tSigned by\t\tSigns");
 	for (loop = 1; loop < 7; loop++) {
 		initcolour(false);
-		degree = countdegree(keyinfo, true, loop);
+		degree = countdegree(dbctx, keyinfo, true, loop);
 		printf("Degree %d:\t%8ld", loop, degree);
 
 		initcolour(false);
-		degree = countdegree(keyinfo, false, loop);
+		degree = countdegree(dbctx, keyinfo, false, loop);
 		printf("\t\t%8ld\n", degree);
 	}
 }
@@ -137,6 +138,7 @@ int main(int argc, char *argv[])
 	int optchar;
 	char *configfile = NULL;
 	uint64_t keyid = 0x2DA8B985;
+	struct onak_dbctx *dbctx;
 
 	while ((optchar = getopt(argc, argv, "c:")) != -1 ) {
 		switch (optchar) {
@@ -152,11 +154,15 @@ int main(int argc, char *argv[])
 
 	readconfig(configfile);
 	initlogthing("sixdegrees", config.logfile);
-	config.dbbackend->initdb(true);
-	inithash();
-	sixdegrees(config.dbbackend->getfullkeyid(keyid));
-	destroyhash();
-	config.dbbackend->cleanupdb();
+	dbctx = config.dbinit(true);
+	if (dbctx != NULL) {
+		inithash();
+		sixdegrees(dbctx, dbctx->getfullkeyid(dbctx, keyid));
+		destroyhash();
+		dbctx->cleanupdb(dbctx);
+	} else {
+		fprintf(stderr, "Couldn't initialize key database.\n");
+	}
 	cleanuplogthing();
 	cleanupconfig();
 

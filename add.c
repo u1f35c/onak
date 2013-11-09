@@ -43,6 +43,7 @@ int main(int argc, char *argv[])
 	struct buffer_ctx            ctx;
 	int                          count = 0;
 	int                          i;
+	struct onak_dbctx           *dbctx;
 
 	memset(&ctx, 0, sizeof(ctx));
 
@@ -88,13 +89,13 @@ int main(int argc, char *argv[])
 				fclose(stderr);
 			}
 			catchsignals();
-			config.dbbackend->initdb(false);
+			dbctx = config.dbinit(false);
 			
 			count = cleankeys(keys);
 			logthing(LOGTHING_INFO, "%d keys cleaned.",
 					count);
 
-			count = config.dbbackend->update_keys(&keys, true);
+			count = dbctx->update_keys(dbctx, &keys, true);
 			logthing(LOGTHING_NOTICE, "Got %d new keys.",
 				count);
 
@@ -103,7 +104,7 @@ int main(int argc, char *argv[])
 				keys = NULL;
 			}
 			
-			config.dbbackend->cleanupdb();
+			dbctx->cleanupdb(dbctx);
 		} else {
 			puts("No OpenPGP packets found in input.");
 			end_html();

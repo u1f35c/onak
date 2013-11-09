@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
 	uint8_t **hashes;
 	struct buffer_ctx cgipostbuf;
 	struct openpgp_publickey **keys;
+	struct onak_dbctx *dbctx;
 
 	readconfig(NULL);
 	initlogthing("hashquery", config.logfile);
@@ -88,15 +89,16 @@ int main(int argc, char *argv[])
 		doerror("Couldn't allocate memory for reply.\n");
 	}
 
-	if (config.dbbackend->fetch_key_skshash == NULL) {
+	catchsignals();
+	dbctx = config.dbinit(false);
+
+	if (dbctx->fetch_key_skshash == NULL) {
+		dbctx->cleanupdb(dbctx);
 		doerror("Can't fetch by skshash with this backend.");
 	}
 
-	catchsignals();
-	config.dbbackend->initdb(false);
-
 	for (i = 0; i < count; i++) {
-		config.dbbackend->fetch_key_skshash(
+		dbctx->fetch_key_skshash(dbctx,
 				(struct skshash *) hashes[i], &keys[found]);
 		if (keys[found] != NULL) {
 			found++;
@@ -107,7 +109,7 @@ int main(int argc, char *argv[])
 	free(hashes);
 	hashes = NULL;
 
-	config.dbbackend->cleanupdb();
+	dbctx->cleanupdb(dbctx);
 
 	puts("Content-Type: pgp/keys\n");
 	marshal_array(stdout_putchar, NULL,

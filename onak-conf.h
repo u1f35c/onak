@@ -76,8 +76,8 @@ struct onak_config {
 	/** Directory where backend .so files can be found */
 	char *backends_dir;
 
-	/** Pointer to the function table for our loaded DB backend */
-	struct dbfuncs *dbbackend;
+	/** Pointer to the initialisation function for our loaded DB backend */
+	struct onak_dbctx *(*dbinit)(bool);
 
 	/** Should we verify signature hashes match? */
 	bool check_sighash;

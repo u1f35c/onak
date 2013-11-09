@@ -46,8 +46,10 @@
 #define PATH_MAX 1024
 #endif
 
-static int keydb_lockfile_fd = -1;
-static bool keydb_lockfile_readonly;
+struct onak_fs_dbctx {
+	int lockfile_fd;
+	bool lockfile_readonly;
+};
 
 /*****************************************************************************/
 
@@ -162,64 +164,20 @@ static void subkeydir(char *buffer, size_t length, uint64_t subkey)
 /*****************************************************************************/
 
 /**
- *	initdb - Initialize the key database.
- */
-static void fs_initdb(bool readonly)
-{
-	char buffer[PATH_MAX];
-
-	keydb_lockfile_readonly = readonly;
-
-	snprintf(buffer, sizeof(buffer), "%s/.lock", config.db_dir);
-
-	if (access(config.db_dir, R_OK | W_OK | X_OK) == -1) {
-		if (errno != ENOENT) {
-			logthing(LOGTHING_CRITICAL,
-				 "Unable to access keydb_fs root of '%s'. (%s)",
-				 config.db_dir, strerror(errno));
-			exit(1);	/* Lacking rwx on the key dir */
-		}
-		mkdir(config.db_dir, 0777);
-		keydb_lockfile_fd = open(buffer, O_RDWR | O_CREAT, 0600);
-	}
-	chdir(config.db_dir);
-	if (keydb_lockfile_fd == -1)
-		keydb_lockfile_fd = open(buffer,
-					 (keydb_lockfile_readonly) ?
-					 O_RDONLY : O_RDWR);
-	if (keydb_lockfile_fd == -1)
-		keydb_lockfile_fd = open(buffer, O_RDWR | O_CREAT, 0600);
-	if (keydb_lockfile_fd == -1) {
-		logthing(LOGTHING_CRITICAL,
-			 "Unable to open lockfile '%s'. (%s)",
-			 buffer, strerror(errno));
-		exit(1);	/* Lacking rwx on the key dir */
-	}
-}
-
-/**
- *	cleanupdb - De-initialize the key database.
- */
-static void fs_cleanupdb(void)
-{
-	/* Mmmm nothing to do here? */
-	close(keydb_lockfile_fd);
-}
-
-/**
  *	starttrans - Start a transaction.
  */
-static bool fs_starttrans(void)
+static bool fs_starttrans(struct onak_dbctx *dbctx)
 {
+	struct onak_fs_dbctx *privctx = (struct onak_fs_dbctx *) dbctx->priv;
 	struct flock lockstruct;
 	int remaining = 20;
 	lockstruct.l_type =
-	    F_RDLCK | ((keydb_lockfile_readonly) ? 0 : F_WRLCK);
+	    F_RDLCK | ((privctx->lockfile_readonly) ? 0 : F_WRLCK);
 	lockstruct.l_whence = SEEK_SET;
 	lockstruct.l_start = 0;
 	lockstruct.l_len = 1;
 
-	while (fcntl(keydb_lockfile_fd, F_SETLK, &lockstruct) == -1) {
+	while (fcntl(privctx->lockfile_fd, F_SETLK, &lockstruct) == -1) {
 		if (remaining-- == 0)
 			return false;	/* Hope to hell that noodles DTRT */
 		usleep(100);
@@ -230,18 +188,19 @@ static bool fs_starttrans(void)
 /**
  *	endtrans - End a transaction.
  */
-static void fs_endtrans(void)
+static void fs_endtrans(struct onak_dbctx *dbctx)
 {
+	struct onak_fs_dbctx *privctx = (struct onak_fs_dbctx *) dbctx->priv;
 	struct flock lockstruct;
 
 	lockstruct.l_type = F_UNLCK;
 	lockstruct.l_whence = SEEK_SET;
 	lockstruct.l_start = 0;
 	lockstruct.l_len = 1;
-	fcntl(keydb_lockfile_fd, F_SETLK, &lockstruct);
+	fcntl(privctx->lockfile_fd, F_SETLK, &lockstruct);
 }
 
-static uint64_t fs_getfullkeyid(uint64_t keyid)
+static uint64_t fs_getfullkeyid(struct onak_dbctx *dbctx, uint64_t keyid)
 {
 	static char buffer[PATH_MAX];
 	DIR *d = NULL;
@@ -285,7 +244,8 @@ static uint64_t fs_getfullkeyid(uint64_t keyid)
  *	@publickey: A pointer to a structure to return the key in.
  *	@intrans: If we're already in a transaction.
  */
-static int fs_fetch_key_id(uint64_t keyid,
+static int fs_fetch_key_id(struct onak_dbctx *dbctx,
+	      uint64_t keyid,
 	      struct openpgp_publickey **publickey,
 	      bool intrans)
 {
@@ -294,10 +254,10 @@ static int fs_fetch_key_id(uint64_t keyid,
 	struct openpgp_packet_list *packets = NULL;
 
 	if (!intrans)
-		fs_starttrans();
+		fs_starttrans(dbctx);
 
 	if ((keyid >> 32) == 0)
-		keyid = fs_getfullkeyid(keyid);
+		keyid = fs_getfullkeyid(dbctx, keyid);
 
 	keypath(buffer, sizeof(buffer), keyid);
 	if ((fd = open(buffer, O_RDONLY)) != -1) {
@@ -311,7 +271,7 @@ static int fs_fetch_key_id(uint64_t keyid,
 	}
 
 	if (!intrans)
-		fs_endtrans();
+		fs_endtrans(dbctx);
 	return ret;
 }
 
@@ -321,7 +281,8 @@ static int fs_fetch_key_id(uint64_t keyid,
  *	@intrans: If we're already in a transaction.
  *	@update: If true the key exists and should be updated.
  */
-static int fs_store_key(struct openpgp_publickey *publickey, bool intrans,
+static int fs_store_key(struct onak_dbctx *dbctx,
+	      struct openpgp_publickey *publickey, bool intrans,
 	      bool update)
 {
 	static char buffer[PATH_MAX];
@@ -343,7 +304,7 @@ static int fs_store_key(struct openpgp_publickey *publickey, bool intrans,
 	}
 
 	if (!intrans)
-		fs_starttrans();
+		fs_starttrans(dbctx);
 
 	prove_path_to(keyid, "key");
 	keypath(buffer, sizeof(buffer), keyid);
@@ -406,7 +367,7 @@ static int fs_store_key(struct openpgp_publickey *publickey, bool intrans,
 	}
 
 	if (!intrans)
-		fs_endtrans();
+		fs_endtrans(dbctx);
 	return ret;
 }
 
@@ -415,7 +376,7 @@ static int fs_store_key(struct openpgp_publickey *publickey, bool intrans,
  *	@keyid: The keyid to delete.
  *	@intrans: If we're already in a transaction.
  */
-static int fs_delete_key(uint64_t keyid, bool intrans)
+static int fs_delete_key(struct onak_dbctx *dbctx, uint64_t keyid, bool intrans)
 {
 	static char buffer[PATH_MAX];
 	int ret;
@@ -426,12 +387,12 @@ static int fs_delete_key(uint64_t keyid, bool intrans)
 	int i = 0;
 
 	if ((keyid >> 32) == 0)
-		keyid = fs_getfullkeyid(keyid);
+		keyid = fs_getfullkeyid(dbctx, keyid);
 
 	if (!intrans)
-		fs_starttrans();
+		fs_starttrans(dbctx);
 
-	ret = fs_fetch_key_id(keyid, &pk, true);
+	ret = fs_fetch_key_id(dbctx, keyid, &pk, true);
 
 	if (ret) {
 		logthing(LOGTHING_DEBUG, "Wordlist for key %016" PRIX64,
@@ -475,7 +436,7 @@ static int fs_delete_key(uint64_t keyid, bool intrans)
 	unlink(buffer);
 
 	if (!intrans)
-		fs_endtrans();
+		fs_endtrans(dbctx);
 	return 1;
 }
 
@@ -519,7 +480,8 @@ static struct ll *internal_get_key_by_word(char *word, struct ll *mct)
  *	@search: The text to search for.
  *	@publickey: A pointer to a structure to return the key in.
  */
-static int fs_fetch_key_text(const char *search,
+static int fs_fetch_key_text(struct onak_dbctx *dbctx,
+		   const char *search,
 		   struct openpgp_publickey **publickey)
 {
 	struct ll *wordlist = NULL, *wl = NULL;
@@ -564,7 +526,8 @@ static int fs_fetch_key_text(const char *search,
 	while (wl) {
 		logthing(LOGTHING_DEBUG, "Adding key: %s", wl->object);
 		addedkeys +=
-		    fs_fetch_key_id(strtoull(wl->object, NULL, 16), publickey,
+		    fs_fetch_key_id(dbctx,
+			      strtoull(wl->object, NULL, 16), publickey,
 			      false);
 		if (addedkeys >= config.maxkeys)
 			break;
@@ -584,7 +547,8 @@ static int fs_fetch_key_text(const char *search,
  *	@publickey: A pointer to a structure to return the key in.
  *	@intrans: If we're already in a transaction.
  */
-static int fs_fetch_key_skshash(const struct skshash *hash,
+static int fs_fetch_key_skshash(struct onak_dbctx *dbctx,
+	      const struct skshash *hash,
 	      struct openpgp_publickey **publickey)
 {
 	static char buffer[PATH_MAX];
@@ -615,7 +579,8 @@ static int fs_fetch_key_skshash(const struct skshash *hash,
  *
  *	Returns the number of keys we iterated over.
  */
-static int fs_iterate_keys(void (*iterfunc)(void *ctx,
+static int fs_iterate_keys(struct onak_dbctx *dbctx,
+		void (*iterfunc)(void *ctx,
 		struct openpgp_publickey *key),	void *ctx)
 {
 	return 0;
@@ -630,21 +595,79 @@ static int fs_iterate_keys(void (*iterfunc)(void *ctx,
 #define NEED_GET_FP 1
 #include "keydb.c"
 
-struct dbfuncs keydb_fs_funcs = {
-	.initdb			= fs_initdb,
-	.cleanupdb		= fs_cleanupdb,
-	.starttrans		= fs_starttrans,
-	.endtrans		= fs_endtrans,
-	.fetch_key_id		= fs_fetch_key_id,
-	.fetch_key_fp		= generic_fetch_key_fp,
-	.fetch_key_text		= fs_fetch_key_text,
-	.fetch_key_skshash	= fs_fetch_key_skshash,
-	.store_key		= fs_store_key,
-	.update_keys		= generic_update_keys,
-	.delete_key		= fs_delete_key,
-	.getkeysigs		= generic_getkeysigs,
-	.cached_getkeysigs	= generic_cached_getkeysigs,
-	.keyid2uid		= generic_keyid2uid,
-	.getfullkeyid		= fs_getfullkeyid,
-	.iterate_keys		= fs_iterate_keys,
-};
+/**
+ *	cleanupdb - De-initialize the key database.
+ */
+static void fs_cleanupdb(struct onak_dbctx *dbctx)
+{
+	struct onak_fs_dbctx *privctx = (struct onak_fs_dbctx *) dbctx->priv;
+
+	/* Mmmm nothing to do here? */
+	close(privctx->lockfile_fd);
+}
+
+/**
+ *	initdb - Initialize the key database.
+ */
+struct onak_dbctx *keydb_fs_init(bool readonly)
+{
+	char buffer[PATH_MAX];
+	struct onak_dbctx *dbctx;
+	struct onak_fs_dbctx *privctx;
+
+	dbctx = malloc(sizeof(struct onak_dbctx));
+	if (dbctx == NULL) {
+		return NULL;
+	}
+	dbctx->priv = privctx = malloc(sizeof(*privctx));
+	if (privctx == NULL) {
+		free(dbctx);
+		return NULL;
+	}
+
+	privctx->lockfile_readonly = readonly;
+
+	snprintf(buffer, sizeof(buffer), "%s/.lock", config.db_dir);
+
+	if (access(config.db_dir, R_OK | W_OK | X_OK) == -1) {
+		if (errno != ENOENT) {
+			logthing(LOGTHING_CRITICAL,
+				 "Unable to access keydb_fs root of '%s'. (%s)",
+				 config.db_dir, strerror(errno));
+			exit(1);	/* Lacking rwx on the key dir */
+		}
+		mkdir(config.db_dir, 0777);
+		privctx->lockfile_fd = open(buffer, O_RDWR | O_CREAT, 0600);
+	}
+	chdir(config.db_dir);
+	if (privctx->lockfile_fd == -1)
+		privctx->lockfile_fd = open(buffer,
+					 (privctx->lockfile_readonly) ?
+					 O_RDONLY : O_RDWR);
+	if (privctx->lockfile_fd == -1)
+		privctx->lockfile_fd = open(buffer, O_RDWR | O_CREAT, 0600);
+	if (privctx->lockfile_fd == -1) {
+		logthing(LOGTHING_CRITICAL,
+			 "Unable to open lockfile '%s'. (%s)",
+			 buffer, strerror(errno));
+		exit(1);	/* Lacking rwx on the key dir */
+	}
+
+	dbctx->cleanupdb		= fs_cleanupdb;
+	dbctx->starttrans		= fs_starttrans;
+	dbctx->endtrans			= fs_endtrans;
+	dbctx->fetch_key_id		= fs_fetch_key_id;
+	dbctx->fetch_key_fp		= generic_fetch_key_fp;
+	dbctx->fetch_key_text		= fs_fetch_key_text;
+	dbctx->fetch_key_skshash	= fs_fetch_key_skshash;
+	dbctx->store_key		= fs_store_key;
+	dbctx->update_keys		= generic_update_keys;
+	dbctx->delete_key		= fs_delete_key;
+	dbctx->getkeysigs		= generic_getkeysigs;
+	dbctx->cached_getkeysigs	= generic_cached_getkeysigs;
+	dbctx->keyid2uid		= generic_keyid2uid;
+	dbctx->getfullkeyid		= fs_getfullkeyid;
+	dbctx->iterate_keys		= fs_iterate_keys;
+
+	return dbctx;
+}

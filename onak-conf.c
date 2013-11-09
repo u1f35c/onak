@@ -28,7 +28,7 @@
 #include "log.h"
 #include "onak-conf.h"
 
-extern struct dbfuncs DBFUNCS;
+extern struct onak_dbctx *DBINIT(bool readonly);
 
 /*
  *	config - Runtime configuration for onak.
@@ -65,7 +65,7 @@ struct onak_config config = {
 	NULL,			/* db_backend */
 	NULL,			/* backends_dir */
 
-	&DBFUNCS,		/* Default dbfuncs struct */
+	DBINIT,			/* Default db initialisation function */
 
 	true,			/* Check packet sig hashes */
 };

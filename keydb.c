@@ -43,14 +43,14 @@
  *	keyid2uid - Takes a keyid and returns the primary UID for it.
  *	@keyid: The keyid to lookup.
  */
-char *generic_keyid2uid(uint64_t keyid)
+char *generic_keyid2uid(struct onak_dbctx *dbctx, uint64_t keyid)
 {
 	struct openpgp_publickey *publickey = NULL;
 	struct openpgp_signedpacket_list *curuid = NULL;
 	char buf[1024];
 
 	buf[0]=0;
-	if (config.dbbackend->fetch_key_id(keyid, &publickey, false) &&
+	if (dbctx->fetch_key_id(dbctx, keyid, &publickey, false) &&
 			publickey != NULL) {
 		curuid = publickey->uids;
 		while (curuid != NULL && buf[0] == 0) {
@@ -82,13 +82,14 @@ char *generic_keyid2uid(uint64_t keyid)
  *	indexing and doing stats bits. If revoked is non-NULL then if the key
  *	is revoked it's set to true.
  */
-struct ll *generic_getkeysigs(uint64_t keyid, bool *revoked)
+struct ll *generic_getkeysigs(struct onak_dbctx *dbctx,
+		uint64_t keyid, bool *revoked)
 {
 	struct ll *sigs = NULL;
 	struct openpgp_signedpacket_list *uids = NULL;
 	struct openpgp_publickey *publickey = NULL;
 
-	config.dbbackend->fetch_key_id(keyid, &publickey, false);
+	dbctx->fetch_key_id(dbctx, keyid, &publickey, false);
 	
 	if (publickey != NULL) {
 		for (uids = publickey->uids; uids != NULL; uids = uids->next) {
@@ -112,7 +113,7 @@ struct ll *generic_getkeysigs(uint64_t keyid, bool *revoked)
  *	getkeysigs function above except we use the hash module to cache the
  *	data so if we need it again it's already loaded.
  */
-struct ll *generic_cached_getkeysigs(uint64_t keyid)
+struct ll *generic_cached_getkeysigs(struct onak_dbctx *dbctx, uint64_t keyid)
 {
 	struct stats_key *key = NULL;
 	struct stats_key *signedkey = NULL;
@@ -127,7 +128,7 @@ struct ll *generic_cached_getkeysigs(uint64_t keyid)
 	key = findinhash(keyid);
 
 	if (key == NULL || key->gotsigs == false) {
-		sigs = config.dbbackend->getkeysigs(keyid, &revoked);
+		sigs = dbctx->getkeysigs(dbctx, keyid, &revoked);
 		if (sigs == NULL) {
 			return NULL;
 		}
@@ -155,12 +156,12 @@ struct ll *generic_cached_getkeysigs(uint64_t keyid)
  *	This function maps a 32bit key id to the full 64bit one. It returns the
  *	full keyid. If the key isn't found a keyid of 0 is returned.
  */
-uint64_t generic_getfullkeyid(uint64_t keyid)
+uint64_t generic_getfullkeyid(struct onak_dbctx *dbctx, uint64_t keyid)
 {
 	struct openpgp_publickey *publickey = NULL;
 
 	if (keyid < 0x100000000LL) {
-		config.dbbackend->fetch_key_id(keyid, &publickey, false);
+		dbctx->fetch_key_id(dbctx, keyid, &publickey, false);
 		if (publickey != NULL) {
 			get_keyid(publickey, &keyid);
 			free_publickey(publickey);
@@ -186,7 +187,8 @@ uint64_t generic_getfullkeyid(uint64_t keyid)
  *	we had before to what we have now (ie the set of data that was added to
  *	the DB). Returns the number of entirely new keys added.
  */
-int generic_update_keys(struct openpgp_publickey **keys, bool sendsync)
+int generic_update_keys(struct onak_dbctx *dbctx,
+		struct openpgp_publickey **keys, bool sendsync)
 {
 	struct openpgp_publickey *curkey = NULL;
 	struct openpgp_publickey *oldkey = NULL;
@@ -196,12 +198,12 @@ int generic_update_keys(struct openpgp_publickey **keys, bool sendsync)
 	uint64_t keyid;
 
 	for (curkey = *keys; curkey != NULL; curkey = curkey->next) {
-		intrans = config.dbbackend->starttrans();
+		intrans = dbctx->starttrans(dbctx);
 		get_keyid(curkey, &keyid);
 		logthing(LOGTHING_INFO,
 			"Fetching key 0x%" PRIX64 ", result: %d",
 			keyid,
-			config.dbbackend->fetch_key_id(keyid, &oldkey,
+			dbctx->fetch_key_id(dbctx, keyid, &oldkey,
 					intrans));
 
 		/*
@@ -227,7 +229,7 @@ int generic_update_keys(struct openpgp_publickey **keys, bool sendsync)
 				prev = curkey;
 				logthing(LOGTHING_INFO,
 					"Merged key; storing updated key.");
-				config.dbbackend->store_key(oldkey, intrans,
+				dbctx->store_key(dbctx, oldkey, intrans,
 					true);
 			}
 			free_publickey(oldkey);
@@ -235,10 +237,10 @@ int generic_update_keys(struct openpgp_publickey **keys, bool sendsync)
 		} else {
 			logthing(LOGTHING_INFO,
 				"Storing completely new key.");
-			config.dbbackend->store_key(curkey, intrans, false);
+			dbctx->store_key(dbctx, curkey, intrans, false);
 			newkeys++;
 		}
-		config.dbbackend->endtrans();
+		dbctx->endtrans(dbctx);
 		intrans = false;
 	}
 
@@ -251,8 +253,9 @@ int generic_update_keys(struct openpgp_publickey **keys, bool sendsync)
 #endif /* NEED_UPDATEKEYS */
 
 #ifdef NEED_GET_FP
-static int generic_fetch_key_fp(uint8_t *fp, size_t fpsize,
-               struct openpgp_publickey **publickey, bool intrans)
+static int generic_fetch_key_fp(struct onak_dbctx *dbctx,
+		uint8_t *fp, size_t fpsize,
+		struct openpgp_publickey **publickey, bool intrans)
 {
 	uint64_t keyid;
 	int i;
@@ -273,6 +276,6 @@ static int generic_fetch_key_fp(uint8_t *fp, size_t fpsize,
 		keyid = (keyid << 8) + fp[i];
 	}
 
-	return config.dbbackend->fetch_key_id(keyid, publickey, intrans);
+	return dbctx->fetch_key_id(dbctx, keyid, publickey, intrans);
 }
 #endif

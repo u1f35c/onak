@@ -33,11 +33,12 @@
 #include "parsekey.h"
 #include "version.h"
 
-static CURL *curl = NULL;
+struct onak_hkp_dbctx {
+	CURL *curl;
+	char hkpbase[1024];
+};
 
-static char hkpbase[1024];
-
-static int hkp_parse_url(const char *url)
+static int hkp_parse_url(struct onak_hkp_dbctx *privctx, const char *url)
 {
 	char proto[6], host[256];
 	unsigned int port;
@@ -65,13 +66,13 @@ static int hkp_parse_url(const char *url)
 		if (port == 0) {
 			port = 11371;
 		}
-		snprintf(hkpbase, sizeof(hkpbase),
+		snprintf(privctx->hkpbase, sizeof(privctx->hkpbase),
 			"http://%s:%u/pks", host, port);
 	} else if (!strcmp(proto, "hkps")) {
 		if (port == 0) {
 			port = 11372;
 		}
-		snprintf(hkpbase, sizeof(hkpbase),
+		snprintf(privctx->hkpbase, sizeof(privctx->hkpbase),
 			"https://%s:%u/pks", host, port);
 	} else if (strcmp(proto, "http") && strcmp(proto, "https")) {
 		logthing(LOGTHING_CRITICAL, "Unknown HKP protocol: %s",
@@ -79,61 +80,15 @@ static int hkp_parse_url(const char *url)
 		ret = 0;
 		goto out;
 	} else if (port == 0) {
-		snprintf(hkpbase, sizeof(hkpbase),
+		snprintf(privctx->hkpbase, sizeof(privctx->hkpbase),
 			"%s://%s/pks", proto, host);
 	} else {
-		snprintf(hkpbase, sizeof(hkpbase),
+		snprintf(privctx->hkpbase, sizeof(privctx->hkpbase),
 			"%s://%s:%u/pks", proto, host, port);
 	}
 
 out:
 	return ret;
-}
-
-/**
- *	cleanupdb - De-initialize the key database.
- *
- *	We cleanup CURL here.
- */
-static void hkp_cleanupdb(void)
-{
-	if (curl) {
-		curl_easy_cleanup(curl);
-		curl = NULL;
-	}
-	curl_global_cleanup();
-}
-
-/**
- *	initdb - Initialize the key database.
- *
- *	We initialize CURL here.
- */
-static void hkp_initdb(bool readonly)
-{
-	curl_version_info_data *curl_info;
-
-	if (!hkp_parse_url(config.db_dir)) {
-		exit(EXIT_FAILURE);
-	}
-	curl_global_init(CURL_GLOBAL_DEFAULT);
-	curl = curl_easy_init();
-	if (curl == NULL) {
-		logthing(LOGTHING_CRITICAL, "Could not initialize CURL.");
-		exit(EXIT_FAILURE);
-	}
-	curl_easy_setopt(curl, CURLOPT_USERAGENT, "onak/" ONAK_VERSION);
-
-	if (strncmp(hkpbase, "https://", 8) == 0) {
-		curl_info = curl_version_info(CURLVERSION_NOW);
-		if (! (curl_info->features & CURL_VERSION_SSL)) {
-			logthing(LOGTHING_CRITICAL,
-				"CURL lacks SSL support; cannot use HKP url: %s",
-				hkpbase);
-			hkp_cleanupdb();
-			exit(EXIT_FAILURE);
-		}
-	}
 }
 
 /**
@@ -147,10 +102,12 @@ static size_t hkp_curl_recv_data(void *buffer, size_t size, size_t nmemb,
 	return (nmemb * size);
 }
 
-static int hkp_fetch_key_url(char *url,
+static int hkp_fetch_key_url(struct onak_dbctx *dbctx,
+		char *url,
 		struct openpgp_publickey **publickey,
 		bool intrans)
 {
+	struct onak_hkp_dbctx *privctx = (struct onak_hkp_dbctx *) dbctx->priv;
 	struct openpgp_packet_list *packets = NULL;
 	CURLcode res;
 	struct buffer_ctx buf;
@@ -160,11 +117,11 @@ static int hkp_fetch_key_url(char *url,
 	buf.size = 8192;
 	buf.buffer = malloc(8192);
 
-	curl_easy_setopt(curl, CURLOPT_URL, url);
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
+	curl_easy_setopt(privctx->curl, CURLOPT_URL, url);
+	curl_easy_setopt(privctx->curl, CURLOPT_WRITEFUNCTION,
 			hkp_curl_recv_data);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buf);
-	res = curl_easy_perform(curl);
+	curl_easy_setopt(privctx->curl, CURLOPT_WRITEDATA, &buf);
+	res = curl_easy_perform(privctx->curl);
 
 	if (res == 0) {
 		buf.offset = 0;
@@ -187,26 +144,30 @@ static int hkp_fetch_key_url(char *url,
 /**
  *	hkp_fetch_key_id - Given a keyid fetch the key from HKP server.
  */
-static int hkp_fetch_key_id(uint64_t keyid,
+static int hkp_fetch_key_id(struct onak_dbctx *dbctx,
+		uint64_t keyid,
 		struct openpgp_publickey **publickey,
 		bool intrans)
 {
+	struct onak_hkp_dbctx *privctx = (struct onak_hkp_dbctx *) dbctx->priv;
 	char keyurl[1024];
 
 	snprintf(keyurl, sizeof(keyurl),
 			"%s/lookup?op=get&search=0x%08" PRIX64,
-			hkpbase, keyid);
+			privctx->hkpbase, keyid);
 
-	return (hkp_fetch_key_url(keyurl, publickey, intrans));
+	return (hkp_fetch_key_url(dbctx, keyurl, publickey, intrans));
 }
 
 /**
  *	hkp_fetch_key_fp - Given a fingerprint fetch the key from HKP server.
  */
-static int hkp_fetch_key_fp(uint8_t *fp, size_t fpsize,
+static int hkp_fetch_key_fp(struct onak_dbctx *dbctx,
+		uint8_t *fp, size_t fpsize,
 		struct openpgp_publickey **publickey,
 		bool intrans)
 {
+	struct onak_hkp_dbctx *privctx = (struct onak_hkp_dbctx *) dbctx->priv;
 	char keyurl[1024];
 	int i, ofs;
 
@@ -215,7 +176,7 @@ static int hkp_fetch_key_fp(uint8_t *fp, size_t fpsize,
 	}
 
 	ofs = snprintf(keyurl, sizeof(keyurl),
-			"%s/lookup?op=get&search=0x", hkpbase);
+			"%s/lookup?op=get&search=0x", privctx->hkpbase);
 
 	if ((ofs + fpsize * 2 + 1)> sizeof(keyurl)) {
 		return 0;
@@ -225,7 +186,7 @@ static int hkp_fetch_key_fp(uint8_t *fp, size_t fpsize,
 		ofs += sprintf(&keyurl[ofs], "%02X", fp[i]);
 	}
 
-	return (hkp_fetch_key_url(keyurl, publickey, intrans));
+	return (hkp_fetch_key_url(dbctx, keyurl, publickey, intrans));
 }
 
 /**
@@ -238,16 +199,18 @@ static int hkp_fetch_key_fp(uint8_t *fp, size_t fpsize,
  *
  *	TODO: Write for flat file access. Some sort of grep?
  */
-static int hkp_fetch_key_text(const char *search,
+static int hkp_fetch_key_text(struct onak_dbctx *dbctx,
+		const char *search,
 		struct openpgp_publickey **publickey)
 {
+	struct onak_hkp_dbctx *privctx = (struct onak_hkp_dbctx *) dbctx->priv;
 	char keyurl[1024];
 
 	snprintf(keyurl, sizeof(keyurl),
 			"%s/lookup?op=get&search=%s",
-			hkpbase, search);
+			privctx->hkpbase, search);
 
-	return (hkp_fetch_key_url(keyurl, publickey, false));
+	return (hkp_fetch_key_url(dbctx, keyurl, publickey, false));
 }
 
 /**
@@ -257,9 +220,11 @@ static int hkp_fetch_key_text(const char *search,
  *	@update: If true the key exists and should be updated.
  *
  */
-static int hkp_store_key(struct openpgp_publickey *publickey, bool intrans,
+static int hkp_store_key(struct onak_dbctx *dbctx,
+		struct openpgp_publickey *publickey, bool intrans,
 		bool update)
 {
+	struct onak_hkp_dbctx *privctx = (struct onak_hkp_dbctx *) dbctx->priv;
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_packet_list *list_end = NULL;
 	char keyurl[1024];
@@ -274,18 +239,18 @@ static int hkp_store_key(struct openpgp_publickey *publickey, bool intrans,
 
 	flatten_publickey(publickey, &packets, &list_end);
 	armor_openpgp_stream(buffer_putchar, &buf, packets);
-	addform = curl_easy_escape(curl, buf.buffer, buf.offset);
+	addform = curl_easy_escape(privctx->curl, buf.buffer, buf.offset);
 	addform[7] = '=';
 
-	snprintf(keyurl, sizeof(keyurl), "%s/add", hkpbase);
+	snprintf(keyurl, sizeof(keyurl), "%s/add", privctx->hkpbase);
 
-	curl_easy_setopt(curl, CURLOPT_URL, keyurl);
-	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, addform);
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
+	curl_easy_setopt(privctx->curl, CURLOPT_URL, keyurl);
+	curl_easy_setopt(privctx->curl, CURLOPT_POSTFIELDS, addform);
+	curl_easy_setopt(privctx->curl, CURLOPT_WRITEFUNCTION,
 			hkp_curl_recv_data);
 	buf.offset = 0;
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buf);
-	res = curl_easy_perform(curl);
+	curl_easy_setopt(privctx->curl, CURLOPT_WRITEDATA, &buf);
+	res = curl_easy_perform(privctx->curl);
 
 	if (res != 0) {
 		logthing(LOGTHING_ERROR, "Couldn't send key: %s (%d)",
@@ -309,7 +274,8 @@ static int hkp_store_key(struct openpgp_publickey *publickey, bool intrans,
  *
  *	No op for HKP.
  */
-static int hkp_delete_key(uint64_t keyid, bool intrans)
+static int hkp_delete_key(struct onak_dbctx *dbctx,
+		uint64_t keyid, bool intrans)
 {
 	return -1;
 }
@@ -321,8 +287,9 @@ static int hkp_delete_key(uint64_t keyid, bool intrans)
  *
  *	Not applicable for HKP backend.
  */
-static int hkp_iterate_keys(void (*iterfunc)(void *ctx,
-		struct openpgp_publickey *key),	void *ctx)
+static int hkp_iterate_keys(struct onak_dbctx *dbctx,
+		void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
+		void *ctx)
 {
 	return 0;
 }
@@ -332,7 +299,7 @@ static int hkp_iterate_keys(void (*iterfunc)(void *ctx,
  *
  *	This is just a no-op for HKP access.
  */
-static bool hkp_starttrans(void)
+static bool hkp_starttrans(struct onak_dbctx *dbctx)
 {
 	return true;
 }
@@ -342,7 +309,7 @@ static bool hkp_starttrans(void)
  *
  *	This is just a no-op for HKP access.
  */
-static void hkp_endtrans(void)
+static void hkp_endtrans(struct onak_dbctx *dbctx)
 {
 	return;
 }
@@ -356,20 +323,81 @@ static void hkp_endtrans(void)
 #define NEED_UPDATEKEYS 1
 #include "keydb.c"
 
-struct dbfuncs keydb_hkp_funcs = {
-	.initdb			= hkp_initdb,
-	.cleanupdb		= hkp_cleanupdb,
-	.starttrans		= hkp_starttrans,
-	.endtrans		= hkp_endtrans,
-	.fetch_key_id		= hkp_fetch_key_id,
-	.fetch_key_fp		= hkp_fetch_key_fp,
-	.fetch_key_text		= hkp_fetch_key_text,
-	.store_key		= hkp_store_key,
-	.update_keys		= generic_update_keys,
-	.delete_key		= hkp_delete_key,
-	.getkeysigs		= generic_getkeysigs,
-	.cached_getkeysigs	= generic_cached_getkeysigs,
-	.keyid2uid		= generic_keyid2uid,
-	.getfullkeyid		= generic_getfullkeyid,
-	.iterate_keys		= hkp_iterate_keys,
-};
+/**
+ *	cleanupdb - De-initialize the key database.
+ *
+ *	We cleanup CURL here.
+ */
+static void hkp_cleanupdb(struct onak_dbctx *dbctx)
+{
+	struct onak_hkp_dbctx *privctx = (struct onak_hkp_dbctx *) dbctx->priv;
+
+	if (privctx->curl) {
+		curl_easy_cleanup(privctx->curl);
+		privctx->curl = NULL;
+	}
+	curl_global_cleanup();
+	free(privctx);
+	free(dbctx);
+}
+
+/**
+ *	initdb - Initialize the key database.
+ *
+ *	We initialize CURL here.
+ */
+struct onak_dbctx *keydb_hkp_init(bool readonly)
+{
+	struct onak_dbctx *dbctx;
+	struct onak_hkp_dbctx *privctx;
+	curl_version_info_data *curl_info;
+
+	dbctx = malloc(sizeof(struct onak_dbctx));
+	if (dbctx == NULL) {
+		return NULL;
+	}
+
+	dbctx->priv = privctx = malloc(sizeof(*privctx));
+	dbctx->cleanupdb		= hkp_cleanupdb;
+	dbctx->starttrans		= hkp_starttrans;
+	dbctx->endtrans			= hkp_endtrans;
+	dbctx->fetch_key_id		= hkp_fetch_key_id;
+	dbctx->fetch_key_fp		= hkp_fetch_key_fp;
+	dbctx->fetch_key_text		= hkp_fetch_key_text;
+	dbctx->store_key		= hkp_store_key;
+	dbctx->update_keys		= generic_update_keys;
+	dbctx->delete_key		= hkp_delete_key;
+	dbctx->getkeysigs		= generic_getkeysigs;
+	dbctx->cached_getkeysigs	= generic_cached_getkeysigs;
+	dbctx->keyid2uid		= generic_keyid2uid;
+	dbctx->getfullkeyid		= generic_getfullkeyid;
+	dbctx->iterate_keys		= hkp_iterate_keys;
+
+	if (!hkp_parse_url(privctx, config.db_dir)) {
+		exit(EXIT_FAILURE);
+	}
+	curl_global_init(CURL_GLOBAL_DEFAULT);
+	privctx->curl = curl_easy_init();
+	if (privctx->curl == NULL) {
+		logthing(LOGTHING_CRITICAL, "Could not initialize CURL.");
+		hkp_cleanupdb(dbctx);
+		dbctx = NULL;
+		exit(EXIT_FAILURE);
+	}
+	curl_easy_setopt(privctx->curl, CURLOPT_USERAGENT,
+		"onak/" ONAK_VERSION);
+
+	if (strncmp(privctx->hkpbase, "https://", 8) == 0) {
+		curl_info = curl_version_info(CURLVERSION_NOW);
+		if (! (curl_info->features & CURL_VERSION_SSL)) {
+			logthing(LOGTHING_CRITICAL,
+				"CURL lacks SSL support; cannot use HKP url: %s",
+				privctx->hkpbase);
+			hkp_cleanupdb(dbctx);
+			dbctx = NULL;
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	return dbctx;
+}

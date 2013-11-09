@@ -33,6 +33,7 @@ key_getsigns - get the keys a key signs. */
 #include <inttypes.h>
 #include <stdbool.h>
 
+#include "keydb.h"
 #include "ll.h"
 
 /**
@@ -75,7 +76,8 @@ void initcolour(bool parent);
  *	key we have. It returns as soon as a path is found or when we run out
  *	of keys; whichever comes sooner.
  */
-unsigned long findpath(struct stats_key *have, struct stats_key *want);
+unsigned long findpath(struct onak_dbctx *dbctx,
+		struct stats_key *have, struct stats_key *want);
 
 /**
  *	dofindpath - Given 2 keys displays a path between them.
@@ -88,8 +90,9 @@ unsigned long findpath(struct stats_key *have, struct stats_key *want);
  *	key we have. It returns as soon as a path is found or when we run out
  *	of keys; whichever comes sooner.
  */
-void dofindpath(uint64_t have, uint64_t want, bool html, int count);
+void dofindpath(struct onak_dbctx *dbctx,
+		uint64_t have, uint64_t want, bool html, int count);
 
-struct stats_key *furthestkey(struct stats_key *have);
+struct stats_key *furthestkey(struct onak_dbctx *dbctx, struct stats_key *have);
 
 #endif /* __STATS_H__ */

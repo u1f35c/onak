@@ -38,29 +38,11 @@
 #include "parsekey.h"
 
 /**
- *	initdb - Initialize the key database.
- *
- *	This is just a no-op for flat file access.
- */
-static void file_initdb(bool readonly)
-{
-}
-
-/**
- *	cleanupdb - De-initialize the key database.
- *
- *	This is just a no-op for flat file access.
- */
-static void file_cleanupdb(void)
-{
-}
-
-/**
  *	starttrans - Start a transaction.
  *
  *	This is just a no-op for flat file access.
  */
-static bool file_starttrans(void)
+static bool file_starttrans(struct onak_dbctx *dbctx)
 {
 	return true;
 }
@@ -70,7 +52,7 @@ static bool file_starttrans(void)
  *
  *	This is just a no-op for flat file access.
  */
-static void file_endtrans(void)
+static void file_endtrans(struct onak_dbctx *dbctx)
 {
 	return;
 }
@@ -87,15 +69,17 @@ static void file_endtrans(void)
  *	in and then parse_keys() to parse the packets into a publickey
  *	structure.
  */
-static int file_fetch_key_id(uint64_t keyid,
+static int file_fetch_key_id(struct onak_dbctx *dbctx,
+		uint64_t keyid,
 		struct openpgp_publickey **publickey,
 		bool intrans)
 {
+	char *db_dir = (char *) dbctx->priv;
 	struct openpgp_packet_list *packets = NULL;
 	char keyfile[1024];
 	int fd = -1;
 
-	snprintf(keyfile, 1023, "%s/0x%" PRIX64, config.db_dir,
+	snprintf(keyfile, 1023, "%s/0x%" PRIX64, db_dir,
 			keyid & 0xFFFFFFFF);
 	fd = open(keyfile, O_RDONLY); // | O_SHLOCK);
 
@@ -121,9 +105,11 @@ static int file_fetch_key_id(uint64_t keyid,
  *	packets and then use write_openpgp_stream() to write the stream out to
  *	the file.
  */
-static int file_store_key(struct openpgp_publickey *publickey, bool intrans,
+static int file_store_key(struct onak_dbctx *dbctx,
+		struct openpgp_publickey *publickey, bool intrans,
 		bool update)
 {
+	char *db_dir = (char *) dbctx->priv;
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_packet_list *list_end = NULL;
 	struct openpgp_publickey *next = NULL;
@@ -135,7 +121,7 @@ static int file_store_key(struct openpgp_publickey *publickey, bool intrans,
 		logthing(LOGTHING_ERROR, "Couldn't find key ID for key.");
 		return 0;
 	}
-	snprintf(keyfile, 1023, "%s/0x%" PRIX64, config.db_dir,
+	snprintf(keyfile, 1023, "%s/0x%" PRIX64, db_dir,
 			keyid & 0xFFFFFFFF);
 	fd = open(keyfile, O_WRONLY | O_CREAT, 0664); // | O_EXLOCK);
 
@@ -162,11 +148,13 @@ static int file_store_key(struct openpgp_publickey *publickey, bool intrans,
  *	This function deletes a public key from whatever storage mechanism we
  *	are using. Returns 0 if the key existed.
  */
-static int file_delete_key(uint64_t keyid, bool intrans)
+static int file_delete_key(struct onak_dbctx *dbctx,
+		uint64_t keyid, bool intrans)
 {
+	char *db_dir = (char *) dbctx->priv;
 	char keyfile[1024];
 
-	snprintf(keyfile, 1023, "%s/0x%" PRIX64, config.db_dir,
+	snprintf(keyfile, 1023, "%s/0x%" PRIX64, db_dir,
 			keyid & 0xFFFFFFFF);
 
 	return unlink(keyfile);
@@ -182,7 +170,8 @@ static int file_delete_key(uint64_t keyid, bool intrans)
  *
  *	TODO: Write for flat file access. Some sort of grep?
  */
-static int file_fetch_key_text(const char *search,
+static int file_fetch_key_text(struct onak_dbctx *dbctx,
+		const char *search,
 		struct openpgp_publickey **publickey)
 {
 	return 0;
@@ -199,9 +188,11 @@ static int file_fetch_key_text(const char *search,
  *
  *	Returns the number of keys we iterated over.
  */
-static int file_iterate_keys(void (*iterfunc)(void *ctx,
-		struct openpgp_publickey *key),	void *ctx)
+static int file_iterate_keys(struct onak_dbctx *dbctx,
+		void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
+		void *ctx)
 {
+	char *db_dir = (char *) dbctx->priv;
 	int                         numkeys = 0;
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_publickey   *key = NULL;
@@ -210,14 +201,14 @@ static int file_iterate_keys(void (*iterfunc)(void *ctx,
 	int                         fd = -1;
 	struct dirent              *curfile = NULL;
 
-	dir = opendir(config.db_dir);
+	dir = opendir(db_dir);
 
 	if (dir != NULL) {
 		while ((curfile = readdir(dir)) != NULL) {
 			if (curfile->d_name[0] == '0' &&
 					curfile->d_name[1] == 'x') {
 				snprintf(keyfile, 1023, "%s/%s",
-						config.db_dir,
+						db_dir,
 						curfile->d_name);
 				fd = open(keyfile, O_RDONLY);
 
@@ -257,20 +248,53 @@ static int file_iterate_keys(void (*iterfunc)(void *ctx,
 #define NEED_GET_FP 1
 #include "keydb.c"
 
-struct dbfuncs keydb_file_funcs = {
-	.initdb			= file_initdb,
-	.cleanupdb		= file_cleanupdb,
-	.starttrans		= file_starttrans,
-	.endtrans		= file_endtrans,
-	.fetch_key_id		= file_fetch_key_id,
-	.fetch_key_fp		= generic_fetch_key_fp,
-	.fetch_key_text		= file_fetch_key_text,
-	.store_key		= file_store_key,
-	.update_keys		= generic_update_keys,
-	.delete_key		= file_delete_key,
-	.getkeysigs		= generic_getkeysigs,
-	.cached_getkeysigs	= generic_cached_getkeysigs,
-	.keyid2uid		= generic_keyid2uid,
-	.getfullkeyid		= generic_getfullkeyid,
-	.iterate_keys		= file_iterate_keys,
-};
+/**
+ *	cleanupdb - De-initialize the key database.
+ *
+ *	This is just a no-op for flat file access.
+ */
+static void file_cleanupdb(struct onak_dbctx *dbctx)
+{
+	if (dbctx->priv != NULL) {
+		free(dbctx->priv);
+		dbctx->priv = NULL;
+	}
+
+	if (dbctx != NULL) {
+		free(dbctx);
+	}
+}
+
+/**
+ *	initdb - Initialize the key database.
+ *
+ *	This is just a no-op for flat file access.
+ */
+struct onak_dbctx *keydb_file_init(bool readonly)
+{
+	struct onak_dbctx *dbctx;
+
+	dbctx = malloc(sizeof(struct onak_dbctx));
+	if (dbctx == NULL) {
+		return NULL;
+	}
+
+	dbctx->priv = strdup(config.db_dir);
+
+	dbctx->cleanupdb		= file_cleanupdb;
+	dbctx->starttrans		= file_starttrans;
+	dbctx->endtrans			= file_endtrans;
+	dbctx->fetch_key_id		= file_fetch_key_id;
+	dbctx->fetch_key_fp		= generic_fetch_key_fp;
+	dbctx->fetch_key_text		= file_fetch_key_text;
+	dbctx->store_key		= file_store_key;
+	dbctx->update_keys		= generic_update_keys;
+	dbctx->delete_key		= file_delete_key;
+	dbctx->getkeysigs		= generic_getkeysigs;
+	dbctx->cached_getkeysigs	= generic_cached_getkeysigs;
+	dbctx->keyid2uid		= generic_keyid2uid;
+	dbctx->getfullkeyid		= generic_getfullkeyid;
+	dbctx->iterate_keys		= file_iterate_keys;
+
+	return dbctx;
+}

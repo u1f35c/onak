@@ -30,7 +30,7 @@
 #include "onak-conf.h"
 #include "stats.h"
 
-void findmaxpath(unsigned long max)
+void findmaxpath(struct onak_dbctx *dbctx, unsigned long max)
 {
 	struct stats_key *from, *to, *tmp;
 	struct ll *curkey;
@@ -43,7 +43,7 @@ void findmaxpath(unsigned long max)
 	 * My (noodles@earth.li, RSA) key is in the strongly connected set of
 	 * keys, so we use it as a suitable starting seed.
 	 */
-	config.dbbackend->cached_getkeysigs(0x94FA372B2DA8B985);
+	dbctx->cached_getkeysigs(dbctx, 0x94FA372B2DA8B985);
 
 	/*
 	 * Loop through the hash examining each key present and finding the
@@ -54,11 +54,11 @@ void findmaxpath(unsigned long max)
 	for (loop = 0; (loop < HASHSIZE) && (distance < max); loop++) {
 		curkey = gethashtableentry(loop);
 		while (curkey != NULL && distance < max) {
-			config.dbbackend->cached_getkeysigs(
+			dbctx->cached_getkeysigs(dbctx,
 					((struct stats_key *)
 					curkey->object)->keyid);
 			initcolour(false);
-			tmp = furthestkey((struct stats_key *)
+			tmp = furthestkey(dbctx, (struct stats_key *)
 						curkey->object);
 			if (tmp->colour > distance) {
 				from = (struct stats_key *)curkey->object;
@@ -79,13 +79,14 @@ void findmaxpath(unsigned long max)
 			from->keyid,
 			to->keyid,
 			distance);
-	dofindpath(to->keyid, from->keyid, false, 1);
+	dofindpath(dbctx, to->keyid, from->keyid, false, 1);
 }
 
 int main(int argc, char *argv[])
 {
 	int optchar;
 	char *configfile = NULL;
+	struct onak_dbctx *dbctx;
 
 	while ((optchar = getopt(argc, argv, "c:")) != -1 ) {
 		switch (optchar) {
@@ -97,13 +98,17 @@ int main(int argc, char *argv[])
 
 	readconfig(configfile);
 	initlogthing("maxpath", config.logfile);
-	config.dbbackend->initdb(true);
-	inithash();
-	findmaxpath(30);
-	printf("--------\n");
-	findmaxpath(30);
-	destroyhash();
-	config.dbbackend->cleanupdb();
+	dbctx = config.dbinit(true);
+	if (dbctx != NULL) {
+		inithash();
+		findmaxpath(dbctx, 30);
+		printf("--------\n");
+		findmaxpath(dbctx, 30);
+		destroyhash();
+		dbctx->cleanupdb(dbctx);
+	} else {
+		fprintf(stderr, "Couldn't initialize key database.\n");
+	}
 	cleanuplogthing();
 	cleanupconfig();
 	

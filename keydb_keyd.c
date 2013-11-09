@@ -38,130 +38,13 @@
 #include "parsekey.h"
 
 /**
- *	keyd_fd - our file descriptor for the socket connection to keyd.
- */
-static int keyd_fd = -1;
-
-/**
- *	initdb - Initialize the key database.
- *	@readonly: If we'll only be reading the DB, not writing to it.
- *
- *	This function should be called before any of the other functions in
- *	this file are called in order to allow the DB to be initialized ready
- *	for access.
- */
-static void keyd_initdb(bool readonly)
-{
-	struct sockaddr_un sock;
-	uint32_t	   cmd = KEYD_CMD_UNKNOWN;
-	uint32_t	   reply = KEYD_REPLY_UNKNOWN_CMD;
-	ssize_t		   count;
-
-	keyd_fd = socket(PF_UNIX, SOCK_STREAM, 0);
-	if (keyd_fd < 0) {
-		logthing(LOGTHING_CRITICAL,
-				"Couldn't open socket: %s (%d)",
-				strerror(errno),
-				errno);
-		exit(EXIT_FAILURE);
-	}
-
-	sock.sun_family = AF_UNIX;
-	snprintf(sock.sun_path, sizeof(sock.sun_path) - 1, "%s/%s",
-			config.db_dir,
-			KEYD_SOCKET);
-	if (connect(keyd_fd, (struct sockaddr *) &sock, sizeof(sock)) < 0) {
-		logthing(LOGTHING_CRITICAL,
-				"Couldn't connect to socket %s: %s (%d)",
-				sock.sun_path,
-				strerror(errno),
-				errno);
-		exit(EXIT_FAILURE);
-	}
-
-	cmd = KEYD_CMD_VERSION;
-	if (write(keyd_fd, &cmd, sizeof(cmd)) != sizeof(cmd)) {
-		logthing(LOGTHING_CRITICAL,
-				"Couldn't write version cmd: %s (%d)",
-				strerror(errno),
-				errno);
-	} else {
-		count = read(keyd_fd, &reply, sizeof(reply));
-		if (count == sizeof(reply) && reply == KEYD_REPLY_OK) {
-			count = read(keyd_fd, &reply, sizeof(reply));
-			if (count != sizeof(reply) || reply != sizeof(reply)) {
-				logthing(LOGTHING_CRITICAL,
-					"Error! Unexpected keyd version "
-					"length: %d != %d",
-					reply, sizeof(reply));
-				exit(EXIT_FAILURE);
-			}
-
-			count = read(keyd_fd, &reply, sizeof(reply));
-			logthing(LOGTHING_DEBUG,
-					"keyd protocol version %d",
-					reply);
-			if (reply != keyd_version) {
-				logthing(LOGTHING_CRITICAL,
-					"Error! keyd protocol version "
-					"mismatch. (us = %d, it = %d)",
-						keyd_version, reply);
-			}
-		}
-	}
-
-	return;
-}
-
-/**
- *	cleanupdb - De-initialize the key database.
- *
- *	This function should be called upon program exit to allow the DB to
- *	cleanup after itself.
- */
-static void keyd_cleanupdb(void)
-{
-	uint32_t cmd = KEYD_CMD_CLOSE;
-
-	if (write(keyd_fd, &cmd, sizeof(cmd)) != sizeof(cmd)) {
-		logthing(LOGTHING_CRITICAL,
-				"Couldn't send close cmd: %s (%d)",
-				strerror(errno),
-				errno);
-	}
-	
-	if (read(keyd_fd, &cmd, sizeof(cmd)) != sizeof(cmd)) {
-		logthing(LOGTHING_CRITICAL,
-			"Couldn't read close cmd reply: %s (%d)",
-			strerror(errno),
-			errno);
-	} else if (cmd != KEYD_REPLY_OK) {
-		logthing(LOGTHING_CRITICAL,
-			"Got bad reply to KEYD_CMD_CLOSE: %d", cmd);
-	}
-
-	if (shutdown(keyd_fd, SHUT_RDWR) < 0) {
-		logthing(LOGTHING_NOTICE, "Error shutting down socket: %d",
-				errno);
-	}
-	if (close(keyd_fd) < 0) {
-		logthing(LOGTHING_NOTICE, "Error closing down socket: %d",
-				errno);
-	}
-	keyd_fd = -1;
-
-	return;
-}
-
-
-/**
  *	starttrans - Start a transaction.
  *
  *	Start a transaction. Intended to be used if we're about to perform many
  *	operations on the database to help speed it all up, or if we want
  *	something to only succeed if all relevant operations are successful.
  */
-static bool keyd_starttrans(void)
+static bool keyd_starttrans(struct onak_dbctx *dbctx)
 {
 	return true;
 }
@@ -171,7 +54,7 @@ static bool keyd_starttrans(void)
  *
  *	Ends a transaction.
  */
-static void keyd_endtrans(void)
+static void keyd_endtrans(struct onak_dbctx *dbctx)
 {
 	return;
 }
@@ -187,10 +70,12 @@ static void keyd_endtrans(void)
  *
  *      TODO: What about keyid collisions? Should we use fingerprint instead?
  */
-static int keyd_fetch_key_id(uint64_t keyid,
+static int keyd_fetch_key_id(struct onak_dbctx *dbctx,
+		uint64_t keyid,
 		struct openpgp_publickey **publickey,
 		bool intrans)
 {
+	int keyd_fd = (intptr_t) dbctx->priv;
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
 	uint32_t                    cmd = KEYD_CMD_GET_ID;
@@ -230,10 +115,12 @@ static int keyd_fetch_key_id(uint64_t keyid,
 	return (count > 0) ? 1 : 0;
 }
 
-static int keyd_fetch_key_fp(uint8_t *fp, size_t fpsize,
+static int keyd_fetch_key_fp(struct onak_dbctx *dbctx,
+		uint8_t *fp, size_t fpsize,
 		struct openpgp_publickey **publickey,
 		bool intrans)
 {
+	int keyd_fd = (intptr_t) dbctx->priv;
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
 	uint32_t                    cmd = KEYD_CMD_GET_FP;
@@ -288,8 +175,10 @@ static int keyd_fetch_key_fp(uint8_t *fp, size_t fpsize,
 *	This function deletes a public key from whatever storage mechanism we
 *	are using. Returns 0 if the key existed.
 */
-static int keyd_delete_key(uint64_t keyid, bool intrans)
+static int keyd_delete_key(struct onak_dbctx *dbctx,
+		uint64_t keyid, bool intrans)
 {
+	int keyd_fd = (intptr_t) dbctx->priv;
 	uint32_t cmd = KEYD_CMD_DELETE;
 
 	write(keyd_fd, &cmd, sizeof(cmd));
@@ -315,9 +204,11 @@ static int keyd_delete_key(uint64_t keyid, bool intrans)
  *	TODO: Do we store multiple keys of the same id? Or only one and replace
  *	it?
  */
-static int keyd_store_key(struct openpgp_publickey *publickey, bool intrans,
+static int keyd_store_key(struct onak_dbctx *dbctx,
+		struct openpgp_publickey *publickey, bool intrans,
 		bool update)
 {
+	int keyd_fd = (intptr_t) dbctx->priv;
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_packet_list *list_end = NULL;
@@ -329,9 +220,9 @@ static int keyd_store_key(struct openpgp_publickey *publickey, bool intrans,
 		logthing(LOGTHING_ERROR, "Couldn't find key ID for key.");
 		return 0;
 	}
-	
+
 	if (update) {
-		keyd_delete_key(keyid, false);
+		keyd_delete_key(dbctx, keyid, false);
 	}
 
 	write(keyd_fd, &cmd, sizeof(cmd));
@@ -359,7 +250,7 @@ static int keyd_store_key(struct openpgp_publickey *publickey, bool intrans,
 		keybuf.buffer = NULL;
 		keybuf.size = keybuf.offset = 0;
 	}
-	
+
 	return 0;
 }
 
@@ -371,9 +262,11 @@ static int keyd_store_key(struct openpgp_publickey *publickey, bool intrans,
  *	This function searches for the supplied text and returns the keys that
  *	contain it.
  */
-static int keyd_fetch_key_text(const char *search,
+static int keyd_fetch_key_text(struct onak_dbctx *dbctx,
+		const char *search,
 		struct openpgp_publickey **publickey)
 {
+	int keyd_fd = (intptr_t) dbctx->priv;
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
 	uint32_t                    cmd = KEYD_CMD_GET_TEXT;
@@ -411,15 +304,17 @@ static int keyd_fetch_key_text(const char *search,
 			keybuf.size = 0;
 		}
 	}
-	
+
 	return (count > 0) ? 1 : 0;
 
 	return 0;
 }
 
-static int keyd_fetch_key_skshash(const struct skshash *hash,
+static int keyd_fetch_key_skshash(struct onak_dbctx *dbctx,
+		const struct skshash *hash,
 		struct openpgp_publickey **publickey)
 {
+	int keyd_fd = (intptr_t) dbctx->priv;
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
 	uint32_t                    cmd = KEYD_CMD_GET_SKSHASH;
@@ -455,7 +350,7 @@ static int keyd_fetch_key_skshash(const struct skshash *hash,
 			keybuf.size = 0;
 		}
 	}
-	
+
 	return (count > 0) ? 1 : 0;
 }
 
@@ -467,8 +362,9 @@ static int keyd_fetch_key_skshash(const struct skshash *hash,
  *	This function maps a 32bit key id to the full 64bit one. It returns the
  *	full keyid. If the key isn't found a keyid of 0 is returned.
  */
-static uint64_t keyd_getfullkeyid(uint64_t keyid)
+static uint64_t keyd_getfullkeyid(struct onak_dbctx *dbctx, uint64_t keyid)
 {
+	int keyd_fd = (intptr_t) dbctx->priv;
 	uint32_t cmd = KEYD_CMD_GETFULLKEYID;
 
 	write(keyd_fd, &cmd, sizeof(cmd));
@@ -496,9 +392,11 @@ static uint64_t keyd_getfullkeyid(uint64_t keyid)
  *
  *	Returns the number of keys we iterated over.
  */
-static int keyd_iterate_keys(void (*iterfunc)(void *ctx,
+static int keyd_iterate_keys(struct onak_dbctx *dbctx,
+		void (*iterfunc)(void *ctx,
 		struct openpgp_publickey *key),	void *ctx)
 {
+	int keyd_fd = (intptr_t) dbctx->priv;
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_publickey   *key = NULL;
@@ -546,7 +444,7 @@ static int keyd_iterate_keys(void (*iterfunc)(void *ctx,
 			read(keyd_fd, &keybuf.size, sizeof(keybuf.size));
 		}
 	}
-	
+
 	return numkeys;
 }
 
@@ -555,21 +453,140 @@ static int keyd_iterate_keys(void (*iterfunc)(void *ctx,
 #define NEED_UPDATEKEYS 1
 #include "keydb.c"
 
-struct dbfuncs keydb_keyd_funcs = {
-	.initdb			= keyd_initdb,
-	.cleanupdb		= keyd_cleanupdb,
-	.starttrans		= keyd_starttrans,
-	.endtrans		= keyd_endtrans,
-	.fetch_key_id		= keyd_fetch_key_id,
-	.fetch_key_fp		= keyd_fetch_key_fp,
-	.fetch_key_text		= keyd_fetch_key_text,
-	.fetch_key_skshash	= keyd_fetch_key_skshash,
-	.store_key		= keyd_store_key,
-	.update_keys		= generic_update_keys,
-	.delete_key		= keyd_delete_key,
-	.getkeysigs		= generic_getkeysigs,
-	.cached_getkeysigs	= generic_cached_getkeysigs,
-	.keyid2uid		= generic_keyid2uid,
-	.getfullkeyid		= keyd_getfullkeyid,
-	.iterate_keys		= keyd_iterate_keys,
-};
+/**
+ *	cleanupdb - De-initialize the key database.
+ *
+ *	This function should be called upon program exit to allow the DB to
+ *	cleanup after itself.
+ */
+static void keyd_cleanupdb(struct onak_dbctx *dbctx)
+{
+	int keyd_fd = (intptr_t) dbctx->priv;
+	uint32_t cmd = KEYD_CMD_CLOSE;
+
+	if (write(keyd_fd, &cmd, sizeof(cmd)) != sizeof(cmd)) {
+		logthing(LOGTHING_CRITICAL,
+				"Couldn't send close cmd: %s (%d)",
+				strerror(errno),
+				errno);
+	}
+
+	if (read(keyd_fd, &cmd, sizeof(cmd)) != sizeof(cmd)) {
+		logthing(LOGTHING_CRITICAL,
+			"Couldn't read close cmd reply: %s (%d)",
+			strerror(errno),
+			errno);
+	} else if (cmd != KEYD_REPLY_OK) {
+		logthing(LOGTHING_CRITICAL,
+			"Got bad reply to KEYD_CMD_CLOSE: %d", cmd);
+	}
+
+	if (shutdown(keyd_fd, SHUT_RDWR) < 0) {
+		logthing(LOGTHING_NOTICE, "Error shutting down socket: %d",
+				errno);
+	}
+	if (close(keyd_fd) < 0) {
+		logthing(LOGTHING_NOTICE, "Error closing down socket: %d",
+				errno);
+	}
+	keyd_fd = -1;
+
+	free(dbctx);
+
+	return;
+}
+
+/**
+ *	initdb - Initialize the key database.
+ *	@readonly: If we'll only be reading the DB, not writing to it.
+ *
+ *	This function should be called before any of the other functions in
+ *	this file are called in order to allow the DB to be initialized ready
+ *	for access.
+ */
+struct onak_dbctx *keydb_keyd_init(bool readonly)
+{
+	struct sockaddr_un sock;
+	uint32_t	   cmd = KEYD_CMD_UNKNOWN;
+	uint32_t	   reply = KEYD_REPLY_UNKNOWN_CMD;
+	ssize_t		   count;
+	int keyd_fd;
+	struct onak_dbctx *dbctx;
+
+	dbctx = malloc(sizeof(*dbctx));
+	if (dbctx == NULL) {
+		return NULL;
+	}
+
+	keyd_fd = socket(PF_UNIX, SOCK_STREAM, 0);
+	if (keyd_fd < 0) {
+		logthing(LOGTHING_CRITICAL,
+				"Couldn't open socket: %s (%d)",
+				strerror(errno),
+				errno);
+		exit(EXIT_FAILURE);
+	}
+
+	sock.sun_family = AF_UNIX;
+	snprintf(sock.sun_path, sizeof(sock.sun_path) - 1, "%s/%s",
+			config.db_dir,
+			KEYD_SOCKET);
+	if (connect(keyd_fd, (struct sockaddr *) &sock, sizeof(sock)) < 0) {
+		logthing(LOGTHING_CRITICAL,
+				"Couldn't connect to socket %s: %s (%d)",
+				sock.sun_path,
+				strerror(errno),
+				errno);
+		exit(EXIT_FAILURE);
+	}
+
+	cmd = KEYD_CMD_VERSION;
+	if (write(keyd_fd, &cmd, sizeof(cmd)) != sizeof(cmd)) {
+		logthing(LOGTHING_CRITICAL,
+				"Couldn't write version cmd: %s (%d)",
+				strerror(errno),
+				errno);
+	} else {
+		count = read(keyd_fd, &reply, sizeof(reply));
+		if (count == sizeof(reply) && reply == KEYD_REPLY_OK) {
+			count = read(keyd_fd, &reply, sizeof(reply));
+			if (count != sizeof(reply) || reply != sizeof(reply)) {
+				logthing(LOGTHING_CRITICAL,
+					"Error! Unexpected keyd version "
+					"length: %d != %d",
+					reply, sizeof(reply));
+				exit(EXIT_FAILURE);
+			}
+
+			count = read(keyd_fd, &reply, sizeof(reply));
+			logthing(LOGTHING_DEBUG,
+					"keyd protocol version %d",
+					reply);
+			if (reply != keyd_version) {
+				logthing(LOGTHING_CRITICAL,
+					"Error! keyd protocol version "
+					"mismatch. (us = %d, it = %d)",
+						keyd_version, reply);
+			}
+		}
+	}
+
+	dbctx->priv			= (void *) (intptr_t) keyd_fd;
+	dbctx->cleanupdb		= keyd_cleanupdb;
+	dbctx->starttrans		= keyd_starttrans;
+	dbctx->endtrans			= keyd_endtrans;
+	dbctx->fetch_key_id		= keyd_fetch_key_id;
+	dbctx->fetch_key_fp		= keyd_fetch_key_fp;
+	dbctx->fetch_key_text		= keyd_fetch_key_text;
+	dbctx->fetch_key_skshash	= keyd_fetch_key_skshash;
+	dbctx->store_key		= keyd_store_key;
+	dbctx->update_keys		= generic_update_keys;
+	dbctx->delete_key		= keyd_delete_key;
+	dbctx->getkeysigs		= generic_getkeysigs;
+	dbctx->cached_getkeysigs	= generic_cached_getkeysigs;
+	dbctx->keyid2uid		= generic_keyid2uid;
+	dbctx->getfullkeyid		= keyd_getfullkeyid;
+	dbctx->iterate_keys		= keyd_iterate_keys;
+
+	return dbctx;
+}

@@ -144,7 +144,7 @@ int sock_init(const char *sockname)
 	return fd;
 }
 
-int sock_do(int fd)
+int sock_do(struct onak_dbctx *dbctx, int fd)
 {
 	uint32_t cmd = KEYD_CMD_UNKNOWN;
 	ssize_t  bytes = 0;
@@ -197,8 +197,8 @@ int sock_do(int fd)
 						"Fetching 0x%" PRIX64
 						", result: %d",
 						keyid,
-						config.dbbackend->
-						fetch_key_id(keyid,
+						dbctx->fetch_key_id(dbctx,
+							keyid,
 							&key, false));
 				if (key != NULL) {
 					storebuf.size = 8192;
@@ -245,8 +245,8 @@ int sock_do(int fd)
 				logthing(LOGTHING_INFO,
 						"Fetching by fingerprint"
 						", result: %d",
-						config.dbbackend->
-						fetch_key_fp(fp, bytes,
+						dbctx->fetch_key_fp(dbctx,
+							fp, bytes,
 							&key, false));
 				if (key != NULL) {
 					storebuf.size = 8192;
@@ -295,8 +295,8 @@ int sock_do(int fd)
 				logthing(LOGTHING_INFO,
 						"Fetching %s, result: %d",
 						search,
-						config.dbbackend->
-						fetch_key_text(search, &key));
+						dbctx->fetch_key_text(dbctx,
+							search, &key));
 				if (key != NULL) {
 					storebuf.size = 8192;
 					storebuf.buffer = malloc(8192);
@@ -357,7 +357,7 @@ int sock_do(int fd)
 						&packets,
 						0);
 				parse_keys(packets, &key);
-				config.dbbackend->store_key(key, false, false);
+				dbctx->store_key(dbctx, key, false, false);
 				free_packet_list(packets);
 				packets = NULL;
 				free_publickey(key);
@@ -379,7 +379,7 @@ int sock_do(int fd)
 						"Deleting 0x%" PRIX64
 						", result: %d",
 						keyid,
-						config.dbbackend->delete_key(
+						dbctx->delete_key(dbctx,
 							keyid, false));
 			}
 			break;
@@ -391,7 +391,7 @@ int sock_do(int fd)
 				ret = 1;
 			}
 			if (ret == 0) {
-				keyid = config.dbbackend->getfullkeyid(keyid);
+				keyid = dbctx->getfullkeyid(dbctx, keyid);
 				cmd = sizeof(keyid);
 				write(fd, &cmd, sizeof(cmd));
 				write(fd, &keyid, sizeof(keyid));
@@ -400,7 +400,7 @@ int sock_do(int fd)
 		case KEYD_CMD_KEYITER:
 			cmd = KEYD_REPLY_OK;
 			write(fd, &cmd, sizeof(cmd));
-			config.dbbackend->iterate_keys(iteratefunc,
+			dbctx->iterate_keys(dbctx, iteratefunc,
 					&fd);
 			bytes = 0;
 			write(fd, &bytes, sizeof(bytes));
@@ -438,9 +438,8 @@ int sock_do(int fd)
 				logthing(LOGTHING_INFO,
 						"Fetching by hash"
 						", result: %d",
-						config.dbbackend->
-						fetch_key_skshash(&hash,
-							&key));
+						dbctx->fetch_key_skshash(dbctx,
+							&hash, &key));
 				if (key != NULL) {
 					storebuf.size = 8192;
 					storebuf.buffer = malloc(8192);
@@ -531,6 +530,7 @@ int main(int argc, char *argv[])
 	char *configfile = NULL;
 	bool foreground = false;
 	int optchar;
+	struct onak_dbctx *dbctx;
 
 	while ((optchar = getopt(argc, argv, "c:fh")) != -1 ) {
 		switch (optchar) {
@@ -578,7 +578,7 @@ int main(int argc, char *argv[])
 		maxfd = fd;
 		memset(clients, -1, sizeof (clients));
 
-		config.dbbackend->initdb(false);
+		dbctx = config.dbinit(false);
 
 		logthing(LOGTHING_NOTICE, "Accepting connections.");
 		while (!cleanup() && select(maxfd + 1, &rfds, NULL, NULL, NULL) != -1) {
@@ -592,7 +592,7 @@ int main(int argc, char *argv[])
 						FD_ISSET(clients[i], &rfds)) {
 					logthing(LOGTHING_DEBUG,
 						"Handling connection for client %d.", i);
-					if (sock_do(clients[i])) {
+					if (sock_do(dbctx, clients[i])) {
 						sock_close(clients[i]);
 						clients[i] = -1;
 						logthing(LOGTHING_DEBUG,
@@ -626,7 +626,7 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
-		config.dbbackend->cleanupdb();
+		dbctx->cleanupdb(dbctx);
 		sock_close(fd);
 		unlink(sockname);
 	}
