@@ -489,7 +489,6 @@ static void keyd_cleanupdb(struct onak_dbctx *dbctx)
 		logthing(LOGTHING_NOTICE, "Error closing down socket: %d",
 				errno);
 	}
-	keyd_fd = -1;
 
 	free(dbctx);
 
@@ -559,6 +558,13 @@ struct onak_dbctx *keydb_keyd_init(bool readonly)
 			}
 
 			count = read(keyd_fd, &reply, sizeof(reply));
+			if (count != sizeof(reply)) {
+				logthing(LOGTHING_CRITICAL,
+					"Error! Unexpected keyd version "
+					"length: %d != %d",
+					count, sizeof(reply));
+				exit(EXIT_FAILURE);
+			}
 			logthing(LOGTHING_DEBUG,
 					"keyd protocol version %d",
 					reply);

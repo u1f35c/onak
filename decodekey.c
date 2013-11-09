@@ -61,11 +61,11 @@ int parse_subpackets(unsigned char *data, uint64_t *keyid, time_t *creation)
 		} else if (packetlen == 255) {
 			packetlen = data[offset++];
 			packetlen <<= 8;
-			packetlen = data[offset++];
+			packetlen |= data[offset++];
 			packetlen <<= 8;
-			packetlen = data[offset++];
+			packetlen |= data[offset++];
 			packetlen <<= 8;
-			packetlen = data[offset++];
+			packetlen |= data[offset++];
 		}
 		switch (data[offset] & 0x7F) {
 		case OPENPGP_SIGSUB_CREATION:

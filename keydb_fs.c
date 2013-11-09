@@ -452,7 +452,7 @@ static struct ll *internal_get_key_by_word(char *word, struct ll *mct)
 	d = opendir(buffer);
 	logthing(LOGTHING_DEBUG, "Scanning for word %s in dir %s", word,
 		 buffer);
-	if (d)
+	if (d) {
 		do {
 			de = readdir(d);
 			if (de && de->d_name[0] != '.') {
@@ -470,7 +470,8 @@ static struct ll *internal_get_key_by_word(char *word, struct ll *mct)
 				}
 			}
 		} while (de);
-	closedir(d);
+		closedir(d);
+	}
 
 	return keys;
 }
@@ -640,10 +641,9 @@ struct onak_dbctx *keydb_fs_init(bool readonly)
 		privctx->lockfile_fd = open(buffer, O_RDWR | O_CREAT, 0600);
 	}
 	chdir(config.db_dir);
-	if (privctx->lockfile_fd == -1)
-		privctx->lockfile_fd = open(buffer,
-					 (privctx->lockfile_readonly) ?
-					 O_RDONLY : O_RDWR);
+	privctx->lockfile_fd = open(buffer,
+				 (privctx->lockfile_readonly) ?
+				 O_RDONLY : O_RDWR);
 	if (privctx->lockfile_fd == -1)
 		privctx->lockfile_fd = open(buffer, O_RDWR | O_CREAT, 0600);
 	if (privctx->lockfile_fd == -1) {

@@ -119,7 +119,7 @@ void sixdegrees(struct onak_dbctx *dbctx, uint64_t keyid)
 	 * if it's signed by the key we're looking at.
 	 */
 	initcolour(false);
-	degree = countdegree(dbctx, keyinfo, true, 7);
+	countdegree(dbctx, keyinfo, true, 7);
 
 	puts("\t\tSigned by\t\tSigns");
 	for (loop = 1; loop < 7; loop++) {
@@ -143,6 +143,9 @@ int main(int argc, char *argv[])
 	while ((optchar = getopt(argc, argv, "c:")) != -1 ) {
 		switch (optchar) {
 		case 'c':
+			if (configfile != NULL) {
+				free(configfile);
+			}
 			configfile = strdup(optarg);
 			break;
 		}
@@ -153,6 +156,7 @@ int main(int argc, char *argv[])
 	}
 
 	readconfig(configfile);
+	free(configfile);
 	initlogthing("sixdegrees", config.logfile);
 	dbctx = config.dbinit(true);
 	if (dbctx != NULL) {

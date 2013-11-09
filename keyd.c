@@ -65,7 +65,7 @@ void daemonize(void)
 		exit(EXIT_SUCCESS);
 	}
 
-	pid = setsid();
+	setsid();
 
 	freopen("/dev/null", "r", stdin);
 	freopen("/dev/null", "w", stdout);
@@ -139,8 +139,12 @@ int sock_init(const char *sockname)
 
 	if (ret != -1) {
 		ret = listen(fd, 5);
+		if (ret == -1) {
+			close(fd);
+			fd = -1;
+		}
 	}
-	
+
 	return fd;
 }
 
@@ -535,6 +539,9 @@ int main(int argc, char *argv[])
 	while ((optchar = getopt(argc, argv, "c:fh")) != -1 ) {
 		switch (optchar) {
 		case 'c':
+			if (configfile != NULL) {
+				free(configfile);
+			}
 			configfile = strdup(optarg);
 			break;
 		case 'f':

@@ -154,10 +154,17 @@ static void keyd_status(void)
 	uint32_t reply;
 	struct keyd_stats stats;
 
-	keyd_do_command(KEYD_CMD_VERSION, &reply, sizeof(reply));
+	if (keyd_do_command(KEYD_CMD_VERSION, &reply, sizeof(reply)) == -1) {
+		printf("Got failure asking for keyd version.\n");
+		return;
+	}
 	printf("Using keyd protocol version %d.\n", reply);
 
-	keyd_do_command(KEYD_CMD_STATS, &stats, sizeof(stats));
+	if (keyd_do_command(KEYD_CMD_STATS, &stats, sizeof(stats)) == -1) {
+		printf("Got failure asking for keyd statistics.\n");
+		return;
+	}
+
 	printf("keyd running since %s", ctime(&stats.started));
 	printf("%d client connections received\n", stats.connects);
 

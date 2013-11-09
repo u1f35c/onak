@@ -166,7 +166,6 @@ int main(int argc, char *argv[])
 	int				 i;
 	bool				 ishex = false;
 	bool				 isfp = false;
-	bool				 verbose = false;
 	bool				 update = false;
 	bool				 binary = false;
 	bool				 fingerprint = false;
@@ -194,7 +193,6 @@ int main(int argc, char *argv[])
 			update = true;
 			break;
 		case 'v': 
-			verbose = true;
 			setlogthreshold(LOGTHING_INFO);
 			break;
 		}

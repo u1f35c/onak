@@ -241,7 +241,6 @@ int generic_update_keys(struct onak_dbctx *dbctx,
 			newkeys++;
 		}
 		dbctx->endtrans(dbctx);
-		intrans = false;
 	}
 
 	if (sendsync && keys != NULL) {

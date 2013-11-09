@@ -176,16 +176,18 @@ static int db4_upgradedb(struct onak_db4_dbctx *privctx)
 
 	logthing(LOGTHING_NOTICE, "Upgrading DB4 database");
 	ret = db_env_create(&privctx->dbenv, 0);
-	privctx->dbenv->set_errcall(privctx->dbenv, &db4_errfunc);
-	privctx->dbenv->remove(privctx->dbenv, config.db_dir, 0);
-	privctx->dbenv = NULL;
+	if (ret == 0) {
+		privctx->dbenv->set_errcall(privctx->dbenv, &db4_errfunc);
+		privctx->dbenv->remove(privctx->dbenv, config.db_dir, 0);
+		privctx->dbenv = NULL;
+	}
 	for (i = 0; i < privctx->numdbs; i++) {
 		ret = db_create(&curdb, NULL, 0);
 		if (ret == 0) {
 			snprintf(buf, sizeof(buf) - 1, "%s/keydb.%d.db",
 				config.db_dir, i);
 			logthing(LOGTHING_DEBUG, "Upgrading %s", buf);
-			ret = curdb->upgrade(curdb, buf, 0);
+			curdb->upgrade(curdb, buf, 0);
 			curdb->close(curdb, 0);
 		} else {
 			logthing(LOGTHING_ERROR, "Error upgrading DB %s : %s",
@@ -198,7 +200,7 @@ static int db4_upgradedb(struct onak_db4_dbctx *privctx)
 	if (ret == 0) {
 		snprintf(buf, sizeof(buf) - 1, "%s/worddb", config.db_dir);
 		logthing(LOGTHING_DEBUG, "Upgrading %s", buf);
-		ret = curdb->upgrade(curdb, buf, 0);
+		curdb->upgrade(curdb, buf, 0);
 		curdb->close(curdb, 0);
 	} else {
 		logthing(LOGTHING_ERROR, "Error upgrading DB %s : %s",
@@ -210,7 +212,7 @@ static int db4_upgradedb(struct onak_db4_dbctx *privctx)
 	if (ret == 0) {
 		snprintf(buf, sizeof(buf) - 1, "%s/id32db", config.db_dir);
 		logthing(LOGTHING_DEBUG, "Upgrading %s", buf);
-		ret = curdb->upgrade(curdb, buf, 0);
+		curdb->upgrade(curdb, buf, 0);
 		curdb->close(curdb, 0);
 	} else {
 		logthing(LOGTHING_ERROR, "Error upgrading DB %s : %s",
@@ -222,7 +224,7 @@ static int db4_upgradedb(struct onak_db4_dbctx *privctx)
 	if (ret == 0) {
 		snprintf(buf, sizeof(buf) - 1, "%s/skshashdb", config.db_dir);
 		logthing(LOGTHING_DEBUG, "Upgrading %s", buf);
-		ret = curdb->upgrade(curdb, buf, 0);
+		curdb->upgrade(curdb, buf, 0);
 		curdb->close(curdb, 0);
 	} else {
 		logthing(LOGTHING_ERROR, "Error upgrading DB %s : %s",
@@ -234,7 +236,7 @@ static int db4_upgradedb(struct onak_db4_dbctx *privctx)
 	if (ret == 0) {
 		snprintf(buf, sizeof(buf) - 1, "%s/subkeydb", config.db_dir);
 		logthing(LOGTHING_DEBUG, "Upgrading %s", buf);
-		ret = curdb->upgrade(curdb, buf, 0);
+		curdb->upgrade(curdb, buf, 0);
 		curdb->close(curdb, 0);
 	} else {
 		logthing(LOGTHING_ERROR, "Error upgrading DB %s : %s",
@@ -270,6 +272,10 @@ static uint64_t db4_getfullkeyid(struct onak_dbctx *dbctx, uint64_t keyid)
 				&cursor,
 				0);   /* flags */
 
+		if (ret != 0) {
+			return 0;
+		}
+
 		shortkeyid = keyid & 0xFFFFFFFF;
 
 		memset(&key, 0, sizeof(key));
@@ -292,7 +298,7 @@ static uint64_t db4_getfullkeyid(struct onak_dbctx *dbctx, uint64_t keyid)
 			}
 		}
 
-		ret = cursor->c_close(cursor);
+		cursor->c_close(cursor);
 		cursor = NULL;
 	}
 
@@ -444,6 +450,11 @@ static int db4_fetch_key_text(struct onak_dbctx *dbctx, const char *search,
 				&cursor,
 				0);   /* flags */
 
+		if (ret != 0) {
+			db4_endtrans(dbctx);
+			break;
+		}
+
 		memset(&key, 0, sizeof(key));
 		memset(&data, 0, sizeof(data));
 		key.data = curword->object;
@@ -488,7 +499,7 @@ static int db4_fetch_key_text(struct onak_dbctx *dbctx, const char *search,
 			free(data.data);
 			data.data = NULL;
 		}
-		ret = cursor->c_close(cursor);
+		cursor->c_close(cursor);
 		cursor = NULL;
 		firstpass = 0;
 		db4_endtrans(dbctx);
@@ -530,6 +541,10 @@ static int db4_fetch_key_skshash(struct onak_dbctx *dbctx,
 			&cursor,
 			0);   /* flags */
 
+	if (ret != 0) {
+		return 0;
+	}
+
 	memset(&key, 0, sizeof(key));
 	memset(&data, 0, sizeof(data));
 	key.data = (void *) hash->hash;
@@ -550,7 +565,7 @@ static int db4_fetch_key_skshash(struct onak_dbctx *dbctx,
 		}
 	}
 
-	ret = cursor->c_close(cursor);
+	cursor->c_close(cursor);
 	cursor = NULL;
 
 	return db4_fetch_key_id(dbctx, keyid, publickey, false);
@@ -600,7 +615,7 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 			wordlist = makewordlist(wordlist, uids[i]);
 		}
 
-		ret = privctx->worddb->cursor(privctx->worddb,
+		privctx->worddb->cursor(privctx->worddb,
 			privctx->txn,
 			&cursor,
 			0);   /* flags */
@@ -651,44 +666,46 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 				}
 			}
 		}
-		ret = cursor->c_close(cursor);
+		cursor->c_close(cursor);
 		cursor = NULL;
 
 		ret = privctx->skshashdb->cursor(privctx->skshashdb,
 			privctx->txn,
 			&cursor,
 			0);   /* flags */
-		get_skshash(publickey, &hash);
-
-		memset(&key, 0, sizeof(key));
-		memset(&data, 0, sizeof(data));
-		key.data = hash.hash;
-		key.size = sizeof(hash.hash);
-		data.data = &keyid;
-		data.size = sizeof(keyid);
-
-		ret = cursor->c_get(cursor,
-			&key,
-			&data,
-			DB_GET_BOTH);
-
 		if (ret == 0) {
-			ret = cursor->c_del(cursor, 0);
-		}
+			get_skshash(publickey, &hash);
 
-		if (ret != 0) {
-			logthing(LOGTHING_ERROR,
-				"Problem deleting skshash: %s "
-				"(0x%016" PRIX64 ")",
-				db_strerror(ret),
-				keyid);
-			if (ret == DB_LOCK_DEADLOCK) {
-				deadlock = true;
+			memset(&key, 0, sizeof(key));
+			memset(&data, 0, sizeof(data));
+			key.data = hash.hash;
+			key.size = sizeof(hash.hash);
+			data.data = &keyid;
+			data.size = sizeof(keyid);
+
+			ret = cursor->c_get(cursor,
+				&key,
+				&data,
+				DB_GET_BOTH);
+
+			if (ret == 0) {
+				ret = cursor->c_del(cursor, 0);
 			}
-		}
 
-		ret = cursor->c_close(cursor);
-		cursor = NULL;
+			if (ret != 0) {
+				logthing(LOGTHING_ERROR,
+					"Problem deleting skshash: %s "
+					"(0x%016" PRIX64 ")",
+					db_strerror(ret),
+					keyid);
+				if (ret == DB_LOCK_DEADLOCK) {
+					deadlock = true;
+				}
+			}
+
+			cursor->c_close(cursor);
+			cursor = NULL;
+		}
 
 		/*
 		 * Free our UID and word lists.
@@ -705,7 +722,7 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 	}
 
 	if (!deadlock) {
-		ret = privctx->id32db->cursor(privctx->id32db,
+		privctx->id32db->cursor(privctx->id32db,
 			privctx->txn,
 			&cursor,
 			0);   /* flags */
@@ -791,9 +808,8 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 			free(subkeyids);
 			subkeyids = NULL;
 		}
-		ret = cursor->c_close(cursor);
+		cursor->c_close(cursor);
 		cursor = NULL;
-
 	}
 
 	if (!deadlock) {
@@ -1129,6 +1145,10 @@ static int db4_iterate_keys(struct onak_dbctx *dbctx,
 			&cursor,
 			0);   /* flags */
 
+		if (ret != 0) {
+			continue;
+		}
+
 		memset(&dbkey, 0, sizeof(dbkey));
 		memset(&data, 0, sizeof(data));
 		ret = cursor->c_get(cursor, &dbkey, &data, DB_NEXT);
@@ -1159,7 +1179,7 @@ static int db4_iterate_keys(struct onak_dbctx *dbctx,
 				db_strerror(ret));
 		}
 
-		ret = cursor->c_close(cursor);
+		cursor->c_close(cursor);
 		cursor = NULL;
 	}
 
@@ -1371,8 +1391,10 @@ struct onak_dbctx *keydb_db4_init(bool readonly)
 					"Error opening db environment: %s (%s)",
 					config.db_dir,
 					db_strerror(ret));
-			privctx->dbenv->close(privctx->dbenv, 0);
-			privctx->dbenv = NULL;
+			if (privctx->dbenv != NULL) {
+				privctx->dbenv->close(privctx->dbenv, 0);
+				privctx->dbenv = NULL;
+			}
 		}
 	}
 

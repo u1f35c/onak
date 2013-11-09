@@ -194,7 +194,6 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 	struct openpgp_packet_list	*curpacket = NULL, **packetend = NULL;
 	onak_status_t			 rc = ONAK_E_OK;
 	int				 keys = 0;
-	bool				 inpacket = false;
 
 	if (packets == NULL)
 		return ONAK_E_INVALID_PARAM;
@@ -206,14 +205,12 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 		}
 	}
 
-	while (!rc && (maxnum == 0 || keys < maxnum) &&
+	while (rc == ONAK_E_OK && (maxnum == 0 || keys < maxnum) &&
 			!getchar_func(ctx, 1, &curchar)) {
-		if (!inpacket && (curchar & 0x80)) {
+		if (curchar & 0x80) {
 			/*
-			 * New packet. Record the fact we're in a packet and
-			 * allocate memory for it.
+			 * New packet. Allocate memory for it.
 			 */
-			inpacket = true;
 			if (curpacket != NULL) {
 				curpacket->next = malloc(sizeof (*curpacket));
 				packetend = &curpacket->next;
@@ -236,7 +233,10 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 			 */
 			if (curpacket->packet->newformat) {
 				curpacket->packet->tag = (curchar & 0x3F);
-				rc = getchar_func(ctx, 1, &curchar);
+				if (getchar_func(ctx, 1, &curchar)) {
+					rc = ONAK_E_INVALID_PKT;
+					break;
+				}
 				curpacket->packet->length = curchar;
 				if (curpacket->packet->length > 191 &&
 					curpacket->packet->length < 224) {
@@ -255,43 +255,76 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 					 * 5 byte length; ie 255 followed by 3
 					 * bytes of MSB length.
 					 */
-					rc = getchar_func(ctx, 1, &curchar);
+					if (getchar_func(ctx, 1, &curchar)) {
+						rc = ONAK_E_INVALID_PKT;
+						break;
+					}
 					curpacket->packet->length = curchar;
 					curpacket->packet->length <<= 8;
-					rc = getchar_func(ctx, 1, &curchar);
+					if (getchar_func(ctx, 1, &curchar)) {
+						rc = ONAK_E_INVALID_PKT;
+						break;
+					}
 					curpacket->packet->length += curchar;
 					curpacket->packet->length <<= 8;
-					rc = getchar_func(ctx, 1, &curchar);
+					if (getchar_func(ctx, 1, &curchar)) {
+						rc = ONAK_E_INVALID_PKT;
+						break;
+					}
 					curpacket->packet->length += curchar;
 					curpacket->packet->length <<= 8;
-					rc = getchar_func(ctx, 1, &curchar);
+					if (getchar_func(ctx, 1, &curchar)) {
+						rc = ONAK_E_INVALID_PKT;
+						break;
+					}
 					curpacket->packet->length += curchar;
 				}
 			} else {
 				curpacket->packet->tag = (curchar & 0x3C) >> 2;
 				switch (curchar & 3) {
 				case 0:
-					rc = getchar_func(ctx, 1, &curchar);
+					if (getchar_func(ctx, 1, &curchar)) {
+						rc = ONAK_E_INVALID_PKT;
+						break;
+					}
 					curpacket->packet->length = curchar;
 					break;
 				case 1:
-					rc = getchar_func(ctx, 1, &curchar);
+					if (getchar_func(ctx, 1, &curchar)) {
+						rc = ONAK_E_INVALID_PKT;
+						break;
+					}
 					curpacket->packet->length = curchar;
 					curpacket->packet->length <<= 8;
-					rc = getchar_func(ctx, 1, &curchar);
+					if (getchar_func(ctx, 1, &curchar)) {
+						rc = ONAK_E_INVALID_PKT;
+						break;
+					}
 					curpacket->packet->length += curchar;
 					break;
 				case 2:
-					rc = getchar_func(ctx, 1, &curchar);
+					if (getchar_func(ctx, 1, &curchar)) {
+						rc = ONAK_E_INVALID_PKT;
+						break;
+					}
 					curpacket->packet->length = 
 						(curchar << 24);
-					rc = getchar_func(ctx, 1, &curchar);
+					if (getchar_func(ctx, 1, &curchar)) {
+						rc = ONAK_E_INVALID_PKT;
+						break;
+					}
 					curpacket->packet->length +=
 						(curchar << 16);
-					rc = getchar_func(ctx, 1, &curchar);
+					if (getchar_func(ctx, 1, &curchar)) {
+						rc = ONAK_E_INVALID_PKT;
+						break;
+					}
 					curpacket->packet->length +=
 						(curchar << 8);
-					rc = getchar_func(ctx, 1, &curchar);
+					if (getchar_func(ctx, 1, &curchar)) {
+						rc = ONAK_E_INVALID_PKT;
+						break;
+					}
 					curpacket->packet->length += curchar;
 					break;
 				case 3:
@@ -318,7 +351,6 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 						curpacket->packet->data);
 				}
 			}
-			inpacket = false;
 		} else {
 			rc = ONAK_E_INVALID_PKT;
 		}

@@ -91,12 +91,16 @@ int main(int argc, char *argv[])
 	while ((optchar = getopt(argc, argv, "c:")) != -1 ) {
 		switch (optchar) {
 		case 'c':
+			if (configfile != NULL) {
+				free(configfile);
+			}
 			configfile = strdup(optarg);
 			break;
 		}
 	}
 
 	readconfig(configfile);
+	free(configfile);
 	initlogthing("maxpath", config.logfile);
 	dbctx = config.dbinit(true);
 	if (dbctx != NULL) {

@@ -200,14 +200,14 @@ char **getcgivars(int argc, char *argv[])
 	for(i=0; cgiinput[i]; i++) if (cgiinput[i]=='+') cgiinput[i] = ' ';
 
 	/* First, split on "&" to extract the name-value pairs into pairlist */
-	pairlist=(char **) malloc(256*sizeof(char **));
+	pairlist= malloc(256*sizeof(char *));
 	paircount=0;
 	nvpair=strtok(cgiinput, "&");
 	while (nvpair) {
 		pairlist[paircount++]= strdup(nvpair) ;
 		if (!(paircount%256)) {
-			pairlist=(char **) realloc(pairlist,
-					(paircount+256)*sizeof(char **));
+			pairlist= realloc(pairlist,
+					(paircount+256)*sizeof(char *));
 		}
 		nvpair=strtok(NULL, "&") ;
 	}
@@ -216,7 +216,7 @@ char **getcgivars(int argc, char *argv[])
 
 	/* Then, from the list of pairs, extract the names and values */
 	
-	cgivars=(char **) malloc((paircount*2+1)*sizeof(char **));
+	cgivars= malloc((paircount*2+1)*sizeof(char *));
 	
 	for (i=0; i<paircount; i++) {
 		if ((eqpos=strchr(pairlist[i], '='))!=NULL) {

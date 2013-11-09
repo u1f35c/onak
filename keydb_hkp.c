@@ -52,7 +52,7 @@ static int hkp_parse_url(struct onak_hkp_dbctx *privctx, const char *url)
 			&port);
 	if (matched < 2) {
 		proto[0] = 0;
-		matched = sscanf(url, "%256[a-zA-Z0-9.]:%u", host, &port);
+		sscanf(url, "%256[a-zA-Z0-9.]:%u", host, &port);
 	}
 
 	if (host[0] == 0) {
