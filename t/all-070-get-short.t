@@ -5,7 +5,7 @@ set -e
 
 cd t
 ../onak -b -c test.conf add < ../keys/noodles.key
-if ! ../onak -c test.conf get 0x94FA372B2DA8B985 2> /dev/null | \
+if ! ../onak -c test.conf get 0x2DA8B985 2> /dev/null | \
 	grep -q -- '-----BEGIN PGP PUBLIC KEY BLOCK-----'; then
 	echo "* Did not correctly retrieve key by keyid."
 	exit 1
