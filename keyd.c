@@ -155,13 +155,13 @@ int sock_do(struct onak_dbctx *dbctx, int fd)
 	ssize_t  count = 0;
 	int	 ret = 0;
 	uint64_t keyid = 0;
-	uint8_t  fp[MAX_FINGERPRINT_LEN];
 	char     *search = NULL;
 	struct openpgp_publickey *key = NULL;
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_packet_list *list_end = NULL;
 	struct buffer_ctx storebuf;
 	struct skshash hash;
+	struct openpgp_fingerprint fingerprint;
 
 	/*
 	 * Get the command from the client.
@@ -242,7 +242,8 @@ int sock_do(struct onak_dbctx *dbctx, int fd)
 			if (bytes > MAX_FINGERPRINT_LEN) {
 				ret = 1;
 			} else {
-				read(fd, fp, bytes);
+				fingerprint.length = bytes;
+				read(fd, fingerprint.fp, bytes);
 			}
 			storebuf.offset = 0;
 			if (ret == 0) {
@@ -250,7 +251,7 @@ int sock_do(struct onak_dbctx *dbctx, int fd)
 						"Fetching by fingerprint"
 						", result: %d",
 						dbctx->fetch_key_fp(dbctx,
-							fp, bytes,
+							&fingerprint,
 							&key, false));
 				if (key != NULL) {
 					storebuf.size = 8192;

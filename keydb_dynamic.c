@@ -66,14 +66,14 @@ static int dynamic_fetch_key_id(struct onak_dbctx *dbctx, uint64_t keyid,
 }
 
 static int dynamic_fetch_key_fp(struct onak_dbctx *dbctx,
-		uint8_t *fp, size_t fpsize,
+		struct openpgp_fingerprint *fingerprint,
 		struct openpgp_publickey **publickey, bool intrans)
 {
 	struct onak_dynamic_dbctx *privctx =
 			(struct onak_dynamic_dbctx *) dbctx->priv;
 
 	return privctx->loadeddbctx->fetch_key_fp(privctx->loadeddbctx,
-			fp, fpsize, publickey, intrans);
+			fingerprint, publickey, intrans);
 }
 
 static int dynamic_fetch_key_text(struct onak_dbctx *dbctx,

@@ -47,8 +47,9 @@
 #define OP_HGET    5
 
 void find_keys(struct onak_dbctx *dbctx,
-		char *search, uint64_t keyid, uint8_t *fp, size_t fpsize,
-		bool ishex, bool isfp, bool fingerprint, bool skshash,
+		char *search, uint64_t keyid,
+		struct openpgp_fingerprint *fingerprint,
+		bool ishex, bool isfp, bool dispfp, bool skshash,
 		bool exact, bool verbose, bool mrhkp)
 {
 	struct openpgp_publickey *publickey = NULL;
@@ -58,7 +59,7 @@ void find_keys(struct onak_dbctx *dbctx,
 		count = dbctx->fetch_key_id(dbctx, keyid, &publickey,
 				false);
 	} else if (isfp) {
-		count = dbctx->fetch_key_fp(dbctx, fp, fpsize, &publickey,
+		count = dbctx->fetch_key_fp(dbctx, fingerprint, &publickey,
 				false);
 	} else {
 		count = dbctx->fetch_key_text(dbctx, search, &publickey);
@@ -68,7 +69,7 @@ void find_keys(struct onak_dbctx *dbctx,
 			printf("info:1:%d\n", count);
 			mrkey_index(publickey);
 		} else {
-			key_index(dbctx, publickey, verbose, fingerprint,
+			key_index(dbctx, publickey, verbose, dispfp,
 				skshash, true);
 		}
 		free_publickey(publickey);
@@ -110,14 +111,14 @@ int main(int argc, char *argv[])
 	int op = OP_UNKNOWN;
 	int i;
 	int indx = 0;
-	bool fingerprint = false;
+	bool dispfp = false;
 	bool skshash = false;
 	bool exact = false;
 	bool ishex = false;
 	bool isfp = false;
 	bool mrhkp = false;
 	uint64_t keyid = 0;
-	uint8_t fp[MAX_FINGERPRINT_LEN];
+	struct openpgp_fingerprint fingerprint;
 	char *search = NULL;
 	char *end = NULL;
 	struct openpgp_publickey *publickey = NULL;
@@ -146,8 +147,10 @@ int main(int argc, char *argv[])
 			params[i+1] = NULL;
 			if (search != NULL && strlen(search) == 42 &&
 					search[0] == '0' && search[1] == 'x') {
+				fingerprint.length = MAX_FINGERPRINT_LEN;
 				for (i = 0; i < MAX_FINGERPRINT_LEN; i++) {
-					fp[i] = (hex2bin(search[2 + i * 2])
+					fingerprint.fp[i] = (hex2bin(
+							search[2 + i * 2])
 								<< 4) +
 						hex2bin(search[3 + i * 2]);
 				}
@@ -164,7 +167,7 @@ int main(int argc, char *argv[])
 			indx = atoi(params[i+1]);
 		} else if (!strcmp(params[i], "fingerprint")) {
 			if (!strcmp(params[i+1], "on")) {
-				fingerprint = true;
+				dispfp = true;
 			}
 		} else if (!strcmp(params[i], "hash")) {
 			if (!strcmp(params[i+1], "on")) {
@@ -224,8 +227,8 @@ int main(int argc, char *argv[])
 				result = dbctx->fetch_key_id(dbctx, keyid,
 					&publickey, false);
 			} else if (isfp) {
-				result = dbctx->fetch_key_fp(dbctx, fp,
-					MAX_FINGERPRINT_LEN, &publickey, false);
+				result = dbctx->fetch_key_fp(dbctx,
+					&fingerprint, &publickey, false);
 			} else {
 				result = dbctx->fetch_key_text(dbctx,
 					search,
@@ -253,19 +256,18 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case OP_INDEX:
-			find_keys(dbctx, search, keyid, fp, MAX_FINGERPRINT_LEN,
-					ishex, isfp, fingerprint, skshash,
+			find_keys(dbctx, search, keyid, &fingerprint,
+					ishex, isfp, dispfp, skshash,
 					exact, false, mrhkp);
 			break;
 		case OP_VINDEX:
-			find_keys(dbctx, search, keyid, fp, MAX_FINGERPRINT_LEN,
-					ishex, isfp, fingerprint, skshash,
+			find_keys(dbctx, search, keyid, &fingerprint,
+					ishex, isfp, dispfp, skshash,
 					exact, true, mrhkp);
 			break;
 		case OP_PHOTO:
 			if (isfp) {
-				dbctx->fetch_key_fp(dbctx, fp,
-					MAX_FINGERPRINT_LEN,
+				dbctx->fetch_key_fp(dbctx, &fingerprint,
 					&publickey, false);
 			} else {
 				dbctx->fetch_key_id(dbctx, keyid,

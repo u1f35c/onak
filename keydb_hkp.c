@@ -163,7 +163,7 @@ static int hkp_fetch_key_id(struct onak_dbctx *dbctx,
  *	hkp_fetch_key_fp - Given a fingerprint fetch the key from HKP server.
  */
 static int hkp_fetch_key_fp(struct onak_dbctx *dbctx,
-		uint8_t *fp, size_t fpsize,
+		struct openpgp_fingerprint *fingerprint,
 		struct openpgp_publickey **publickey,
 		bool intrans)
 {
@@ -171,19 +171,19 @@ static int hkp_fetch_key_fp(struct onak_dbctx *dbctx,
 	char keyurl[1024];
 	int i, ofs;
 
-	if (fpsize > MAX_FINGERPRINT_LEN) {
+	if (fingerprint->length > MAX_FINGERPRINT_LEN) {
 		return 0;
 	}
 
 	ofs = snprintf(keyurl, sizeof(keyurl),
 			"%s/lookup?op=get&search=0x", privctx->hkpbase);
 
-	if ((ofs + fpsize * 2 + 1)> sizeof(keyurl)) {
+	if ((ofs + fingerprint->length * 2 + 1)> sizeof(keyurl)) {
 		return 0;
 	}
 
-	for (i = 0; i < fpsize; i++) {
-		ofs += sprintf(&keyurl[ofs], "%02X", fp[i]);
+	for (i = 0; i < fingerprint->length; i++) {
+		ofs += sprintf(&keyurl[ofs], "%02X", fingerprint->fp[i]);
 	}
 
 	return (hkp_fetch_key_url(dbctx, keyurl, publickey, intrans));

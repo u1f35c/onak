@@ -284,21 +284,21 @@ int list_subkeys(struct onak_dbctx *dbctx,
 void display_fingerprint(struct openpgp_publickey *key)
 {
 	int		i = 0;
-	size_t		length = 0;
-	unsigned char	fp[20];
+	struct openpgp_fingerprint fingerprint;
 
-	get_fingerprint(key->publickey, fp, &length);
+	get_fingerprint(key->publickey, &fingerprint);
 	printf("      Key fingerprint =");
-	for (i = 0; i < length; i++) {
-		if ((length == 16) ||
+	for (i = 0; i < fingerprint.length; i++) {
+		if ((fingerprint.length == 16) ||
 			(i % 2 == 0)) {
 			printf(" ");
 		}
-		if (length == 20 && (i * 2) == length) {
+		if (fingerprint.length == 20 &&
+				(i * 2) == fingerprint.length) {
 			/* Extra space in the middle of a SHA1 fingerprint */
 			printf(" ");
 		}
-		printf("%02X", fp[i]);
+		printf("%02X", fingerprint.fp[i]);
 	}
 	printf("\n");
 
@@ -464,10 +464,9 @@ int mrkey_index(struct openpgp_publickey *keys)
 	int					 type = 0;
 	int					 length = 0;
 	int					 i = 0;
-	size_t					 fplength = 0;
-	unsigned char				 fp[20];
 	int					 c;
 	uint64_t				 keyid;
+	struct openpgp_fingerprint fingerprint;
 
 	while (keys != NULL) {
 		created_time = (keys->publickey->data[1] << 24) +
@@ -487,10 +486,10 @@ int mrkey_index(struct openpgp_publickey *keys)
 			type = keys->publickey->data[7];
 			break;
 		case 4:
-			(void) get_fingerprint(keys->publickey, fp, &fplength);
+			(void) get_fingerprint(keys->publickey, &fingerprint);
 
-			for (i = 0; i < fplength; i++) {
-				printf("%02X", fp[i]);
+			for (i = 0; i < fingerprint.length; i++) {
+				printf("%02X", fingerprint.fp[i]);
 			}
 
 			type = keys->publickey->data[5];

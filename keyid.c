@@ -59,8 +59,7 @@ onak_status_t get_keyid(struct openpgp_publickey *publickey, uint64_t *keyid)
  *	which we've returned.
  */
 onak_status_t get_fingerprint(struct openpgp_packet *packet,
-	unsigned char *fingerprint,
-	size_t *len)
+	struct openpgp_fingerprint *fingerprint)
 {
 	struct sha1_ctx sha_ctx;
 	struct md5_ctx md5_context;
@@ -69,10 +68,8 @@ onak_status_t get_fingerprint(struct openpgp_packet *packet,
 
 	if (fingerprint == NULL)
 		return ONAK_E_INVALID_PARAM;
-	if (len == NULL)
-		return ONAK_E_INVALID_PARAM;
 
-	*len = 0;
+	fingerprint->length = 0;
 
 	switch (packet->data[0]) {
 	case 2:
@@ -90,8 +87,8 @@ onak_status_t get_fingerprint(struct openpgp_packet *packet,
 			 packet->data[11+modlen] + 7) >> 3;
 		md5_update(&md5_context, explen, &packet->data[12 + modlen]);
 
-		*len = 16;
-		md5_digest(&md5_context, *len, fingerprint);
+		fingerprint->length = 16;
+		md5_digest(&md5_context, fingerprint->length, fingerprint->fp);
 
 		break;
 
@@ -109,8 +106,8 @@ onak_status_t get_fingerprint(struct openpgp_packet *packet,
 		sha1_update(&sha_ctx, sizeof(c), &c);
 		sha1_update(&sha_ctx, packet->length,
 			packet->data);
-		*len = 20;
-		sha1_digest(&sha_ctx, *len, fingerprint);
+		fingerprint->length = 20;
+		sha1_digest(&sha_ctx, fingerprint->length, fingerprint->fp);
 
 		break;
 	default:
@@ -129,8 +126,7 @@ onak_status_t get_packetid(struct openpgp_packet *packet, uint64_t *keyid)
 {
 	int		offset = 0;
 	int		i = 0;
-	size_t		length = 0;
-	unsigned char	buff[20];
+	struct openpgp_fingerprint fingerprint;
 #ifdef NETTLE_WITH_RIPEMD160
 	struct ripemd160_ctx ripemd160_context;
 	uint8_t		data;
@@ -162,11 +158,11 @@ onak_status_t get_packetid(struct openpgp_packet *packet, uint64_t *keyid)
 
 			ripemd160_digest(&ripemd160_context,
 				RIPEMD160_DIGEST_SIZE,
-				buff);
+				fingerprint.fp);
 
 			for (*keyid = 0, i = 12; i < 20; i++) {
 				*keyid <<= 8;
-				*keyid += buff[i];
+				*keyid += fingerprint.fp[i];
 			}
 
 			return ONAK_E_OK;
@@ -197,11 +193,11 @@ onak_status_t get_packetid(struct openpgp_packet *packet, uint64_t *keyid)
 		}
 		break;
 	case 4:
-		get_fingerprint(packet, buff, &length);
+		get_fingerprint(packet, &fingerprint);
 		
 		for (*keyid = 0, i = 12; i < 20; i++) {
 			*keyid <<= 8;
-			*keyid += buff[i];
+			*keyid += fingerprint.fp[i];
 		}
 
 		break;

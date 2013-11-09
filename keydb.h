@@ -81,8 +81,7 @@ struct onak_dbctx {
  * are using.
  */
 	int (*fetch_key_fp)(struct onak_dbctx *,
-			uint8_t *fp,
-			size_t fpsize,
+			struct openpgp_fingerprint *fingerprint,
 			struct openpgp_publickey **publickey,
 			bool intrans);
 

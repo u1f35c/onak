@@ -45,9 +45,10 @@
 #include "version.h"
 
 void find_keys(struct onak_dbctx *dbctx,
-		char *search, uint64_t keyid, uint8_t *fp, bool ishex,
-		bool isfp, bool fingerprint, bool skshash, bool exact,
-		bool verbose)
+		char *search, uint64_t keyid,
+		struct openpgp_fingerprint *fingerprint,
+		bool ishex, bool isfp, bool dispfp, bool skshash,
+		bool exact, bool verbose)
 {
 	struct openpgp_publickey *publickey = NULL;
 	int count = 0;
@@ -56,13 +57,13 @@ void find_keys(struct onak_dbctx *dbctx,
 		count = dbctx->fetch_key_id(dbctx, keyid, &publickey,
 				false);
 	} else if (isfp) {
-		count = dbctx->fetch_key_fp(dbctx, fp, MAX_FINGERPRINT_LEN,
+		count = dbctx->fetch_key_fp(dbctx, fingerprint,
 				&publickey, false);
 	} else {
 		count = dbctx->fetch_key_text(dbctx, search, &publickey);
 	}
 	if (publickey != NULL) {
-		key_index(dbctx, publickey, verbose, fingerprint, skshash,
+		key_index(dbctx, publickey, verbose, dispfp, skshash,
 			false);
 		free_publickey(publickey);
 	} else if (count == 0) {
@@ -162,18 +163,18 @@ int main(int argc, char *argv[])
 	char				*search = NULL;
 	char				*end = NULL;
 	uint64_t			 keyid = 0;
-	uint8_t				 fp[MAX_FINGERPRINT_LEN];
 	int				 i;
 	bool				 ishex = false;
 	bool				 isfp = false;
 	bool				 update = false;
 	bool				 binary = false;
-	bool				 fingerprint = false;
+	bool				 dispfp = false;
 	bool				 skshash = false;
 	int				 optchar;
 	struct dump_ctx                  dumpstate;
 	struct skshash			 hash;
 	struct onak_dbctx		*dbctx;
+	struct openpgp_fingerprint	 fingerprint;
 
 	while ((optchar = getopt(argc, argv, "bc:fsuv")) != -1 ) {
 		switch (optchar) {
@@ -184,7 +185,7 @@ int main(int argc, char *argv[])
 			configfile = strdup(optarg);
 			break;
 		case 'f': 
-			fingerprint = true;
+			dispfp = true;
 			break;
 		case 's': 
 			skshash = true;
@@ -320,8 +321,10 @@ int main(int argc, char *argv[])
 		search = argv[optind+1];
 		if (search != NULL && strlen(search) == 42 &&
 				search[0] == '0' && search[1] == 'x') {
+			fingerprint.length = MAX_FINGERPRINT_LEN;
 			for (i = 0; i < MAX_FINGERPRINT_LEN; i++) {
-				fp[i] = (hex2bin(search[2 + i * 2]) << 4) +
+				fingerprint.fp[i] =
+					(hex2bin(search[2 + i * 2]) << 4) +
 						hex2bin(search[3 + i * 2]);
 			}
 			isfp = true;
@@ -335,12 +338,12 @@ int main(int argc, char *argv[])
 		}
 		dbctx = config.dbinit(false);
 		if (!strcmp("index", argv[optind])) {
-			find_keys(dbctx, search, keyid, fp, ishex, isfp,
-					fingerprint, skshash,
+			find_keys(dbctx, search, keyid, &fingerprint, ishex,
+					isfp, dispfp, skshash,
 					false, false);
 		} else if (!strcmp("vindex", argv[optind])) {
-			find_keys(dbctx, search, keyid, fp, ishex, isfp,
-					fingerprint, skshash,
+			find_keys(dbctx, search, keyid, &fingerprint, ishex,
+					isfp, dispfp, skshash,
 					false, true);
 		} else if (!strcmp("getphoto", argv[optind])) {
 			if (!ishex) {
@@ -373,8 +376,8 @@ int main(int argc, char *argv[])
 					" You must supply a keyid / "
 					"fingerprint.");
 			} else if ((isfp &&
-					dbctx->fetch_key_fp(dbctx, fp,
-						MAX_FINGERPRINT_LEN,
+					dbctx->fetch_key_fp(dbctx,
+						&fingerprint,
 						&keys, false)) ||
 					(ishex &&
 					dbctx->fetch_key_id(dbctx, keyid,

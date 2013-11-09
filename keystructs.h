@@ -31,6 +31,16 @@
 #define MAX_FINGERPRINT_LEN 20
 
 /**
+ * @brief Stores the fingerprint of an OpenPGP key
+ */
+struct openpgp_fingerprint {
+	/** Length of fingerprint. 16 bytes for v3, 20 for v4 */
+	size_t length;
+	/** Fingerprint data. Only the first length bytes are valid */
+	uint8_t fp[MAX_FINGERPRINT_LEN];
+};
+
+/**
  * @brief Stores an OpenPGP packet.
  *
  * This structure holds any form of OpenPGP packet with minimum common

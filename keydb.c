@@ -253,13 +253,13 @@ int generic_update_keys(struct onak_dbctx *dbctx,
 
 #ifdef NEED_GET_FP
 static int generic_fetch_key_fp(struct onak_dbctx *dbctx,
-		uint8_t *fp, size_t fpsize,
+		struct openpgp_fingerprint *fingerprint,
 		struct openpgp_publickey **publickey, bool intrans)
 {
 	uint64_t keyid;
 	int i;
 
-	if (fpsize > MAX_FINGERPRINT_LEN) {
+	if (fingerprint->length > MAX_FINGERPRINT_LEN) {
 		return 0;
 	}
 
@@ -271,8 +271,8 @@ static int generic_fetch_key_fp(struct onak_dbctx *dbctx,
 	 * if the backend can't do it we're going to fail anyway.
 	 */
 	keyid = 0;
-	for (i = (fpsize - 8); i < fpsize; i++) {
-		keyid = (keyid << 8) + fp[i];
+	for (i = (fingerprint->length - 8); i < fingerprint->length; i++) {
+		keyid = (keyid << 8) + fingerprint->fp[i];
 	}
 
 	return dbctx->fetch_key_id(dbctx, keyid, publickey, intrans);

@@ -116,7 +116,7 @@ static int keyd_fetch_key_id(struct onak_dbctx *dbctx,
 }
 
 static int keyd_fetch_key_fp(struct onak_dbctx *dbctx,
-		uint8_t *fp, size_t fpsize,
+		struct openpgp_fingerprint *fingerprint,
 		struct openpgp_publickey **publickey,
 		bool intrans)
 {
@@ -128,16 +128,16 @@ static int keyd_fetch_key_fp(struct onak_dbctx *dbctx,
 	ssize_t                     count = 0;
 	uint8_t                     size;
 
-	if (fpsize > MAX_FINGERPRINT_LEN) {
+	if (fingerprint->length > MAX_FINGERPRINT_LEN) {
 		return 0;
 	}
 
 	write(keyd_fd, &cmd, sizeof(cmd));
 	read(keyd_fd, &cmd, sizeof(cmd));
 	if (cmd == KEYD_REPLY_OK) {
-		size = fpsize;
+		size = fingerprint->length;
 		write(keyd_fd, &size, sizeof(size));
-		write(keyd_fd, fp, size);
+		write(keyd_fd, fingerprint->fp, size);
 		keybuf.offset = 0;
 		read(keyd_fd, &keybuf.size, sizeof(keybuf.size));
 		if (keybuf.size > 0) {
