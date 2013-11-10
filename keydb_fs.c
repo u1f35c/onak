@@ -300,7 +300,7 @@ static int fs_store_key(struct onak_dbctx *dbctx,
 	uint64_t keyid;
 	struct ll *wordlist = NULL, *wl = NULL;
 	struct skshash hash;
-	uint64_t *subkeyids = NULL;
+	struct openpgp_fingerprint *subkeyids = NULL;
 	uint32_t hashid;
 	int i = 0;
 
@@ -348,12 +348,14 @@ static int fs_store_key(struct onak_dbctx *dbctx,
 		
 		subkeyids = keysubkeys(publickey);
 		i = 0;
-		while (subkeyids != NULL && subkeyids[i] != 0) {
-			prove_path_to(subkeyids[i], "subkeys");
+		while (subkeyids != NULL && subkeyids[i].length != 0) {
+			keyid = fingerprint2keyid(&subkeyids[i]);
 
-			subkeydir(wbuffer, sizeof(wbuffer), subkeyids[i]);
+			prove_path_to(keyid, "subkeys");
+
+			subkeydir(wbuffer, sizeof(wbuffer), keyid);
 			mkdir(wbuffer, 0777);
-			subkeypath(wbuffer, sizeof(wbuffer), subkeyids[i]);
+			subkeypath(wbuffer, sizeof(wbuffer), keyid);
 			link(buffer, wbuffer);
 
 			i++;
@@ -388,7 +390,8 @@ static int fs_delete_key(struct onak_dbctx *dbctx, uint64_t keyid, bool intrans)
 	struct openpgp_publickey *pk = NULL;
 	struct skshash hash;
 	struct ll *wordlist = NULL, *wl = NULL;
-	uint64_t *subkeyids = NULL;
+	struct openpgp_fingerprint *subkeyids = NULL;
+	uint64_t subkeyid;
 	int i = 0;
 
 	if ((keyid >> 32) == 0)
@@ -418,10 +421,11 @@ static int fs_delete_key(struct onak_dbctx *dbctx, uint64_t keyid, bool intrans)
 
 		subkeyids = keysubkeys(pk);
 		i = 0;
-		while (subkeyids != NULL && subkeyids[i] != 0) {
-			prove_path_to(subkeyids[i], "subkeys");
+		while (subkeyids != NULL && subkeyids[i].length != 0) {
+			subkeyid = fingerprint2keyid(&subkeyids[i]);
+			prove_path_to(subkeyid, "subkeys");
 
-			subkeypath(buffer, sizeof(buffer), subkeyids[i]);
+			subkeypath(buffer, sizeof(buffer), subkeyid);
 			unlink(buffer);
 
 			i++;

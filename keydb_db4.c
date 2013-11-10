@@ -587,7 +587,7 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 	DBT key, data;
 	DBC *cursor = NULL;
 	uint32_t   shortkeyid = 0;
-	uint64_t  *subkeyids = NULL;
+	struct openpgp_fingerprint *subkeyids = NULL;
 	int ret = 0;
 	int i;
 	char **uids = NULL;
@@ -597,6 +597,7 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 	struct ll *curword  = NULL;
 	bool deadlock = false;
 	struct skshash hash;
+	uint64_t subkeyid;
 
 	if (!intrans) {
 		db4_starttrans(dbctx);
@@ -758,10 +759,11 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 
 		subkeyids = keysubkeys(publickey);
 		i = 0;
-		while (subkeyids != NULL && subkeyids[i] != 0) {
+		while (subkeyids != NULL && subkeyids[i].length != 0) {
+			subkeyid = fingerprint2keyid(&subkeyids[i]);
 			memset(&key, 0, sizeof(key));
-			key.data = &subkeyids[i];
-			key.size = sizeof(subkeyids[i]);
+			key.data = &subkeyid;
+			key.size = sizeof(subkeyid);
 			privctx->subkeydb->del(privctx->subkeydb,
 					privctx->txn, &key, 0);
 			if (ret != 0) {
@@ -775,7 +777,7 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 				}
 			}
 
-			shortkeyid = subkeyids[i++] & 0xFFFFFFFF;
+			shortkeyid = subkeyid & 0xFFFFFFFF;
 
 			memset(&key, 0, sizeof(key));
 			memset(&data, 0, sizeof(data));
@@ -803,6 +805,7 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 					deadlock = true;
 				}
 			}
+			i++;
 		}
 		if (subkeyids != NULL) {
 			free(subkeyids);
@@ -856,7 +859,7 @@ static int db4_store_key(struct onak_dbctx *dbctx,
 	DBT        data;
 	uint64_t   keyid = 0;
 	uint32_t   shortkeyid = 0;
-	uint64_t  *subkeyids = NULL;
+	struct openpgp_fingerprint *subkeyids = NULL;
 	char     **uids = NULL;
 	char      *primary = NULL;
 	unsigned char worddb_data[12];
@@ -864,6 +867,7 @@ static int db4_store_key(struct onak_dbctx *dbctx,
 	struct ll *curword  = NULL;
 	bool       deadlock = false;
 	struct skshash hash;
+	uint64_t subkeyid;
 
 	if (get_keyid(publickey, &keyid) != ONAK_E_OK) {
 		logthing(LOGTHING_ERROR, "Couldn't find key ID for key.");
@@ -1030,12 +1034,13 @@ static int db4_store_key(struct onak_dbctx *dbctx,
 	if (!deadlock) {
 		subkeyids = keysubkeys(publickey);
 		i = 0;
-		while (subkeyids != NULL && subkeyids[i] != 0) {
+		while (subkeyids != NULL && subkeyids[i].length != 0) {
+			subkeyid = fingerprint2keyid(&subkeyids[i]);
 			/* Store the subkey ID -> main key ID mapping */
 			memset(&key, 0, sizeof(key));
 			memset(&data, 0, sizeof(data));
-			key.data = &subkeyids[i];
-			key.size = sizeof(subkeyids[i]);
+			key.data = &subkeyid;
+			key.size = sizeof(subkeyid);
 			data.data = &keyid;
 			data.size = sizeof(keyid);
 
@@ -1054,7 +1059,7 @@ static int db4_store_key(struct onak_dbctx *dbctx,
 			}
 
 			/* Store the short subkey ID -> main key ID mapping */
-			shortkeyid = subkeyids[i++] & 0xFFFFFFFF;
+			shortkeyid = subkeyid & 0xFFFFFFFF;
 
 			memset(&key, 0, sizeof(key));
 			memset(&data, 0, sizeof(data));
@@ -1076,6 +1081,7 @@ static int db4_store_key(struct onak_dbctx *dbctx,
 					deadlock = true;
 				}
 			}
+			i++;
 		}
 		if (subkeyids != NULL) {
 			free(subkeyids);

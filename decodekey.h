@@ -68,13 +68,13 @@ uint64_t sig_keyid(struct openpgp_packet *packet);
 char **keyuids(struct openpgp_publickey *key, char **primary);
 
 /**
- *	keysubkeys - Takes a key and returns an array of its subkey keyids.
+ *	keysubkeys - Takes a key & returns an array of its subkey fingerprints
  *	@key: The key to get the subkeys of.
  *
  *	keysubkeys takes a public key structure and returns an array of the
- *	subkey keyids for that key.
+ *	subkey fingerprints for that key.
  */
-uint64_t *keysubkeys(struct openpgp_publickey *key);
+struct openpgp_fingerprint *keysubkeys(struct openpgp_publickey *key);
 
 /**
  *	parse_subpackets - Parse the subpackets of a Type 4 signature.

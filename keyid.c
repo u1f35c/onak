@@ -38,6 +38,20 @@
 #include "sha1.h"
 #endif
 
+uint64_t fingerprint2keyid(struct openpgp_fingerprint *fingerprint)
+{
+	uint64_t keyid;
+	int i;
+
+	keyid = 0;
+	for (keyid = 0, i = 12; i < 20; i++) {
+		keyid <<= 8;
+		keyid += fingerprint->fp[i];
+	}
+
+	return keyid;
+}
+
 
 /**
  *	get_keyid - Given a public key returns the keyid.
@@ -159,11 +173,9 @@ onak_status_t get_packetid(struct openpgp_packet *packet, uint64_t *keyid)
 			ripemd160_digest(&ripemd160_context,
 				RIPEMD160_DIGEST_SIZE,
 				fingerprint.fp);
+			fingerprint.length = RIPEMD160_DIGEST_SIZE;
 
-			for (*keyid = 0, i = 12; i < 20; i++) {
-				*keyid <<= 8;
-				*keyid += fingerprint.fp[i];
-			}
+			*keyid = fingerprint2keyid(&fingerprint);
 
 			return ONAK_E_OK;
 		}
@@ -194,11 +206,8 @@ onak_status_t get_packetid(struct openpgp_packet *packet, uint64_t *keyid)
 		break;
 	case 4:
 		get_fingerprint(packet, &fingerprint);
-		
-		for (*keyid = 0, i = 12; i < 20; i++) {
-			*keyid <<= 8;
-			*keyid += fingerprint.fp[i];
-		}
+
+		*keyid = fingerprint2keyid(&fingerprint);
 
 		break;
 	default:

@@ -26,6 +26,16 @@
 #include "onak.h"
 
 /**
+ *	fingerprint2keyid - convert a fingerprint to a keyid
+ *	@fingerprint: The fingerprint structure to convert
+ *	@returns: 64 bit keyid
+ *
+ *	This function returns the key id for a given fingerprint. Currently
+ *	only works for v4 fingerprints.
+ */
+uint64_t fingerprint2keyid(struct openpgp_fingerprint *fingerprint);
+
+/**
  *	get_keyid - Given a public key returns the keyid.
  *	@publickey: The key to calculate the id for.
  *	@keeyid: The returned keyid

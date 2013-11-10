@@ -310,21 +310,21 @@ char **keyuids(struct openpgp_publickey *key, char **primary)
  *	keysubkeys takes a public key structure and returns an array of the
  *	subkey keyids for that key.
  */
-uint64_t *keysubkeys(struct openpgp_publickey *key)
+struct openpgp_fingerprint *keysubkeys(struct openpgp_publickey *key)
 {
 	struct openpgp_signedpacket_list *cursubkey = NULL;
-	uint64_t                         *subkeys = NULL;
+	struct openpgp_fingerprint       *subkeys = NULL;
 	int                               count = 0;
 
 	if (key != NULL && key->subkeys != NULL) {
 		subkeys = malloc((spsize(key->subkeys) + 1) *
-				sizeof (uint64_t));
+				sizeof (struct openpgp_fingerprint));
 		cursubkey = key->subkeys;
 		while (cursubkey != NULL) {
-			get_packetid(cursubkey->packet, &subkeys[count++]);
+			get_fingerprint(cursubkey->packet, &subkeys[count++]);
 			cursubkey = cursubkey -> next;
 		}
-		subkeys[count] = 0;
+		subkeys[count].length = 0;
 	}
 
 	return subkeys;
