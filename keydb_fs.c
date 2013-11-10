@@ -128,15 +128,23 @@ static void worddir(char *buffer, size_t length, char *word, uint32_t hash)
 		 (uint8_t) ((hash >> 16) & 0xFF), hash, word);
 }
 
-static void subkeypath(char *buffer, size_t length, uint64_t subkey,
-		uint64_t keyid)
+static void subkeypath(char *buffer, size_t length, uint64_t subkey)
 {
 	snprintf(buffer, length, "%s/subkeys/%02X/%02X/%08X/%016" PRIX64,
 		 config.db_dir,
 		 (uint8_t) ((subkey >> 24) & 0xFF),
 		 (uint8_t) ((subkey >> 16) & 0xFF),
 		 (uint32_t) (subkey & 0xFFFFFFFF),
-		 keyid);
+		 subkey);
+}
+
+static void subkeydir(char *buffer, size_t length, uint64_t subkey)
+{
+	snprintf(buffer, length, "%s/subkeys/%02X/%02X/%08X",
+		 config.db_dir,
+		 (uint8_t) ((subkey >> 24) & 0xFF),
+		 (uint8_t) ((subkey >> 16) & 0xFF),
+		 (uint32_t) (subkey & 0xFFFFFFFF));
 }
 
 static void skshashpath(char *buffer, size_t length,
@@ -151,14 +159,6 @@ static void skshashpath(char *buffer, size_t length,
 		 hash->hash[8], hash->hash[9], hash->hash[10], hash->hash[11],
 		 hash->hash[12], hash->hash[13], hash->hash[14],
 		 hash->hash[15]);
-}
-static void subkeydir(char *buffer, size_t length, uint64_t subkey)
-{
-	snprintf(buffer, length, "%s/subkeys/%02X/%02X/%08X",
-		 config.db_dir,
-		 (uint8_t) ((subkey >> 24) & 0xFF),
-		 (uint8_t) ((subkey >> 16) & 0xFF),
-		 (uint32_t) (subkey & 0xFFFFFFFF));
 }
 
 /*****************************************************************************/
@@ -260,7 +260,13 @@ static int fs_fetch_key_id(struct onak_dbctx *dbctx,
 		keyid = fs_getfullkeyid(dbctx, keyid);
 
 	keypath(buffer, sizeof(buffer), keyid);
-	if ((fd = open(buffer, O_RDONLY)) != -1) {
+	fd = open(buffer, O_RDONLY);
+	if (fd == -1 && errno == ENOENT) {
+		subkeypath(buffer, sizeof(buffer), keyid);
+		fd = open(buffer, O_RDONLY);
+	}
+
+	if (fd != -1) {
 		/* File is present, load it in... */
 		read_openpgp_stream(file_fetchchar, &fd, &packets, 0);
 		parse_keys(packets, publickey);
@@ -347,8 +353,7 @@ static int fs_store_key(struct onak_dbctx *dbctx,
 
 			subkeydir(wbuffer, sizeof(wbuffer), subkeyids[i]);
 			mkdir(wbuffer, 0777);
-			subkeypath(wbuffer, sizeof(wbuffer), subkeyids[i],
-				keyid);
+			subkeypath(wbuffer, sizeof(wbuffer), subkeyids[i]);
 			link(buffer, wbuffer);
 
 			i++;
@@ -416,8 +421,7 @@ static int fs_delete_key(struct onak_dbctx *dbctx, uint64_t keyid, bool intrans)
 		while (subkeyids != NULL && subkeyids[i] != 0) {
 			prove_path_to(subkeyids[i], "subkeys");
 
-			subkeypath(buffer, sizeof(buffer), subkeyids[i],
-				keyid);
+			subkeypath(buffer, sizeof(buffer), subkeyids[i]);
 			unlink(buffer);
 
 			i++;
