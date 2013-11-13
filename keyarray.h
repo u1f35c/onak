@@ -24,16 +24,18 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "keystructs.h"
+
 /**
- * @brief A sorted array of keyids
+ * @brief A sorted array of fingerprints
  *
- * Holds a sorted list of keyids, with room for growth - has details of both
- * the total size of the array as well as the current number of elements.
+ * Holds a sorted list of fingerprints, with room for growth - has details of
+ * both the total size of the array as well as the current number of elements.
  */
 struct keyarray {
-	/** The array of key ids */
-	uint64_t *keys;
-	/** Number of key ids in the array */
+	/** The array of key fingerprints */
+	struct openpgp_fingerprint *keys;
+	/** Number of fingerprints in the array */
 	size_t count;
 	/** Total size of the array */
 	size_t size;
@@ -44,7 +46,7 @@ struct keyarray {
  * @param array Pointer to the key array
  * @param key The keyid to look for
  */
-bool array_find(struct keyarray *array, uint64_t key);
+bool array_find(struct keyarray *array, struct openpgp_fingerprint *fp);
 
 /**
  * @brief Free a key array
@@ -61,6 +63,6 @@ void array_free(struct keyarray *array);
  * Returns true if the key was added, false if it was found to be already
  * present.
  */
-bool array_add(struct keyarray *array, uint64_t key);
+bool array_add(struct keyarray *array, struct openpgp_fingerprint *fp);
 
 #endif /* __KEYARRAY_H__ */

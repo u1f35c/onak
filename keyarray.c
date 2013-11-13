@@ -24,8 +24,21 @@
 #include <string.h>
 
 #include "keyarray.h"
+#include "keystructs.h"
 
-bool array_find(struct keyarray *array, uint64_t key)
+int fingerprint_cmp(struct openpgp_fingerprint *a,
+		struct openpgp_fingerprint *b)
+{
+	if (a->length < b->length) {
+		return -1;
+	} else if (a->length > b->length) {
+		return 1;
+	} else {
+		return memcmp(a->fp, b->fp, a->length);
+	}
+}
+
+bool array_find(struct keyarray *array, struct openpgp_fingerprint *fp)
 {
 	bool found;
 	int  top = 0;
@@ -38,19 +51,19 @@ bool array_find(struct keyarray *array, uint64_t key)
 		top = array->count - 1;
 		while ((top - bottom) > 1) {
 			curpos = (top + bottom) / 2;
-			if (key > array->keys[curpos]) {
+			if (fingerprint_cmp(fp, &array->keys[curpos]) > 0) {
 				bottom = curpos;
 			} else {
 				top = curpos;
 			}
 		}
-		found = (array->keys[top] == key);
+		found = (fingerprint_cmp(fp, &array->keys[top]) == 0);
 	}
 
 	return found;
 }
 
-bool array_add(struct keyarray *array, uint64_t key)
+bool array_add(struct keyarray *array, struct openpgp_fingerprint *fp)
 {
 	bool found;
 	int  top = 0;
@@ -63,15 +76,15 @@ bool array_add(struct keyarray *array, uint64_t key)
 		top = array->count - 1;
 		while ((top - bottom) > 1) {
 			curpos = (top + bottom) / 2;
-			if (key > array->keys[curpos]) {
+			if (fingerprint_cmp(fp, &array->keys[curpos]) > 0) {
 				bottom = curpos;
 			} else {
 				top = curpos;
 			}
 		}
-		found = (array->keys[top] == key);
+		found = (fingerprint_cmp(fp, &array->keys[top]) == 0);
 
-		if (key > array->keys[top]) {
+		if (fingerprint_cmp(fp, &array->keys[top]) > 0) {
 			curpos = top + 1;
 		} else {
 			curpos = top;
@@ -80,23 +93,25 @@ bool array_add(struct keyarray *array, uint64_t key)
 
 	if (!found) {
 		if (array->size == 0) {
-			array->keys = malloc(16 * sizeof(uint64_t));
+			array->keys = malloc(16 *
+				sizeof(struct openpgp_fingerprint));
 			array->size = 16;
 			array->count = 1;
-			array->keys[0] = key;
+			array->keys[0] = *fp;
 		} else {
 			if (array->count >= array->size) {
 				array->size *= 2;
 				array->keys = realloc(array->keys,
-						array->size * sizeof(uint64_t));
+					array->size *
+					sizeof(struct openpgp_fingerprint));
 			}
 			if (curpos < array->count) {
 				memmove(&array->keys[curpos+1],
 					&array->keys[curpos],
-					sizeof(uint64_t) *
+					sizeof(struct openpgp_fingerprint) *
 						(array->count - curpos));
 			}
-			array->keys[curpos] = key;
+			array->keys[curpos] = *fp;
 			array->count++;
 		}
 	}
