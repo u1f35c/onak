@@ -1032,13 +1032,13 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 			data.data = fingerprint.fp;
 			data.size = fingerprint.length;
 
-			ret = cursor->c_get(cursor,
+			ret = cursor64->c_get(cursor64,
 				&key,
 				&data,
 				DB_GET_BOTH);
 
 			if (ret == 0) {
-				ret = cursor->c_del(cursor, 0);
+				ret = cursor64->c_del(cursor64, 0);
 			}
 
 			if (ret != 0 && ret != DB_NOTFOUND) {
