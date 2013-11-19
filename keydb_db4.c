@@ -1124,6 +1124,16 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 	publickey = NULL;
 
 	if (!deadlock) {
+		key.data = fingerprint.fp;
+		key.size = fingerprint.length;
+
+		keydb_fp(privctx, &fingerprint)->del(keydb_fp(privctx,
+					&fingerprint),
+				privctx->txn,
+				&key,
+				0); /* flags */
+
+		/* Delete old style 64 bit keyid */
 		key.data = &keyid;
 		key.size = sizeof(keyid);
 
