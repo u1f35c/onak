@@ -826,7 +826,7 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 				DB_GET_BOTH);
 
 			if (ret == 0) {
-				ret = cursor->c_del(cursor, 0);
+				cursor->c_del(cursor, 0);
 			}
 
 			/* New style just uses the fingerprint as the data */
@@ -898,7 +898,7 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 			DB_GET_BOTH);
 
 		if (ret == 0) {
-			ret = cursor->c_del(cursor, 0);
+			cursor->c_del(cursor, 0);
 		}
 
 		/* New style mapping to fingerprint */
@@ -993,7 +993,7 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 				DB_GET_BOTH);
 
 			if (ret == 0) {
-				ret = cursor->c_del(cursor, 0);
+				cursor->c_del(cursor, 0);
 			}
 
 			/* Remove 32 bit keyid -> fingerprint mapping */
@@ -1085,7 +1085,7 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 				DB_GET_BOTH);
 
 			if (ret == 0) {
-				ret = cursor->c_del(cursor, 0);
+				cursor->c_del(cursor, 0);
 			}
 
 			/* Then delete new style fingerprint mapping */

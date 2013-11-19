@@ -43,7 +43,6 @@ uint64_t fingerprint2keyid(struct openpgp_fingerprint *fingerprint)
 	uint64_t keyid;
 	int i;
 
-	keyid = 0;
 	for (keyid = 0, i = 12; i < 20; i++) {
 		keyid <<= 8;
 		keyid += fingerprint->fp[i];
