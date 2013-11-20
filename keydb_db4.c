@@ -772,7 +772,9 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 	}
 
 	if (db4_fetch_key_id(dbctx, keyid, &publickey, true) == 0) {
-		db4_endtrans(dbctx);
+		if (!intrans) {
+			db4_endtrans(dbctx);
+		}
 		return 1;
 	}
 
