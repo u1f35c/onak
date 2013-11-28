@@ -24,6 +24,7 @@
 #include <time.h>
 #include "keystructs.h"
 #include "ll.h"
+#include "onak.h"
 
 /**
  *	keysigs - Return the sigs on a given OpenPGP signature packet list.
@@ -46,7 +47,8 @@ struct ll *keysigs(struct ll *curll,
  *	key or pulls the data directly from v2/3. NULL can be passed for any
  *	values which aren't cared about.
  */
-void sig_info(struct openpgp_packet *packet, uint64_t *keyid, time_t *creation);
+onak_status_t sig_info(struct openpgp_packet *packet, uint64_t *keyid,
+		time_t *creation);
 
 /**
  *	sig_keyid - Return the keyid for a given OpenPGP signature packet.
@@ -79,6 +81,8 @@ struct openpgp_fingerprint *keysubkeys(struct openpgp_publickey *key);
 /**
  *	parse_subpackets - Parse the subpackets of a Type 4 signature.
  *	@data: The subpacket data.
+ *	@len: The amount of data available to read.
+ *	@parselen: The amount of data that was actually parsed.
  *	@keyid: A pointer to where we should return the keyid.
  *	@creationtime: A pointer to where we should return the creation time.
  *
@@ -87,6 +91,7 @@ struct openpgp_fingerprint *keysubkeys(struct openpgp_publickey *key);
  *	processed. If the value of any piece of data is not desired a NULL
  *	can be passed instead of a pointer to a storage area for that value.
  */
-int parse_subpackets(unsigned char *data, uint64_t *keyid, time_t *creation);
+onak_status_t parse_subpackets(unsigned char *data, size_t len,
+		size_t *parselen, uint64_t *keyid, time_t *creation);
 
 #endif

@@ -70,6 +70,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 	size_t hashlen[8];
 	int chunks, i;
 	uint64_t keyid;
+	onak_status_t res;
 
 	keyheader[0] = 0x99;
 	keyheader[1] = key->publickey->length >> 8;
@@ -114,7 +115,13 @@ int check_packet_sighash(struct openpgp_publickey *key,
 			size_t len;
 
 			keyid = 0;
-			len = parse_subpackets(&sig->data[4], &keyid, NULL);
+			res = parse_subpackets(&sig->data[4],
+						sig->length - 4, &len,
+						&keyid, NULL);
+			if (res != ONAK_E_OK) {
+				/* If it parses badly, reject it */
+				return 0;
+			}
 			if (keyid == 0 &&
 					/* No unhashed data */
 					sig->data[4 + len] == 0 &&
@@ -163,6 +170,10 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		hashdata[chunks] = sig->data;
 		hashlen[chunks] = siglen = (sig->data[4] << 8) +
 			sig->data[5] + 6;;
+		if (siglen > sig->length) {
+			/* Signature data exceed packet length, bogus */
+			return 0;
+		}
 		chunks++;
 
 		v4trailer[0] = 4;

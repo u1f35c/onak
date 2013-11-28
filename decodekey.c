@@ -34,6 +34,8 @@
 /*
  *	parse_subpackets - Parse the subpackets of a Type 4 signature.
  *	@data: The subpacket data.
+ *	@len: The amount of data available to read.
+ *	@parselen: The amount of data that was actually parsed.
  *	@keyid: A pointer to where we should return the keyid.
  *	@creationtime: A pointer to where we should return the creation time.
  *
@@ -42,7 +44,8 @@
  *	processed. If the value of any piece of data is not desired a NULL
  *	can be passed instead of a pointer to a storage area for that value.
  */
-int parse_subpackets(unsigned char *data, uint64_t *keyid, time_t *creation)
+onak_status_t parse_subpackets(unsigned char *data, size_t len,
+		size_t *parselen, uint64_t *keyid, time_t *creation)
 {
 	int offset = 0;
 	int length = 0;
@@ -50,7 +53,19 @@ int parse_subpackets(unsigned char *data, uint64_t *keyid, time_t *creation)
 
 	log_assert(data != NULL);
 
+	/* Make sure we actually have the 2 byte length field */
+	if (len < 2) {
+		return ONAK_E_INVALID_PKT;
+	}
+
 	length = (data[0] << 8) + data[1] + 2;
+
+	/* If the length is off the end of the data available, it's bogus */
+	if (len < length) {
+		return ONAK_E_INVALID_PKT;
+	}
+
+	*parselen = length;
 
 	offset = 2;
 	while (offset < length) {
@@ -152,7 +167,7 @@ int parse_subpackets(unsigned char *data, uint64_t *keyid, time_t *creation)
 		offset += packetlen;
 	}
 
-	return length;
+	return ONAK_E_OK;
 }
 
 /**
@@ -187,10 +202,12 @@ struct ll *keysigs(struct ll *curll,
  *	key or pulls the data directly from v2/3. NULL can be passed for any
  *	values which aren't cared about.
  */
-void sig_info(struct openpgp_packet *packet, uint64_t *keyid, time_t *creation)
+onak_status_t sig_info(struct openpgp_packet *packet, uint64_t *keyid,
+		time_t *creation)
 {
-	int length = 0;
-	
+	size_t length = 0;
+	onak_status_t res;
+
 	if (packet != NULL) {
 		switch (packet->data[0]) {
 		case 2:
@@ -223,20 +240,25 @@ void sig_info(struct openpgp_packet *packet, uint64_t *keyid, time_t *creation)
 			}
 			break;
 		case 4:
-			length = parse_subpackets(&packet->data[4],
-					keyid, creation);
-			parse_subpackets(&packet->data[length + 4],
-					keyid, creation);
-			/*
-			 * Don't bother to look at the unsigned packets.
-			 */
+			res = parse_subpackets(&packet->data[4],
+					packet->length - 4,
+					&length, keyid, creation);
+			if (res != ONAK_E_OK) {
+				return res;
+			}
+			res = parse_subpackets(&packet->data[length + 4],
+					packet->length - (4 + length),
+					&length, keyid, creation);
+			if (res != ONAK_E_OK) {
+				return res;
+			}
 			break;
 		default:
 			break;
 		}
 	}
 
-	return;
+	return ONAK_E_OK;
 }
 
 /**
