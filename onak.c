@@ -149,6 +149,7 @@ void usage(void) {
 	puts("\tgetphoto - retrieves the first photoid on the given key and"
 		" dumps to\n\t           stdout");
 	puts("\tindex    - search for a key and list it");
+	puts("\treindex  - retrieve and re-store a key in the backend db");
 	puts("\tvindex   - search for a key and list it and its signatures");
 }
 
@@ -425,6 +426,16 @@ int main(int argc, char *argv[])
 			} else {
 				puts("Key not found");
 			}
+		} else if (!strcmp("reindex", argv[optind])) {
+			dbctx->starttrans(dbctx);
+			if (dbctx->fetch_key_id(dbctx, keyid, &keys, true)) {
+				dbctx->delete_key(dbctx, keyid, true);
+				cleankeys(keys);
+				dbctx->store_key(dbctx, keys, true, false);
+			} else {
+				puts("Key not found");
+			}
+			dbctx->endtrans(dbctx);
 		}
 		dbctx->cleanupdb(dbctx);
 	} else {
