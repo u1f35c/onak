@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 {
 	char **params = NULL;
 	int op = OP_UNKNOWN;
-	int i;
+	int i, j;
 	int indx = 0;
 	bool dispfp = false;
 	bool skshash = false;
@@ -148,11 +148,11 @@ int main(int argc, char *argv[])
 			if (search != NULL && strlen(search) == 42 &&
 					search[0] == '0' && search[1] == 'x') {
 				fingerprint.length = MAX_FINGERPRINT_LEN;
-				for (i = 0; i < MAX_FINGERPRINT_LEN; i++) {
-					fingerprint.fp[i] = (hex2bin(
-							search[2 + i * 2])
+				for (j = 0; j < MAX_FINGERPRINT_LEN; j++) {
+					fingerprint.fp[j] = (hex2bin(
+							search[2 + j * 2])
 								<< 4) +
-						hex2bin(search[3 + i * 2]);
+						hex2bin(search[3 + j * 2]);
 				}
 				isfp = true;
 			} else if (search != NULL) {
