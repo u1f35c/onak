@@ -169,6 +169,7 @@ static int db4_upgradedb(struct onak_db4_dbctx *privctx)
 	char buf[1024];
 	int lockfile_fd;
 	struct stat statbuf;
+	ssize_t written;
 
 	snprintf(buf, sizeof(buf) - 1, "%s/%s", config.db_dir,
 			DB4_UPGRADE_FILE);
@@ -184,8 +185,16 @@ static int db4_upgradedb(struct onak_db4_dbctx *privctx)
 		}
 	}
 	snprintf(buf, sizeof(buf) - 1, "%d", getpid());
-	write(lockfile_fd, buf, strlen(buf));
+	written = write(lockfile_fd, buf, strlen(buf));
 	close(lockfile_fd);
+	if (written != strlen(buf)) {
+		logthing(LOGTHING_CRITICAL, "Couldn't write PID to lockfile: "
+				"%s", strerror(errno));
+		snprintf(buf, sizeof(buf) - 1, "%s/%s", config.db_dir,
+				DB4_UPGRADE_FILE);
+		unlink(buf);
+		return -1;
+	}
 
 	logthing(LOGTHING_NOTICE, "Upgrading DB4 database");
 	ret = db_env_create(&privctx->dbenv, 0);
