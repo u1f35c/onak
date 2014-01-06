@@ -48,7 +48,7 @@
 
 static struct keyd_stats *stats;
 
-void daemonize(void)
+static void daemonize(void)
 {
 	pid_t pid;
 
@@ -98,7 +98,7 @@ void daemonize(void)
 	return;
 }
 
-void iteratefunc(void *ctx, struct openpgp_publickey *key)
+static void iteratefunc(void *ctx, struct openpgp_publickey *key)
 {
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_packet_list *list_end = NULL;
@@ -143,7 +143,7 @@ void iteratefunc(void *ctx, struct openpgp_publickey *key)
 	return;
 }
 
-int sock_init(const char *sockname)
+static int sock_init(const char *sockname)
 {
 	struct sockaddr_un sock;
 	int                fd = -1;
@@ -172,7 +172,7 @@ int sock_init(const char *sockname)
 	return fd;
 }
 
-int sock_do(struct onak_dbctx *dbctx, int fd)
+static int sock_do(struct onak_dbctx *dbctx, int fd)
 {
 	uint32_t cmd = KEYD_CMD_UNKNOWN;
 	ssize_t  bytes = 0;
@@ -512,13 +512,13 @@ int sock_do(struct onak_dbctx *dbctx, int fd)
 	return(ret);
 }
 
-int sock_close(int fd)
+static int sock_close(int fd)
 {
 	shutdown(fd, SHUT_RDWR);
 	return close(fd);
 }
 
-int sock_accept(int fd)
+static int sock_accept(int fd)
 {
 	struct sockaddr_un sock;
 	socklen_t          socklen;
