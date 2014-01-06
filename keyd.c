@@ -65,11 +65,35 @@ void daemonize(void)
 		exit(EXIT_SUCCESS);
 	}
 
-	setsid();
+	if (setsid() == -1) {
+		logthing(LOGTHING_CRITICAL,
+			"Couldn't set process group leader: %d (%s)",
+			errno,
+			strerror(errno));
+		exit(EXIT_FAILURE);
+	}
 
-	freopen("/dev/null", "r", stdin);
-	freopen("/dev/null", "w", stdout);
-	freopen("/dev/null", "w", stderr);
+	if (!freopen("/dev/null", "r", stdin)) {
+		logthing(LOGTHING_CRITICAL,
+			"Couldn't reopen stdin to NULL: %d (%s)",
+			errno,
+			strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+	if (!freopen("/dev/null", "w", stdout)) {
+		logthing(LOGTHING_CRITICAL,
+			"Couldn't reopen stdout to NULL: %d (%s)",
+			errno,
+			strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+	if (!freopen("/dev/null", "w", stderr)) {
+		logthing(LOGTHING_CRITICAL,
+			"Couldn't reopen stderr to NULL: %d (%s)",
+			errno,
+			strerror(errno));
+		exit(EXIT_FAILURE);
+	}
 
 	return;
 }
