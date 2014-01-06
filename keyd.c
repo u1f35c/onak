@@ -98,46 +98,87 @@ static void daemonize(void)
 	return;
 }
 
-static void iteratefunc(void *ctx, struct openpgp_publickey *key)
+static bool keyd_write_key(int fd, struct openpgp_publickey *key)
 {
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_packet_list *list_end = NULL;
 	struct buffer_ctx           storebuf;
-	int                         ret = 0;
-	int                         *fd = (int *) ctx;
-	uint64_t                    keyid;
+	ssize_t written;
+	bool    ok = true;
+
+	storebuf.offset = 0;
+	storebuf.size = 8192;
+	storebuf.buffer = malloc(8192);
+
+	flatten_publickey(key,
+				&packets,
+				&list_end);
+	write_openpgp_stream(buffer_putchar,
+				&storebuf,
+				packets);
+	logthing(LOGTHING_TRACE,
+				"Sending %d bytes.",
+				storebuf.offset);
+	written = write(fd, &storebuf.offset,
+			sizeof(storebuf.offset));
+	if (written == 0) {
+		ok = false;
+	} else {
+		written = write(fd, storebuf.buffer,
+			storebuf.offset);
+		if (written != storebuf.offset) {
+			ok = false;
+		}
+	}
+
+	free(storebuf.buffer);
+	storebuf.buffer = NULL;
+	storebuf.size = storebuf.offset = 0;
+	free_packet_list(packets);
+	packets = list_end = NULL;
+
+	return (ok);
+}
+
+static bool keyd_write_reply(int fd, enum keyd_reply _reply)
+{
+	uint32_t reply = _reply;
+	ssize_t written;
+	bool ok = true;
+
+	written = write(fd, &reply, sizeof(reply));
+	if (written != sizeof(reply)) {
+		ok = false;
+	}
+
+	return (ok);
+}
+
+static bool keyd_write_size(int fd, size_t size)
+{
+	ssize_t written;
+	bool ok = true;
+
+	written = write(fd, &size, sizeof(size));
+	if (written != sizeof(size)) {
+		ok = false;
+	}
+
+	return (ok);
+}
+
+static void iteratefunc(void *ctx, struct openpgp_publickey *key)
+{
+	int      *fd = (int *) ctx;
+	uint64_t  keyid;
 
 	if (key != NULL) {
-		storebuf.offset = 0;
-		storebuf.size = 8192;
-		storebuf.buffer = malloc(8192);
-
 		get_keyid(key, &keyid);
 		logthing(LOGTHING_TRACE,
 				"Iterating over 0x%016" PRIX64 ".",
 				keyid);
 
-		flatten_publickey(key,
-				&packets,
-				&list_end);
-		write_openpgp_stream(buffer_putchar,
-				&storebuf,
-				packets);
-		logthing(LOGTHING_TRACE,
-				"Sending %d bytes.",
-				storebuf.offset);
-		ret = write(*fd, &storebuf.offset,
-			sizeof(storebuf.offset));
-		if (ret != 0) {
-			write(*fd, storebuf.buffer,
-				storebuf.offset);
-		}
-
-		free(storebuf.buffer);
-		storebuf.buffer = NULL;
-		storebuf.size = storebuf.offset = 0;
-		free_packet_list(packets);
-		packets = list_end = NULL;
+		keyd_write_key(*fd, key);
 	}
 
 	return;
@@ -182,7 +223,6 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 	char     *search = NULL;
 	struct openpgp_publickey *key = NULL;
 	struct openpgp_packet_list *packets = NULL;
-	struct openpgp_packet_list *list_end = NULL;
 	struct buffer_ctx storebuf;
 	struct skshash hash;
 	struct openpgp_fingerprint fingerprint;
@@ -206,20 +246,34 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 		}
 		switch (cmd) {
 		case KEYD_CMD_VERSION:
-			cmd = KEYD_REPLY_OK;
-			write(fd, &cmd, sizeof(cmd));
-			cmd = sizeof(keyd_version);
-			write(fd, &cmd, sizeof(cmd));
-			write(fd, &keyd_version, sizeof(keyd_version));
-			break;
-		case KEYD_CMD_GET_ID:
-			cmd = KEYD_REPLY_OK;
-			write(fd, &cmd, sizeof(cmd));
-			bytes = read(fd, &keyid, sizeof(keyid));
-			if (bytes != sizeof(keyid)) {
+			if (!keyd_write_reply(fd, KEYD_REPLY_OK)) {
 				ret = 1;
 			}
-			storebuf.offset = 0;
+			if (ret == 0) {
+				cmd = sizeof(keyd_version);
+				bytes = write(fd, &cmd, sizeof(cmd));
+				if (bytes != sizeof(cmd)) {
+					ret = 1;
+				}
+			}
+			if (ret == 0) {
+				bytes = write(fd, &keyd_version,
+					sizeof(keyd_version));
+				if (bytes != sizeof(keyd_version)) {
+					ret = 1;
+				}
+			}
+			break;
+		case KEYD_CMD_GET_ID:
+			if (!keyd_write_reply(fd, KEYD_REPLY_OK)) {
+				ret = 1;
+			}
+			if (ret == 0) {
+				bytes = read(fd, &keyid, sizeof(keyid));
+				if (bytes != sizeof(keyid)) {
+					ret = 1;
+				}
+			}
 			if (ret == 0) {
 				logthing(LOGTHING_INFO,
 						"Fetching 0x%" PRIX64
@@ -229,47 +283,33 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 							keyid,
 							&key, false));
 				if (key != NULL) {
-					storebuf.size = 8192;
-					storebuf.buffer = malloc(8192);
-
-					flatten_publickey(key,
-							&packets,
-							&list_end);
-					write_openpgp_stream(buffer_putchar,
-							&storebuf,
-							packets);
-					logthing(LOGTHING_TRACE,
-							"Sending %d bytes.",
-							storebuf.offset);
-					write(fd, &storebuf.offset,
-						sizeof(storebuf.offset));
-					write(fd, storebuf.buffer,
-						storebuf.offset);
-
-					free(storebuf.buffer);
-					storebuf.buffer = NULL;
-					storebuf.size = storebuf.offset = 0;
-					free_packet_list(packets);
-					packets = list_end = NULL;
+					keyd_write_key(fd, key);
 					free_publickey(key);
 					key = NULL;
 				} else {
-					write(fd, &storebuf.offset,
-						sizeof(storebuf.offset));
+					if (!keyd_write_size(fd, 0)) {
+						ret = 1;
+					}
 				}
 			}
 			break;
 		case KEYD_CMD_GET_FP:
-			cmd = KEYD_REPLY_OK;
-			write(fd, &cmd, sizeof(cmd));
-			read(fd, &bytes, 1);
-			if (bytes > MAX_FINGERPRINT_LEN) {
+			if (!keyd_write_reply(fd, KEYD_REPLY_OK)) {
 				ret = 1;
-			} else {
-				fingerprint.length = bytes;
-				read(fd, fingerprint.fp, bytes);
 			}
-			storebuf.offset = 0;
+			if (ret == 0) {
+				if ((read(fd, &bytes, 1) != 1) ||
+						(bytes > MAX_FINGERPRINT_LEN)) {
+					ret = 1;
+				} else {
+					fingerprint.length = bytes;
+					bytes = read(fd, fingerprint.fp,
+						fingerprint.length);
+					if (bytes != fingerprint.length) {
+						ret = 1;
+					}
+				}
+			}
 			if (ret == 0) {
 				logthing(LOGTHING_INFO,
 						"Fetching by fingerprint"
@@ -278,48 +318,34 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 							&fingerprint,
 							&key, false));
 				if (key != NULL) {
-					storebuf.size = 8192;
-					storebuf.buffer = malloc(8192);
-
-					flatten_publickey(key,
-							&packets,
-							&list_end);
-					write_openpgp_stream(buffer_putchar,
-							&storebuf,
-							packets);
-					logthing(LOGTHING_TRACE,
-							"Sending %d bytes.",
-							storebuf.offset);
-					write(fd, &storebuf.offset,
-						sizeof(storebuf.offset));
-					write(fd, storebuf.buffer,
-						storebuf.offset);
-
-					free(storebuf.buffer);
-					storebuf.buffer = NULL;
-					storebuf.size = storebuf.offset = 0;
-					free_packet_list(packets);
-					packets = list_end = NULL;
+					keyd_write_key(fd, key);
 					free_publickey(key);
 					key = NULL;
 				} else {
-					write(fd, &storebuf.offset,
-						sizeof(storebuf.offset));
+					if (!keyd_write_size(fd, 0)) {
+						ret = 1;
+					}
 				}
 			}
 			break;
 
 		case KEYD_CMD_GET_TEXT:
-			cmd = KEYD_REPLY_OK;
-			write(fd, &cmd, sizeof(cmd));
-			bytes = read(fd, &count, sizeof(count));
-			if (bytes != sizeof(count)) {
+			if (!keyd_write_reply(fd, KEYD_REPLY_OK)) {
 				ret = 1;
 			}
-			storebuf.offset = 0;
+			if (ret == 0) {
+				bytes = read(fd, &count, sizeof(count));
+				if (bytes != sizeof(count)) {
+					ret = 1;
+				}
+			}
 			if (ret == 0) {
 				search = malloc(count+1);
-				read(fd, search, count);
+				bytes = read(fd, search, count);
+				if (bytes != count) {
+					ret = 1;
+					break;
+				}
 				search[count] = 0;
 				logthing(LOGTHING_INFO,
 						"Fetching %s, result: %d",
@@ -327,50 +353,33 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 						dbctx->fetch_key_text(dbctx,
 							search, &key));
 				if (key != NULL) {
-					storebuf.size = 8192;
-					storebuf.buffer = malloc(8192);
-
-					flatten_publickey(key,
-							&packets,
-							&list_end);
-					write_openpgp_stream(buffer_putchar,
-							&storebuf,
-							packets);
-					logthing(LOGTHING_TRACE,
-							"Sending %d bytes.",
-							storebuf.offset);
-					write(fd, &storebuf.offset,
-						sizeof(storebuf.offset));
-					write(fd, storebuf.buffer,
-						storebuf.offset);
-
-					free(storebuf.buffer);
-					storebuf.buffer = NULL;
-					storebuf.size = storebuf.offset = 0;
-					free_packet_list(packets);
-					packets = list_end = NULL;
+					keyd_write_key(fd, key);
 					free_publickey(key);
 					key = NULL;
 				} else {
-					write(fd, &storebuf.offset,
-						sizeof(storebuf.offset));
+					if (!keyd_write_size(fd, 0)) {
+						ret = 1;
+					}
 				}
 				free(search);
 			}
 			break;
 		case KEYD_CMD_STORE:
-			cmd = KEYD_REPLY_OK;
-			write(fd, &cmd, sizeof(cmd));
-			storebuf.offset = 0;
-			bytes = read(fd, &storebuf.size,
-					sizeof(storebuf.size));
-			logthing(LOGTHING_TRACE, "Reading %d bytes.",
-					storebuf.size);
-			if (bytes != sizeof(storebuf.size)) {
+			if (!keyd_write_reply(fd, KEYD_REPLY_OK)) {
 				ret = 1;
+			}
+			if (ret == 0) {
+				bytes = read(fd, &storebuf.size,
+					sizeof(storebuf.size));
+				logthing(LOGTHING_TRACE, "Reading %d bytes.",
+					storebuf.size);
+				if (bytes != sizeof(storebuf.size)) {
+					ret = 1;
+				}
 			}
 			if (ret == 0 && storebuf.size > 0) {
 				storebuf.buffer = malloc(storebuf.size);
+				storebuf.offset = 0;
 				bytes = count = 0;
 				while (bytes >= 0 && count < storebuf.size) {
 					bytes = read(fd,
@@ -397,11 +406,14 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 			}
 			break;
 		case KEYD_CMD_DELETE:
-			cmd = KEYD_REPLY_OK;
-			write(fd, &cmd, sizeof(cmd));
-			bytes = read(fd, &keyid, sizeof(keyid));
-			if (bytes != sizeof(keyid)) {
+			if (!keyd_write_reply(fd, KEYD_REPLY_OK)) {
 				ret = 1;
+			}
+			if (ret == 0) {
+				bytes = read(fd, &keyid, sizeof(keyid));
+				if (bytes != sizeof(keyid)) {
+					ret = 1;
+				}
 			}
 			if (ret == 0) {
 				logthing(LOGTHING_INFO,
@@ -413,56 +425,83 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 			}
 			break;
 		case KEYD_CMD_GETFULLKEYID:
-			cmd = KEYD_REPLY_OK;
-			write(fd, &cmd, sizeof(cmd));
-			bytes = read(fd, &keyid, sizeof(keyid));
-			if (bytes != sizeof(keyid)) {
+			if (!keyd_write_reply(fd, KEYD_REPLY_OK)) {
 				ret = 1;
+			}
+			if (ret == 0) {
+				bytes = read(fd, &keyid, sizeof(keyid));
+				if (bytes != sizeof(keyid)) {
+					ret = 1;
+				}
 			}
 			if (ret == 0) {
 				keyid = dbctx->getfullkeyid(dbctx, keyid);
 				cmd = sizeof(keyid);
-				write(fd, &cmd, sizeof(cmd));
-				write(fd, &keyid, sizeof(keyid));
+				bytes = write(fd, &cmd, sizeof(cmd));
+				if (bytes != sizeof(cmd)) {
+					ret = 1;
+				}
+			}
+			if (ret == 0) {
+				bytes = write(fd, &keyid, sizeof(keyid));
+				if (bytes != sizeof(keyid)) {
+					ret = 1;
+				}
 			}
 			break;
 		case KEYD_CMD_KEYITER:
-			cmd = KEYD_REPLY_OK;
-			write(fd, &cmd, sizeof(cmd));
-			dbctx->iterate_keys(dbctx, iteratefunc,
+			if (!keyd_write_reply(fd, KEYD_REPLY_OK)) {
+				ret = 1;
+			}
+			if (ret == 0) {
+				dbctx->iterate_keys(dbctx, iteratefunc,
 					&fd);
-			bytes = 0;
-			write(fd, &bytes, sizeof(bytes));
+				if (!keyd_write_size(fd, 0)) {
+					ret = 1;
+				}
+			}
 			break;
 		case KEYD_CMD_CLOSE:
-			cmd = KEYD_REPLY_OK;
-			write(fd, &cmd, sizeof(cmd));
+			/* We're going to close the FD even if this fails */
+			(void) keyd_write_reply(fd, KEYD_REPLY_OK);
 			ret = 1;
 			break;
 		case KEYD_CMD_QUIT:
-			cmd = KEYD_REPLY_OK;
-			write(fd, &cmd, sizeof(cmd));
+			/* We're going to quit even if this fails */
+			(void) keyd_write_reply(fd, KEYD_REPLY_OK);
 			logthing(LOGTHING_NOTICE,
 				"Exiting due to quit request.");
 			ret = 1;
 			trytocleanup();
 			break;
 		case KEYD_CMD_STATS:
-			cmd = KEYD_REPLY_OK;
-			write(fd, &cmd, sizeof(cmd));
-			cmd = sizeof(*stats);
-			write(fd, &cmd, sizeof(cmd));
-			write(fd, stats,
-				sizeof(*stats));
-			break;
-		case KEYD_CMD_GET_SKSHASH:
-			cmd = KEYD_REPLY_OK;
-			write(fd, &cmd, sizeof(cmd));
-			bytes = read(fd, hash.hash, sizeof(hash.hash));
-			if (bytes != sizeof(hash.hash)) {
+			if (!keyd_write_reply(fd, KEYD_REPLY_OK)) {
 				ret = 1;
 			}
-			storebuf.offset = 0;
+			if (ret == 0) {
+				cmd = sizeof(*stats);
+				bytes = write(fd, &cmd, sizeof(cmd));
+				if (bytes != sizeof(cmd)) {
+					ret = 1;
+				}
+			}
+			if (ret == 0) {
+				bytes = write(fd, stats, sizeof(*stats));
+				if (bytes != sizeof(*stats)) {
+					ret = 1;
+				}
+			}
+			break;
+		case KEYD_CMD_GET_SKSHASH:
+			if (!keyd_write_reply(fd, KEYD_REPLY_OK)) {
+				ret = 1;
+			}
+			if (ret == 0) {
+				bytes = read(fd, hash.hash, sizeof(hash.hash));
+				if (bytes != sizeof(hash.hash)) {
+					ret = 1;
+				}
+			}
 			if (ret == 0) {
 				logthing(LOGTHING_INFO,
 						"Fetching by hash"
@@ -470,33 +509,13 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 						dbctx->fetch_key_skshash(dbctx,
 							&hash, &key));
 				if (key != NULL) {
-					storebuf.size = 8192;
-					storebuf.buffer = malloc(8192);
-
-					flatten_publickey(key,
-							&packets,
-							&list_end);
-					write_openpgp_stream(buffer_putchar,
-							&storebuf,
-							packets);
-					logthing(LOGTHING_TRACE,
-							"Sending %d bytes.",
-							storebuf.offset);
-					write(fd, &storebuf.offset,
-						sizeof(storebuf.offset));
-					write(fd, storebuf.buffer,
-						storebuf.offset);
-
-					free(storebuf.buffer);
-					storebuf.buffer = NULL;
-					storebuf.size = storebuf.offset = 0;
-					free_packet_list(packets);
-					packets = list_end = NULL;
+					keyd_write_key(fd, key);
 					free_publickey(key);
 					key = NULL;
 				} else {
-					write(fd, &storebuf.offset,
-						sizeof(storebuf.offset));
+					if (!keyd_write_size(fd, 0)) {
+						ret = 1;
+					}
 				}
 			}
 			break;
@@ -504,8 +523,9 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 		default:
 			logthing(LOGTHING_ERROR, "Got unknown command: %d",
 					cmd);
-			cmd = KEYD_REPLY_UNKNOWN_CMD;
-			write(fd, &cmd, sizeof(cmd));
+			if (!keyd_write_reply(fd, KEYD_REPLY_UNKNOWN_CMD)) {
+				ret = 1;
+			}
 		}
 	}
 
