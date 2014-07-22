@@ -1706,12 +1706,14 @@ struct onak_dbctx *keydb_db4_init(bool readonly)
 	 * Up the number of locks we're allowed at once. We base this on
 	 * the maximum number of keys we're going to return.
 	 */
-	maxlocks = config.maxkeys * 16;
-	if (maxlocks < 1000) {
-		maxlocks = 1000;
+	if (ret == 0) {
+		maxlocks = config.maxkeys * 16;
+		if (maxlocks < 1000) {
+			maxlocks = 1000;
+		}
+		privctx->dbenv->set_lk_max_locks(privctx->dbenv, maxlocks);
+		privctx->dbenv->set_lk_max_objects(privctx->dbenv, maxlocks);
 	}
-	privctx->dbenv->set_lk_max_locks(privctx->dbenv, maxlocks);
-	privctx->dbenv->set_lk_max_objects(privctx->dbenv, maxlocks);
 
 	/*
 	 * Enable deadlock detection so that we don't block indefinitely on
