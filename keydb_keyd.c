@@ -59,6 +59,28 @@ static void keyd_endtrans(struct onak_dbctx *dbctx)
 	return;
 }
 
+static bool keyd_send_cmd(int fd, enum keyd_ops _cmd)
+{
+	uint32_t cmd = _cmd;
+	ssize_t bytes;
+
+	bytes = write(fd, &cmd, sizeof(cmd));
+	if (bytes != sizeof(cmd)) {
+		return false;
+	}
+
+	bytes = read(fd, &cmd, sizeof(cmd));
+	if (bytes != sizeof(cmd)) {
+		return false;
+	}
+
+	if (cmd != KEYD_REPLY_OK) {
+		return false;
+	}
+
+	return true;
+}
+
 /**
  *	fetch_key - Given a keyid fetch the key from storage.
  *	@keyid: The keyid to fetch.
@@ -78,13 +100,10 @@ static int keyd_fetch_key_id(struct onak_dbctx *dbctx,
 	int keyd_fd = (intptr_t) dbctx->priv;
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
-	uint32_t                    cmd = KEYD_CMD_GET_ID;
 	ssize_t                     bytes = 0;
 	ssize_t                     count = 0;
 
-	write(keyd_fd, &cmd, sizeof(cmd));
-	read(keyd_fd, &cmd, sizeof(cmd));
-	if (cmd == KEYD_REPLY_OK) {
+	if (keyd_send_cmd(keyd_fd, KEYD_CMD_GET_ID)) {
 		write(keyd_fd, &keyid, sizeof(keyid));
 		keybuf.offset = 0;
 		read(keyd_fd, &keybuf.size, sizeof(keybuf.size));
@@ -123,7 +142,6 @@ static int keyd_fetch_key_fp(struct onak_dbctx *dbctx,
 	int keyd_fd = (intptr_t) dbctx->priv;
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
-	uint32_t                    cmd = KEYD_CMD_GET_FP;
 	ssize_t                     bytes = 0;
 	ssize_t                     count = 0;
 	uint8_t                     size;
@@ -132,9 +150,7 @@ static int keyd_fetch_key_fp(struct onak_dbctx *dbctx,
 		return 0;
 	}
 
-	write(keyd_fd, &cmd, sizeof(cmd));
-	read(keyd_fd, &cmd, sizeof(cmd));
-	if (cmd == KEYD_REPLY_OK) {
+	if (keyd_send_cmd(keyd_fd, KEYD_CMD_GET_FP)) {
 		size = fingerprint->length;
 		write(keyd_fd, &size, sizeof(size));
 		write(keyd_fd, fingerprint->fp, size);
@@ -179,11 +195,8 @@ static int keyd_delete_key(struct onak_dbctx *dbctx,
 		uint64_t keyid, bool intrans)
 {
 	int keyd_fd = (intptr_t) dbctx->priv;
-	uint32_t cmd = KEYD_CMD_DELETE;
 
-	write(keyd_fd, &cmd, sizeof(cmd));
-	read(keyd_fd, &cmd, sizeof(cmd));
-	if (cmd == KEYD_REPLY_OK) {
+	if (keyd_send_cmd(keyd_fd, KEYD_CMD_DELETE)) {
 		write(keyd_fd, &keyid, sizeof(keyid));
 	}
 
@@ -213,7 +226,6 @@ static int keyd_store_key(struct onak_dbctx *dbctx,
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_packet_list *list_end = NULL;
 	struct openpgp_publickey   *next = NULL;
-	uint32_t                    cmd = KEYD_CMD_STORE;
 	uint64_t                    keyid;
 
 	if (get_keyid(publickey, &keyid) != ONAK_E_OK) {
@@ -225,9 +237,7 @@ static int keyd_store_key(struct onak_dbctx *dbctx,
 		keyd_delete_key(dbctx, keyid, false);
 	}
 
-	write(keyd_fd, &cmd, sizeof(cmd));
-	read(keyd_fd, &cmd, sizeof(cmd));
-	if (cmd == KEYD_REPLY_OK) {
+	if (keyd_send_cmd(keyd_fd, KEYD_CMD_STORE)) {
 		keybuf.offset = 0;
 		keybuf.size = 8192;
 		keybuf.buffer = malloc(keybuf.size);
@@ -269,13 +279,10 @@ static int keyd_fetch_key_text(struct onak_dbctx *dbctx,
 	int keyd_fd = (intptr_t) dbctx->priv;
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
-	uint32_t                    cmd = KEYD_CMD_GET_TEXT;
 	ssize_t                     bytes = 0;
 	ssize_t                     count = 0;
 
-	write(keyd_fd, &cmd, sizeof(cmd));
-	read(keyd_fd, &cmd, sizeof(cmd));
-	if (cmd == KEYD_REPLY_OK) {
+	if (keyd_send_cmd(keyd_fd, KEYD_CMD_GET_TEXT)) {
 		bytes = strlen(search);
 		write(keyd_fd, &bytes, sizeof(bytes));
 		write(keyd_fd, search, bytes);
@@ -317,13 +324,10 @@ static int keyd_fetch_key_skshash(struct onak_dbctx *dbctx,
 	int keyd_fd = (intptr_t) dbctx->priv;
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
-	uint32_t                    cmd = KEYD_CMD_GET_SKSHASH;
 	ssize_t                     bytes = 0;
 	ssize_t                     count = 0;
 
-	write(keyd_fd, &cmd, sizeof(cmd));
-	read(keyd_fd, &cmd, sizeof(cmd));
-	if (cmd == KEYD_REPLY_OK) {
+	if (keyd_send_cmd(keyd_fd, KEYD_CMD_GET_SKSHASH)) {
 		write(keyd_fd, hash->hash, sizeof(hash->hash));
 		keybuf.offset = 0;
 		read(keyd_fd, &keybuf.size, sizeof(keybuf.size));
@@ -367,9 +371,7 @@ static uint64_t keyd_getfullkeyid(struct onak_dbctx *dbctx, uint64_t keyid)
 	int keyd_fd = (intptr_t) dbctx->priv;
 	uint32_t cmd = KEYD_CMD_GETFULLKEYID;
 
-	write(keyd_fd, &cmd, sizeof(cmd));
-	read(keyd_fd, &cmd, sizeof(cmd));
-	if (cmd == KEYD_REPLY_OK) {
+	if (keyd_send_cmd(keyd_fd, KEYD_CMD_GETFULLKEYID)) {
 		write(keyd_fd, &keyid, sizeof(keyid));
 		read(keyd_fd, &cmd, sizeof(cmd));
 		if (cmd != sizeof(keyid)) {
@@ -400,14 +402,11 @@ static int keyd_iterate_keys(struct onak_dbctx *dbctx,
 	struct buffer_ctx           keybuf;
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_publickey   *key = NULL;
-	uint32_t                    cmd = KEYD_CMD_KEYITER;
 	ssize_t                     bytes = 0;
 	ssize_t                     count = 0;
 	int                         numkeys = 0;
 
-	write(keyd_fd, &cmd, sizeof(cmd));
-	read(keyd_fd, &cmd, sizeof(cmd));
-	if (cmd == KEYD_REPLY_OK) {
+	if (keyd_send_cmd(keyd_fd, KEYD_CMD_KEYITER)) {
 		keybuf.offset = 0;
 		read(keyd_fd, &keybuf.size, sizeof(keybuf.size));
 		while (keybuf.size > 0) {
