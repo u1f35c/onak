@@ -648,7 +648,15 @@ struct onak_dbctx *keydb_fs_init(bool readonly)
 		mkdir(config.db_dir, 0777);
 		privctx->lockfile_fd = open(buffer, O_RDWR | O_CREAT, 0600);
 	}
-	chdir(config.db_dir);
+	if (chdir(config.db_dir) == -1) {
+		/* Shouldn't happen after the above */
+		logthing(LOGTHING_CRITICAL,
+			"Couldn't change to database directory: %s",
+			strerror(errno));
+		free(dbctx->priv);
+		free(dbctx);
+		return NULL;
+	}
 	privctx->lockfile_fd = open(buffer,
 				 (privctx->lockfile_readonly) ?
 				 O_RDONLY : O_RDWR);
