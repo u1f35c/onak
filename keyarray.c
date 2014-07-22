@@ -71,7 +71,7 @@ bool array_add(struct keyarray *array, struct openpgp_fingerprint *fp)
 	int  curpos = 0;
 
 	found = false;
-	if (array->keys != NULL && array->count > 0) {
+	if (array->size != 0 && array->count > 0) {
 		bottom = -1;
 		top = array->count - 1;
 		while ((top - bottom) > 1) {
