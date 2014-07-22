@@ -344,6 +344,7 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 				bytes = read(fd, search, count);
 				if (bytes != count) {
 					ret = 1;
+					free(search);
 					break;
 				}
 				search[count] = 0;
