@@ -118,7 +118,12 @@ void readconfig(const char *configfile) {
 		conffile = fopen(configfile, "r");
 	}
 	if (conffile != NULL) {
-		fgets(curline, 1023, conffile);
+		if (!fgets(curline, 1023, conffile)) {
+			logthing(LOGTHING_CRITICAL,
+				"Problem reading configuration file.");
+			fclose(conffile);
+			return;
+		}
 
 		while (!feof(conffile)) {
 			for (i = strlen(curline) - 1;
@@ -203,7 +208,12 @@ void readconfig(const char *configfile) {
 				"Unknown config line: %s", curline);
 		}
 
-			fgets(curline, 1023, conffile);
+			if (!fgets(curline, 1023, conffile) &&
+					!feof(conffile)) {
+				logthing(LOGTHING_CRITICAL,
+					"Problem reading configuration file.");
+				break;
+			}
 		}
 		fclose(conffile);
 	} else {
