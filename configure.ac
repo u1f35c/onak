@@ -11,6 +11,12 @@ AC_C_BIGENDIAN
 m4_include([m4/ax_lib_nettle.m4])
 
 AX_LIB_NETTLE(auto)
+AC_CHECK_HEADER([systemd/sd-daemon.h], [
+	AC_CHECK_LIB([systemd-daemon], [sd_listen_fds],
+		[AC_DEFINE([HAVE_SYSTEMD], [1], [systemd-daemon is available])
+		AC_SUBST([SYSTEMD_LIBS], [-lsystemd-daemon])
+	])
+])
 
 dnl We should always have these backends available.
 backends="file fs keyd"

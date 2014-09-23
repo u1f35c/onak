@@ -78,7 +78,8 @@ endif
 
 keyd: keyd.o $(CORE_OBJS) keydb_$(DBTYPE).o
 	$(CC) $(LDFLAGS) $(PROGS_LDFLAGS_EXTRA) \
-		-o keyd keyd.o $(CORE_OBJS) keydb_$(DBTYPE).o $(LIBS)
+		-o keyd keyd.o $(CORE_OBJS) keydb_$(DBTYPE).o $(LIBS) \
+		@SYSTEMD_LIBS@
 
 keydctl: keydctl.o onak-conf.o ll.o log.o
 	$(CC) $(LDFLAGS) $(PROGS_LDFLAGS_EXTRA) \

@@ -31,6 +31,12 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "config.h"
+
+#ifdef HAVE_SYSTEMD
+#include <systemd/sd-daemon.h>
+#endif
+
 #include "charfuncs.h"
 #include "cleanup.h"
 #include "keyd.h"
@@ -45,6 +51,10 @@
 
 /* Maximum number of clients we're prepared to accept at once */
 #define MAX_CLIENTS 16
+
+#ifdef HAVE_SYSTEMD
+static bool using_socket_activation = false;
+#endif
 
 static struct keyd_stats *stats;
 
@@ -189,26 +199,47 @@ static int sock_init(const char *sockname)
 	struct sockaddr_un sock;
 	int                fd = -1;
 	int                ret = -1;
+#ifdef HAVE_SYSTEMD
+	int                n;
 
-	fd = socket(PF_UNIX, SOCK_STREAM, 0);
-	if (fd != -1) {
-		ret = fcntl(fd, F_SETFD, FD_CLOEXEC);
-	}
-
-	if (ret != -1) {
-		sock.sun_family = AF_UNIX;
-		strncpy(sock.sun_path, sockname, sizeof(sock.sun_path) - 1);
-		unlink(sockname);
-		ret = bind(fd, (struct sockaddr *) &sock, sizeof(sock));
-	}
-
-	if (ret != -1) {
-		ret = listen(fd, 5);
-		if (ret == -1) {
-			close(fd);
+	n = sd_listen_fds(0);
+	if (n > 1) {
+		logthing(LOGTHING_ERROR,
+			"Too many file descriptors received from systemd.");
+	} else if (n == 1) {
+		fd = SD_LISTEN_FDS_START + 0;
+		if (sd_is_socket_unix(fd, SOCK_STREAM, 1, NULL, 0) <= 0) {
+			logthing(LOGTHING_ERROR,
+				"systemd passed an invalid socket.");
 			fd = -1;
 		}
+		using_socket_activation = true;
+	} else {
+#endif
+		fd = socket(PF_UNIX, SOCK_STREAM, 0);
+		if (fd != -1) {
+			ret = fcntl(fd, F_SETFD, FD_CLOEXEC);
+		}
+
+		if (ret != -1) {
+			sock.sun_family = AF_UNIX;
+			strncpy(sock.sun_path, sockname,
+					sizeof(sock.sun_path) - 1);
+			unlink(sockname);
+			ret = bind(fd, (struct sockaddr *) &sock,
+					sizeof(sock));
+		}
+
+		if (ret != -1) {
+			ret = listen(fd, 5);
+			if (ret == -1) {
+				close(fd);
+				fd = -1;
+			}
+		}
+#ifdef HAVE_SYSTEMD
 	}
+#endif
 
 	return fd;
 }
@@ -680,8 +711,14 @@ int main(int argc, char *argv[])
 			}
 		}
 		dbctx->cleanupdb(dbctx);
-		sock_close(fd);
-		unlink(sockname);
+#ifdef HAVE_SYSTEMD
+		if (!using_socket_activation) {
+#endif
+			sock_close(fd);
+			unlink(sockname);
+#ifdef HAVE_SYSTEMD
+		}
+#endif
 	}
 
 	free(stats);
