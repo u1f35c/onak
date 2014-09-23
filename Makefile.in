@@ -65,7 +65,7 @@ install: $(PROGS) onak.conf $(BACKENDS)
 	install -d $(DESTDIR)/@mandir@/man1
 	install -d $(DESTDIR)/@mandir@/man8
 	install -d $(DESTDIR)/@sysconfdir@
-	install onak-mail.pl $(DESTDIR)/@libdir@/onak
+	install -m 755 onak-mail.pl $(DESTDIR)/@libdir@/onak
 	install onak splitkeys $(DESTDIR)/@bindir@
 	install onak.1 splitkeys.1 $(DESTDIR)/@mandir@/man1
 	install keyd.8 keydctl.8 onak-mail.pl.8 $(DESTDIR)/@mandir@/man8
@@ -149,15 +149,13 @@ onak-conf.o: onak-conf.c onak-conf.h
 keydctl.o: keydctl.c keyd.h
 	$(CC) $(CFLAGS) -DDBINIT=keydb_@DBTYPE@_init -c keydctl.c
 
-onak-mail.pl: onak-mail.pl.in
-	sed 's:@CONFIG@:@sysconfdir@/onak.conf:g' < onak-mail.pl.in > onak-mail.pl
-	chmod +x onak-mail.pl
-
-onak.conf: onak.conf.in
+%: %.in
 	sed -e 's:@BINDIR@:@bindir@:g' \
+		-e 's:@CONFIG@:@sysconfdir@/onak.conf:g' \
 		-e 's:@LIBDIR@:@libdir@:g' \
+		-e 's:@SBINDIR@:@sbindir@:g' \
 		-e 's:@STATEDIR@:@localstatedir@:g' \
-		< onak.conf.in > onak.conf
+		< $< > $@
 
 clean:
 	$(RM) $(PROGS) $(OBJS) Makefile.bak testparse maxpath *.core core \
