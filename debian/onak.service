@@ -1,0 +1,9 @@
+[Unit]
+Description=Backend caching key daemon for onak OpenPGP keyserver
+Documentation=man:keyd
+Requires=onak.socket
+
+[Service]
+User=onak
+ExecStart=/usr/sbin/keyd -f
+ExecStop=/usr/bin/keydctl quit

@@ -51,3 +51,13 @@ if [ "$1" = "configure" ]; then
 fi
 
 #DEBHELPER#
+
+#
+# With the move to systemd this will force systemd to start keyd even if it's
+# disabled in the onak config file; the systemd service file can't check the
+# way the init script does. Work around this by doing the check here and
+# only calling invoke-rc.d if it's actually enabled.
+#
+if grep -q -E '^use_keyd *(true|yes|1)$' /etc/onak.conf; then
+    invoke-rc.d onak start || exit $?
+fi
