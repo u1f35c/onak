@@ -298,3 +298,22 @@
 * Allow maxpath + splitkeys to take a -c option to specify the config file
 * Add wotsap tool to generate data files for wotsap
 * Add HKP backend to allow onak to be used as a proxying keyserver
+
+0.4.3 - 30th September 2014
+
+* Set our user agent in the HKP backend
+* Allow keyd to serve multiple clients at once
+* Improve HKP backend URL parsing, adding support for HKPS
+* Add support for a user specific config file for onak binary
+* Make wotsap output tool ignore revoked keys
+* Add support for old Elgamal v3 key IDs
+* Add support for displaying EC/ECDSA key types + sizes
+* Extend database backends to support key fetching by fingerprint
+* Remove legacy pksd compatible DB2 backend
+* Add SHA1x hash support
+* Ignore X509 signatures for signature hash checking
+* Code cleanups for issues found using scan-build (llvm) + valgrind
+* Extend tests to include retrieval by subkey ID
+* Switch DB4 backend to using key fingerprint as primary index
+* Sanity check signature data lengths
+* Add support for systemd socket activation

@@ -1,11 +1,12 @@
-onak (0.4.2-1+git) unstable; urgency=low
+onak (0.4.3-1) unstable; urgency=low
 
-  * Development build
+  * New upstream release
   * Fix issue with pre-seeding key database on install.
   * Add systemd service files using new systemd socket activation support.
   * Bump Debian Standards-Version to 3.9.6.0
+  * Switch to debhelper.
 
- -- Jonathan McDowell <noodles@earth.li>  Sun, 06 Oct 2013 13:18:38 +0100
+ -- Jonathan McDowell <noodles@earth.li>  Tue, 30 Sep 2014 10:09:28 +0100
 
 onak (0.4.2-1) unstable; urgency=low
 
