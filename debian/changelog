@@ -1,3 +1,10 @@
+onak (0.4.4-1) unstable; urgency=low
+
+  * New upstream release
+    * Fixes key lookups using onak CLI tool on 32 bit platforms.
+
+ -- Jonathan McDowell <noodles@earth.li>  Tue, 30 Sep 2014 22:36:34 +0100
+
 onak (0.4.3-1) unstable; urgency=low
 
   * New upstream release
