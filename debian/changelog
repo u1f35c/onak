@@ -3,6 +3,7 @@ onak (0.4.2-1+git) unstable; urgency=low
   * Development build
   * Fix issue with pre-seeding key database on install.
   * Add systemd service files using new systemd socket activation support.
+  * Bump Debian Standards-Version to 3.9.6.0
 
  -- Jonathan McDowell <noodles@earth.li>  Sun, 06 Oct 2013 13:18:38 +0100
 
