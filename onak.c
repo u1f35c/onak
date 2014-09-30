@@ -330,7 +330,7 @@ int main(int argc, char *argv[])
 			}
 			isfp = true;
 		} else if (search != NULL) {
-			keyid = strtoul(search, &end, 16);
+			keyid = strtouq(search, &end, 16);
 			if (*search != 0 &&
 					end != NULL &&
 					*end == 0) {
