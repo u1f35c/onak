@@ -1,5 +1,7 @@
 #! /bin/sh
 
+set -e
+
 # If keyd was enabled then make sure to stop it.
 if grep -q -E '^use_keyd *(true|yes|1)$' /etc/onak.conf; then
     invoke-rc.d onak stop || exit $?
