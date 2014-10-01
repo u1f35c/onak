@@ -13,9 +13,14 @@ m4_include([m4/ax_lib_nettle.m4])
 AX_LIB_NETTLE(auto)
 AC_CHECK_HEADER([systemd/sd-daemon.h], [
 	AC_CHECK_LIB([systemd-daemon], [sd_listen_fds],
-		[AC_DEFINE([HAVE_SYSTEMD], [1], [systemd-daemon is available])
+		[AC_DEFINE([HAVE_SYSTEMD], [1], [sd_listen_fds is available])
 		AC_SUBST([SYSTEMD_LIBS], [-lsystemd-daemon])
+	],
+	AC_CHECK_LIB([systemd], [sd_listen_fds],
+		[AC_DEFINE([HAVE_SYSTEMD], [1], [sd_listen_fds is available])
+		AC_SUBST([SYSTEMD_LIBS], [-lsystemd])
 	])
+	)
 ])
 
 dnl We should always have these backends available.
