@@ -1,3 +1,10 @@
+onak (0.4.5-1) unstable; urgency=low
+
+  * New upstream release
+    * Fix detection of systemd support with new versions of systemd.
+
+ -- Jonathan McDowell <noodles@earth.li>  Fri, 03 Oct 2014 17:30:00 +0100
+
 onak (0.4.4-1) unstable; urgency=low
 
   * New upstream release

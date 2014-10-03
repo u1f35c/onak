@@ -321,3 +321,7 @@
 0.4.4 - 30th September 2014
 
 * Fix key ID lookups using onak CLI tool on 32 bit platforms
+
+0.4.5 - 3rd October 2014
+
+* Fix for detecting systemd socket support with more recent versions of systemd
