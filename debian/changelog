@@ -1,3 +1,10 @@
+onak (0.4.5-2) unstable; urgency=low
+
+  * Don't build-depend on systemd dev packages for non-Linux architectures.
+    Thanks to Pino Toscano for the patch. (Closes: #763924)
+
+ -- Jonathan McDowell <noodles@earth.li>  Sun, 05 Oct 2014 14:41:08 +0100
+
 onak (0.4.5-1) unstable; urgency=low
 
   * New upstream release
