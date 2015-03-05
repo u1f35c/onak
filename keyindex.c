@@ -94,7 +94,20 @@ unsigned int keylength(struct openpgp_packet *keydata)
 		case OPENPGP_PKALGO_EC:
 		case OPENPGP_PKALGO_ECDSA:
 			/* Elliptic curve key size is based on OID */
-			if ((keydata->data[6] == 8) &&
+			/* Ed25519 / 1.3.6.1.4.1.11591.15.1 */
+			if ((keydata->data[6] == 9) &&
+					(keydata->data[7] == 0x2B) &&
+					(keydata->data[8] == 0x06) &&
+					(keydata->data[9] == 0x01) &&
+					(keydata->data[10] == 0x04) &&
+					(keydata->data[11] == 0x01) &&
+					(keydata->data[12] == 0xDA) &&
+					(keydata->data[13] == 0x47) &&
+					(keydata->data[14] == 0x0F) &&
+					(keydata->data[15] == 0x01)) {
+				length = 256;
+			/* nistp256 / 1.2.840.10045.3.1.7 */
+			} else if ((keydata->data[6] == 8) &&
 					(keydata->data[7] == 0x2A) &&
 					(keydata->data[8] == 0x86) &&
 					(keydata->data[9] == 0x48) &&
@@ -104,6 +117,7 @@ unsigned int keylength(struct openpgp_packet *keydata)
 					(keydata->data[13] == 0x01) &&
 					(keydata->data[14] == 0x07)) {
 				length = 256;
+			/* nistp384 / 1.3.132.0.34 */
 			} else if ((keydata->data[6] == 5) &&
 					(keydata->data[7] == 0x2B) &&
 					(keydata->data[8] == 0x81) &&
@@ -111,6 +125,7 @@ unsigned int keylength(struct openpgp_packet *keydata)
 					(keydata->data[10] == 0x00) &&
 					(keydata->data[11] == 0x22)) {
 				length = 384;
+			/* nistp521 / 1.3.132.0.35 */
 			} else if ((keydata->data[6] == 5) &&
 					(keydata->data[7] == 0x2B) &&
 					(keydata->data[8] == 0x81) &&
@@ -118,6 +133,50 @@ unsigned int keylength(struct openpgp_packet *keydata)
 					(keydata->data[10] == 0x00) &&
 					(keydata->data[11] == 0x23)) {
 				length = 521;
+			/* brainpoolP256r1 / 1.3.36.3.3.2.8.1.1.7 */
+			} else if ((keydata->data[6] == 9) &&
+					(keydata->data[7] == 0x2B) &&
+					(keydata->data[8] == 0x24) &&
+					(keydata->data[9] == 0x03) &&
+					(keydata->data[10] == 0x03) &&
+					(keydata->data[11] == 0x02) &&
+					(keydata->data[12] == 0x08) &&
+					(keydata->data[13] == 0x01) &&
+					(keydata->data[14] == 0x01) &&
+					(keydata->data[15] == 0x07)) {
+				length = 256;
+			/* brainpoolP384r1 / 1.3.36.3.3.2.8.1.1.11 */
+			} else if ((keydata->data[6] == 9) &&
+					(keydata->data[7] == 0x2B) &&
+					(keydata->data[8] == 0x24) &&
+					(keydata->data[9] == 0x03) &&
+					(keydata->data[10] == 0x03) &&
+					(keydata->data[11] == 0x02) &&
+					(keydata->data[12] == 0x08) &&
+					(keydata->data[13] == 0x01) &&
+					(keydata->data[14] == 0x01) &&
+					(keydata->data[15] == 0x0B)) {
+				length = 384;
+			/* brainpoolP512r1 / 1.3.36.3.3.2.8.1.1.13 */
+			} else if ((keydata->data[6] == 9) &&
+					(keydata->data[7] == 0x2B) &&
+					(keydata->data[8] == 0x24) &&
+					(keydata->data[9] == 0x03) &&
+					(keydata->data[10] == 0x03) &&
+					(keydata->data[11] == 0x02) &&
+					(keydata->data[12] == 0x08) &&
+					(keydata->data[13] == 0x01) &&
+					(keydata->data[14] == 0x01) &&
+					(keydata->data[15] == 0x0D)) {
+				length = 512;
+			/* secp256k1 / 1.3.132.0.10 */
+			} else if ((keydata->data[6] == 5) &&
+					(keydata->data[7] == 0x2B) &&
+					(keydata->data[8] == 0x81) &&
+					(keydata->data[9] == 0x04) &&
+					(keydata->data[10] == 0x00) &&
+					(keydata->data[11] == 0x0A)) {
+				length = 256;
 			} else {
 				logthing(LOGTHING_ERROR,
 					"Unknown elliptic curve size");
