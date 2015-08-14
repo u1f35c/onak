@@ -22,6 +22,7 @@
 #include <stdlib.h>
 
 #include "cleankey.h"
+#include "keyid.h"
 #include "keystructs.h"
 #include "log.h"
 #include "mem.h"
@@ -68,6 +69,53 @@ int dedupuids(struct openpgp_publickey *key)
 			dup = find_signed_packet(curuid->next, curuid->packet);
 		}
 		curuid = curuid->next;
+	}
+
+	return merged;
+}
+
+/**
+ *	dedupsubkeys - Merge duplicate subkeys on a key.
+ *	@key: The key to de-dup subkeys on.
+ *
+ *	This function attempts to merge duplicate subkeys on a key. It returns
+ *	0 if the key is unchanged, otherwise the number of dups merged.
+ */
+int dedupsubkeys(struct openpgp_publickey *key)
+{
+	struct openpgp_signedpacket_list *cursubkey = NULL;
+	struct openpgp_signedpacket_list *dup = NULL;
+	struct openpgp_signedpacket_list *tmp = NULL;
+	int                               merged = 0;
+	uint64_t                          subkeyid;
+
+	log_assert(key != NULL);
+	cursubkey = key->subkeys;
+	while (cursubkey != NULL) {
+		dup = find_signed_packet(cursubkey->next, cursubkey->packet);
+		while (dup != NULL) {
+			get_packetid(cursubkey->packet, &subkeyid);
+			logthing(LOGTHING_INFO,
+				"Found duplicate subkey: 0x%016" PRIX64,
+				subkeyid);
+			merged++;
+			merge_packet_sigs(cursubkey, dup);
+			/*
+			 * Remove the duplicate uid.
+			 */
+			tmp = cursubkey;
+			while (tmp != NULL && tmp->next != dup) {
+				tmp = tmp->next;
+			}
+			log_assert(tmp != NULL);
+			tmp->next = dup->next;
+			dup->next = NULL;
+			free_signedpacket_list(dup);
+
+			dup = find_signed_packet(cursubkey->next,
+				cursubkey->packet);
+		}
+		cursubkey = cursubkey->next;
 	}
 
 	return merged;
@@ -146,6 +194,7 @@ int cleankeys(struct openpgp_publickey *keys)
 
 	while (keys != NULL) {
 		count = dedupuids(keys);
+		count += dedupsubkeys(keys);
 		if (config.check_sighash) {
 			count += clean_key_sighashes(keys);
 		}
