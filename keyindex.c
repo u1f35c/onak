@@ -96,8 +96,21 @@ unsigned int keylength(struct openpgp_packet *keydata)
 		case OPENPGP_PKALGO_ECDSA:
 		case OPENPGP_PKALGO_EDDSA:
 			/* Elliptic curve key size is based on OID */
+			/* Curve25519 / 1.3.6.1.4.1.3029.1.5.1 */
+			if ((keydata->data[6] == 10) &&
+					(keydata->data[7] == 0x2B) &&
+					(keydata->data[8] == 0x06) &&
+					(keydata->data[9] == 0x01) &&
+					(keydata->data[10] == 0x04) &&
+					(keydata->data[11] == 0x01) &&
+					(keydata->data[12] == 0x97) &&
+					(keydata->data[13] == 0x55) &&
+					(keydata->data[14] == 0x01) &&
+					(keydata->data[15] == 0x05) &&
+					(keydata->data[16] == 0x01)) {
+				length = 255;
 			/* Ed25519 / 1.3.6.1.4.1.11591.15.1 */
-			if ((keydata->data[6] == 9) &&
+			} else if ((keydata->data[6] == 9) &&
 					(keydata->data[7] == 0x2B) &&
 					(keydata->data[8] == 0x06) &&
 					(keydata->data[9] == 0x01) &&
