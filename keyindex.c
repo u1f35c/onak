@@ -48,6 +48,7 @@ char pkalgo2char(uint8_t algo)
 		typech = 'D';
 		break;
 	case OPENPGP_PKALGO_ECDSA:
+	case OPENPGP_PKALGO_EDDSA:
 		typech = 'E';
 		break;
 	case OPENPGP_PKALGO_EC:
@@ -93,6 +94,7 @@ unsigned int keylength(struct openpgp_packet *keydata)
 		switch (keydata->data[5]) {
 		case OPENPGP_PKALGO_EC:
 		case OPENPGP_PKALGO_ECDSA:
+		case OPENPGP_PKALGO_EDDSA:
 			/* Elliptic curve key size is based on OID */
 			/* Ed25519 / 1.3.6.1.4.1.11591.15.1 */
 			if ((keydata->data[6] == 9) &&
