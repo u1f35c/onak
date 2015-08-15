@@ -107,7 +107,7 @@ unsigned int keylength(struct openpgp_packet *keydata)
 					(keydata->data[13] == 0x47) &&
 					(keydata->data[14] == 0x0F) &&
 					(keydata->data[15] == 0x01)) {
-				length = 256;
+				length = 255;
 			/* nistp256 / 1.2.840.10045.3.1.7 */
 			} else if ((keydata->data[6] == 8) &&
 					(keydata->data[7] == 0x2A) &&
