@@ -176,7 +176,7 @@ distclean: clean
 doxygen-docs: *.c *.h Doxyfile
 	doxygen
 
-version.h:
+version.h: $(SRCS)
 	@echo '#include "config.h"' > version.h
 	@if [ -e .git ]; then \
 		echo "#define ONAK_VERSION \"`git describe --tags --dirty | cut -d - -f 2-`\"" \
