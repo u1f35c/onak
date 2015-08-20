@@ -178,8 +178,8 @@ doxygen-docs: *.c *.h Doxyfile
 
 version.h:
 	@echo '#include "config.h"' > version.h
-	@if [ -e .bzr ]; then \
-		echo "#define ONAK_VERSION PACKAGE_VERSION \"+bzr`bzr revno`\"" \
+	@if [ -e .git ]; then \
+		echo "#define ONAK_VERSION \"`git describe --tags --dirty | cut -d - -f 2-`\"" \
 		>> version.h; \
 	else \
 		echo "#define ONAK_VERSION PACKAGE_VERSION" >> version.h; \
