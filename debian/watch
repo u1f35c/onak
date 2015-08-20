@@ -1,2 +1,2 @@
-version=2
-http://www.earth.li/projectpurple/files/        onak-(.*).tar.gz        debian  uupdate
+version=3
+http://www.earth.li/projectpurple/files/        onak-(.*).tar.(?:gz|bz2|xz)
