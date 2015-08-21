@@ -527,7 +527,7 @@ struct onak_dbctx *keydb_keyd_init(bool readonly)
 
 	sock.sun_family = AF_UNIX;
 	snprintf(sock.sun_path, sizeof(sock.sun_path) - 1, "%s/%s",
-			config.db_dir,
+			config.sock_dir,
 			KEYD_SOCKET);
 	if (connect(keyd_fd, (struct sockaddr *) &sock, sizeof(sock)) < 0) {
 		logthing(LOGTHING_CRITICAL,

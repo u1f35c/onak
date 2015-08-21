@@ -45,6 +45,7 @@ struct onak_config config = {
 	NULL,			/* logfile */
 
 	false,			/* use_keyd */
+	".",			/* sock_dir */
 
 	/*
 	 * Options for directory backends.

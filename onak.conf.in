@@ -34,6 +34,7 @@ maintainer_email PGP Key Server Administrator <pgp-keyserver-admin@the.earth.li>
 mail_intro_file /community/pgp-keyserver/share/mail_intro
 help_dir /community/pgp-keyserver/share
 mail_dir @STATEDIR@/spool/onak
+sock_dir @STATEDIR@/run
 
 ### If you change this, make sure to put a corresponding help file in
 ### the help_dir named above

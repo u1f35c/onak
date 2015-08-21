@@ -48,6 +48,8 @@ struct onak_config {
 
 	/** Set if we're using keyd as the backend. */
 	bool use_keyd;
+	/** The path to the directory the keyd socket lives in. */
+	char *sock_dir;
 
 	/*
 	 * Options for any database backend that needs a directory, be it the

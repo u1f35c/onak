@@ -653,7 +653,7 @@ int main(int argc, char *argv[])
 	}
 	stats->started = time(NULL);
 
-	snprintf(sockname, 1023, "%s/%s", config.db_dir, KEYD_SOCKET);
+	snprintf(sockname, 1023, "%s/%s", config.sock_dir, KEYD_SOCKET);
 	fd = sock_init(sockname);
 
 	if (fd != -1) {

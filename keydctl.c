@@ -99,7 +99,7 @@ static void keyd_connect(void)
 
 	sock.sun_family = AF_UNIX;
 	snprintf(sock.sun_path, sizeof(sock.sun_path) - 1, "%s/%s",
-			config.db_dir,
+			config.sock_dir,
 			KEYD_SOCKET);
 	if (connect(keyd_fd, (struct sockaddr *) &sock, sizeof(sock)) < 0) {
 		if (verbose >= 0) {
