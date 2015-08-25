@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-DEB_CONFIGURE_EXTRA_FLAGS += --enable-backend=dynamic
+DEB_CONFIGURE_EXTRA_FLAGS += --enable-backend=dynamic --runstatedir=/run
 
 CFLAGS += -std=gnu99
 

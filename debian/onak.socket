@@ -1,5 +1,5 @@
 [Socket]
-ListenStream=/var/run/keyd.sock
+ListenStream=/run/keyd.sock
 SocketUser=onak
 SocketMode=0660
 

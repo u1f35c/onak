@@ -85,6 +85,11 @@ then
 	backend="$enable_backend"
 fi
 
+dnl Fallback for autoconf before 2.70
+if test "x$runstatedir" = x; then
+	AC_SUBST([runstatedir], ["$localstatedir/run"])
+fi
+
 AC_SUBST(DBTYPE, $enable_backend)
 AC_SUBST(DB4LIBS, $db4libs)
 AC_SUBST(KEYD, $enable_keyd)
