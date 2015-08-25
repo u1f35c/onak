@@ -201,6 +201,8 @@ void readconfig(const char *configfile) {
 		} else if (!strncmp("use_keyd ", curline, 9)) {
 			config.use_keyd = parsebool(&curline[9],
 						config.use_keyd);
+		} else if (!strncmp("sock_dir ", curline, 9)) {
+			config.sock_dir = strdup(&curline[9]);
 		} else if (!strncmp("check_sighash ", curline, 9)) {
 			config.check_sighash = parsebool(&curline[9],
 						config.check_sighash);
