@@ -325,3 +325,11 @@
 0.4.5 - 3rd October 2014
 
 * Fix for detecting systemd socket support with more recent versions of systemd
+
+0.4.6 - 25th August 2015
+
+* Add additional ECC OIDs (Ed25519/Brainpool/secp256k1/Curve25519)
+* Re-order linking for backend plugins to cope with ld --as-needed
+* Add de-duplication of subkeys on a key
+* Add support for displaying EDDSA keys (type 22)
+* Add config file option to specify keyd socket directory

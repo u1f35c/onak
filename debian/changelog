@@ -1,3 +1,12 @@
+onak (0.4.6-1) unstable; urgency=low
+
+  * New upstream release
+    * Re-order linking for backend plugins to cope with ld --as-needed.
+      (Closes: #772433)
+    * Update debian/watch file to deal with non-gz compressed tarballs.
+
+ -- Jonathan McDowell <noodles@earth.li>  Tue, 25 Aug 2015 16:18:12 +0100
+
 onak (0.4.5-2) unstable; urgency=low
 
   * Don't build-depend on systemd dev packages for non-Linux architectures.
