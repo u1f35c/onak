@@ -1,3 +1,9 @@
+onak (0.4.6-1+git) UNRELEASED; urgency=low
+
+  * Remove Ross Burton from Uploaders.
+
+ -- Jonathan McDowell <noodles@earth.li>  Sun, 17 Jan 2016 14:14:00 +0000
+
 onak (0.4.6-1) unstable; urgency=low
 
   * New upstream release

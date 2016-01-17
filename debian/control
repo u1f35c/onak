@@ -2,7 +2,6 @@ Source: onak
 Section: net
 Priority: optional
 Maintainer: Jonathan McDowell <noodles@earth.li>
-Uploaders: Ross Burton <ross@debian.org>
 Build-Depends: debhelper (>= 9), dh-autoreconf, dh-systemd, libdb-dev, nettle-dev, libcurl4-gnutls-dev | libcurl-dev, libsystemd-dev (>= 214) [linux-any] | libsystemd-daemon-dev [linux-any]
 Standards-Version: 3.9.6.0
 Homepage: http://www.earth.li/projectpurple/progs/onak.html
