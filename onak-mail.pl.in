@@ -37,8 +37,6 @@ sub readconfig {
 			$config{'mta'} = $1;
 		} elsif (/^pks_bin_dir (.*)/) {
 			$config{'pks_bin_dir'} = $1;
-		} elsif (/^db_dir (.*)/) {
-			$config{'db_dir'} = $1;
 		} elsif (/^mail_dir (.*)/) {
 			$config{'mail_dir'} = $1;
 		} elsif (/^syncsite (.*)/) {
@@ -223,7 +221,7 @@ rename $tmpfile.".tmp", $tmpfile;
 # Lock here to ensure that only one copy of us is processing the incoming
 # mail queue at any point in time.
 #
-sysopen(LOCKFILE, $config{'db_dir'}.'/onak-mail.lck',
+sysopen(LOCKFILE, $config{'mail_dir'}.'/onak-mail.lck',
 		O_WRONLY|O_CREAT|O_EXCL) or exit;
 print LOCKFILE "$$";
 close(LOCKFILE);
@@ -266,4 +264,4 @@ while ($file = readdir(MAILDIR)) {
 	processmail($subject, $from, $replyto, \%seenby, \@body);
 }
 closedir(MAILDIR);
-unlink $config{'db_dir'}.'/onak-mail.lck';
+unlink $config{'mail_dir'}.'/onak-mail.lck';
