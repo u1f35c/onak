@@ -24,6 +24,25 @@
 #include "keydb.h"
 
 /**
+ * @brief Backend database configuration.
+ *
+ */
+struct onak_db_config {
+	/** Name, as used to refer to individual backend instances */
+	char *name;
+	/** Backend type [e.g. db4, pg, fs, file] */
+	char *type;
+	/** Location information; directory for file backed, DB name for DBs */
+	char *location;
+	/** Database backend hostname, if appropriate */
+	char *hostname;
+	/** Database backend username, if appropriate */
+	char *username;
+	/** Database backend password, if appropriate */
+	char *password;
+};
+
+/**
  * @brief Runtime configuration for onak.
  *
  * This structure holds various runtime configuration options for onak. It
@@ -51,24 +70,11 @@ struct onak_config {
 	/** The path to the directory the keyd socket lives in. */
 	char *sock_dir;
 
-	/*
-	 * Options for any database backend that needs a directory, be it the
-	 * file, fs or db4 options.
-	 */
-	/** The path to the directory containing the database files. */
-	char *db_dir;
-	
-	/*
-	 * Options for the Postgres backend.
-	 */
-	/** The host that Postgres is running on. */
-	char *pg_dbhost;
-	/** The database name. */
-	char *pg_dbname;
-	/** The user we should connect as. */
-	char *pg_dbuser;
-	/** The password for the user. */
-	char *pg_dbpass;
+	/** List of backend configurations */
+	struct ll *backends;
+
+	/* The default backend to use */
+	struct onak_db_config *backend;
 
 	/*
 	 * Options for the dynamic backend.
@@ -79,7 +85,7 @@ struct onak_config {
 	char *backends_dir;
 
 	/** Pointer to the initialisation function for our loaded DB backend */
-	struct onak_dbctx *(*dbinit)(bool);
+	struct onak_dbctx *(*dbinit)(struct onak_db_config *, bool);
 
 	/** Should we verify signature hashes match? */
 	bool check_sighash;

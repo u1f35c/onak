@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
 
 	readconfig(configfile);
 	initlogthing("wotsap", config.logfile);
-	dbctx = config.dbinit(true);
+	dbctx = config.dbinit(config.backend, true);
 	if (dbctx != NULL) {
 		inithash();
 		wotsap(dbctx, dbctx->getfullkeyid(dbctx, keyid),

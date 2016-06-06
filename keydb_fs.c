@@ -72,41 +72,43 @@ static uint32_t calchash(uint8_t * ptr)
 }
 
 
-static void keypath(char *buffer, size_t length, uint64_t _keyid)
+static void keypath(char *buffer, size_t length, uint64_t _keyid,
+		char *basepath)
 {
 	uint64_t keyid = _keyid << 32;
 	snprintf(buffer, length, "%s/key/%02X/%02X/%08X/%016" PRIX64,
-		 config.db_dir, (uint8_t) ((keyid >> 56) & 0xFF),
+		 basepath, (uint8_t) ((keyid >> 56) & 0xFF),
 		 (uint8_t) ((keyid >> 48) & 0xFF),
 		 (uint32_t) (keyid >> 32), _keyid);
 }
 
-static void keydir(char *buffer, size_t length, uint64_t _keyid)
+static void keydir(char *buffer, size_t length, uint64_t _keyid,
+		char *basepath)
 {
 	uint64_t keyid = _keyid << 32;
-	snprintf(buffer, length, "%s/key/%02X/%02X/%08X", config.db_dir,
+	snprintf(buffer, length, "%s/key/%02X/%02X/%08X", basepath,
 		 (uint8_t) ((keyid >> 56) & 0xFF),
 		 (uint8_t) ((keyid >> 48) & 0xFF),
 		 (uint32_t) (keyid >> 32));
 }
 
-static void prove_path_to(uint64_t keyid, char *what)
+static void prove_path_to(uint64_t keyid, char *what, char *basepath)
 {
 	static char buffer[PATH_MAX];
-	snprintf(buffer, sizeof(buffer), "%s/%s", config.db_dir, what);
+	snprintf(buffer, sizeof(buffer), "%s/%s", basepath, what);
 	mkdir(buffer, 0777);
 
-	snprintf(buffer, sizeof(buffer), "%s/%s/%02X", config.db_dir, what,
+	snprintf(buffer, sizeof(buffer), "%s/%s/%02X", basepath, what,
 		 (uint8_t) ((keyid >> 24) & 0xFF));
 	mkdir(buffer, 0777);
 
-	snprintf(buffer, sizeof(buffer), "%s/%s/%02X/%02X", config.db_dir,
+	snprintf(buffer, sizeof(buffer), "%s/%s/%02X/%02X", basepath,
 		 what,
 		 (uint8_t) ((keyid >> 24) & 0xFF),
 		 (uint8_t) ((keyid >> 16) & 0xFF));
 	mkdir(buffer, 0777);
 
-	snprintf(buffer, sizeof(buffer), "%s/%s/%02X/%02X/%08X", config.db_dir,
+	snprintf(buffer, sizeof(buffer), "%s/%s/%02X/%02X/%08X", basepath,
 		 what,
 		 (uint8_t) ((keyid >> 24) & 0xFF),
 		 (uint8_t) ((keyid >> 16) & 0xFF), (uint32_t) (keyid));
@@ -114,45 +116,48 @@ static void prove_path_to(uint64_t keyid, char *what)
 }
 
 static void wordpath(char *buffer, size_t length, char *word, uint32_t hash,
-		uint64_t keyid)
+		uint64_t keyid, char *basepath)
 {
 	snprintf(buffer, length, "%s/words/%02X/%02X/%08X/%s/%016" PRIX64,
-		 config.db_dir, (uint8_t) ((hash >> 24) & 0xFF),
+		 basepath, (uint8_t) ((hash >> 24) & 0xFF),
 		 (uint8_t) ((hash >> 16) & 0xFF), hash, word, keyid);
 }
 
-static void worddir(char *buffer, size_t length, char *word, uint32_t hash)
+static void worddir(char *buffer, size_t length, char *word, uint32_t hash,
+		char *basepath)
 {
-	snprintf(buffer, length, "%s/words/%02X/%02X/%08X/%s", config.db_dir,
+	snprintf(buffer, length, "%s/words/%02X/%02X/%08X/%s", basepath,
 		 (uint8_t) ((hash >> 24) & 0xFF),
 		 (uint8_t) ((hash >> 16) & 0xFF), hash, word);
 }
 
-static void subkeypath(char *buffer, size_t length, uint64_t subkey)
+static void subkeypath(char *buffer, size_t length, uint64_t subkey,
+		char *basepath)
 {
 	snprintf(buffer, length, "%s/subkeys/%02X/%02X/%08X/%016" PRIX64,
-		 config.db_dir,
+		 basepath,
 		 (uint8_t) ((subkey >> 24) & 0xFF),
 		 (uint8_t) ((subkey >> 16) & 0xFF),
 		 (uint32_t) (subkey & 0xFFFFFFFF),
 		 subkey);
 }
 
-static void subkeydir(char *buffer, size_t length, uint64_t subkey)
+static void subkeydir(char *buffer, size_t length, uint64_t subkey,
+		char *basepath)
 {
 	snprintf(buffer, length, "%s/subkeys/%02X/%02X/%08X",
-		 config.db_dir,
+		 basepath,
 		 (uint8_t) ((subkey >> 24) & 0xFF),
 		 (uint8_t) ((subkey >> 16) & 0xFF),
 		 (uint32_t) (subkey & 0xFFFFFFFF));
 }
 
 static void skshashpath(char *buffer, size_t length,
-		const struct skshash *hash)
+		const struct skshash *hash, char *basepath)
 {
 	snprintf(buffer, length, "%s/skshash/%02X/%02X/%02X%02X%02X%02X/"
 		"%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
-		 config.db_dir,
+		 basepath,
 		 hash->hash[0], hash->hash[1],
 		 hash->hash[0], hash->hash[1], hash->hash[2], hash->hash[3],
 		 hash->hash[4], hash->hash[5], hash->hash[6], hash->hash[7],
@@ -207,7 +212,7 @@ static uint64_t fs_getfullkeyid(struct onak_dbctx *dbctx, uint64_t keyid)
 	struct dirent *de = NULL;
 	uint64_t ret = 0;
 
-	keydir(buffer, sizeof(buffer), keyid);
+	keydir(buffer, sizeof(buffer), keyid, dbctx->config->location);
 
 	d = opendir(buffer);
 	if (d) {
@@ -221,7 +226,8 @@ static uint64_t fs_getfullkeyid(struct onak_dbctx *dbctx, uint64_t keyid)
 	}
 
 	if (ret == 0) {
-		subkeydir(buffer, sizeof(buffer), keyid);
+		subkeydir(buffer, sizeof(buffer), keyid,
+			dbctx->config->location);
 
 		d = opendir(buffer);
 		if (d) {
@@ -259,10 +265,11 @@ static int fs_fetch_key_id(struct onak_dbctx *dbctx,
 	if ((keyid >> 32) == 0)
 		keyid = fs_getfullkeyid(dbctx, keyid);
 
-	keypath(buffer, sizeof(buffer), keyid);
+	keypath(buffer, sizeof(buffer), keyid, dbctx->config->location);
 	fd = open(buffer, O_RDONLY);
 	if (fd == -1 && errno == ENOENT) {
-		subkeypath(buffer, sizeof(buffer), keyid);
+		subkeypath(buffer, sizeof(buffer), keyid,
+			dbctx->config->location);
 		fd = open(buffer, O_RDONLY);
 	}
 
@@ -312,8 +319,8 @@ static int fs_store_key(struct onak_dbctx *dbctx,
 	if (!intrans)
 		fs_starttrans(dbctx);
 
-	prove_path_to(keyid, "key");
-	keypath(buffer, sizeof(buffer), keyid);
+	prove_path_to(keyid, "key", dbctx->config->location);
+	keypath(buffer, sizeof(buffer), keyid, dbctx->config->location);
 
 	if ((fd =
 	     open(buffer, O_WRONLY | (update ? O_TRUNC : O_CREAT),
@@ -334,12 +341,13 @@ static int fs_store_key(struct onak_dbctx *dbctx,
 		wl = wordlist = makewordlistfromkey(wordlist, publickey);
 		while (wl) {
 			uint32_t hash = calchash((uint8_t *) (wl->object));
-			prove_path_to(hash, "words");
+			prove_path_to(hash, "words", dbctx->config->location);
 
-			worddir(wbuffer, sizeof(wbuffer), wl->object, hash);
+			worddir(wbuffer, sizeof(wbuffer), wl->object, hash,
+				dbctx->config->location);
 			mkdir(wbuffer, 0777);
 			wordpath(wbuffer, sizeof(wbuffer), wl->object, hash,
-				keyid);
+				keyid, dbctx->config->location);
 			link(buffer, wbuffer);
 
 			wl = wl->next;
@@ -351,11 +359,14 @@ static int fs_store_key(struct onak_dbctx *dbctx,
 		while (subkeyids != NULL && subkeyids[i].length != 0) {
 			keyid = fingerprint2keyid(&subkeyids[i]);
 
-			prove_path_to(keyid, "subkeys");
+			prove_path_to(keyid, "subkeys",
+				dbctx->config->location);
 
-			subkeydir(wbuffer, sizeof(wbuffer), keyid);
+			subkeydir(wbuffer, sizeof(wbuffer), keyid,
+				dbctx->config->location);
 			mkdir(wbuffer, 0777);
-			subkeypath(wbuffer, sizeof(wbuffer), keyid);
+			subkeypath(wbuffer, sizeof(wbuffer), keyid,
+				dbctx->config->location);
 			link(buffer, wbuffer);
 
 			i++;
@@ -368,8 +379,9 @@ static int fs_store_key(struct onak_dbctx *dbctx,
 		get_skshash(publickey, &hash);
 		hashid = (hash.hash[0] << 24) + (hash.hash[1] << 16) +
 				(hash.hash[2] << 8) + hash.hash[3];
-		prove_path_to(hashid, "skshash");
-		skshashpath(wbuffer, sizeof(wbuffer), &hash);
+		prove_path_to(hashid, "skshash", dbctx->config->location);
+		skshashpath(wbuffer, sizeof(wbuffer), &hash,
+			dbctx->config->location);
 		link(buffer, wbuffer);
 	}
 
@@ -410,10 +422,10 @@ static int fs_delete_key(struct onak_dbctx *dbctx, uint64_t keyid, bool intrans)
 			 "Wordlist for key %016" PRIX64 " done", keyid);
 		while (wl) {
 			uint32_t hash = calchash((uint8_t *) (wl->object));
-			prove_path_to(hash, "words");
+			prove_path_to(hash, "words", dbctx->config->location);
 
 			wordpath(buffer, sizeof(buffer), wl->object, hash,
-				keyid);
+				keyid, dbctx->config->location);
 			unlink(buffer);
 
 			wl = wl->next;
@@ -423,9 +435,11 @@ static int fs_delete_key(struct onak_dbctx *dbctx, uint64_t keyid, bool intrans)
 		i = 0;
 		while (subkeyids != NULL && subkeyids[i].length != 0) {
 			subkeyid = fingerprint2keyid(&subkeyids[i]);
-			prove_path_to(subkeyid, "subkeys");
+			prove_path_to(subkeyid, "subkeys",
+				dbctx->config->location);
 
-			subkeypath(buffer, sizeof(buffer), subkeyid);
+			subkeypath(buffer, sizeof(buffer), subkeyid,
+				dbctx->config->location);
 			unlink(buffer);
 
 			i++;
@@ -436,11 +450,12 @@ static int fs_delete_key(struct onak_dbctx *dbctx, uint64_t keyid, bool intrans)
 		}
 
 		get_skshash(pk, &hash);
-		skshashpath(buffer, sizeof(buffer), &hash);
+		skshashpath(buffer, sizeof(buffer), &hash,
+			dbctx->config->location);
 		unlink(buffer);
 	}
 
-	keypath(buffer, sizeof(buffer), keyid);
+	keypath(buffer, sizeof(buffer), keyid, dbctx->config->location);
 	unlink(buffer);
 
 	if (!intrans)
@@ -448,7 +463,8 @@ static int fs_delete_key(struct onak_dbctx *dbctx, uint64_t keyid, bool intrans)
 	return 1;
 }
 
-static struct ll *internal_get_key_by_word(char *word, struct ll *mct)
+static struct ll *internal_get_key_by_word(char *word, struct ll *mct,
+		char *basepath)
 {
 	struct ll *keys = NULL;
 	DIR *d = NULL;
@@ -456,7 +472,7 @@ static struct ll *internal_get_key_by_word(char *word, struct ll *mct)
 	uint32_t hash = calchash((uint8_t *) (word));
 	struct dirent *de;
 
-	worddir(buffer, sizeof(buffer), word, hash);
+	worddir(buffer, sizeof(buffer), word, hash, basepath);
 	d = opendir(buffer);
 	logthing(LOGTHING_DEBUG, "Scanning for word %s in dir %s", word,
 		 buffer);
@@ -503,7 +519,8 @@ static int fs_fetch_key_text(struct onak_dbctx *dbctx,
 	searchtext = strdup(search);
 	wl = wordlist = makewordlist(wordlist, searchtext);
 
-	keylist = internal_get_key_by_word(wordlist->object, NULL);
+	keylist = internal_get_key_by_word(wordlist->object, NULL,
+		dbctx->config->location);
 
 	if (!keylist) {
 		llfree(wordlist, NULL);
@@ -515,7 +532,8 @@ static int fs_fetch_key_text(struct onak_dbctx *dbctx,
 	wl = wl->next;
 	while (wl) {
 		struct ll *nkl =
-		    internal_get_key_by_word(wl->object, keylist);
+		    internal_get_key_by_word(wl->object, keylist,
+			dbctx->config->location);
 		if (!nkl) {
 			llfree(wordlist, NULL);
 			llfree(keylist, free);
@@ -564,7 +582,7 @@ static int fs_fetch_key_skshash(struct onak_dbctx *dbctx,
 	int ret = 0, fd;
 	struct openpgp_packet_list *packets = NULL;
 
-	skshashpath(buffer, sizeof(buffer), hash);
+	skshashpath(buffer, sizeof(buffer), hash, dbctx->config->location);
 	if ((fd = open(buffer, O_RDONLY)) != -1) {
 		read_openpgp_stream(file_fetchchar, &fd, &packets, 0);
 		parse_keys(packets, publickey);
@@ -618,7 +636,7 @@ static void fs_cleanupdb(struct onak_dbctx *dbctx)
 /**
  *	initdb - Initialize the key database.
  */
-struct onak_dbctx *keydb_fs_init(bool readonly)
+struct onak_dbctx *keydb_fs_init(struct onak_db_config *dbcfg, bool readonly)
 {
 	char buffer[PATH_MAX];
 	struct onak_dbctx *dbctx;
@@ -628,6 +646,7 @@ struct onak_dbctx *keydb_fs_init(bool readonly)
 	if (dbctx == NULL) {
 		return NULL;
 	}
+	dbctx->config = dbcfg;
 	dbctx->priv = privctx = malloc(sizeof(*privctx));
 	if (privctx == NULL) {
 		free(dbctx);
@@ -636,19 +655,19 @@ struct onak_dbctx *keydb_fs_init(bool readonly)
 
 	privctx->lockfile_readonly = readonly;
 
-	snprintf(buffer, sizeof(buffer), "%s/.lock", config.db_dir);
+	snprintf(buffer, sizeof(buffer), "%s/.lock", dbcfg->location);
 
-	if (access(config.db_dir, R_OK | W_OK | X_OK) == -1) {
+	if (access(dbcfg->location, R_OK | W_OK | X_OK) == -1) {
 		if (errno != ENOENT) {
 			logthing(LOGTHING_CRITICAL,
 				 "Unable to access keydb_fs root of '%s'. (%s)",
-				 config.db_dir, strerror(errno));
+				 dbcfg->location, strerror(errno));
 			exit(1);	/* Lacking rwx on the key dir */
 		}
-		mkdir(config.db_dir, 0777);
+		mkdir(dbcfg->location, 0777);
 		privctx->lockfile_fd = open(buffer, O_RDWR | O_CREAT, 0600);
 	}
-	if (chdir(config.db_dir) == -1) {
+	if (chdir(dbcfg->location) == -1) {
 		/* Shouldn't happen after the above */
 		logthing(LOGTHING_CRITICAL,
 			"Couldn't change to database directory: %s",

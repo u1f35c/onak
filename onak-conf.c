@@ -28,7 +28,7 @@
 #include "log.h"
 #include "onak-conf.h"
 
-extern struct onak_dbctx *DBINIT(bool readonly);
+extern struct onak_dbctx *DBINIT(struct onak_db_config *dbcfg, bool readonly);
 
 /*
  *	config - Runtime configuration for onak.
@@ -47,28 +47,15 @@ struct onak_config config = {
 	.use_keyd = false,
 	.sock_dir = ".",
 
-	/*
-	 * Options for directory backends.
-	 */
-	.db_dir = NULL,
-
-	/*
-	 * Options for the Postgres backend.
-	 */
-	.pg_dbhost = NULL,
-	.pg_dbname = NULL,
-	.pg_dbuser = NULL,
-	.pg_dbpass = NULL,
-
-	/*
-	 * Options for dynamic backends.
-	 */
-	.db_backend = NULL,
+	.backends = NULL,
 	.backends_dir = NULL,
 
 	.dbinit = DBINIT,
 
 	.check_sighash = true,
+
+	.bin_dir = NULL,
+	.mail_dir = NULL,
 };
 
 bool parsebool(char *str, bool fallback)
@@ -95,6 +82,7 @@ void readconfig(const char *configfile) {
 	int   i;
 	char *dir, *conf;
 	size_t len;
+	struct onak_db_config *backend;
 
 	curline[1023] = 0;
 	if (configfile == NULL) {
@@ -126,6 +114,11 @@ void readconfig(const char *configfile) {
 			return;
 		}
 
+		/* Add a single DB configuration */
+		backend = calloc(1, sizeof(*backend));
+		config.backend = backend;
+		config.backends = lladd(NULL, backend);
+
 		while (!feof(conffile)) {
 			for (i = strlen(curline) - 1;
 					i >= 0 && isspace(curline[i]);
@@ -138,7 +131,7 @@ void readconfig(const char *configfile) {
 			 * Comment line, ignore.
 			 */
 		} else if (!strncmp("db_dir ", curline, 7)) {
-			config.db_dir = strdup(&curline[7]);
+			backend->location = strdup(&curline[7]);
 		} else if (!strncmp("debug ", curline, 6)) {
 			/*
 			 * Not supported yet; ignore for compatibility with
@@ -171,13 +164,13 @@ void readconfig(const char *configfile) {
 		} else if (!strncmp("max_reply_keys ", curline, 15)) {
 			config.maxkeys = atoi(&curline[15]);
 		} else if (!strncmp("pg_dbhost ", curline, 10)) {
-			config.pg_dbhost = strdup(&curline[10]);
+			backend->hostname = strdup(&curline[10]);
 		} else if (!strncmp("pg_dbname ", curline, 10)) {
-			config.pg_dbname = strdup(&curline[10]);
+			backend->location = strdup(&curline[10]);
 		} else if (!strncmp("pg_dbuser ", curline, 10)) {
-			config.pg_dbuser = strdup(&curline[10]);
+			backend->username = strdup(&curline[10]);
 		} else if (!strncmp("pg_dbpass ", curline, 10)) {
-			config.pg_dbpass = strdup(&curline[10]);
+			backend->password = strdup(&curline[10]);
 		} else if (!strncmp("syncsite ", curline, 9)) {
 			config.syncsites =
 				lladd(config.syncsites, strdup(&curline[9]));
@@ -195,6 +188,8 @@ void readconfig(const char *configfile) {
 			 * Not applicable; ignored for compatibility with pksd.
 			 */
 		} else if (!strncmp("db_backend ", curline, 11)) {
+			backend->type = strdup(&curline[11]);
+			backend->name = strdup(&curline[11]);
 			config.db_backend = strdup(&curline[11]);
 		} else if (!strncmp("backends_dir ", curline, 13)) {
 			config.backends_dir = strdup(&curline[13]);
@@ -225,7 +220,41 @@ void readconfig(const char *configfile) {
 	}
 }
 
+void cleanupdbconfig(void *object)
+{
+	struct onak_db_config *dbconfig = (struct onak_db_config *) object;
+
+	if (dbconfig->name != NULL) {
+		free(dbconfig->name);
+		dbconfig->name = NULL;
+	}
+	if (dbconfig->type != NULL) {
+		free(dbconfig->type);
+		dbconfig->type = NULL;
+	}
+	if (dbconfig->location != NULL) {
+		free(dbconfig->location);
+		dbconfig->location = NULL;
+	}
+	if (dbconfig->hostname != NULL) {
+		free(dbconfig->hostname);
+		dbconfig->hostname = NULL;
+	}
+	if (dbconfig->username != NULL) {
+		free(dbconfig->username);
+		dbconfig->username = NULL;
+	}
+	if (dbconfig->password != NULL) {
+		free(dbconfig->password);
+		dbconfig->password = NULL;
+	}
+}
+
 void cleanupconfig(void) {
+	/* Free any defined DB backend configuration first */
+	llfree(config.backends, cleanupdbconfig);
+	config.backends = NULL;
+
 	if (config.thissite != NULL) {
 		free(config.thissite);
 		config.thissite = NULL;
@@ -237,26 +266,6 @@ void cleanupconfig(void) {
 	if (config.mta != NULL) {
 		free(config.mta);
 		config.mta = NULL;
-	}
-	if (config.db_dir != NULL) {
-		free(config.db_dir);
-		config.db_dir = NULL;
-	}
-	if (config.pg_dbhost != NULL) {
-		free(config.pg_dbhost);
-		config.pg_dbhost = NULL;
-	}
-	if (config.pg_dbname != NULL) {
-		free(config.pg_dbname);
-		config.pg_dbname = NULL;
-	}
-	if (config.pg_dbuser != NULL) {
-		free(config.pg_dbuser);
-		config.pg_dbuser = NULL;
-	}
-	if (config.pg_dbpass != NULL) {
-		free(config.pg_dbpass);
-		config.pg_dbpass = NULL;
 	}
 	if (config.syncsites != NULL) {
 		llfree(config.syncsites, free);

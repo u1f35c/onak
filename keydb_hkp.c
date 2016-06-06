@@ -34,6 +34,7 @@
 #include "version.h"
 
 struct onak_hkp_dbctx {
+	struct onak_db_config *config; /* Our DB config info */
 	CURL *curl;
 	char hkpbase[1024];
 };
@@ -346,7 +347,7 @@ static void hkp_cleanupdb(struct onak_dbctx *dbctx)
  *
  *	We initialize CURL here.
  */
-struct onak_dbctx *keydb_hkp_init(bool readonly)
+struct onak_dbctx *keydb_hkp_init(struct onak_db_config *dbcfg, bool readonly)
 {
 	struct onak_dbctx *dbctx;
 	struct onak_hkp_dbctx *privctx;
@@ -357,6 +358,7 @@ struct onak_dbctx *keydb_hkp_init(bool readonly)
 		return NULL;
 	}
 
+	dbctx->config = dbcfg;
 	dbctx->priv = privctx = malloc(sizeof(*privctx));
 	dbctx->cleanupdb		= hkp_cleanupdb;
 	dbctx->starttrans		= hkp_starttrans;
@@ -373,7 +375,7 @@ struct onak_dbctx *keydb_hkp_init(bool readonly)
 	dbctx->getfullkeyid		= generic_getfullkeyid;
 	dbctx->iterate_keys		= hkp_iterate_keys;
 
-	if (!hkp_parse_url(privctx, config.db_dir)) {
+	if (!hkp_parse_url(privctx, dbcfg->location)) {
 		exit(EXIT_FAILURE);
 	}
 	curl_global_init(CURL_GLOBAL_DEFAULT);

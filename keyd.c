@@ -662,7 +662,7 @@ int main(int argc, char *argv[])
 		maxfd = fd;
 		memset(clients, -1, sizeof (clients));
 
-		dbctx = config.dbinit(false);
+		dbctx = config.dbinit(config.backend, false);
 
 		logthing(LOGTHING_NOTICE, "Accepting connections.");
 		while (!cleanup() && select(maxfd + 1, &rfds, NULL, NULL, NULL) != -1) {

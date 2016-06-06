@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 				fclose(stderr);
 			}
 			catchsignals();
-			dbctx = config.dbinit(false);
+			dbctx = config.dbinit(config.backend, false);
 			
 			count = cleankeys(keys);
 			logthing(LOGTHING_INFO, "%d keys cleaned.",

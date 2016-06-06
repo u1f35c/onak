@@ -161,8 +161,9 @@ static void db4_endtrans(struct onak_dbctx *dbctx)
  *	we're running with a newer version of db4 than the database was
  *	created with.
  */
-static int db4_upgradedb(struct onak_db4_dbctx *privctx)
+static int db4_upgradedb(struct onak_dbctx *dbctx)
 {
+	struct onak_db4_dbctx *privctx = (struct onak_db4_dbctx *) dbctx->priv;
 	DB *curdb = NULL;
 	int ret;
 	int i;
@@ -171,7 +172,7 @@ static int db4_upgradedb(struct onak_db4_dbctx *privctx)
 	struct stat statbuf;
 	ssize_t written;
 
-	snprintf(buf, sizeof(buf) - 1, "%s/%s", config.db_dir,
+	snprintf(buf, sizeof(buf) - 1, "%s/%s", dbctx->config->location,
 			DB4_UPGRADE_FILE);
 	lockfile_fd = open(buf, O_RDWR | O_CREAT | O_EXCL, 0600);
 	if (lockfile_fd < 0) {
@@ -190,7 +191,7 @@ static int db4_upgradedb(struct onak_db4_dbctx *privctx)
 	if (written != strlen(buf)) {
 		logthing(LOGTHING_CRITICAL, "Couldn't write PID to lockfile: "
 				"%s", strerror(errno));
-		snprintf(buf, sizeof(buf) - 1, "%s/%s", config.db_dir,
+		snprintf(buf, sizeof(buf) - 1, "%s/%s", dbctx->config->location,
 				DB4_UPGRADE_FILE);
 		unlink(buf);
 		return -1;
@@ -200,14 +201,14 @@ static int db4_upgradedb(struct onak_db4_dbctx *privctx)
 	ret = db_env_create(&privctx->dbenv, 0);
 	if (ret == 0) {
 		privctx->dbenv->set_errcall(privctx->dbenv, &db4_errfunc);
-		privctx->dbenv->remove(privctx->dbenv, config.db_dir, 0);
+		privctx->dbenv->remove(privctx->dbenv, dbctx->config->location, 0);
 		privctx->dbenv = NULL;
 	}
 	for (i = 0; i < privctx->numdbs; i++) {
 		ret = db_create(&curdb, NULL, 0);
 		if (ret == 0) {
 			snprintf(buf, sizeof(buf) - 1, "%s/keydb.%d.db",
-				config.db_dir, i);
+				dbctx->config->location, i);
 			logthing(LOGTHING_DEBUG, "Upgrading %s", buf);
 			curdb->upgrade(curdb, buf, 0);
 			curdb->close(curdb, 0);
@@ -220,7 +221,7 @@ static int db4_upgradedb(struct onak_db4_dbctx *privctx)
 
 	ret = db_create(&curdb, NULL, 0);
 	if (ret == 0) {
-		snprintf(buf, sizeof(buf) - 1, "%s/worddb", config.db_dir);
+		snprintf(buf, sizeof(buf) - 1, "%s/worddb", dbctx->config->location);
 		logthing(LOGTHING_DEBUG, "Upgrading %s", buf);
 		curdb->upgrade(curdb, buf, 0);
 		curdb->close(curdb, 0);
@@ -232,7 +233,7 @@ static int db4_upgradedb(struct onak_db4_dbctx *privctx)
 
 	ret = db_create(&curdb, NULL, 0);
 	if (ret == 0) {
-		snprintf(buf, sizeof(buf) - 1, "%s/id32db", config.db_dir);
+		snprintf(buf, sizeof(buf) - 1, "%s/id32db", dbctx->config->location);
 		logthing(LOGTHING_DEBUG, "Upgrading %s", buf);
 		curdb->upgrade(curdb, buf, 0);
 		curdb->close(curdb, 0);
@@ -244,7 +245,7 @@ static int db4_upgradedb(struct onak_db4_dbctx *privctx)
 
 	ret = db_create(&curdb, NULL, 0);
 	if (ret == 0) {
-		snprintf(buf, sizeof(buf) - 1, "%s/id64db", config.db_dir);
+		snprintf(buf, sizeof(buf) - 1, "%s/id64db", dbctx->config->location);
 		logthing(LOGTHING_DEBUG, "Upgrading %s", buf);
 		curdb->upgrade(curdb, buf, 0);
 		curdb->close(curdb, 0);
@@ -256,7 +257,7 @@ static int db4_upgradedb(struct onak_db4_dbctx *privctx)
 
 	ret = db_create(&curdb, NULL, 0);
 	if (ret == 0) {
-		snprintf(buf, sizeof(buf) - 1, "%s/skshashdb", config.db_dir);
+		snprintf(buf, sizeof(buf) - 1, "%s/skshashdb", dbctx->config->location);
 		logthing(LOGTHING_DEBUG, "Upgrading %s", buf);
 		curdb->upgrade(curdb, buf, 0);
 		curdb->close(curdb, 0);
@@ -268,7 +269,7 @@ static int db4_upgradedb(struct onak_db4_dbctx *privctx)
 
 	ret = db_create(&curdb, NULL, 0);
 	if (ret == 0) {
-		snprintf(buf, sizeof(buf) - 1, "%s/subkeydb", config.db_dir);
+		snprintf(buf, sizeof(buf) - 1, "%s/subkeydb", dbctx->config->location);
 		logthing(LOGTHING_DEBUG, "Upgrading %s", buf);
 		curdb->upgrade(curdb, buf, 0);
 		curdb->close(curdb, 0);
@@ -278,7 +279,7 @@ static int db4_upgradedb(struct onak_db4_dbctx *privctx)
 			db_strerror(ret));
 	}
 
-	snprintf(buf, sizeof(buf) - 1, "%s/%s", config.db_dir,
+	snprintf(buf, sizeof(buf) - 1, "%s/%s", dbctx->config->location,
 			DB4_UPGRADE_FILE);
 	unlink(buf);
 
@@ -1626,7 +1627,7 @@ static void db4_cleanupdb(struct onak_dbctx *dbctx)
  *	this file are called in order to allow the DB to be initialized ready
  *	for access.
  */
-struct onak_dbctx *keydb_db4_init(bool readonly)
+struct onak_dbctx *keydb_db4_init(struct onak_db_config *dbcfg, bool readonly)
 {
 	char       buf[1024];
 	FILE      *numdb = NULL;
@@ -1642,6 +1643,7 @@ struct onak_dbctx *keydb_db4_init(bool readonly)
 	if (dbctx == NULL) {
 		return NULL;
 	}
+	dbctx->config = dbcfg;
 	dbctx->priv = privctx = calloc(1, sizeof(*privctx));
 	if (privctx == NULL) {
 		free(dbctx);
@@ -1651,7 +1653,7 @@ struct onak_dbctx *keydb_db4_init(bool readonly)
 	/* Default to 16 key data DBs */
 	privctx->numdbs = 16;
 
-	snprintf(buf, sizeof(buf) - 1, "%s/%s", config.db_dir,
+	snprintf(buf, sizeof(buf) - 1, "%s/%s", dbcfg->location,
 			DB4_UPGRADE_FILE);
 	ret = stat(buf, &statbuf);
 	while ((ret == 0) || (errno != ENOENT)) {
@@ -1666,7 +1668,7 @@ struct onak_dbctx *keydb_db4_init(bool readonly)
 	}
 	ret = 0;
 
-	snprintf(buf, sizeof(buf) - 1, "%s/num_keydb", config.db_dir);
+	snprintf(buf, sizeof(buf) - 1, "%s/num_keydb", dbcfg->location);
 	numdb = fopen(buf, "r");
 	if (numdb != NULL) {
 		if (fgets(buf, sizeof(buf), numdb) != NULL) {
@@ -1730,7 +1732,7 @@ struct onak_dbctx *keydb_db4_init(bool readonly)
 	}
 
 	if (ret == 0) {
-		ret = privctx->dbenv->open(privctx->dbenv, config.db_dir,
+		ret = privctx->dbenv->open(privctx->dbenv, dbcfg->location,
 				DB_INIT_LOG | DB_INIT_MPOOL | DB_INIT_LOCK |
 				DB_INIT_TXN |
 				DB_CREATE,
@@ -1739,7 +1741,7 @@ struct onak_dbctx *keydb_db4_init(bool readonly)
 		if (ret == DB_VERSION_MISMATCH) {
 			privctx->dbenv->close(privctx->dbenv, 0);
 			privctx->dbenv = NULL;
-			ret = db4_upgradedb(privctx);
+			ret = db4_upgradedb(dbctx);
 			if (ret == 0) {
 				ret = db_env_create(&privctx->dbenv, 0);
 			}
@@ -1749,7 +1751,7 @@ struct onak_dbctx *keydb_db4_init(bool readonly)
 				privctx->dbenv->set_lk_detect(privctx->dbenv,
 					DB_LOCK_DEFAULT);
 				ret = privctx->dbenv->open(privctx->dbenv,
-					config.db_dir,
+					dbcfg->location,
 					DB_INIT_LOG | DB_INIT_MPOOL |
 					DB_INIT_LOCK | DB_INIT_TXN |
 					DB_CREATE | DB_RECOVER,
@@ -1768,7 +1770,7 @@ struct onak_dbctx *keydb_db4_init(bool readonly)
 		if (ret != 0) {
 			logthing(LOGTHING_CRITICAL,
 					"Error opening db environment: %s (%s)",
-					config.db_dir,
+					dbcfg->location,
 					db_strerror(ret));
 			if (privctx->dbenv != NULL) {
 				privctx->dbenv->close(privctx->dbenv, 0);

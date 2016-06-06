@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
 	if ((argc - optind) < 1) {
 		usage();
 	} else if (!strcmp("dump", argv[optind])) {
-		dbctx = config.dbinit(true);
+		dbctx = config.dbinit(config.backend, true);
 		dumpstate.count = dumpstate.filenum = 0;
 		dumpstate.maxcount = 100000;
 		dumpstate.fd = -1;
@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
 			logthing(LOGTHING_INFO, "%d keys cleaned.",
 					result);
 
-			dbctx = config.dbinit(false);
+			dbctx = config.dbinit(config.backend, false);
 			logthing(LOGTHING_NOTICE, "Got %d new keys.",
 					dbctx->update_keys(dbctx, &keys,
 					false));
@@ -337,7 +337,7 @@ int main(int argc, char *argv[])
 				ishex = true;
 			}
 		}
-		dbctx = config.dbinit(false);
+		dbctx = config.dbinit(config.backend, false);
 		if (!strcmp("index", argv[optind])) {
 			find_keys(dbctx, search, keyid, &fingerprint, ishex,
 					isfp, dispfp, skshash,

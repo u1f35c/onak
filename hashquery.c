@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
 	}
 
 	catchsignals();
-	dbctx = config.dbinit(false);
+	dbctx = config.dbinit(config.backend, false);
 
 	if (dbctx->fetch_key_skshash == NULL) {
 		dbctx->cleanupdb(dbctx);

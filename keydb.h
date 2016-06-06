@@ -208,6 +208,11 @@ struct onak_dbctx {
 			struct openpgp_publickey *key),	void *ctx);
 
 /**
+ * @brief Configuration file information for this backend instance
+ */
+	struct onak_db_config *config;
+
+/**
  * @brief Private backend context information.
  */
 	void *priv;

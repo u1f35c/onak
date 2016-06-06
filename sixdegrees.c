@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 	readconfig(configfile);
 	free(configfile);
 	initlogthing("sixdegrees", config.logfile);
-	dbctx = config.dbinit(true);
+	dbctx = config.dbinit(config.backend, true);
 	if (dbctx != NULL) {
 		inithash();
 		sixdegrees(dbctx, dbctx->getfullkeyid(dbctx, keyid));

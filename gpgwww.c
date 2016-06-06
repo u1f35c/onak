@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
 	readconfig(NULL);
 	initlogthing("gpgwww", config.logfile);
 	catchsignals();
-	dbctx = config.dbinit(true);
+	dbctx = config.dbinit(config.backend, true);
 	inithash();
 	logthing(LOGTHING_NOTICE, "Looking for path from 0x%016" PRIX64
 			" to 0x%016"

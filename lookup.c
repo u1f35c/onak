@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
 		readconfig(NULL);
 		initlogthing("lookup", config.logfile);
 		catchsignals();
-		dbctx = config.dbinit(false);
+		dbctx = config.dbinit(config.backend, false);
 		switch (op) {
 		case OP_GET:
 		case OP_HGET:

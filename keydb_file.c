@@ -270,7 +270,7 @@ static void file_cleanupdb(struct onak_dbctx *dbctx)
  *
  *	This is just a no-op for flat file access.
  */
-struct onak_dbctx *keydb_file_init(bool readonly)
+struct onak_dbctx *keydb_file_init(struct onak_db_config *dbcfg, bool readonly)
 {
 	struct onak_dbctx *dbctx;
 
@@ -279,7 +279,8 @@ struct onak_dbctx *keydb_file_init(bool readonly)
 		return NULL;
 	}
 
-	dbctx->priv = strdup(config.db_dir);
+	dbctx->config = dbcfg;
+	dbctx->priv = strdup(dbcfg->location);
 
 	dbctx->cleanupdb		= file_cleanupdb;
 	dbctx->starttrans		= file_starttrans;

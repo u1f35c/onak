@@ -502,7 +502,7 @@ static void keyd_cleanupdb(struct onak_dbctx *dbctx)
  *	this file are called in order to allow the DB to be initialized ready
  *	for access.
  */
-struct onak_dbctx *keydb_keyd_init(bool readonly)
+struct onak_dbctx *keydb_keyd_init(struct onak_db_config *dbcfg, bool readonly)
 {
 	struct sockaddr_un sock;
 	uint32_t	   cmd = KEYD_CMD_UNKNOWN;
@@ -515,6 +515,7 @@ struct onak_dbctx *keydb_keyd_init(bool readonly)
 	if (dbctx == NULL) {
 		return NULL;
 	}
+	dbctx->config = dbcfg;
 
 	keyd_fd = socket(PF_UNIX, SOCK_STREAM, 0);
 	if (keyd_fd < 0) {

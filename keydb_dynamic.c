@@ -206,12 +206,13 @@ static void dynamic_cleanupdb(struct onak_dbctx *dbctx)
 	}
 }
 
-struct onak_dbctx *keydb_dynamic_init(bool readonly)
+struct onak_dbctx *keydb_dynamic_init(struct onak_db_config *dbcfg,
+		bool readonly)
 {
 	struct onak_dbctx *dbctx;
 	char *soname;
 	char *initname;
-	struct onak_dbctx *(*backend_init)(bool);
+	struct onak_dbctx *(*backend_init)(struct onak_db_config *, bool);
 	struct onak_dynamic_dbctx *privctx;
 
 	dbctx = malloc(sizeof(struct onak_dbctx));
@@ -220,6 +221,7 @@ struct onak_dbctx *keydb_dynamic_init(bool readonly)
 		return NULL;
 	}
 
+	dbctx->config = dbcfg;
 	dbctx->priv = privctx = malloc(sizeof(struct onak_dynamic_dbctx));
 	if (dbctx->priv == NULL) {
 		free(dbctx);
@@ -237,21 +239,21 @@ struct onak_dbctx *keydb_dynamic_init(bool readonly)
 	}
 
 	if (config.backends_dir == NULL) {
-		soname = malloc(strlen(config.db_backend)
+		soname = malloc(strlen(dbcfg->type)
 			+ strlen("./libkeydb_")
 			+ strlen(".so")
 			+ 1);
 
-		sprintf(soname, "./libkeydb_%s.so", config.db_backend);
+		sprintf(soname, "./libkeydb_%s.so", dbcfg->type);
 	} else {
-		soname = malloc(strlen(config.db_backend)
+		soname = malloc(strlen(dbcfg->type)
 			+ strlen("/libkeydb_")
 			+ strlen(".so")
 			+ strlen(config.backends_dir)
 			+ 1);
 
 		sprintf(soname, "%s/libkeydb_%s.so", config.backends_dir,
-			config.db_backend);
+			dbcfg->type);
 	}
 
 	logthing(LOGTHING_INFO, "Loading dynamic backend: %s", soname);
@@ -270,7 +272,7 @@ struct onak_dbctx *keydb_dynamic_init(bool readonly)
 			+ strlen("keydb_")
 			+ strlen("_init")
 			+ 1);
-	sprintf(initname, "keydb_%s_init", config.db_backend);
+	sprintf(initname, "keydb_%s_init", dbcfg->type);
 
 	*(void **) (&backend_init) = dlsym(privctx->backend_handle, initname);
 	free(initname);
@@ -286,7 +288,7 @@ struct onak_dbctx *keydb_dynamic_init(bool readonly)
 	free(soname);
 	soname = NULL;
 
-	privctx->loadeddbctx = backend_init(readonly);
+	privctx->loadeddbctx = backend_init(dbcfg, readonly);
 
 	if (privctx->loadeddbctx != NULL) {
 		dbctx->cleanupdb = dynamic_cleanupdb;
