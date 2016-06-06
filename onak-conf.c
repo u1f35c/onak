@@ -37,38 +37,38 @@ extern struct onak_dbctx *DBINIT(bool readonly);
  *	config file.
  */
 struct onak_config config = {
-	128,			/* maxkeys */
-	NULL,			/* thissite */
-	NULL,			/* adminemail */
-	NULL,			/* mta */
-	NULL,			/* syncsites */
-	NULL,			/* logfile */
+	.maxkeys = 128,
+	.thissite = NULL,
+	.adminemail = NULL,
+	.mta = NULL,
+	.syncsites = NULL,
+	.logfile = NULL,
 
-	false,			/* use_keyd */
-	".",			/* sock_dir */
+	.use_keyd = false,
+	.sock_dir = ".",
 
 	/*
 	 * Options for directory backends.
 	 */
-	NULL,			/* db_dir */
+	.db_dir = NULL,
 
 	/*
 	 * Options for the Postgres backend.
 	 */
-	NULL,			/* pg_dbhost */
-	NULL,			/* pg_dbname */
-	NULL,			/* pg_dbuser */
-	NULL,			/* pg_dbpass */
+	.pg_dbhost = NULL,
+	.pg_dbname = NULL,
+	.pg_dbuser = NULL,
+	.pg_dbpass = NULL,
 
 	/*
 	 * Options for dynamic backends.
 	 */
-	NULL,			/* db_backend */
-	NULL,			/* backends_dir */
+	.db_backend = NULL,
+	.backends_dir = NULL,
 
-	DBINIT,			/* Default db initialisation function */
+	.dbinit = DBINIT,
 
-	true,			/* Check packet sig hashes */
+	.check_sighash = true,
 };
 
 bool parsebool(char *str, bool fallback)
