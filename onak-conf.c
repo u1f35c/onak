@@ -53,9 +53,6 @@ struct onak_config config = {
 	.dbinit = DBINIT,
 
 	.check_sighash = true,
-
-	.bin_dir = NULL,
-	.mail_dir = NULL,
 };
 
 bool parsebool(char *str, bool fallback)
