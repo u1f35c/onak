@@ -4,8 +4,8 @@
 set -e
 
 cd t
-../onak -b -c test.conf add < ../keys/noodles.key
-if ! ../onak -c test.conf get 0x12345678 2>&1 | \
+../onak -b -c $1 add < ../keys/noodles.key
+if ! ../onak -c $1 get 0x12345678 2>&1 | \
 	grep -q 'Key not found'; then
 	echo "* Did not correctly error on non-existent key"
 	exit 1

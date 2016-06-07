@@ -4,7 +4,7 @@
 set -e
 
 cd t
-../onak -b -c test.conf add < ../keys/noodles.key
+../onak -b -c $1 add < ../keys/noodles.key
 if [ ! -e db/0x2DA8B985 ]; then
 	echo Did not correctly add key using file backend.
 	exit 1

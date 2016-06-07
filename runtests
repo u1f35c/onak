@@ -23,7 +23,7 @@ for t in libkeydb_*.so; do
 		for t in t/$backend-*.t t/all-*.t; do
 			total=`expr $total + 1`
 			mkdir t/db/
-			if ! $t $backend; then
+			if ! $t test.conf $backend; then
 				echo "test $t failed" >&2
 				fail=`expr $fail + 1`
 			fi
