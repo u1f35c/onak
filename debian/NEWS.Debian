@@ -1,0 +1,14 @@
+onak (0.4.6-1+git) UNRELEASED; urgency=low
+
+ Upstream onak has migrated to a new .ini style configuration file,
+ referred to as onak.ini instead of onak.conf. If you had local modifications
+ to /etc/onak.conf they have been retained in /etc/onak.conf.dpkg-bak and
+ automatically migrated to the new style in /etc/onak.ini. If you have any
+ other copies of the configuration (e.g. store in home directories) then
+ the "onak dumpconfig" utility can upgrade them for you. onak is still
+ capable of reading old style configurations but this is expected to go away
+ in a future release and no new configuration options will be available in
+ the old config file format.
+
+ -- Jonathan McDowell <noodles@earth.li>  Tue, 07 Jun 2016 16:05:43 +0100
+

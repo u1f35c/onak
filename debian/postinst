@@ -3,6 +3,18 @@
 set -e
 
 if [ "$1" = "configure" ]; then
+    if dpkg --compare-versions -- "$2" le "0.4.6-1"; then
+        echo "Upgrading from old onak.conf version"
+        if [ -e /etc/onak.conf.dpkg-backup -a ! -e /etc/onak.conf ]; then
+                echo "Migrating onak.conf to onak.ini"
+                # Old config file was modified; generate a new style
+                # file. onak will use the file extension to determine it's
+                # an old style config, so we need the symlink.
+                ln -s /etc/onak.conf.dpkg-backup /etc/onak.conf
+                /usr/bin/onak -c /etc/onak.conf dumpconfig /etc/onak.ini
+                rm /etc/onak.conf
+        fi
+    fi
 
     # Add the onak user
     adduser --system --home /var/lib/onak --no-create-home --disabled-login onak
@@ -11,8 +23,8 @@ if [ "$1" = "configure" ]; then
     # If we're using a default config and there's no onak database, create it
     # by adding my key.
     #
-    if grep -q "^db_dir /var/lib/onak" /etc/onak.conf &&
-            grep -q "^db_backend db4" /etc/onak.conf &&
+    if grep -q "^backend=defaultdb4" /etc/onak.ini &&
+            grep -q "^location=/var/lib/onak" /etc/onak.ini &&
             [ ! -e /var/lib/onak/num_keydb -a \
                 -e /usr/share/doc/onak/noodles.key.gz ]; then
         zcat /usr/share/doc/onak/noodles.key | onak -b add
@@ -34,20 +46,6 @@ if [ "$1" = "configure" ]; then
             dpkg-statoverride --update --add onak root 4755 $i
         fi
     done
-
-    # If we don't have a DB backend defined, then add appropriate config
-    if ! grep -q db_backend /etc/onak.conf; then
-        echo "# Auto added on package update" >> /etc/onak.conf
-        echo "backends_dir /usr/lib/onak/backends" >> /etc/onak.conf
-        echo "db_backend db4" >> /etc/onak.conf
-    fi
-
-    # If we still have the old default mail_dir setting, fix it
-    if grep -q "mail_dir /community/pgp-keyserver/incoming" /etc/onak.conf; then
-        sed -i.bak "s/community\/pgp-keyserver\/incoming/var\/spool\/onak/" \
-		/etc/onak.conf
-    fi
-
 fi
 
 #DEBHELPER#
@@ -58,6 +56,6 @@ fi
 # way the init script does. Work around this by doing the check here and
 # only calling invoke-rc.d if it's actually enabled.
 #
-if grep -q -E '^use_keyd *(true|yes|1)$' /etc/onak.conf; then
+if grep -q -E '^use_keyd=*(true|yes|1)$' /etc/onak.ini; then
     invoke-rc.d onak start || exit $?
 fi

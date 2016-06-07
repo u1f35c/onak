@@ -1,0 +1,1 @@
+rm_conffile /etc/onak.conf 0.4.6-1 onak

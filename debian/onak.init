@@ -32,7 +32,7 @@ SCRIPTNAME=/etc/init.d/onak
 # and status_of_proc is working.
 . /lib/lsb/init-functions
 
-if ! grep -q -E '^use_keyd *(true|yes|1)$' /etc/onak.conf; then
+if ! grep -q -E '^use_keyd=*(true|yes|1)$' /etc/onak.ini; then
 	exit 0
 fi
 

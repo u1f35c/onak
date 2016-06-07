@@ -1,7 +1,7 @@
 onak for Debian
 ---------------
 
-Before using onak you will want to edit /etc/onak.conf and set 'this_site' as
+Before using onak you will want to edit /etc/onak.ini and set 'this_site' as
 appropriate.
 
 The OpenPGP Key Server specification uses host:11371/pks/lookup etc as the URLs,
