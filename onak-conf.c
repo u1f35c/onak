@@ -76,6 +76,92 @@ bool parsebool(char *str, bool fallback)
 	}
 }
 
+static bool parseconfigline(char *line)
+{
+	if (line[0] == '#' || line[0] == 0) {
+		/*
+		 * Comment line, ignore.
+		 */
+	} else if (!strncmp("db_dir ", line, 7)) {
+		config.backend->location = strdup(&line[7]);
+	} else if (!strncmp("debug ", line, 6)) {
+		/*
+		 * Not supported yet; ignore for compatibility with
+		 * pksd.
+		 */
+	} else if (!strncmp("default_language ", line, 17)) {
+		/*
+		 * Not supported yet; ignore for compatibility with
+		 * pksd.
+		 */
+	} else if (!strncmp("mail_delivery_client ", line, 21)) {
+		config.mta = strdup(&line[21]);
+	} else if (!strncmp("maintainer_email ", line, 17)) {
+		config.adminemail = strdup(&line[17]);
+	} else if (!strncmp("mail_intro_file ", line, 16)) {
+		/*
+		 * Not supported yet; ignore for compatibility with
+		 * pksd.
+		 */
+	} else if (!strncmp("help_dir ", line, 9)) {
+		/*
+		 * Not supported yet; ignore for compatibility with
+		 * pksd.
+		 */
+	} else if (!strncmp("max_last ", line, 9)) {
+		/*
+		 * Not supported yet; ignore for compatibility with
+		 * pksd.
+		 */
+	} else if (!strncmp("max_reply_keys ", line, 15)) {
+		config.maxkeys = atoi(&line[15]);
+	} else if (!strncmp("pg_dbhost ", line, 10)) {
+		config.backend->hostname = strdup(&line[10]);
+	} else if (!strncmp("pg_dbname ", line, 10)) {
+		config.backend->location = strdup(&line[10]);
+	} else if (!strncmp("pg_dbuser ", line, 10)) {
+		config.backend->username = strdup(&line[10]);
+	} else if (!strncmp("pg_dbpass ", line, 10)) {
+		config.backend->password = strdup(&line[10]);
+	} else if (!strncmp("syncsite ", line, 9)) {
+		config.syncsites =
+			lladd(config.syncsites, strdup(&line[9]));
+	} else if (!strncmp("logfile ", line, 8)) {
+		config.logfile = strdup(&line[8]);
+	} else if (!strncmp("loglevel ", line, 9)) {
+		setlogthreshold(atoi(&line[9]));
+	} else if (!strncmp("this_site ", line, 10)) {
+		config.thissite = strdup(&line[10]);
+	} else if (!strncmp("socket_name ", line, 12) ||
+			!strncmp("www_port ", line, 9)) {
+		/*
+		 * Not applicable; ignored for compatibility with pksd.
+		 */
+	} else if (!strncmp("pks_bin_dir ", line, 12)) {
+		config.bin_dir = strdup(&line[12]);
+	} else if (!strncmp("mail_dir ", line, 9)) {
+		config.mail_dir = strdup(&line[9]);
+	} else if (!strncmp("db_backend ", line, 11)) {
+		config.backend->type = strdup(&line[11]);
+		config.backend->name = strdup(&line[11]);
+		config.db_backend = strdup(&line[11]);
+	} else if (!strncmp("backends_dir ", line, 13)) {
+		config.backends_dir = strdup(&line[13]);
+	} else if (!strncmp("use_keyd ", line, 9)) {
+		config.use_keyd = parsebool(&line[9],
+					config.use_keyd);
+	} else if (!strncmp("sock_dir ", line, 9)) {
+		config.sock_dir = strdup(&line[9]);
+	} else if (!strncmp("check_sighash ", line, 9)) {
+		config.check_sighash = parsebool(&line[9],
+					config.check_sighash);
+	} else {
+		return false;
+	}
+
+	return true;
+}
+
 void readconfig(const char *configfile) {
 	FILE *conffile;
 	char  curline[1024];
@@ -120,93 +206,23 @@ void readconfig(const char *configfile) {
 		config.backends = lladd(NULL, backend);
 
 		while (!feof(conffile)) {
+			/* Strip any trailing white space */
 			for (i = strlen(curline) - 1;
 					i >= 0 && isspace(curline[i]);
 					i--) {
 				curline[i] = 0;
 			}
 
-		if (curline[0] == '#' || curline[0] == 0) {
-			/*
-			 * Comment line, ignore.
-			 */
-		} else if (!strncmp("db_dir ", curline, 7)) {
-			backend->location = strdup(&curline[7]);
-		} else if (!strncmp("debug ", curline, 6)) {
-			/*
-			 * Not supported yet; ignore for compatibility with
-			 * pksd.
-			 */
-		} else if (!strncmp("default_language ", curline, 17)) {
-			/*
-			 * Not supported yet; ignore for compatibility with
-			 * pksd.
-			 */
-		} else if (!strncmp("mail_delivery_client ", curline, 21)) {
-			config.mta = strdup(&curline[21]);
-		} else if (!strncmp("maintainer_email ", curline, 17)) {
-			config.adminemail = strdup(&curline[17]);
-		} else if (!strncmp("mail_intro_file ", curline, 16)) {
-			/*
-			 * Not supported yet; ignore for compatibility with
-			 * pksd.
-			 */
-		} else if (!strncmp("help_dir ", curline, 9)) {
-			/*
-			 * Not supported yet; ignore for compatibility with
-			 * pksd.
-			 */
-		} else if (!strncmp("max_last ", curline, 9)) {
-			/*
-			 * Not supported yet; ignore for compatibility with
-			 * pksd.
-			 */
-		} else if (!strncmp("max_reply_keys ", curline, 15)) {
-			config.maxkeys = atoi(&curline[15]);
-		} else if (!strncmp("pg_dbhost ", curline, 10)) {
-			backend->hostname = strdup(&curline[10]);
-		} else if (!strncmp("pg_dbname ", curline, 10)) {
-			backend->location = strdup(&curline[10]);
-		} else if (!strncmp("pg_dbuser ", curline, 10)) {
-			backend->username = strdup(&curline[10]);
-		} else if (!strncmp("pg_dbpass ", curline, 10)) {
-			backend->password = strdup(&curline[10]);
-		} else if (!strncmp("syncsite ", curline, 9)) {
-			config.syncsites =
-				lladd(config.syncsites, strdup(&curline[9]));
-		} else if (!strncmp("logfile ", curline, 8)) {
-			config.logfile = strdup(&curline[8]);
-		} else if (!strncmp("loglevel ", curline, 9)) {
-			setlogthreshold(atoi(&curline[9]));
-		} else if (!strncmp("this_site ", curline, 10)) {
-			config.thissite = strdup(&curline[10]);
-		} else if (!strncmp("socket_name ", curline, 12) ||
-				!strncmp("www_port ", curline, 9)) {
-			/*
-			 * Not applicable; ignored for compatibility with pksd.
-			 */
-		} else if (!strncmp("pks_bin_dir ", curline, 12)) {
-			config.bin_dir = strdup(&curline[12]);
-		} else if (!strncmp("mail_dir ", curline, 9)) {
-			config.mail_dir = strdup(&curline[9]);
-		} else if (!strncmp("db_backend ", curline, 11)) {
-			backend->type = strdup(&curline[11]);
-			backend->name = strdup(&curline[11]);
-			config.db_backend = strdup(&curline[11]);
-		} else if (!strncmp("backends_dir ", curline, 13)) {
-			config.backends_dir = strdup(&curline[13]);
-		} else if (!strncmp("use_keyd ", curline, 9)) {
-			config.use_keyd = parsebool(&curline[9],
-						config.use_keyd);
-		} else if (!strncmp("sock_dir ", curline, 9)) {
-			config.sock_dir = strdup(&curline[9]);
-		} else if (!strncmp("check_sighash ", curline, 9)) {
-			config.check_sighash = parsebool(&curline[9],
-						config.check_sighash);
-		} else {
-			logthing(LOGTHING_ERROR,
-				"Unknown config line: %s", curline);
-		}
+			/* Strip any leading white space */
+			i = 0;
+			while (curline[i] != 0 && isspace(curline[i])) {
+				i++;
+			}
+
+			if (!parseconfigline(&curline[i])) {
+				logthing(LOGTHING_ERROR,
+					"Unknown config line: %s", curline);
+			}
 
 			if (!fgets(curline, 1023, conffile) &&
 					!feof(conffile)) {
