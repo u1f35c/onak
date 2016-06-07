@@ -45,7 +45,7 @@ struct onak_config config = {
 	.logfile = NULL,
 
 	.use_keyd = false,
-	.sock_dir = ".",
+	.sock_dir = NULL,
 
 	.backends = NULL,
 	.backends_dir = NULL,
@@ -266,6 +266,8 @@ void cleanupdbconfig(void *object)
 		free(dbconfig->password);
 		dbconfig->password = NULL;
 	}
+
+	free(dbconfig);
 }
 
 void cleanupconfig(void) {
@@ -300,6 +302,10 @@ void cleanupconfig(void) {
 	if (config.backends_dir != NULL) {
 		free(config.backends_dir);
 		config.backends_dir = NULL;
+	}
+	if (config.sock_dir != NULL) {
+		free(config.sock_dir);
+		config.sock_dir = NULL;
 	}
 	if (config.bin_dir != NULL) {
 		free(config.bin_dir);

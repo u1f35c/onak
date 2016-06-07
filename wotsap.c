@@ -215,4 +215,5 @@ int main(int argc, char *argv[])
 	}
 	cleanuplogthing();
 	cleanupconfig();
+	free(configfile);
 }
