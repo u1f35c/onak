@@ -215,6 +215,12 @@ struct onak_dbctx *keydb_dynamic_init(struct onak_db_config *dbcfg,
 	struct onak_dbctx *(*backend_init)(struct onak_db_config *, bool);
 	struct onak_dynamic_dbctx *privctx;
 
+	if (dbcfg == NULL) {
+		logthing(LOGTHING_CRITICAL,
+			"No backend database configuration supplied.");
+		return NULL;
+	}
+
 	dbctx = malloc(sizeof(struct onak_dbctx));
 
 	if (dbctx == NULL) {
