@@ -89,6 +89,16 @@ struct onak_config {
 
 	/** Should we verify signature hashes match? */
 	bool check_sighash;
+
+	/*
+	 * Options used by the email handling script.
+	 * None of the C code uses this information, but we should be able
+	 * to parse it.
+	 */
+	/** Location of the onak binary, so the mail script can find it. */
+	char *bin_dir;
+	/** Where incoming mail gets queue, one file per mail. */
+	char *mail_dir;
 };
 
 /**

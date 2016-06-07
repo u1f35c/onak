@@ -53,6 +53,9 @@ struct onak_config config = {
 	.dbinit = DBINIT,
 
 	.check_sighash = true,
+
+	.bin_dir = NULL,
+	.mail_dir = NULL,
 };
 
 bool parsebool(char *str, bool fallback)
@@ -178,12 +181,14 @@ void readconfig(const char *configfile) {
 		} else if (!strncmp("this_site ", curline, 10)) {
 			config.thissite = strdup(&curline[10]);
 		} else if (!strncmp("socket_name ", curline, 12) ||
-				!strncmp("pks_bin_dir ", curline, 12) ||
-				!strncmp("mail_dir ", curline, 9) ||
 				!strncmp("www_port ", curline, 9)) {
 			/*
 			 * Not applicable; ignored for compatibility with pksd.
 			 */
+		} else if (!strncmp("pks_bin_dir ", curline, 12)) {
+			config.bin_dir = strdup(&curline[12]);
+		} else if (!strncmp("mail_dir ", curline, 9)) {
+			config.mail_dir = strdup(&curline[9]);
 		} else if (!strncmp("db_backend ", curline, 11)) {
 			backend->type = strdup(&curline[11]);
 			backend->name = strdup(&curline[11]);
@@ -279,5 +284,13 @@ void cleanupconfig(void) {
 	if (config.backends_dir != NULL) {
 		free(config.backends_dir);
 		config.backends_dir = NULL;
+	}
+	if (config.bin_dir != NULL) {
+		free(config.bin_dir);
+		config.bin_dir = NULL;
+	}
+	if (config.mail_dir != NULL) {
+		free(config.mail_dir);
+		config.mail_dir = NULL;
 	}
 }
