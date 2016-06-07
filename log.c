@@ -112,6 +112,17 @@ loglevels setlogthreshold(loglevels loglevel)
 }
 
 /*
+ *	getlogthreshold - get the threshold for log output
+ *
+ *	Returns the threshold for log output; anything logged with a log level
+ *	lower than this will be silently dropped.
+ */
+loglevels getlogthreshold(void)
+{
+	return logthres;
+}
+
+/*
  *	vflog - write a log entry to an already opened log file.
  *      @logfile: The FILE * handle of the open log file.
  *      @format: A format string.

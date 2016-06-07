@@ -89,6 +89,14 @@ void cleanuplogthing(void);
 loglevels setlogthreshold(loglevels loglevel);
 
 /*
+ *	getlogthreshold - get the threshold for log output
+ *
+ *	Returns the threshold for log output; anything logged with a log level
+ *	lower than this will be silently dropped.
+ */
+loglevels getlogthreshold(void);
+
+/*
  *	logthing - output a log entry
  *      @loglevel: The level of the log.
  *      @format: A format string, followed by any parameters required.
