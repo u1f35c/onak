@@ -54,10 +54,10 @@ Once make has completed you'll end up with various binaries:
 
 Config:
 
-I've finally added config file support. onak.conf is an example config;
-the main thing to change is the db_dir to whereever you want to put your
-database files. The configure script allows you to specific where it
-should live; by default it'll be PREFIX/etc/onak.conf.
+I've finally added config file support. onak.ini is an example config;
+the main thing to change is the location in the backend section to
+whereever you want to put your database files. The configure script allows
+you to specific where it should live; by default it'll be PREFIX/etc/onak.ini.
 
 
 Backends:

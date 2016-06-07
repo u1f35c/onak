@@ -58,6 +58,19 @@ struct onak_config config = {
 	.mail_dir = NULL,
 };
 
+struct onak_db_config *find_db_backend_config(struct ll *backends, char *name)
+{
+	struct ll *cur;
+
+	cur = backends;
+	while (cur != NULL && strcmp(name,
+			((struct onak_db_config *) cur->object)->name)) {
+		cur = cur->next;
+	}
+
+	return (cur != NULL) ? (struct onak_db_config *) cur->object : NULL;
+}
+
 bool parsebool(char *str, bool fallback)
 {
 	if (!strcasecmp(str, "false") || !strcasecmp(str, "no") ||
@@ -76,7 +89,10 @@ bool parsebool(char *str, bool fallback)
 	}
 }
 
-static bool parseconfigline(char *line)
+/*
+ * Parse an old pksd style config line, as used in onak 0.4.6 and earlier.
+ */
+static bool parseoldconfigline(char *line)
 {
 	if (line[0] == '#' || line[0] == 0) {
 		/*
@@ -162,6 +178,113 @@ static bool parseconfigline(char *line)
 	return true;
 }
 
+/*
+ * Parse a new style .ini config line, supporting [sections] and name=value
+ * format.
+ */
+static bool parseconfigline(char *line)
+{
+	/* Yes, this means we're not re-entrant. */
+	static char section[32] = "";
+	struct onak_db_config *backend;
+	size_t len;
+	char *name, *value;
+
+	if (line[0] == '#' || line[0] == ';' ||
+			line[0] == 0) {
+		/*
+		 * Comment line, ignore.
+		 */
+	} else if (line[0] == '[') {
+		/* Section name */
+		len = strlen(line);
+		if (line[len - 1] != ']') {
+			logthing(LOGTHING_CRITICAL,
+				"Malformed section header '%s' in "
+				"config file.", line);
+			return false;
+		}
+		if (len > sizeof(section)) {
+			logthing(LOGTHING_CRITICAL,
+				"Section header '%s' is too long in "
+				"config file.", line);
+			return false;
+		}
+		line[len - 1] = 0;
+		strncpy(section, &line[1], len);
+	} else if ((value = strchr(line, '=')) != NULL) {
+		name = line;
+		*value++ = 0;
+
+		/* We can have multiple backend: sections */
+		if (!strncmp(section, "backend:", 8)) {
+			backend = find_db_backend_config(
+				config.backends, &section[8]);
+			if (backend == NULL) {
+				backend = calloc(1,
+					sizeof(struct onak_db_config));
+				backend->name = strdup(&section[8]);
+				config.backends = lladd(config.backends,
+							backend);
+			}
+
+			if (!strcmp(name, "type")) {
+				backend->type = strdup(value);
+			} else if (!strcmp(name, "location")) {
+				backend->location = strdup(value);
+			} else if (!strcmp(name, "hostname")) {
+				backend->location = strdup(value);
+			} else if (!strcmp(name, "username")) {
+				backend->location = strdup(value);
+			} else if (!strcmp(name, "password")) {
+				backend->location = strdup(value);
+			}
+
+#define MATCH(s, n) !strcmp(section, s) && !strcmp(name, n)
+		/* [main] section */
+		} else if (MATCH("main", "backend")) {
+			config.db_backend = strdup(value);
+		} else if (MATCH("main", "backends_dir")) {
+			config.backends_dir = strdup(value);
+		} else if (MATCH("main", "logfile")) {
+			config.logfile = strdup(value);
+		} else if (MATCH("main", "loglevel")) {
+			setlogthreshold(atoi(value));
+		} else if (MATCH("main", "use_keyd")) {
+			config.use_keyd = parsebool(value,
+					config.use_keyd);
+		} else if (MATCH("main", "sock_dir")) {
+			config.sock_dir = strdup(value);
+		} else if (MATCH("main", "max_reply_keys")) {
+			config.maxkeys = atoi(value);
+		/* [mail] section */
+		} else if (MATCH("mail", "maintainer_email")) {
+			config.adminemail = strdup(value);
+		} else if (MATCH("mail", "mail_dir")) {
+		config.mail_dir = strdup(value);
+		} else if (MATCH("mail", "mta")) {
+			config.mta = strdup(value);
+		} else if (MATCH("mail", "bin_dir")) {
+			config.bin_dir = strdup(value);
+		} else if (MATCH("mail", "this_site")) {
+			config.thissite = strdup(value);
+		} else if (MATCH("mail", "syncsite")) {
+			config.syncsites = lladd(config.syncsites,
+				strdup(value));
+		/* [verification] section */
+		} else if (MATCH("verification", "check_sighash")) {
+			config.check_sighash = parsebool(value,
+					config.check_sighash);
+		} else {
+			return false;
+		}
+	} else {
+		return false;
+	}
+
+	return true;
+}
+
 void readconfig(const char *configfile) {
 	FILE *conffile;
 	char  curline[1024];
@@ -169,29 +292,69 @@ void readconfig(const char *configfile) {
 	char *dir, *conf;
 	size_t len;
 	struct onak_db_config *backend;
+	bool oldstyle = false;
+	bool res;
 
 	curline[1023] = 0;
+
+	/*
+	 * Try to find a config file to use. If one is explicitly provided,
+	 * use that. Otherwise look in $XDG_CONFIG_HOME, $HOME and finally
+	 * the build in configuration directory. We try an old style onak.conf
+	 * first and then the new style onak.ini if that wasn't found - this
+	 * is to prevent breaking existing installs on upgrade.
+	 */
 	if (configfile == NULL) {
 		conffile = NULL;
 		if ((dir = getenv("XDG_CONFIG_HOME")) != NULL) {
-			len = strlen(dir) + 1 + 9 + 1; /* dir + / + onak.conf + NUL */
+			/* dir + / + onak.conf + NUL */
+			len = strlen(dir) + 1 + 9 + 1;
 			conf = malloc(len);
 			snprintf(conf, len, "%s/onak.conf", dir);
 			conffile = fopen(conf, "r");
+			if (conffile == NULL) {
+				/* Conveniently .ini is shorter than .conf */
+				snprintf(conf, len, "%s/onak.ini", dir);
+				conffile = fopen(conf, "r");
+			} else {
+				oldstyle = true;
+			}
 			free(conf);
 		} else if ((dir = getenv("HOME")) != NULL) {
-			len = strlen(dir) + 18 + 1; /* dir + /.config/onak.conf + NUL */
+			/* dir + /.config/onak.conf + NUL */
+			len = strlen(dir) + 18 + 1;
 			conf = malloc(len);
 			snprintf(conf, len, "%s/.config/onak.conf", dir);
 			conffile = fopen(conf, "r");
+			if (conffile == NULL) {
+				/* Conveniently .ini is shorter than .conf */
+				snprintf(conf, len, "%s/onak.ini", dir);
+				conffile = fopen(conf, "r");
+			} else {
+				oldstyle = true;
+			}
 			free(conf);
 		}
 		if (conffile == NULL) {
-			conffile = fopen(CONFIGFILE, "r");
+			conffile = fopen(CONFIGDIR "/onak.conf", "r");
+			if (conffile == NULL) {
+				conffile = fopen(CONFIGDIR "/onak.ini", "r");
+			} else {
+				oldstyle = true;
+			}
 		}
 	} else {
+		/*
+		 * Explicitly provided config file; if the filename ends .conf
+		 * assume it's old style.
+		 */
+		len = strlen(configfile);
+		if (!strcmp(&configfile[len - 5], ".conf")) {
+			oldstyle = true;
+		}
 		conffile = fopen(configfile, "r");
 	}
+
 	if (conffile != NULL) {
 		if (!fgets(curline, 1023, conffile)) {
 			logthing(LOGTHING_CRITICAL,
@@ -200,10 +363,12 @@ void readconfig(const char *configfile) {
 			return;
 		}
 
-		/* Add a single DB configuration */
-		backend = calloc(1, sizeof(*backend));
-		config.backend = backend;
-		config.backends = lladd(NULL, backend);
+		if (oldstyle) {
+			/* Add a single DB configuration */
+			backend = calloc(1, sizeof(*backend));
+			config.backend = backend;
+			config.backends = lladd(NULL, backend);
+		}
 
 		while (!feof(conffile)) {
 			/* Strip any trailing white space */
@@ -219,7 +384,12 @@ void readconfig(const char *configfile) {
 				i++;
 			}
 
-			if (!parseconfigline(&curline[i])) {
+			if (oldstyle) {
+				res = parseoldconfigline(&curline[i]);
+			} else {
+				res = parseconfigline(&curline[i]);
+			}
+			if (!res) {
 				logthing(LOGTHING_ERROR,
 					"Unknown config line: %s", curline);
 			}
@@ -232,6 +402,19 @@ void readconfig(const char *configfile) {
 			}
 		}
 		fclose(conffile);
+
+		if (config.db_backend == NULL) {
+			logthing(LOGTHING_CRITICAL,
+				"No database backend configured.");
+		} else if (!oldstyle) {
+			config.backend = find_db_backend_config(
+				config.backends, config.db_backend);
+			if (config.backend == NULL) {
+				logthing(LOGTHING_NOTICE,
+					"Couldn't find configuration for %s "
+					"backend.", config.db_backend);
+			}
+		}
 	} else {
 		logthing(LOGTHING_NOTICE,
 				"Couldn't open config file; using defaults.");

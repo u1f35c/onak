@@ -13,7 +13,7 @@ keyd
 keydctl
 maxpath
 onak-mail.pl
-onak.conf
+onak.ini
 sixdegrees
 splitkeys
 stripkey

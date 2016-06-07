@@ -17,7 +17,7 @@ for t in libkeydb_*.so; do
 	backend=${t##libkeydb_}
 	backend=${backend%%.so}
 	if [ "`echo t/$backend-*`" != "t/$backend-*" ]; then
-		echo "* testing $backend backend"
+		echo "* testing $backend backend [conf]"
 		(sed -e "s;DIR;`pwd`;" t/test-in.conf ; \
 			echo db_backend $backend) > t/test.conf
 		for t in t/$backend-*.t t/all-*.t; do
@@ -30,6 +30,22 @@ for t in libkeydb_*.so; do
 			rm -rf t/db/
 		done
 		rm t/test.conf
+	fi
+
+	if [ "`echo t/$backend-*`" != "t/$backend-*" ]; then
+		echo "* testing $backend backend [ini]"
+		sed -e "s;DIR;`pwd`;" -e "s;DB;${backend};" t/test-in.ini \
+			> t/test.ini
+		for t in t/$backend-*.t t/all-*.t; do
+			total=`expr $total + 1`
+			mkdir t/db/
+			if ! $t test.ini $backend; then
+				echo "test $t failed" >&2
+				fail=`expr $fail + 1`
+			fi
+			rm -rf t/db/
+		done
+		rm t/test.ini
 	fi
 done
 

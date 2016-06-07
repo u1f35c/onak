@@ -52,13 +52,13 @@ endif
 
 OBJS = stats.o cleankey.o $(CORE_OBJS) $(KEYDB_OBJ)
 
-all: .depend $(PROGS) testparse maxpath sixdegrees splitkeys onak.conf \
+all: .depend $(PROGS) testparse maxpath sixdegrees splitkeys onak.ini \
 	wotsap $(BACKENDS)
 
 test: onak $(BACKENDS)
 	@./runtests
 
-install: $(PROGS) onak.conf $(BACKENDS)
+install: $(PROGS) onak.ini $(BACKENDS)
 	install -d $(DESTDIR)/@bindir@
 	install -d $(DESTDIR)/@libdir@/onak/backends
 	install -d $(DESTDIR)/@localstatedir@/lib/onak
@@ -142,7 +142,7 @@ onak: onak.o cleankey.o $(CORE_OBJS) $(KEYDB_OBJ)
 		$(CORE_OBJS) $(KEYDB_OBJ) $(LIBS) $(PROGS_LDFLAGS_EXTRA)
 
 onak-conf.o: onak-conf.c onak-conf.h
-	$(CC) $(CFLAGS) -DCONFIGFILE=\"@sysconfdir@/onak.conf\" \
+	$(CC) $(CFLAGS) -DCONFIGDIR=\"@sysconfdir@\" \
 		-DDBINIT=keydb_@DBTYPE@_init -c onak-conf.c
 
 # HACK: onak-conf.o needs to be able to see keydb_@DBTYPE@_funcs, but
@@ -152,7 +152,8 @@ keydctl.o: keydctl.c keyd.h
 
 %: %.in
 	sed -e 's:@BINDIR@:@bindir@:g' \
-		-e 's:@CONFIG@:@sysconfdir@/onak.conf:g' \
+		-e 's:@CONFIG@:@sysconfdir@/onak.ini:g' \
+		-e 's:@CONFIGOLD@:@sysconfdir@/onak.conf:g' \
 		-e 's:@LIBDIR@:@libdir@:g' \
 		-e 's:@RUNDIR@:@runstatedir@:g' \
 		-e 's:@SBINDIR@:@sbindir@:g' \
@@ -162,7 +163,7 @@ keydctl.o: keydctl.c keyd.h
 clean:
 	$(RM) $(PROGS) $(OBJS) Makefile.bak testparse maxpath *.core core \
 		gpgwww.o add.o lookup.o main.o maxpath.o onak.o sixdegrees \
-		sixdegrees.o splitkeys.o stripkey.o onak.conf keyd.o \
+		sixdegrees.o splitkeys.o stripkey.o onak.ini keyd.o \
 		keydctl.o hashquery.o wotsap.o version.h \
 		TAGS cscope.out cscope.files \
 		$(foreach be,@BACKENDS@,keydb_$(be).o) *.so

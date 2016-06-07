@@ -14,14 +14,14 @@ use IPC::Open3;
 my %config;
 
 #
-# readconfig
+# readoldconfig
 #
-# Reads in our config file. Ignores any command it doesn't understand rather
-# than having to list all the ones that are of no interest to us.
+# Read an old pksd-style config file. Currently if both old and new style
+# files are present the old style will be preferred in order to ensure smooth
+# upgrades.
 #
-sub readconfig {
-
-	open(CONFIG, "@CONFIG@") or
+sub readoldconfig {
+	open(CONFIG, "@CONFIGOLD@") or
 		die "Can't read config file: $!";
 	
 	while (<CONFIG>) {
@@ -41,6 +41,54 @@ sub readconfig {
 			$config{'mail_dir'} = $1;
 		} elsif (/^syncsite (.*)/) {
 			push @{$config{'syncsites'}}, $1;
+		}
+	}
+
+	close(CONFIG);
+
+	return;
+}
+
+#
+# readconfig
+#
+# Reads in our config file. Ignores any command it doesn't understand rather
+# than having to list all the ones that are of no interest to us.
+#
+sub readconfig {
+	# Prefer the old style config if it exists.
+	if (-e "@CONFIGOLD@") {
+		&readoldconfig;
+		return;
+	}
+
+	open(CONFIG, "@CONFIG@") or
+		die "Can't read config file: $!";
+
+	$section = "";
+	while (<CONFIG>) {
+		if (/^#/ or /^$/) {
+			# Ignore; comment line.
+		} elsif (/^\[(\w+)\]/) {
+			section = $1;
+		} elsif ($section == "main") {
+			if (/^logfile\s*=\s*(.*)/) {
+				$config{'logfile'} = $1;
+			}
+		} elsif ($section == "mail") {
+			if (/^this_site\s*=\s*(.*)/) {
+				$config{'thissite'} = $1;
+			} elsif (/^maintainer_email\s*=\s*(.*)/) {
+				$config{'adminemail'} = $1;
+			} elsif (/^mta\s*=\s*(.*)/) {
+				$config{'mta'} = $1;
+			} elsif (/^bin_dir\s*=\s*(.*)/) {
+				$config{'pks_bin_dir'} = $1;
+			} elsif (/^mail_dir\s*=\s*(.*)/) {
+				$config{'mail_dir'} = $1;
+			} elsif (/^syncsite\s*=\s*(.*)/) {
+				push @{$config{'syncsites'}}, $1;
+			}
 		}
 	}
 

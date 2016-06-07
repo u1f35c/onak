@@ -1,0 +1,51 @@
+;
+; Configuration for onak, an OpenPGP compatible keyserver
+;
+[main]
+backend=defaultdb4
+backends_dir=@LIBDIR@/onak/backends
+logfile=@STATEDIR@/log/onak.log
+; Loglevel : 0 is highest debug, default is 3, nothing is 7+
+loglevel=3
+; Should we use the keyd backend?
+use_keyd=false
+sock_dir=@RUNDIR@
+; Maximum number of keys to return in a reply to an index, verbose index or
+; get. Setting it to -1 will allow any size of reply.
+max_reply_keys=128
+
+; Settings related to key verification options available.
+[verification]
+; Verify signature hashes - verify that the hash a signature claims to be
+; over matches the hash of the data. Does not actually verify the signature.
+check_sighash=true
+
+; Settings related to the email interface to onak.
+[mail]
+maintainer_email=PGP Key Server Administrator <pgp-keyserver-admin@the.earth.li>
+mail_dir=@STATEDIR@/spool/onak
+; Specify the envelope sender address as the -f argument to
+;   sendmail.  This is the address which will receive any bounces.
+; If you don't use sendmail, then change this to an equivalent command.
+; If you do not want to process mail requests, leave this unset.
+mta=/usr/sbin/sendmail -t -oi -fmailer-daemon
+; Where the main onak binary lives, so the script that handles incoming
+; email knows where to find it.
+bin_dir=@BINDIR@
+; Email address outgoing incremental messages will come from.
+; Needs to match the syncsite entries others sites have for this site.
+this_site=pgp-public-keys@the.earth.li
+; Include a syncsite line for each site with which you are exchanging
+; incremental requests.
+;syncsite=pgp-public-keys@keys.nl.pgp.net
+;syncsite=pgp-public-keys@blackhole.pca.dfn.de
+;syncsite=pgp-public-keys@pgp.es.net
+;syncsite=pgp-public-keys@keyserver.linux.it
+;syncsite=pgp-public-keys@pgp.dtype.org
+;syncsite=pgp-public-keys@kjsl.com
+
+; Database backend configurations below here
+
+[backend:defaultdb4]
+type=db4
+location=@STATEDIR@/lib/onak
