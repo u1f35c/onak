@@ -318,6 +318,13 @@ int main(int argc, char *argv[])
 			free_publickey(keys);
 			keys = NULL;
 		}
+	} else if (!strcmp("dumpconfig", argv[optind])) {
+		if ((argc - optind) == 2) {
+			writeconfig(argv[optind + 1]);
+		} else {
+			/* Dump config to stdout */
+			writeconfig(NULL);
+		}
 	} else if ((argc - optind) == 2) {
 		search = argv[optind+1];
 		if (search != NULL && strlen(search) == 42 &&

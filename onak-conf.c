@@ -421,6 +421,67 @@ void readconfig(const char *configfile) {
 	}
 }
 
+void writeconfig(const char *configfile)
+{
+	FILE *conffile;
+	struct ll *cur;
+
+	if (configfile) {
+		conffile = fopen(configfile, "w");
+	} else {
+		conffile = stdout;
+	}
+
+#define WRITE_IF_NOT_NULL(c, s) if (c != NULL) { \
+	fprintf(conffile, s "=%s\n", c); \
+}
+#define WRITE_BOOL(c, s) fprintf(conffile, s "=%s\n", s ? "true" : "false");
+
+	fprintf(conffile, "[main]\n");
+	WRITE_IF_NOT_NULL(config.backend->name, "backend");
+	WRITE_IF_NOT_NULL(config.backends_dir, "backends_dir");
+	WRITE_IF_NOT_NULL(config.logfile, "logfile");
+	fprintf(conffile, "loglevel=%d\n", getlogthreshold());
+	WRITE_BOOL(config.use_keyd, "use_keyd");
+	WRITE_IF_NOT_NULL(config.sock_dir, "sock_dir");
+	fprintf(conffile, "max_reply_keys=%d\n", config.maxkeys);
+	fprintf(conffile, "\n");
+
+	fprintf(conffile, "[verification]\n");
+	WRITE_BOOL(config.check_sighash, "check_sighash");
+	fprintf(conffile, "\n");
+
+	fprintf(conffile, "[mail]\n");
+	WRITE_IF_NOT_NULL(config.adminemail, "maintainer_email");
+	WRITE_IF_NOT_NULL(config.mail_dir, "mail_dir");
+	WRITE_IF_NOT_NULL(config.mta, "mta");
+	WRITE_IF_NOT_NULL(config.bin_dir, "bin_dir");
+	WRITE_IF_NOT_NULL(config.thissite, "this_site");
+
+	cur = config.syncsites;
+	while (cur != NULL) {
+		fprintf(conffile, "syncsite=%s\n", (char *) cur->object);
+		cur = cur->next;
+	}
+
+	cur = config.backends;
+	while (cur != NULL) {
+		struct onak_db_config *backend =
+			(struct onak_db_config *) cur->object;
+		fprintf(conffile, "\n[backend:%s]\n", backend->name);
+		WRITE_IF_NOT_NULL(backend->type, "type");
+		WRITE_IF_NOT_NULL(backend->location, "location");
+		WRITE_IF_NOT_NULL(backend->hostname, "hostname");
+		WRITE_IF_NOT_NULL(backend->username, "username");
+		WRITE_IF_NOT_NULL(backend->password, "password");
+		cur = cur->next;
+	}
+
+	if (configfile) {
+		fclose(conffile);
+	}
+}
+
 void cleanupdbconfig(void *object)
 {
 	struct onak_db_config *dbconfig = (struct onak_db_config *) object;

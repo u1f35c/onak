@@ -39,6 +39,12 @@ Read OpenPGP keys from stdin and add them to the keyserver database.
 Read OpenPGP keys from stdin, run the key cleaning routines against them and
 dump to stdout.
 .TP
+.B dumpconfig
+Dump the running config in new .ini format to stdout, or the provided file.
+Intended to help with migration from old style configuration files - onak can
+read and parse the old style file and this command will output the equivalent
+new style configuration.
+.TP
 .B delete
 Delete a given key from the keyserver.
 .TP

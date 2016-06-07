@@ -116,6 +116,14 @@ extern struct onak_config config;
 void readconfig(const char *configfile);
 
 /**
+ * @brief write the onak config.
+ * @param configfile the config file to write to.
+ *
+ * Write out the config file. If config file is NULL write it to STDOUT.
+ */
+void writeconfig(const char *configfile);
+
+/**
  * @brief clean up the config when we're shutting down.
  */
 void cleanupconfig(void);
