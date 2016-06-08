@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "cleankey.h"
 #include "decodekey.h"
 #include "hash.h"
 #include "keydb.h"
@@ -117,6 +118,7 @@ static void store_on_fallback(struct onak_stacked_dbctx *privctx,
 			(struct onak_dbctx *) privctx->backends->object;
 	struct openpgp_publickey *curkey;
 
+	cleankeys(publickey);
 	/*
 	 * If we walked the stack at all, store the key in the first
 	 * backend if configured to do so. It's not an update as we
