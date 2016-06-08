@@ -11,7 +11,7 @@ if [ "$1" = "configure" ]; then
                 # file. onak will use the file extension to determine it's
                 # an old style config, so we need the symlink.
                 ln -s /etc/onak.conf.dpkg-backup /etc/onak.conf
-                /usr/bin/onak -c /etc/onak.conf dumpconfig /etc/onak.ini
+                onak -c /etc/onak.conf dumpconfig /etc/onak.ini
                 rm /etc/onak.conf
         fi
     fi
