@@ -4,9 +4,9 @@ Priority: optional
 Maintainer: Jonathan McDowell <noodles@earth.li>
 Build-Depends: debhelper (>= 9), dh-autoreconf, dh-systemd, libdb-dev, nettle-dev, libcurl4-gnutls-dev | libcurl-dev, libsystemd-dev (>= 214) [linux-any] | libsystemd-daemon-dev [linux-any]
 Standards-Version: 3.9.8.0
-Homepage: http://www.earth.li/projectpurple/progs/onak.html
-Vcs-Browser: http://the.earth.li/gitweb/?p=onak.git;a=summary
-Vcs-Git: git://the.earth.li/onak.git
+Homepage: https://www.earth.li/projectpurple/progs/onak.html
+Vcs-Browser: https://the.earth.li/gitweb/?p=onak.git;a=summary
+Vcs-Git: https://the.earth.li/git/onak.git
 
 Package: onak
 Architecture: any
