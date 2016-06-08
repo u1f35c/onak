@@ -606,7 +606,7 @@ static void usage(void)
 int main(int argc, char *argv[])
 {
 	int fd = -1, maxfd, i, clients[MAX_CLIENTS];
-	fd_set rfds;
+	fd_set rfds = { 0 }; /* Avoid scan-build false report for FD_SET */
 	char sockname[1024];
 	char *configfile = NULL;
 	bool foreground = false;
