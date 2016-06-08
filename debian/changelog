@@ -5,6 +5,7 @@ onak (0.4.6-1+git) UNRELEASED; urgency=low
   * Fix up systemd control file to allow non-socket activation.
   * Update Vcs URLs to use secure variants.
   * Add onak to Provides: in init script rather than just pgp-keyserver.
+  * Add all hardening options (in particular for bindnow + pie).
 
  -- Jonathan McDowell <noodles@earth.li>  Sun, 17 Jan 2016 14:14:00 +0000
 
