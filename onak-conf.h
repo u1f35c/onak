@@ -128,4 +128,10 @@ void writeconfig(const char *configfile);
  */
 void cleanupconfig(void);
 
+
+/**
+ * @brief Find a specified backend configuration by name.
+ */
+struct onak_db_config *find_db_backend_config(struct ll *backends, char *name);
+
 #endif /* __ONAK_CONF_H_ */

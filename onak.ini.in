@@ -47,5 +47,26 @@ this_site=pgp-public-keys@the.earth.li
 ; Database backend configurations below here
 
 [backend:defaultdb4]
+; The default DB4 backend. Recommended.
 type=db4
 location=@STATEDIR@/lib/onak
+
+[backend:examplehkp]
+; An example HKP backend; all operations will be done against the
+; provided keyserver, with no local storage.
+type=hkp
+location=hkp://the.earth.li/
+
+[backend:examplestacked]
+; A stacked set of backends. All fetch operations will be tried against
+; the provided list of backends, from left to right, until one succeeds.
+; All store operations are against the first backend.
+; If a fetch does not succeed against the first backend, but against a
+; later one, then the returned keys are also stored in the first backend.
+; This example configuration essentially produces a caching keyserver,
+; with any key fetched from the HKP backend being stored in the DB4
+; backend.
+; Note keys are not expired from the DB4 backend, so without any other
+; update mechanism configured this will result in stale data eventually.
+type=stacked
+location=defaultdb4:examplehkp

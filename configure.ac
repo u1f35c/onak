@@ -24,7 +24,7 @@ AC_CHECK_HEADER([systemd/sd-daemon.h], [
 ])
 
 dnl We should always have these backends available.
-backends="file fs keyd"
+backends="file fs keyd stacked"
 
 LIBCURL_CHECK_CONFIG(,,[have_libcurl="yes" backends="$backends hkp"],have_libcurl="no")
 
