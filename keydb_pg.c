@@ -677,13 +677,13 @@ struct onak_dbctx *keydb_pg_init(struct onak_db_config *dbcfg, bool readonly)
 	}
 	dbctx->config = dbcfg;
 
-	dbconn = PQsetdbLogin(config.pg_dbhost, // host
+	dbconn = PQsetdbLogin(dbcfg->hostname, // host
 			NULL, // port
 			NULL, // options
 			NULL, // tty
-			config.pg_dbname, // database
-			config.pg_dbuser,  //login
-			config.pg_dbpass); // password
+			dbcfg->location, // database
+			dbcfg->username,  //login
+			dbcfg->password); // password
 
 	if (PQstatus(dbconn) == CONNECTION_BAD) {
 		logthing(LOGTHING_CRITICAL, "Connection to database failed.");
