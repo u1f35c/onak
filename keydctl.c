@@ -175,6 +175,8 @@ static void keyd_status(void)
 		stats.command_stats[KEYD_CMD_GET_ID]);
 	printf("  Get key by FP:    %d\n",
 		stats.command_stats[KEYD_CMD_GET_FP]);
+	printf("  Get key by hash:  %d\n",
+		stats.command_stats[KEYD_CMD_GET_SKSHASH]);
 	printf("  Store key:        %d\n",
 		stats.command_stats[KEYD_CMD_STORE]);
 	printf("  Delete key:       %d\n",
