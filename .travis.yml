@@ -9,3 +9,4 @@ addons:
       - libcurl4-gnutls-dev
       - libsystemd-dev
       - nettle-dev
+before_script: autoreconf -i
