@@ -1,0 +1,11 @@
+language: c
+compiler:
+  - clang
+  - gcc
+addons:
+  apt:
+    packages:
+      - libdb-dev
+      - libcurl4-gnutls-dev
+      - libsystemd-dev
+      - nettle-dev
