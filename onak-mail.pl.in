@@ -65,17 +65,17 @@ sub readconfig {
 	open(CONFIG, "@CONFIG@") or
 		die "Can't read config file: $!";
 
-	$section = "";
+	my $section = "";
 	while (<CONFIG>) {
 		if (/^#/ or /^$/) {
 			# Ignore; comment line.
 		} elsif (/^\[(\w+)\]/) {
-			section = $1;
-		} elsif ($section == "main") {
+			$section = $1;
+		} elsif ($section eq "main") {
 			if (/^logfile\s*=\s*(.*)/) {
 				$config{'logfile'} = $1;
 			}
-		} elsif ($section == "mail") {
+		} elsif ($section eq "mail") {
 			if (/^this_site\s*=\s*(.*)/) {
 				$config{'thissite'} = $1;
 			} elsif (/^maintainer_email\s*=\s*(.*)/) {

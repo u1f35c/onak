@@ -56,6 +56,7 @@ all: .depend $(PROGS) testparse maxpath sixdegrees splitkeys onak.ini \
 	wotsap $(BACKENDS)
 
 test: onak $(BACKENDS)
+	perl -cw onak-mail.pl
 	@./runtests
 
 install: $(PROGS) onak.ini $(BACKENDS)
