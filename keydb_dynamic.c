@@ -214,6 +214,7 @@ struct onak_dbctx *keydb_dynamic_init(struct onak_db_config *dbcfg,
 	char *initname;
 	struct onak_dbctx *(*backend_init)(struct onak_db_config *, bool);
 	struct onak_dynamic_dbctx *privctx;
+	char *type;
 
 	if (dbcfg == NULL) {
 		logthing(LOGTHING_CRITICAL,
@@ -234,9 +235,9 @@ struct onak_dbctx *keydb_dynamic_init(struct onak_db_config *dbcfg,
 		return (NULL);
 	}
 
+	type = dbcfg->type;
 	if (config.use_keyd) {
-		free(config.db_backend);
-		config.db_backend = strdup("keyd");
+		type = "keyd";
 	}
 
 	if (!config.db_backend) {
@@ -245,21 +246,21 @@ struct onak_dbctx *keydb_dynamic_init(struct onak_db_config *dbcfg,
 	}
 
 	if (config.backends_dir == NULL) {
-		soname = malloc(strlen(dbcfg->type)
+		soname = malloc(strlen(type)
 			+ strlen("./libkeydb_")
 			+ strlen(".so")
 			+ 1);
 
-		sprintf(soname, "./libkeydb_%s.so", dbcfg->type);
+		sprintf(soname, "./libkeydb_%s.so", type);
 	} else {
-		soname = malloc(strlen(dbcfg->type)
+		soname = malloc(strlen(type)
 			+ strlen("/libkeydb_")
 			+ strlen(".so")
 			+ strlen(config.backends_dir)
 			+ 1);
 
 		sprintf(soname, "%s/libkeydb_%s.so", config.backends_dir,
-			dbcfg->type);
+			type);
 	}
 
 	logthing(LOGTHING_INFO, "Loading dynamic backend: %s", soname);
@@ -278,7 +279,7 @@ struct onak_dbctx *keydb_dynamic_init(struct onak_db_config *dbcfg,
 			+ strlen("keydb_")
 			+ strlen("_init")
 			+ 1);
-	sprintf(initname, "keydb_%s_init", dbcfg->type);
+	sprintf(initname, "keydb_%s_init", type);
 
 	*(void **) (&backend_init) = dlsym(privctx->backend_handle, initname);
 	free(initname);
