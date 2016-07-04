@@ -397,6 +397,7 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 			}
 			break;
 		case KEYD_CMD_STORE:
+		case KEYD_CMD_UPDATE:
 			if (!keyd_write_reply(fd, KEYD_REPLY_OK)) {
 				ret = 1;
 			}
@@ -427,7 +428,8 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 						&packets,
 						0);
 				parse_keys(packets, &key);
-				dbctx->store_key(dbctx, key, false, false);
+				dbctx->store_key(dbctx, key, false,
+					(cmd == KEYD_CMD_UPDATE));
 				free_packet_list(packets);
 				packets = NULL;
 				free_publickey(key);

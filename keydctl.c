@@ -181,6 +181,8 @@ static void keyd_status(void)
 		stats.command_stats[KEYD_CMD_STORE]);
 	printf("  Delete key:       %d\n",
 		stats.command_stats[KEYD_CMD_DELETE]);
+	printf("  Update key:       %d\n",
+		stats.command_stats[KEYD_CMD_UPDATE]);
 	printf("  Search key:       %d\n",
 		stats.command_stats[KEYD_CMD_GET_TEXT]);
 	printf("  Get full keyid:   %d\n",

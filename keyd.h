@@ -45,6 +45,7 @@ enum keyd_ops {
 	KEYD_CMD_STATS,
 	KEYD_CMD_GET_SKSHASH,
 	KEYD_CMD_GET_FP,
+	KEYD_CMD_UPDATE,
 	KEYD_CMD_LAST			/* Placeholder */
 };
 
@@ -59,7 +60,7 @@ enum keyd_reply {
 /**
  * @brief Version of the keyd protocol currently supported
  */
-static const uint32_t keyd_version = 4;
+static const uint32_t keyd_version = 5;
 
 /**
  * @brief Response structure for the @a KEYD_CMD_STATS response

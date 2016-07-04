@@ -227,6 +227,7 @@ static int keyd_store_key(struct onak_dbctx *dbctx,
 	struct openpgp_packet_list *list_end = NULL;
 	struct openpgp_publickey   *next = NULL;
 	uint64_t                    keyid;
+	enum keyd_ops               cmd = KEYD_CMD_STORE;
 
 	if (get_keyid(publickey, &keyid) != ONAK_E_OK) {
 		logthing(LOGTHING_ERROR, "Couldn't find key ID for key.");
@@ -234,10 +235,10 @@ static int keyd_store_key(struct onak_dbctx *dbctx,
 	}
 
 	if (update) {
-		keyd_delete_key(dbctx, keyid, false);
+		cmd = KEYD_CMD_UPDATE;
 	}
 
-	if (keyd_send_cmd(keyd_fd, KEYD_CMD_STORE)) {
+	if (keyd_send_cmd(keyd_fd, cmd)) {
 		keybuf.offset = 0;
 		keybuf.size = 8192;
 		keybuf.buffer = malloc(keybuf.size);
