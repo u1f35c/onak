@@ -378,6 +378,8 @@ struct onak_dbctx *keydb_hkp_init(struct onak_db_config *dbcfg, bool readonly)
 	if (!hkp_parse_url(privctx, dbcfg->location)) {
 		exit(EXIT_FAILURE);
 	}
+	logthing(LOGTHING_INFO, "Using %s as HKP forwarding URL.",
+		privctx->hkpbase);
 	curl_global_init(CURL_GLOBAL_DEFAULT);
 	privctx->curl = curl_easy_init();
 	if (privctx->curl == NULL) {
