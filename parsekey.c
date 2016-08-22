@@ -308,7 +308,7 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 						break;
 					}
 					curpacket->packet->length = 
-						(curchar << 24);
+						((unsigned) curchar << 24);
 					if (getchar_func(ctx, 1, &curchar)) {
 						rc = ONAK_E_INVALID_PKT;
 						break;
