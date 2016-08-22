@@ -145,7 +145,7 @@ onak_status_t get_packetid(struct openpgp_packet *packet, uint64_t *keyid)
 	uint8_t		data;
 #endif
 
-	if (packet == NULL)
+	if (packet == NULL || packet->data == NULL)
 		return ONAK_E_INVALID_PARAM;
 
 	switch (packet->data[0]) {

@@ -97,7 +97,7 @@ struct ll *makewordlistfromkey(struct ll *wordlist,
 	struct ll  *wl = NULL;
 
 	uids = keyuids(key, NULL);
-	for (i = 0; uids[i] != NULL; ++i) {
+	for (i = 0; uids != NULL && uids[i] != NULL; ++i) {
 		words = makewordlist(NULL, uids[i]);
 		for (wl = words; wl != NULL; wl = wl->next) {
 			if (llfind(wordlist, wl->object, 
