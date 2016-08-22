@@ -356,10 +356,25 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 		}
 	}
 
-	/* Trim the last packet if it doesn't actually exist */
-	if (packetend != NULL && (*packetend)->packet == NULL) {
-		free(*packetend);
-		*packetend = NULL;
+	if (packetend != NULL) {
+		if ((*packetend)->packet != NULL) {
+			/* If we got an invalid final packet, discard it. */
+			if ((*packetend)->packet->data != NULL &&
+					rc != ONAK_E_OK) {
+				free((*packetend)->packet->data);
+				(*packetend)->packet->data = NULL;
+			}
+			/* If we didn't get any data, clean it up. */
+			if ((*packetend)->packet->data == NULL) {
+				free((*packetend)->packet);
+				(*packetend)->packet = NULL;
+			}
+		}
+		/* Trim the last packet if it doesn't actually exist */
+		if ((*packetend)->packet == NULL) {
+			free(*packetend);
+			*packetend = NULL;
+		}
 	}
 
 	return (rc);
