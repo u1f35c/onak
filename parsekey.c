@@ -354,6 +354,12 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 		} else {
 			rc = ONAK_E_INVALID_PKT;
 		}
+		if (rc == ONAK_E_OK) {
+			/* Make sure the packet version is sane */
+			if (curpacket->packet->data[0] > 4) {
+				rc = ONAK_E_INVALID_PKT;
+			}
+		}
 	}
 
 	if (packetend != NULL) {
