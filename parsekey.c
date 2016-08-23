@@ -356,8 +356,37 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 		}
 		if (rc == ONAK_E_OK) {
 			/* Make sure the packet version is sane */
-			if (curpacket->packet->data[0] > 4) {
-				rc = ONAK_E_INVALID_PKT;
+			switch (curpacket->packet->tag) {
+			case OPENPGP_PACKET_ENCRYPTED_MDC:
+				/* These packets must be v1 */
+				if (curpacket->packet->data[0] != 1) {
+					rc = ONAK_E_INVALID_PKT;
+				}
+				break;
+			case OPENPGP_PACKET_PKSESSIONKEY:
+			case OPENPGP_PACKET_ONEPASSSIG:
+				/* These packets must be v3 */
+				if (curpacket->packet->data[0] != 3) {
+					rc = ONAK_E_INVALID_PKT;
+				}
+				break;
+			case OPENPGP_PACKET_SYMSESSIONKEY:
+				/* These packets must be v4 */
+				if (curpacket->packet->data[0] != 4) {
+					rc = ONAK_E_INVALID_PKT;
+				}
+				break;
+			case OPENPGP_PACKET_SIGNATURE:
+			case OPENPGP_PACKET_SECRETKEY:
+			case OPENPGP_PACKET_PUBLICKEY:
+				/* Must be v2 -> v4 */
+				if (curpacket->packet->data[0] < 2 ||
+					curpacket->packet->data[0] > 4) {
+					rc = ONAK_E_INVALID_PKT;
+				}
+				break;
+			default:
+				break;
 			}
 		}
 	}
