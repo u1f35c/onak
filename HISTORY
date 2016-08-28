@@ -333,3 +333,13 @@
 * Add de-duplication of subkeys on a key
 * Add support for displaying EDDSA keys (type 22)
 * Add config file option to specify keyd socket directory
+
+0.5.0 - 28th August 2016
+
+* Use mail_dir for the incoming mail lock file
+* Switch to .ini style config file
+* Add dumpconfig command to dump running config in .ini format
+* Add stacked backend
+* Include statistics for fetch by SKS hash in 'keydctl status'
+* Pull key updates into keyd protocol rather than using delete/store
+* Various robustness cleanups from American Fuzzy Lop testing

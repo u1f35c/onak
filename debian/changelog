@@ -1,4 +1,4 @@
-onak (0.4.6-1+git) UNRELEASED; urgency=low
+onak (0.5.0-1) unstable; urgency=low
 
   * Remove Ross Burton from Uploaders.
   * Bump Debian Standards-Version to 3.9.8.0
@@ -7,7 +7,7 @@ onak (0.4.6-1+git) UNRELEASED; urgency=low
   * Add onak to Provides: in init script rather than just pgp-keyserver.
   * Add all hardening options (in particular for bindnow + pie).
 
- -- Jonathan McDowell <noodles@earth.li>  Sun, 17 Jan 2016 14:14:00 +0000
+ -- Jonathan McDowell <noodles@earth.li>  Sun, 28 Aug 2016 16:16:10 +0100
 
 onak (0.4.6-1) unstable; urgency=low
 
