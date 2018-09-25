@@ -227,19 +227,30 @@ static int stacked_fetch_key_skshash(struct onak_dbctx *dbctx,
 	return res;
 }
 
+/*
+ * Include the basic keydb routines so we can use them for fall back.
+ * For all of the following we try the top keydb backend and if that doesn't
+ * have answer fall back to the generics, which will do a retrieve from a
+ * backend further down the stack, then a fallback store.
+ */
+#define NEED_KEYID2UID 1
+#define NEED_GETKEYSIGS 1
+#define NEED_GETFULLKEYID 1
+#define NEED_UPDATEKEYS 1
+#include "keydb.c"
+
 static struct ll *stacked_getkeysigs(struct onak_dbctx *dbctx,
 		uint64_t keyid, bool *revoked)
 {
 	struct onak_stacked_dbctx *privctx =
 			(struct onak_stacked_dbctx *) dbctx->priv;
-	struct onak_dbctx *backend;
-	struct ll *cur;
-	struct ll *res = NULL;
+	struct onak_dbctx *backend =
+			(struct onak_dbctx *) privctx->backends->object;
+	struct ll *res;
 
-	for (cur = privctx->backends; cur != NULL && res == NULL;
-			cur = cur->next) {
-		backend = (struct onak_dbctx *) cur->object;
-		res = backend->getkeysigs(backend, keyid, revoked);
+	res = backend->getkeysigs(backend, keyid, revoked);
+	if (res == NULL) {
+		res = generic_getkeysigs(dbctx, keyid, revoked);
 	}
 
 	return res;
@@ -250,14 +261,13 @@ static struct ll *stacked_cached_getkeysigs(struct onak_dbctx *dbctx,
 {
 	struct onak_stacked_dbctx *privctx =
 			(struct onak_stacked_dbctx *) dbctx->priv;
-	struct onak_dbctx *backend;
-	struct ll *cur;
-	struct ll *res = NULL;
+	struct onak_dbctx *backend =
+			(struct onak_dbctx *) privctx->backends->object;
+	struct ll *res;
 
-	for (cur = privctx->backends; cur != NULL && res == NULL;
-			cur = cur->next) {
-		backend = (struct onak_dbctx *) cur->object;
-		res = backend->cached_getkeysigs(backend, keyid);
+	res = backend->cached_getkeysigs(backend, keyid);
+	if (res == NULL) {
+		res = generic_cached_getkeysigs(dbctx, keyid);
 	}
 
 	return res;
@@ -268,14 +278,13 @@ static char *stacked_keyid2uid(struct onak_dbctx *dbctx,
 {
 	struct onak_stacked_dbctx *privctx =
 			(struct onak_stacked_dbctx *) dbctx->priv;
-	struct onak_dbctx *backend;
-	struct ll *cur;
+	struct onak_dbctx *backend =
+			(struct onak_dbctx *) privctx->backends->object;
 	char *res = NULL;
 
-	for (cur = privctx->backends; cur != NULL && res == NULL;
-			cur = cur->next) {
-		backend = (struct onak_dbctx *) cur->object;
-		res = backend->keyid2uid(backend, keyid);
+	res = backend->keyid2uid(backend, keyid);
+	if (!res) {
+		res = generic_keyid2uid(dbctx, keyid);
 	}
 
 	return res;
@@ -286,14 +295,13 @@ static uint64_t stacked_getfullkeyid(struct onak_dbctx *dbctx,
 {
 	struct onak_stacked_dbctx *privctx =
 			(struct onak_stacked_dbctx *) dbctx->priv;
-	struct onak_dbctx *backend;
-	struct ll *cur;
+	struct onak_dbctx *backend =
+			(struct onak_dbctx *) privctx->backends->object;
 	uint64_t res = 0;
 
-	for (cur = privctx->backends; cur != NULL && res == 0;
-			cur = cur->next) {
-		backend = (struct onak_dbctx *) cur->object;
-		res = backend->getfullkeyid(backend, keyid);
+	res = backend->getfullkeyid(backend, keyid);
+	if (res == 0) {
+		res = generic_getfullkeyid(dbctx, keyid);
 	}
 
 	return res;
