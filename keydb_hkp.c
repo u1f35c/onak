@@ -36,7 +36,7 @@
 struct onak_hkp_dbctx {
 	struct onak_db_config *config; /* Our DB config info */
 	CURL *curl;
-	char hkpbase[1024];
+	char hkpbase[512];
 };
 
 static int hkp_parse_url(struct onak_hkp_dbctx *privctx, const char *url)
