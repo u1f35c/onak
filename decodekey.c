@@ -170,28 +170,6 @@ onak_status_t parse_subpackets(unsigned char *data, size_t len,
 }
 
 /**
- *	keysigs - Return the sigs on a given OpenPGP signature list.
- *	@curll: The current linked list. Can be NULL to create a new list.
- *	@sigs: The signature list we want the sigs on.
- *
- *	Returns a linked list of stats_key elements containing the sigs on the
- *	supplied OpenPGP packet list.
- */
-struct ll *keysigs(struct ll *curll,
-		struct openpgp_packet_list *sigs)
-{
-	uint64_t keyid = 0;
-	
-	while (sigs != NULL) {
-		keyid = sig_keyid(sigs->packet);
-		sigs = sigs->next;
-		curll = lladd(curll, createandaddtohash(keyid));
-	}
-
-	return curll;
-}
-
-/**
  *	sig_info - Get info on a given OpenPGP signature packet
  *	@packet: The signature packet
  *	@keyid: A pointer for where to return the signature keyid

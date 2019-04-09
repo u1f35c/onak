@@ -88,13 +88,19 @@ struct ll *generic_getkeysigs(struct onak_dbctx *dbctx,
 {
 	struct ll *sigs = NULL;
 	struct openpgp_signedpacket_list *uids = NULL;
+	struct openpgp_packet_list *cursig;
 	struct openpgp_publickey *publickey = NULL;
 
 	dbctx->fetch_key_id(dbctx, keyid, &publickey, false);
 	
 	if (publickey != NULL) {
 		for (uids = publickey->uids; uids != NULL; uids = uids->next) {
-			sigs = keysigs(sigs, uids->sigs);
+			for (cursig = uids->sigs; cursig != NULL;
+					cursig = cursig->next) {
+				sigs = lladd(sigs,
+						createandaddtohash(sig_keyid(
+							cursig->packet)));
+			}
 		}
 		if (revoked != NULL) {
 			*revoked = publickey->revoked;
