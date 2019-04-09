@@ -288,6 +288,15 @@ static bool parseconfigline(char *line)
 				config.clean_policies &=
 					~ONAK_CLEAN_CHECK_SIGHASH;
 			}
+		} else if (MATCH("verification", "check_packet_size")) {
+			if (parsebool(value, config.clean_policies &
+					ONAK_CLEAN_LARGE_PACKETS)) {
+				config.clean_policies |=
+					ONAK_CLEAN_LARGE_PACKETS;
+			} else {
+				config.clean_policies &=
+					~ONAK_CLEAN_LARGE_PACKETS;
+			}
 		} else {
 			return false;
 		}

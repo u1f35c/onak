@@ -26,7 +26,7 @@
 #include "log.h"
 #include "mem.h"
 #include "merge.h"
-#include "onak-conf.h"
+#include "openpgp.h"
 #include "sigcheck.h"
 
 /**
@@ -179,6 +179,54 @@ int clean_key_sighashes(struct openpgp_publickey *key)
 	return removed;
 }
 
+#define UAT_LIMIT	0xFFFF
+#define UID_LIMIT	1024
+#define PACKET_LIMIT	8383		/* Fits in 2 byte packet length */
+int clean_large_packets(struct openpgp_publickey *key)
+{
+	struct openpgp_signedpacket_list **curuid = NULL;
+	struct openpgp_signedpacket_list *tmp = NULL;
+	bool                              drop;
+	int                               dropped = 0;
+
+	log_assert(key != NULL);
+	curuid = &key->uids;
+	while (*curuid != NULL) {
+		drop = false;
+		switch ((*curuid)->packet->tag) {
+		case OPENPGP_PACKET_UID:
+			if ((*curuid)->packet->length > UID_LIMIT)
+				drop = true;
+			break;
+		case OPENPGP_PACKET_UAT:
+			if ((*curuid)->packet->length > UAT_LIMIT)
+				drop = true;
+			break;
+		default:
+			if ((*curuid)->packet->length > PACKET_LIMIT)
+				drop = true;
+			break;
+		}
+
+		if (drop) {
+			logthing(LOGTHING_INFO,
+					"Dropping large (%d) packet, type %d",
+					(*curuid)->packet->length,
+					(*curuid)->packet->tag);
+			/* Remove the entire large signed packet list */
+			tmp = *curuid;
+			*curuid = (*curuid)->next;
+			tmp->next = NULL;
+			free_signedpacket_list(tmp);
+			dropped++;
+		} else {
+			curuid = &(*curuid)->next;
+		}
+	}
+
+	return dropped;
+}
+
 /**
  *	cleankeys - Apply all available cleaning options on a list of keys.
  *	@policies: The cleaning policies to apply.
@@ -192,14 +240,17 @@ int clean_key_sighashes(struct openpgp_publickey *key)
 int cleankeys(struct openpgp_publickey **keys, uint64_t policies)
 {
 	struct openpgp_publickey *curkey;
-	int changed = 0, count;
+	int changed = 0, count = 0;
 
 	if (keys == NULL)
 		return 0;
 
 	curkey = *keys;
 	while (curkey != NULL) {
-		count = dedupuids(curkey);
+		if (policies & ONAK_CLEAN_LARGE_PACKETS) {
+			count += clean_large_packets(curkey);
+		}
+		count += dedupuids(curkey);
 		count += dedupsubkeys(curkey);
 		if (policies & ONAK_CLEAN_CHECK_SIGHASH) {
 			count += clean_key_sighashes(curkey);
