@@ -30,3 +30,7 @@ docs
 cscope.files
 cscope.out
 TAGS
+GPATH
+GRTAGS
+GTAGS
+.*.swp
