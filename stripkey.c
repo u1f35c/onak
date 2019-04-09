@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
   parse_keys( packets, &keys );
   free_packet_list(packets);
   packets = NULL;
-  cleankeys( keys );
+  cleankeys(&keys, ONAK_CLEAN_ALL);
   /* Iterate over the keys... */
   for( key = keys; key; key = key->next ) {
     uint64_t keyid;

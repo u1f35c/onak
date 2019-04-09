@@ -181,26 +181,33 @@ int clean_key_sighashes(struct openpgp_publickey *key)
 
 /**
  *	cleankeys - Apply all available cleaning options on a list of keys.
- *	@keys: The list of keys to clean.
+ *	@policies: The cleaning policies to apply.
  *
- *	Applies all the cleaning options we can (eg duplicate key ids) to a
- *	list of keys. Returns 0 if no changes were made, otherwise the number
- *	of keys cleaned.
+ *	Applies the requested cleaning policies to a list of keys. These are
+ *	specified from the ONAK_CLEAN_* set of flags, or ONAK_CLEAN_ALL to
+ *	apply all available cleaning options. Returns 0 if no changes were
+ *	made, otherwise the number of keys cleaned. Note that some options
+ *	may result in keys being removed entirely from the list.
  */
-int cleankeys(struct openpgp_publickey *keys)
+int cleankeys(struct openpgp_publickey **keys, uint64_t policies)
 {
+	struct openpgp_publickey *curkey;
 	int changed = 0, count;
 
-	while (keys != NULL) {
-		count = dedupuids(keys);
-		count += dedupsubkeys(keys);
-		if (config.check_sighash) {
-			count += clean_key_sighashes(keys);
+	if (keys == NULL)
+		return 0;
+
+	curkey = *keys;
+	while (curkey != NULL) {
+		count = dedupuids(curkey);
+		count += dedupsubkeys(curkey);
+		if (policies & ONAK_CLEAN_CHECK_SIGHASH) {
+			count += clean_key_sighashes(curkey);
 		}
 		if (count > 0) {
 			changed++;
 		}
-		keys = keys->next;
+		curkey = curkey->next;
 	}
 
 	return changed;

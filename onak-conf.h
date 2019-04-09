@@ -21,6 +21,7 @@
 #define __ONAK_CONF_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "ll.h"
 
@@ -88,8 +89,8 @@ struct onak_config {
 	/** Pointer to the initialisation function for our loaded DB backend */
 	struct onak_dbctx *(*dbinit)(struct onak_db_config *, bool);
 
-	/** Should we verify signature hashes match? */
-	bool check_sighash;
+	/** What policies should we use for cleaning keys? */
+	uint64_t clean_policies;
 
 	/*
 	 * Options used by the email handling script.

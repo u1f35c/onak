@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
 			logthing(LOGTHING_INFO, "Finished reading %d keys.",
 					result);
 
-			result = cleankeys(keys);
+			result = cleankeys(&keys, config.clean_policies);
 			logthing(LOGTHING_INFO, "%d keys cleaned.",
 					result);
 
@@ -288,7 +288,8 @@ int main(int argc, char *argv[])
 					result);
 
 			if (keys != NULL) {
-				result = cleankeys(keys);
+				result = cleankeys(&keys,
+						config.clean_policies);
 				logthing(LOGTHING_INFO, "%d keys cleaned.",
 						result);
 
@@ -436,7 +437,7 @@ int main(int argc, char *argv[])
 			dbctx->starttrans(dbctx);
 			if (dbctx->fetch_key_id(dbctx, keyid, &keys, true)) {
 				dbctx->delete_key(dbctx, keyid, true);
-				cleankeys(keys);
+				cleankeys(&keys, config.clean_policies);
 				dbctx->store_key(dbctx, keys, true, false);
 			} else {
 				puts("Key not found");

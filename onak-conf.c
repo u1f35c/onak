@@ -24,6 +24,7 @@
 #include <string.h>
 #include <strings.h>
 
+#include "cleankey.h"
 #include "ll.h"
 #include "log.h"
 #include "onak-conf.h"
@@ -52,7 +53,7 @@ struct onak_config config = {
 
 	.dbinit = DBINIT,
 
-	.check_sighash = true,
+	.clean_policies = ONAK_CLEAN_CHECK_SIGHASH,
 
 	.bin_dir = NULL,
 	.mail_dir = NULL,
@@ -169,8 +170,14 @@ static bool parseoldconfigline(char *line)
 	} else if (!strncmp("sock_dir ", line, 9)) {
 		config.sock_dir = strdup(&line[9]);
 	} else if (!strncmp("check_sighash ", line, 9)) {
-		config.check_sighash = parsebool(&line[9],
-					config.check_sighash);
+		if (parsebool(&line[9], config.clean_policies &
+					ONAK_CLEAN_CHECK_SIGHASH)) {
+			config.clean_policies |=
+				ONAK_CLEAN_CHECK_SIGHASH;
+		} else {
+			config.clean_policies &=
+				~ONAK_CLEAN_CHECK_SIGHASH;
+		}
 	} else {
 		return false;
 	}
@@ -273,8 +280,14 @@ static bool parseconfigline(char *line)
 				strdup(value));
 		/* [verification] section */
 		} else if (MATCH("verification", "check_sighash")) {
-			config.check_sighash = parsebool(value,
-					config.check_sighash);
+			if (parsebool(value, config.clean_policies &
+					ONAK_CLEAN_CHECK_SIGHASH)) {
+				config.clean_policies |=
+					ONAK_CLEAN_CHECK_SIGHASH;
+			} else {
+				config.clean_policies &=
+					~ONAK_CLEAN_CHECK_SIGHASH;
+			}
 		} else {
 			return false;
 		}
@@ -448,7 +461,8 @@ void writeconfig(const char *configfile)
 	fprintf(conffile, "\n");
 
 	fprintf(conffile, "[verification]\n");
-	WRITE_BOOL(config.check_sighash, "check_sighash");
+	WRITE_BOOL(config.clean_policies & ONAK_CLEAN_CHECK_SIGHASH,
+			"check_sighash");
 	fprintf(conffile, "\n");
 
 	fprintf(conffile, "[mail]\n");
