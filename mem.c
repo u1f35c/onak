@@ -172,26 +172,3 @@ void free_publickey(struct openpgp_publickey *key) {
 		key = nextkey;
 	}
 }
-
-/**
- *	free_statskey - free an stats key structure.
- *	@key: The key to free.
- *
- *	Takes a stats key and frees the memory used by it and the linked list
- *	of sigs under it. Doesn't recurse into the list as it's assumed all the
- *	objects referenced also exist in the hash.
- */
-void free_statskey(struct stats_key *key)
-{
-	if (key != NULL) {
-		if (key->sigs != NULL) {
-			llfree(key->sigs, NULL);
-			key->sigs = NULL;
-		}
-		if (key->signs != NULL) {
-			llfree(key->signs, NULL);
-			key->signs = NULL;
-		}
-		free(key);
-	}
-}

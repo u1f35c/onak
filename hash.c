@@ -37,6 +37,29 @@ static struct ll *hashtable[HASHSIZE];
 static unsigned long elements;
 
 /**
+ *	free_statskey - free an stats key structure.
+ *	@key: The key to free.
+ *
+ *	Takes a stats key and frees the memory used by it and the linked list
+ *	of sigs under it. Doesn't recurse into the list as it's assumed all the
+ *	objects referenced also exist in the hash.
+ */
+static void free_statskey(struct stats_key *key)
+{
+	if (key != NULL) {
+		if (key->sigs != NULL) {
+			llfree(key->sigs, NULL);
+			key->sigs = NULL;
+		}
+		if (key->signs != NULL) {
+			llfree(key->signs, NULL);
+			key->signs = NULL;
+		}
+		free(key);
+	}
+}
+
+/**
  *	inithash - Initialize the hash ready for use.
  */
 void inithash(void)
@@ -110,7 +133,7 @@ struct stats_key *createandaddtohash(uint64_t keyid)
 	return tmpkey;
 }
 
-int stats_key_cmp(struct stats_key *key, uint64_t *keyid)
+static int stats_key_cmp(struct stats_key *key, uint64_t *keyid)
 {
 	return !(key != NULL && key->keyid == *keyid);
 }
