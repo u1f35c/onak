@@ -17,7 +17,7 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,10 +28,8 @@
 #include "charfuncs.h"
 #include "getcgi.h"
 #include "keydb.h"
-#include "keystructs.h"
 #include "log.h"
 #include "mem.h"
-#include "merge.h"
 #include "onak-conf.h"
 #include "parsekey.h"
 

@@ -19,11 +19,12 @@
 
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "ll.h"
 #include "decodekey.h"
-#include "log.h"
+#include "keystructs.h"
 #include "wordlist.h"
 
 /**

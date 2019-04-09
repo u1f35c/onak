@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "keyid.h"
 #include "keystructs.h"
 #include "ll.h"
 #include "mem.h"

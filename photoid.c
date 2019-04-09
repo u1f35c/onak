@@ -17,13 +17,8 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#include <inttypes.h>
-#include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
 
-#include "keyid.h"
-#include "keyindex.h"
 #include "keystructs.h"
 #include "onak.h"
 #include "photoid.h"

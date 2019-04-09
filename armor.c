@@ -22,7 +22,6 @@
 
 #include "armor.h"
 #include "keystructs.h"
-#include "onak-conf.h"
 #include "parsekey.h"
 #include "version.h"
 

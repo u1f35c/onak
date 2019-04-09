@@ -17,11 +17,11 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "ll.h"
-#include "log.h"
 
 struct ll *lladd(struct ll *curll, void *object)
 {
@@ -45,8 +45,6 @@ struct ll *lladdend(struct ll *curll, void *object)
 	struct ll *cur;
 
 	if ((new = malloc(sizeof(struct ll))) == NULL) {
-		logthing(LOGTHING_ERROR,
-				"Couldn't allocate memory in lladdend()");
 		return NULL;
 	}
 
@@ -72,7 +70,7 @@ struct ll *lldel(struct ll *curll, void *object,
 	struct ll *cur = NULL;
 	struct ll *old = NULL;
 
-	log_assert(objectcmp != NULL);
+	assert(objectcmp != NULL);
 
 	cur = curll;
 	if (cur == NULL) {
@@ -99,7 +97,7 @@ struct ll *llfind(struct ll *curll, void *object,
 {
 	struct ll *cur;
 
-	log_assert(objectcmp != NULL);
+	assert(objectcmp != NULL);
 
 	cur = curll;
 	while (cur != NULL && (*objectcmp)(cur->object, object)) {

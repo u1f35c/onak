@@ -18,11 +18,12 @@
  */
 
 #include <getopt.h>
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "stats.h"
 #include "hash.h"
 #include "keydb.h"
 #include "ll.h"

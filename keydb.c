@@ -25,6 +25,7 @@
  *	slower than custom functions however.
  */
 
+#include <stdbool.h>
 #include <stdio.h>
 
 #include "decodekey.h"
@@ -32,11 +33,12 @@
 #include "keydb.h"
 #include "keyid.h"
 #include "keystructs.h"
+#include "ll.h"
 #include "mem.h"
 #include "merge.h"
 #include "openpgp.h"
-#include "parsekey.h"
 #include "sendsync.h"
+#include "stats.h"
 
 #ifdef NEED_KEYID2UID
 /**

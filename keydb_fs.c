@@ -22,6 +22,8 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,6 +38,7 @@
 #include "keystructs.h"
 #include "ll.h"
 #include "mem.h"
+#include "onak.h"
 #include "onak-conf.h"
 #include "parsekey.h"
 #include "log.h"

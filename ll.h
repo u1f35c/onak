@@ -21,6 +21,8 @@
 #ifndef __LL_H__
 #define __LL_H__
 
+#include <stdlib.h>
+
 /**
  * @brief Take a packet and add it to a linked list
  */

@@ -17,6 +17,7 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,7 +26,7 @@
 
 #include "charfuncs.h"
 #include "cleanup.h"
-#include "keyid.h"
+#include "keydb.h"
 #include "log.h"
 #include "marshal.h"
 #include "mem.h"

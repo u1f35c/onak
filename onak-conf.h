@@ -21,7 +21,9 @@
 #ifndef __ONAK_CONF_H_
 #define __ONAK_CONF_H_
 
-#include "keydb.h"
+#include <stdbool.h>
+
+#include "ll.h"
 
 /**
  * @brief Backend database configuration.

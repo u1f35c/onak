@@ -17,6 +17,7 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -25,7 +26,6 @@
 #include "hash.h"
 #include "keydb.h"
 #include "ll.h"
-#include "onak-conf.h"
 #include "stats.h"
 
 /**

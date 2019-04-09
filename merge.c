@@ -17,18 +17,18 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "decodekey.h"
-#include "keydb.h"
 #include "keyid.h"
 #include "keystructs.h"
 #include "ll.h"
-#include "log.h"
 #include "mem.h"
 #include "merge.h"
+#include "onak.h"
 
 /**
  *	compare_packets - Check to see if 2 OpenPGP packets are the same.
@@ -210,7 +210,7 @@ int merge_packet_sigs(struct openpgp_signedpacket_list *old,
 	struct openpgp_packet_list	*curpacket = NULL;
 	struct openpgp_packet_list	*nextpacket = NULL;
 
-	log_assert(compare_packets(old->packet, new->packet) == 0);
+	assert(compare_packets(old->packet, new->packet) == 0);
 
 	curpacket = new->sigs;
 	while (curpacket != NULL) {
@@ -230,7 +230,7 @@ int merge_packet_sigs(struct openpgp_signedpacket_list *old,
 			if (lastpacket != NULL) {
 				lastpacket->next = curpacket->next;
 			} else {
-				log_assert(curpacket == new->sigs);
+				assert(curpacket == new->sigs);
 				new->sigs = curpacket->next;
 			}
 			curpacket->next = NULL;
@@ -362,7 +362,7 @@ int merge_keys(struct openpgp_publickey *a, struct openpgp_publickey *b)
 				if (lastpacket != NULL) {
 					lastpacket->next = curpacket->next;
 				} else {
-					log_assert(curpacket == b->sigs);
+					assert(curpacket == b->sigs);
 					b->sigs = curpacket->next;
 				}
 				curpacket->next = NULL;

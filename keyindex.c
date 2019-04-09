@@ -26,14 +26,12 @@
 
 #include "decodekey.h"
 #include "getcgi.h"
-#include "hash.h"
 #include "keydb.h"
 #include "keyid.h"
 #include "keyindex.h"
 #include "keystructs.h"
 #include "log.h"
 #include "onak.h"
-#include "onak-conf.h"
 #include "openpgp.h"
 
 /*

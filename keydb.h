@@ -21,6 +21,7 @@
 #ifndef __KEYDB_H__
 #define __KEYDB_H__
 
+#include <stdbool.h>
 #include <inttypes.h>
 
 #include "keystructs.h"

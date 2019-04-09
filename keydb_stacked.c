@@ -17,22 +17,18 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "cleankey.h"
-#include "decodekey.h"
-#include "hash.h"
 #include "keydb.h"
-#include "keyid.h"
 #include "keystructs.h"
+#include "ll.h"
 #include "log.h"
-#include "mem.h"
-#include "merge.h"
 #include "onak-conf.h"
-#include "openpgp.h"
-#include "parsekey.h"
-#include "sendsync.h"
 
 struct onak_stacked_dbctx {
 	struct ll *backends;

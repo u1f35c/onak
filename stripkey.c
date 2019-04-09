@@ -17,26 +17,16 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#include <getopt.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
 
-#include "armor.h"
 #include "charfuncs.h"
 #include "cleankey.h"
-#include "keydb.h"
 #include "keyid.h"
-#include "keyindex.h"
 #include "keystructs.h"
-#include "log.h"
 #include "mem.h"
-#include "merge.h"
-#include "onak-conf.h"
 #include "parsekey.h"
-#include "photoid.h"
 #include "decodekey.h"
 
 int main(int argc, char** argv) {

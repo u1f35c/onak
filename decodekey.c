@@ -17,7 +17,7 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#include <stdbool.h>
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,7 +28,6 @@
 #include "keyid.h"
 #include "keystructs.h"
 #include "ll.h"
-#include "log.h"
 #include "openpgp.h"
 
 /*
@@ -51,7 +50,7 @@ onak_status_t parse_subpackets(unsigned char *data, size_t len,
 	int length = 0;
 	int packetlen = 0;
 
-	log_assert(data != NULL);
+	assert(data != NULL);
 
 	/* Make sure we actually have the 2 byte length field */
 	if (len < 2) {
@@ -162,11 +161,8 @@ onak_status_t parse_subpackets(unsigned char *data, size_t len,
 			 * 7 is set in which case we log a major error.
 			 */
 			if (data[offset] & 0x80) {
-				logthing(LOGTHING_CRITICAL,
-				"Critical subpacket type not parsed: 0x%X",
-					data[offset]);
+				return ONAK_E_UNSUPPORTED_FEATURE;
 			}
-				
 		}
 		offset += packetlen;
 	}
