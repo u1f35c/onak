@@ -9,9 +9,9 @@ if [ "$2" = "file" ]; then
 	exit 0
 fi
 
-cd t
-../onak -b -c $1 add < ../keys/noodles.key
-if ! ../onak -c $1 hget 81929DAE08B8F80888DA524923B93067 2> /dev/null | \
+cd ${WORKDIR}
+${BUILDDIR}/onak -b -c $1 add < ${TESTSDIR}/../keys/noodles.key
+if ! ${BUILDDIR}/onak -c $1 hget 81929DAE08B8F80888DA524923B93067 2> /dev/null | \
 	grep -q -- '-----BEGIN PGP PUBLIC KEY BLOCK-----'; then
 	echo "* Did not correctly retrieve key by text"
 	exit 1

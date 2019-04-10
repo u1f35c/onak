@@ -1,51 +1,69 @@
 #!/bin/sh
 set -e
 
-fail=0
-total=0
+# Work out where everything is
 
+# Binary should be in current directory
 if [ ! -e onak ]; then
 	echo "** onak binary doesn't exist, cannot run test suite" >&2
 	exit 1
 fi
+BUILDDIR=$PWD
 
-if [ -e t/db/ ]; then
-	rm -rf t/db/
-fi
+# Tests live in the t/ dir underneath where this script is
+TESTSDIR=$(dirname $(readlink -f "$0"))/t
+
+# We create a temporary directory to work in
+WORKDIR=$(mktemp -d -t onak-test.XXXXXXXX)
+trap cleanup exit
+cleanup () {
+	rm -rf "$WORKDIR"
+}
+
+export BUILDDIR TESTSDIR WORKDIR
+
+echo "BUILDDIR: ${BUILDDIR}"
+echo "TESTSDIR: ${TESTSDIR}"
+echo "WORKDIR : ${WORKDIR}"
+
+fail=0
+total=0
 
 for t in libkeydb_*.so; do
 	backend=${t##libkeydb_}
 	backend=${backend%%.so}
-	if [ "`echo t/$backend-*`" != "t/$backend-*" ]; then
+	if [ "`echo ${TESTSDIR}/$backend-*`" != "${TESTSDIR}/$backend-*" ]; then
 		echo "* testing $backend backend [conf]"
-		(sed -e "s;DIR;`pwd`;" t/test-in.conf ; \
-			echo db_backend $backend) > t/test.conf
-		for t in t/$backend-*.t t/all-*.t; do
+		(sed -e "s;BUILDDIR;${BUILDDIR};" -e "s;WORKDIR;${WORKDIR};" \
+			${TESTSDIR}/test-in.conf ; \
+			echo db_backend $backend) > ${WORKDIR}/test.conf
+		for t in ${TESTSDIR}/$backend-*.t ${TESTSDIR}/all-*.t; do
 			total=`expr $total + 1`
-			mkdir t/db/
-			if ! $t test.conf $backend; then
+			mkdir ${WORKDIR}/db/
+			if ! $t ${WORKDIR}/test.conf $backend; then
 				echo "test $t failed" >&2
 				fail=`expr $fail + 1`
 			fi
-			rm -rf t/db/
+			rm -rf ${WORKDIR}/db/
 		done
-		rm t/test.conf
+		rm ${WORKDIR}/test.conf
 	fi
 
-	if [ "`echo t/$backend-*`" != "t/$backend-*" ]; then
+	if [ "`echo ${TESTSDIR}/$backend-*`" != "${TESTSDIR}/$backend-*" ]; then
 		echo "* testing $backend backend [ini]"
-		sed -e "s;DIR;`pwd`;" -e "s;DB;${backend};" t/test-in.ini \
-			> t/test.ini
-		for t in t/$backend-*.t t/all-*.t; do
+		sed -e "s;BUILDDIR;${BUILDDIR};" -e "s;WORKDIR;${WORKDIR};" \
+			-e "s;DB;${backend};" \
+			${TESTSDIR}/test-in.ini > ${WORKDIR}/test.ini
+		for t in ${TESTSDIR}/$backend-*.t ${TESTSDIR}/all-*.t; do
 			total=`expr $total + 1`
-			mkdir t/db/
-			if ! $t test.ini $backend; then
+			mkdir ${WORKDIR}/db/
+			if ! $t ${WORKDIR}/test.ini $backend; then
 				echo "test $t failed" >&2
 				fail=`expr $fail + 1`
 			fi
-			rm -rf t/db/
+			rm -rf ${WORKDIR}/db/
 		done
-		rm t/test.ini
+		rm ${WORKDIR}/test.ini
 	fi
 done
 
@@ -53,5 +71,5 @@ if [ "$fail" -gt 0 ]; then
 	echo "** failed $fail/$total tests" >&2
 	exit 1
 else
-	echo "** all tests succeeded"
+	echo "** all tests succeeded ($total)"
 fi

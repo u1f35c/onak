@@ -3,9 +3,9 @@
 
 set -e
 
-cd t
-../onak -b -c $1 add < ../keys/noodles.key
-../onak -b -c $1 delete 0x2DA8B985
+cd ${WORKDIR}
+${BUILDDIR}/onak -b -c $1 add < ${TESTSDIR}/../keys/noodles.key
+${BUILDDIR}/onak -b -c $1 delete 0x2DA8B985
 if [ -e db/key/2D/A8/2DA8B985/94FA372B2DA8B985 ]; then
 	echo "* Did not correctly delete key using fs backend"
 	exit 1

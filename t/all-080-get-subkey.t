@@ -9,14 +9,14 @@ if [ "$2" = "file" ]; then
 	exit 0
 fi
 
-cd t
-../onak -b -c $1 add < ../keys/noodles.key
-if ! ../onak -c $1 get 0x045281F1B9A66E35 2> /dev/null | \
+cd ${WORKDIR}
+${BUILDDIR}/onak -b -c $1 add < ${TESTSDIR}/../keys/noodles.key
+if ! ${BUILDDIR}/onak -c $1 get 0x045281F1B9A66E35 2> /dev/null | \
 	grep -q -- '-----BEGIN PGP PUBLIC KEY BLOCK-----'; then
 	echo "* Did not correctly retrieve key by subkey id."
 	exit 1
 fi
-if ! ../onak -c $1 get 0xFF162FC5CF3FBAD1 2> /dev/null | \
+if ! ${BUILDDIR}/onak -c $1 get 0xFF162FC5CF3FBAD1 2> /dev/null | \
 	grep -q -- '-----BEGIN PGP PUBLIC KEY BLOCK-----'; then
 	echo "* Did not correctly retrieve key by subkey id."
 	exit 1

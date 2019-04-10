@@ -9,9 +9,9 @@ if [ "$2" = "file" ]; then
 	exit 0
 fi
 
-cd t
-../onak -b -c $1 add < ../keys/noodles.key
-if ! ../onak -c $1 index noodles 2> /dev/null | \
+cd ${WORKDIR}
+${BUILDDIR}/onak -b -c $1 add < ${TESTSDIR}/../keys/noodles.key
+if ! ${BUILDDIR}/onak -c $1 index noodles 2> /dev/null | \
 	grep -q -- 'pub   4096R/2DA8B985 2008/06/03 Jonathan McDowell'; then
 	echo "* Did not correctly retrieve key by text"
 	exit 1
