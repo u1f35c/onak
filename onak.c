@@ -27,6 +27,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "build-config.h"
+
 #include "armor.h"
 #include "charfuncs.h"
 #include "cleankey.h"
@@ -41,7 +43,6 @@
 #include "onak-conf.h"
 #include "parsekey.h"
 #include "photoid.h"
-#include "version.h"
 
 void find_keys(struct onak_dbctx *dbctx,
 		char *search, uint64_t keyid,

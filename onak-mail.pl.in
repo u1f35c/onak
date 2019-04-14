@@ -21,7 +21,7 @@ my %config;
 # upgrades.
 #
 sub readoldconfig {
-	open(CONFIG, "@CONFIGOLD@") or
+	open(CONFIG, "@CMAKE_INSTALL_FULL_SYSCONFDIR@/onak.conf") or
 		die "Can't read config file: $!";
 	
 	while (<CONFIG>) {
@@ -57,12 +57,12 @@ sub readoldconfig {
 #
 sub readconfig {
 	# Prefer the old style config if it exists.
-	if (-e "@CONFIGOLD@") {
+	if (-e "@CMAKE_INSTALL_FULL_SYSCONFDIR@/onak.conf") {
 		&readoldconfig;
 		return;
 	}
 
-	open(CONFIG, "@CONFIG@") or
+	open(CONFIG, "@CMAKE_INSTALL_FULL_SYSCONFDIR@/onak.ini") or
 		die "Can't read config file: $!";
 
 	my $section = "";

@@ -17,7 +17,7 @@
 
 #define SHA1HANDSOFF
 
-#include "config.h"
+#include "build-config.h"
 
 #include <string.h>
 

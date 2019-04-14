@@ -18,7 +18,7 @@
 
 #include <stdint.h>
 
-#include "config.h"
+#include "build-config.h"
 #include "decodekey.h"
 #include "keyid.h"
 #include "keystructs.h"

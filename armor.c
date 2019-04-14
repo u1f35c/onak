@@ -19,10 +19,11 @@
 
 #include <stdlib.h>
 
+#include "build-config.h"
+
 #include "armor.h"
 #include "keystructs.h"
 #include "parsekey.h"
-#include "version.h"
 
 /**
  * @brief Line length we'll use for armored output

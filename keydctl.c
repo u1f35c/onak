@@ -26,12 +26,10 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#include "build-config.h"
+
 #include "keyd.h"
 #include "onak-conf.h"
-#include "version.h"
-
-/* HACK: We need to stop onak-conf.o requiring this. */
-void *DBINIT = NULL;
 
 static int keyd_fd = -1;
 static int verbose = 0;

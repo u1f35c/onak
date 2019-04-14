@@ -23,6 +23,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "build-config.h"
+
 #include "armor.h"
 #include "charfuncs.h"
 #include "cleankey.h"
@@ -36,7 +38,6 @@
 #include "onak-conf.h"
 #include "parsekey.h"
 #include "photoid.h"
-#include "version.h"
 
 #define OP_UNKNOWN 0
 #define OP_GET     1

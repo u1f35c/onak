@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "build-config.h"
+
 #include "armor.h"
 #include "charfuncs.h"
 #include "cleanup.h"
@@ -32,7 +34,6 @@
 #include "onak-conf.h"
 #include "parsekey.h"
 #include "stats.h"
-#include "version.h"
 
 #define OP_UNKNOWN 0
 #define OP_GET     1

@@ -32,7 +32,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "config.h"
+#include "build-config.h"
 
 #ifdef HAVE_SYSTEMD
 #include <systemd/sd-daemon.h>
@@ -48,7 +48,6 @@
 #include "mem.h"
 #include "onak-conf.h"
 #include "parsekey.h"
-#include "version.h"
 
 /* Maximum number of clients we're prepared to accept at once */
 #define MAX_CLIENTS 16

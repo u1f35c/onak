@@ -1,2 +1,2 @@
-onak.ini                    etc
-add lookup gpgwww hashquery usr/lib/cgi-bin/pks
+obj-*/onak.ini                                       etc
+obj-*/add obj-*/lookup obj-*/gpgwww obj-*/hashquery  usr/lib/cgi-bin/pks

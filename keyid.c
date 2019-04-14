@@ -20,7 +20,7 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 
-#include "config.h"
+#include "build-config.h"
 #include "keyid.h"
 #include "keystructs.h"
 #include "onak.h"

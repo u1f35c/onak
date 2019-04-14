@@ -23,6 +23,8 @@
 #include <string.h>
 #include <curl/curl.h>
 
+#include "build-config.h"
+
 #include "armor.h"
 #include "charfuncs.h"
 #include "keydb.h"
@@ -31,7 +33,6 @@
 #include "mem.h"
 #include "onak-conf.h"
 #include "parsekey.h"
-#include "version.h"
 
 struct onak_hkp_dbctx {
 	struct onak_db_config *config; /* Our DB config info */

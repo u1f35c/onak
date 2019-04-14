@@ -1,12 +1,10 @@
 #!/usr/bin/make -f
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
-DEB_CONFIGURE_EXTRA_FLAGS += --enable-backend=dynamic --runstatedir=/run
-
 CFLAGS += -std=gnu99
 
 %:
-	dh "$@" --with autoreconf,systemd
+	dh "$@" --with systemd
 
 override_dh_installinit:
 	dh_installinit --no-start

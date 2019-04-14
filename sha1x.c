@@ -12,12 +12,11 @@
  *
  * Placed into the public domain.
  */
-
-#include "config.h"
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+
+#include "build-config.h"
 
 #ifdef HAVE_NETTLE
 #include <nettle/sha.h>

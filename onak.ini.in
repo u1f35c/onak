@@ -3,13 +3,13 @@
 ;
 [main]
 backend=defaultdb4
-backends_dir=@LIBDIR@/onak/backends
-logfile=@STATEDIR@/log/onak.log
+backends_dir=@CMAKE_INSTALL_FULL_LIBDIR@/onak/backends
+logfile=@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/log/onak.log
 ; Loglevel : 0 is highest debug, default is 3, nothing is 7+
 loglevel=3
 ; Should we use the keyd backend?
 use_keyd=false
-sock_dir=@RUNDIR@
+sock_dir=@CMAKE_INSTALL_FULL_RUNSTATEDIR@
 ; Maximum number of keys to return in a reply to an index, verbose index or
 ; get. Setting it to -1 will allow any size of reply.
 max_reply_keys=128
@@ -23,7 +23,7 @@ check_sighash=true
 ; Settings related to the email interface to onak.
 [mail]
 maintainer_email=PGP Key Server Administrator <pgp-keyserver-admin@the.earth.li>
-mail_dir=@STATEDIR@/spool/onak
+mail_dir=@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/spool/onak
 ; Specify the envelope sender address as the -f argument to
 ;   sendmail.  This is the address which will receive any bounces.
 ; If you don't use sendmail, then change this to an equivalent command.
@@ -49,7 +49,7 @@ this_site=pgp-public-keys@the.earth.li
 [backend:defaultdb4]
 ; The default DB4 backend. Recommended.
 type=db4
-location=@STATEDIR@/lib/onak
+location=@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/lib/onak
 
 [backend:examplehkp]
 ; An example HKP backend; all operations will be done against the

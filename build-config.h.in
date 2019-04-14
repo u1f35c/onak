@@ -1,0 +1,10 @@
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
+
+#define ONAK_VERSION "@VERSION@"
+
+#cmakedefine HAVE_NETTLE 1
+#cmakedefine HAVE_SYSTEMD 1
+#cmakedefine WORDS_BIGENDIAN 1
+
+#endif /* __CONFIG_H__ */

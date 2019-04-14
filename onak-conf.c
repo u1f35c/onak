@@ -15,21 +15,22 @@
  * You should have received a copy of the GNU General Public License along with
  * this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-#include "config.h"
-
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 
+#include "build-config.h"
+
 #include "cleankey.h"
 #include "ll.h"
 #include "log.h"
 #include "onak-conf.h"
 
+#ifdef DBINIT
 extern struct onak_dbctx *DBINIT(struct onak_db_config *dbcfg, bool readonly);
+#endif
 
 /*
  *	config - Runtime configuration for onak.
@@ -51,7 +52,11 @@ struct onak_config config = {
 	.backends = NULL,
 	.backends_dir = NULL,
 
+#ifdef DBINIT
 	.dbinit = DBINIT,
+#else
+	.dbinit = NULL,
+#endif
 
 	.clean_policies = ONAK_CLEAN_CHECK_SIGHASH,
 

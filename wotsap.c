@@ -28,11 +28,12 @@
 #include <string.h>
 #include <arpa/inet.h>
 
+#include "build-config.h"
+
 #include "hash.h"
 #include "log.h"
 #include "onak-conf.h"
 #include "stats.h"
-#include "version.h"
 
 static struct ll *sortkeyll(struct ll *keys)
 {
