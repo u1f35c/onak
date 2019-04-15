@@ -6,6 +6,7 @@ compiler:
 addons:
   apt:
     packages:
+      - cmake
       - libdb-dev
       - libcurl4-gnutls-dev
       - libsystemd-dev
