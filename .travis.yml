@@ -11,3 +11,8 @@ addons:
       - libcurl4-gnutls-dev
       - libsystemd-dev
       - nettle-dev
+before_script:
+  - mkdir travis-build
+  - cd travis-build
+  - cmake ..
+script: make && make test
