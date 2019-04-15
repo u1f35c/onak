@@ -48,6 +48,8 @@ onak_status_t parse_subpackets(unsigned char *data, size_t len,
 	int offset = 0;
 	int length = 0;
 	int packetlen = 0;
+	struct openpgp_fingerprint fp;
+	int i;
 
 	assert(data != NULL);
 
@@ -122,6 +124,16 @@ onak_status_t parse_subpackets(unsigned char *data, size_t len,
 				*keyid += data[offset+packetlen - 1];
 			}
 			break;
+		case OPENPGP_SIGSUB_ISSUER_FINGER:
+			if ((packetlen - 2) <= MAX_FINGERPRINT_LEN &&
+					keyid != NULL) {
+				fp.length = packetlen - 2;
+				for (i = 0; i < fp.length; i++) {
+					fp.fp[i] = data[offset + i + 2];
+				}
+				*keyid = fingerprint2keyid(&fp);
+			}
+			break;
 		case OPENPGP_SIGSUB_EXPIRY:
 		case OPENPGP_SIGSUB_EXPORTABLE:
 		case OPENPGP_SIGSUB_TRUSTSIG:
@@ -134,7 +146,7 @@ onak_status_t parse_subpackets(unsigned char *data, size_t len,
 		case OPENPGP_SIGSUB_REVOCATION_KEY:
 		case OPENPGP_SIGSUB_ISSUER_UID:
 		case OPENPGP_SIGSUB_URL:
-		case OPENPGP_SIGSUB_ISSUER_FINGER:
+		case OPENPGP_SIGSUB_X_ISSUER_FINGER:
 		case OPENPGP_SIGSUB_NOTATION:
 		case OPENPGP_SIGSUB_PREFHASH:
 		case OPENPGP_SIGSUB_PREFCOMPRESS:
