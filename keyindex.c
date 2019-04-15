@@ -222,7 +222,9 @@ int list_sigs(struct onak_dbctx *dbctx,
 
 	while (sigs != NULL) {
 		sigid = sig_keyid(sigs->packet);
-		uid = dbctx->keyid2uid(dbctx, sigid);
+		if (dbctx) {
+			uid = dbctx->keyid2uid(dbctx, sigid);
+		}
 		if (sigs->packet->data[0] == 4 &&
 				sigs->packet->data[1] == 0x30) {
 			/* It's a Type 4 sig revocation */
