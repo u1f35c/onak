@@ -26,8 +26,12 @@
 
 #include "ll.h"
 
-/* v3 MD5 fingerprint is 16 characters, v4 SHA-1 fingerprint is 20 */
-#define MAX_FINGERPRINT_LEN 20
+/*
+ * v3 MD5 fingerprint is 16 bytes
+ * v4 SHA-1 fingerprint is 20
+ * v5 SHA2-256 fingerprint is 32
+ */
+#define MAX_FINGERPRINT_LEN 32
 
 /**
  * @brief Stores the fingerprint of an OpenPGP key

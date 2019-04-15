@@ -229,6 +229,7 @@ onak_status_t sig_info(struct openpgp_packet *packet, uint64_t *keyid,
 			}
 			break;
 		case 4:
+		case 5:
 			res = parse_subpackets(&packet->data[4],
 					packet->length - 4,
 					&length, keyid, creation);

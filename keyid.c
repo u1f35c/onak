@@ -42,9 +42,23 @@ uint64_t fingerprint2keyid(struct openpgp_fingerprint *fingerprint)
 	uint64_t keyid;
 	int i;
 
-	for (keyid = 0, i = 12; i < 20; i++) {
-		keyid <<= 8;
-		keyid += fingerprint->fp[i];
+	switch (fingerprint->length) {
+	case 20:
+		/* v4, keyid is last 64 bits */
+		for (keyid = 0, i = 12; i < 20; i++) {
+			keyid <<= 8;
+			keyid += fingerprint->fp[i];
+		}
+		break;
+	case 32:
+		/* v5, keyid is first 64 bits */
+		for (keyid = 0, i = 0; i < 8; i++) {
+			keyid <<= 8;
+			keyid += fingerprint->fp[i];
+		}
+		break;
+	default:
+		keyid = (uint64_t) -1;
 	}
 
 	return keyid;
@@ -73,6 +87,7 @@ onak_status_t get_keyid(struct openpgp_publickey *publickey, uint64_t *keyid)
 onak_status_t get_fingerprint(struct openpgp_packet *packet,
 	struct openpgp_fingerprint *fingerprint)
 {
+	struct sha256_ctx sha2_ctx;
 	struct sha1_ctx sha_ctx;
 	struct md5_ctx md5_context;
 	unsigned char c;
@@ -103,7 +118,6 @@ onak_status_t get_fingerprint(struct openpgp_packet *packet,
 		md5_digest(&md5_context, fingerprint->length, fingerprint->fp);
 
 		break;
-
 	case 4:
 		sha1_init(&sha_ctx);
 		/*
@@ -120,6 +134,25 @@ onak_status_t get_fingerprint(struct openpgp_packet *packet,
 			packet->data);
 		fingerprint->length = 20;
 		sha1_digest(&sha_ctx, fingerprint->length, fingerprint->fp);
+
+		break;
+	case 5:
+		sha256_init(&sha2_ctx);
+		/* RFC4880bis 12.2 */
+		c = 0x9A;
+		sha256_update(&sha2_ctx, sizeof(c), &c);
+		c = packet->length >> 24;
+		sha256_update(&sha2_ctx, sizeof(c), &c);
+		c = packet->length >> 16;
+		sha256_update(&sha2_ctx, sizeof(c), &c);
+		c = packet->length >> 8;
+		sha256_update(&sha2_ctx, sizeof(c), &c);
+		c = packet->length & 0xFF;
+		sha256_update(&sha2_ctx, sizeof(c), &c);
+		sha256_update(&sha2_ctx, packet->length,
+			packet->data);
+		fingerprint->length = 32;
+		sha256_digest(&sha2_ctx, fingerprint->length, fingerprint->fp);
 
 		break;
 	default:
@@ -203,10 +236,9 @@ onak_status_t get_packetid(struct openpgp_packet *packet, uint64_t *keyid)
 		}
 		break;
 	case 4:
+	case 5:
 		get_fingerprint(packet, &fingerprint);
-
 		*keyid = fingerprint2keyid(&fingerprint);
-
 		break;
 	default:
 		return ONAK_E_UNKNOWN_VER;

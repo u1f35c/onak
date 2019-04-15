@@ -330,8 +330,19 @@ int main(int argc, char *argv[])
 		search = argv[optind+1];
 		if (search != NULL && strlen(search) == 42 &&
 				search[0] == '0' && search[1] == 'x') {
-			fingerprint.length = MAX_FINGERPRINT_LEN;
-			for (i = 0; i < MAX_FINGERPRINT_LEN; i++) {
+			/* v4 fingerprint */
+			fingerprint.length = 20;
+			for (i = 0; i < 20; i++) {
+				fingerprint.fp[i] =
+					(hex2bin(search[2 + i * 2]) << 4) +
+						hex2bin(search[3 + i * 2]);
+			}
+			isfp = true;
+		} else if (search != NULL && strlen(search) == 66 &&
+				search[0] == '0' && search[1] == 'x') {
+			/* v5 fingerprint */
+			fingerprint.length = 32;
+			for (i = 0; i < 32; i++) {
 				fingerprint.fp[i] =
 					(hex2bin(search[2 + i * 2]) << 4) +
 						hex2bin(search[3 + i * 2]);

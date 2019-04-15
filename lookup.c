@@ -147,8 +147,20 @@ int main(int argc, char *argv[])
 			params[i+1] = NULL;
 			if (search != NULL && strlen(search) == 42 &&
 					search[0] == '0' && search[1] == 'x') {
-				fingerprint.length = MAX_FINGERPRINT_LEN;
-				for (j = 0; j < MAX_FINGERPRINT_LEN; j++) {
+				/* v4 fingerprint */
+				fingerprint.length = 20;
+				for (j = 0; j < 20; j++) {
+					fingerprint.fp[j] = (hex2bin(
+							search[2 + j * 2])
+								<< 4) +
+						hex2bin(search[3 + j * 2]);
+				}
+				isfp = true;
+			} else if (search != NULL && strlen(search) == 66 &&
+					search[0] == '0' && search[1] == 'x') {
+				/* v5 fingerprint */
+				fingerprint.length = 32;
+				for (j = 0; j < 32; j++) {
 					fingerprint.fp[j] = (hex2bin(
 							search[2 + j * 2])
 								<< 4) +

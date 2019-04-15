@@ -273,13 +273,23 @@ static int generic_fetch_key_fp(struct onak_dbctx *dbctx,
 	/*
 	 * We assume if the backend is using this function it's not storing
 	 * anything bigger than the 64 bit key ID and just truncate the
-	 * fingerprint to get that value. This doesn't work for v3 keys,
+	 * fingerprint to get that value. v4 keys want the lowest 64 bits, v5
+	 * keys need the top 64 bits.  This doesn't work for v3 keys,
 	 * but there's no way to map from v3 fingerprint to v3 key ID so
 	 * if the backend can't do it we're going to fail anyway.
 	 */
 	keyid = 0;
-	for (i = (fingerprint->length - 8); i < fingerprint->length; i++) {
-		keyid = (keyid << 8) + fingerprint->fp[i];
+	if (fingerprint->length == 20) {
+		/* v4 */
+		for (i = (fingerprint->length - 8); i < fingerprint->length;
+				i++) {
+			keyid = (keyid << 8) + fingerprint->fp[i];
+		}
+	} else {
+		/* v5 */
+		for (i = 0; i < 8; i++) {
+			keyid = (keyid << 8) + fingerprint->fp[i];
+		}
 	}
 
 	return dbctx->fetch_key_id(dbctx, keyid, publickey, intrans);
