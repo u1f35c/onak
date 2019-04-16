@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 				"\">Find reverse path</A>\n",
 				to,
 				from);
-		printf("<A HREF=\"gpgwww?from=0x%08" PRIX64 "&to=0x%08" PRIX64
+		printf("<A HREF=\"gpgwww?from=0x%016" PRIX64 "&to=0x%016" PRIX64
 				"&op=get\">"
 				"Get all keys listed</A></P>\n",
 				from,

@@ -234,25 +234,25 @@ int list_sigs(struct onak_dbctx *dbctx,
 		}
 		if (html && uid != NULL) {
 			printf("%s         <a href=\"lookup?op=get&"
-				"search=0x%016" PRIX64 "\">%08" PRIX64
+				"search=0x%016" PRIX64 "\">0x%016" PRIX64
 				"</a>             "
 				"<a href=\"lookup?op=vindex&search=0x%016"
 				PRIX64 "\">%s</a>\n",
 				sig,
 				sigid,
-				sigid & 0xFFFFFFFF,
+				sigid,
 				sigid,
 				txt2html(uid));
 		} else if (html && uid == NULL) {
-			printf("%s         %08" PRIX64 "             "
+			printf("%s         0x%016" PRIX64 "             "
 				"[User id not found]\n",
 				sig,
-				sigid & 0xFFFFFFFF);
+				sigid);
 		} else {
-			printf("%s         %08" PRIX64
+			printf("%s         0x%016" PRIX64
 				"             %s\n",
 				sig,
-				sigid & 0xFFFFFFFF,
+				sigid,
 				(uid != NULL) ? uid :
 				"[User id not found]");
 		}
@@ -341,10 +341,10 @@ int list_subkeys(struct onak_dbctx *dbctx,
 					&keyid) != ONAK_E_OK) {
 				logthing(LOGTHING_ERROR, "Couldn't get keyid.");
 			}
-			printf("sub  %5d%c/%08X %04d/%02d/%02d\n",
+			printf("sub  %5d%c/0x%016" PRIX64 " %04d/%02d/%02d\n",
 				length,
 				pkalgo2char(type),
-				(uint32_t) (keyid & 0xFFFFFFFF),
+				keyid,
 				created->tm_year + 1900,
 				created->tm_mon + 1,
 				created->tm_mday);
@@ -462,20 +462,20 @@ int key_index(struct onak_dbctx *dbctx,
 
 		if (html) {
 			printf("pub  %5d%c/<a href=\"lookup?op=get&"
-				"search=0x%016" PRIX64 "\">%08" PRIX64
+				"search=0x%016" PRIX64 "\">0x%016" PRIX64
 				"</a> %04d/%02d/%02d ",
 				length,
 				pkalgo2char(type),
 				keyid,
-				keyid & 0xFFFFFFFF,
+				keyid,
 				created->tm_year + 1900,
 				created->tm_mon + 1,
 				created->tm_mday);
 		} else {
-			printf("pub  %5d%c/%08" PRIX64 " %04d/%02d/%02d ",
+			printf("pub  %5d%c/0x%016" PRIX64 " %04d/%02d/%02d ",
 				length,
 				pkalgo2char(type),
-				keyid & 0xFFFFFFFF,
+				keyid,
 				created->tm_year + 1900,
 				created->tm_mon + 1,
 				created->tm_mday);

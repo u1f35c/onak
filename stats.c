@@ -176,8 +176,8 @@ void dofindpath(struct onak_dbctx *dbctx,
 			html ? "<BR>" : "");
 		if (keyinfoa->colour == 0) {
 			if (pathnum == 0) {
-				printf("Can't find a link from 0x%08" PRIX64
-				" to 0x%08" PRIX64 "%s\n",
+				printf("Can't find a link from 0x%016" PRIX64
+				" to 0x%016" PRIX64 "%s\n",
 				have,
 				want,
 				html ? "<BR>" : "");
@@ -187,10 +187,10 @@ void dofindpath(struct onak_dbctx *dbctx,
 			}
 			pathnum = count;
 		} else {
-			printf("%d steps from 0x%08" PRIX64 " to 0x%08" PRIX64
-				"%s\n",
-				keyinfoa->colour, have & 0xFFFFFFFF,
-				want & 0xFFFFFFFF,
+			printf("%d steps from 0x%016" PRIX64 " to 0x%016"
+				PRIX64 "%s\n",
+				keyinfoa->colour, have,
+				want,
 				html ? "<BR>" : "");
 			curkey = keyinfoa;
 			while (curkey != NULL && curkey->keyid != 0) {
@@ -198,30 +198,30 @@ void dofindpath(struct onak_dbctx *dbctx,
 						curkey->keyid);
 				if (html && uid == NULL) {
 					printf("<a href=\"lookup?op=get&search="
-						"0x%08" PRIX64 "\">0x%08" PRIX64
-						"</a> (["
+						"0x%016" PRIX64 "\">0x%016"
+						PRIX64 "</a> (["
 						"User id not found])%s<BR>\n",
-						curkey->keyid & 0xFFFFFFFF,
-						curkey->keyid & 0xFFFFFFFF,
+						curkey->keyid,
+						curkey->keyid,
 						(curkey->keyid == fullwant) ?
 							"" : " signs");
 				} else if (html && uid != NULL) {
 					printf("<a href=\"lookup?op=get&search="
-						"0x%08" PRIX64 "\">0x%08"
+						"0x%016" PRIX64 "\">0x%016"
 						PRIX64 "</a>"
 						" (<a href=\"lookup?op=vindex&"
-						"search=0x%08" PRIX64 
+						"search=0x%016" PRIX64
 						"\">%s</a>)%s"
 						"<BR>\n",
-						curkey->keyid & 0xFFFFFFFF,
-						curkey->keyid & 0xFFFFFFFF,
-						curkey->keyid & 0xFFFFFFFF,
+						curkey->keyid,
+						curkey->keyid,
+						curkey->keyid,
 						txt2html(uid),
 						(curkey->keyid == fullwant) ?
 						"" : " signs");
 				} else {
-					printf("0x%08" PRIX64 " (%s)%s\n",
-						curkey->keyid & 0xFFFFFFFF,
+					printf("0x%016" PRIX64 " (%s)%s\n",
+						curkey->keyid,
 						(uid == NULL) ?
 							"[User id not found]" :
 							uid,
@@ -244,8 +244,8 @@ void dofindpath(struct onak_dbctx *dbctx,
 			}
 			curkey = keyinfoa;
 			while (curkey != NULL && curkey->keyid != 0) {
-				printf("0x%08" PRIX64 " ",
-						curkey->keyid & 0xFFFFFFFF);
+				printf("0x%016" PRIX64 " ",
+						curkey->keyid);
 				curkey = findinhash(curkey->parent);
 			}
 			putchar('\n');
