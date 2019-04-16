@@ -1,9 +1,3 @@
-Makefile
-configure
-config.status
-config.log
-config.h
-config.h.in
 add
 hashquery
 lookup
@@ -21,9 +15,6 @@ testparse
 wotsap
 tags
 .depend
-aclocal.m4
-autom4te.cache
-version.h
 *.o
 *.so
 docs
