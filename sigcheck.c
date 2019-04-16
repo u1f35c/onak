@@ -46,19 +46,11 @@ int check_packet_sighash(struct openpgp_publickey *key,
 	struct sha1_ctx sha1_context;
 	struct sha1x_ctx sha1x_context;
 	struct md5_ctx md5_context;
-#ifdef NETTLE_WITH_RIPEMD160
+#ifdef HAVE_NETTLE
 	struct ripemd160_ctx ripemd160_context;
-#endif
-#ifdef NETTLE_WITH_SHA224
 	struct sha224_ctx sha224_context;
-#endif
-#ifdef NETTLE_WITH_SHA256
 	struct sha256_ctx sha256_context;
-#endif
-#ifdef NETTLE_WITH_SHA384
 	struct sha384_ctx sha384_context;
-#endif
-#ifdef NETTLE_WITH_SHA512
 	struct sha512_ctx sha512_context;
 #endif
 	uint8_t keyheader[3];
@@ -212,8 +204,15 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		}
 		sha1_digest(&sha1_context, 20, hash);
 		break;
+	case OPENPGP_HASH_SHA1X:
+		sha1x_init(&sha1x_context);
+		for (i = 0; i < chunks; i++) {
+			sha1x_update(&sha1x_context, hashlen[i], hashdata[i]);
+		}
+		sha1x_digest(&sha1x_context, 20, hash);
+		break;
+#ifdef HAVE_NETTLE
 	case OPENPGP_HASH_RIPEMD160:
-#ifdef NETTLE_WITH_RIPEMD160
 		ripemd160_init(&ripemd160_context);
 		for (i = 0; i < chunks; i++) {
 			ripemd160_update(&ripemd160_context, hashlen[i],
@@ -222,19 +221,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		ripemd160_digest(&ripemd160_context, RIPEMD160_DIGEST_SIZE,
 			hash);
 		break;
-#else
-		logthing(LOGTHING_INFO, "RIPEMD160 support not available.");
-		return -1;
-#endif
-	case OPENPGP_HASH_SHA1X:
-		sha1x_init(&sha1x_context);
-		for (i = 0; i < chunks; i++) {
-			sha1x_update(&sha1x_context, hashlen[i], hashdata[i]);
-		}
-		sha1x_digest(&sha1x_context, 20, hash);
-		break;
 	case OPENPGP_HASH_SHA224:
-#ifdef NETTLE_WITH_SHA224
 		sha224_init(&sha224_context);
 		for (i = 0; i < chunks; i++) {
 			sha224_update(&sha224_context, hashlen[i],
@@ -242,12 +229,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		}
 		sha224_digest(&sha224_context, SHA224_DIGEST_SIZE, hash);
 		break;
-#else
-		logthing(LOGTHING_INFO, "SHA224 support not available.");
-		return -1;
-#endif
 	case OPENPGP_HASH_SHA256:
-#ifdef NETTLE_WITH_SHA256
 		sha256_init(&sha256_context);
 		for (i = 0; i < chunks; i++) {
 			sha256_update(&sha256_context, hashlen[i],
@@ -255,12 +237,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		}
 		sha256_digest(&sha256_context, SHA256_DIGEST_SIZE, hash);
 		break;
-#else
-		logthing(LOGTHING_INFO, "SHA256 support not available.");
-		return -1;
-#endif
 	case OPENPGP_HASH_SHA384:
-#ifdef NETTLE_WITH_SHA384
 		sha384_init(&sha384_context);
 		for (i = 0; i < chunks; i++) {
 			sha384_update(&sha384_context, hashlen[i],
@@ -268,12 +245,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		}
 		sha384_digest(&sha384_context, SHA384_DIGEST_SIZE, hash);
 		break;
-#else
-		logthing(LOGTHING_INFO, "SHA384 support not available.");
-		return -1;
-#endif
 	case OPENPGP_HASH_SHA512:
-#ifdef NETTLE_WITH_SHA512
 		sha512_init(&sha512_context);
 		for (i = 0; i < chunks; i++) {
 			sha512_update(&sha512_context, hashlen[i],
@@ -281,9 +253,6 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		}
 		sha512_digest(&sha512_context, SHA512_DIGEST_SIZE, hash);
 		break;
-#else
-		logthing(LOGTHING_INFO, "SHA512 support not available.");
-		return -1;
 #endif
 	default:
 		get_keyid(key, &keyid);
