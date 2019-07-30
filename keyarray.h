@@ -64,4 +64,20 @@ void array_free(struct keyarray *array);
  */
 bool array_add(struct keyarray *array, struct openpgp_fingerprint *fp);
 
+/**
+ * @brief Compare two OpenPGP fingerprints
+ * @param a Fingerprint 1
+ * @param b Fingerprint 2
+ *
+ * Compares 2 OpenPGP fingerprints, returning an integer less than, equal to,
+ * or greater than zero depending on whether a is less than, matches, or is
+ * greater than b.
+ *
+ * For the purposes of comparison shorter fingerprints sort earlier than
+ * longer fingerprints (i.e. v3 < v4 < v5) and comparison of same-length
+ * fingerprints treats them as a numberical value.
+ */
+int fingerprint_cmp(struct openpgp_fingerprint *a,
+		struct openpgp_fingerprint *b);
+
 #endif /* __KEYARRAY_H__ */
