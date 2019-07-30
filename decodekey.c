@@ -354,3 +354,82 @@ struct openpgp_fingerprint *keysubkeys(struct openpgp_publickey *key)
 
 	return subkeys;
 }
+
+enum onak_oid onak_parse_oid(uint8_t *buf, size_t len)
+{
+	enum onak_oid oid;
+
+	/* Elliptic curve key size is based on OID */
+	if (len == 0 || (buf[0] >= len)) {
+		oid = ONAK_OID_INVALID;
+	/* Curve25519 / 1.3.6.1.4.1.3029.1.5.1 */
+	} else if ((buf[0] == 10) &&
+			(buf[1] == 0x2B) && (buf[2] == 0x06) &&
+			(buf[3] == 0x01) && (buf[4] == 0x04) &&
+			(buf[5] == 0x01) && (buf[6] == 0x97) &&
+			(buf[7] == 0x55) && (buf[8] == 0x01) &&
+			(buf[9] == 0x05) && (buf[10] == 0x01)) {
+		oid = ONAK_OID_CURVE25519;
+	/* Ed25519 / 1.3.6.1.4.1.11591.15.1 */
+	} else if ((buf[0] == 9) &&
+			(buf[1] == 0x2B) && (buf[2] == 0x06) &&
+			(buf[3] == 0x01) && (buf[4] == 0x04) &&
+			(buf[5] == 0x01) && (buf[6] == 0xDA) &&
+			(buf[7] == 0x47) && (buf[8] == 0x0F) &&
+			(buf[9] == 0x01)) {
+		oid = ONAK_OID_ED25519;
+	/* nistp256 / 1.2.840.10045.3.1.7 */
+	} else if ((buf[0] == 8) &&
+			(buf[1] == 0x2A) && (buf[2] == 0x86) &&
+			(buf[3] == 0x48) && (buf[4] == 0xCE) &&
+			(buf[5] == 0x3D) && (buf[6] == 0x03) &&
+			(buf[7] == 0x01) && (buf[8] == 0x07)) {
+		oid = ONAK_OID_NISTP256;
+	/* nistp384 / 1.3.132.0.34 */
+	} else if ((buf[0] == 5) &&
+			(buf[1] == 0x2B) && (buf[2] == 0x81) &&
+			(buf[3] == 0x04) && (buf[4] == 0x00) &&
+			(buf[5] == 0x22)) {
+		oid = ONAK_OID_NISTP384;
+	/* nistp521 / 1.3.132.0.35 */
+	} else if ((buf[0] == 5) &&
+			(buf[1] == 0x2B) && (buf[2] == 0x81) &&
+			(buf[3] == 0x04) && (buf[4] == 0x00) &&
+			(buf[5] == 0x23)) {
+		oid = ONAK_OID_NISTP521;
+	/* brainpoolP256r1 / 1.3.36.3.3.2.8.1.1.7 */
+	} else if ((buf[0] == 9) &&
+			(buf[1] == 0x2B) && (buf[2] == 0x24) &&
+			(buf[3] == 0x03) && (buf[4] == 0x03) &&
+			(buf[5] == 0x02) && (buf[6] == 0x08) &&
+			(buf[7] == 0x01) && (buf[8] == 0x01) &&
+			(buf[9] == 0x07)) {
+		oid = ONAK_OID_BRAINPOOLP256R1;
+	/* brainpoolP384r1 / 1.3.36.3.3.2.8.1.1.11 */
+	} else if ((buf[0] == 9) &&
+			(buf[1] == 0x2B) && (buf[2] == 0x24) &&
+			(buf[3] == 0x03) && (buf[4] == 0x03) &&
+			(buf[5] == 0x02) && (buf[6] == 0x08) &&
+			(buf[7] == 0x01) && (buf[8] == 0x01) &&
+			(buf[9] == 0x0B)) {
+		oid = ONAK_OID_BRAINPOOLP384R1;
+	/* brainpoolP512r1 / 1.3.36.3.3.2.8.1.1.13 */
+	} else if ((buf[0] == 9) &&
+			(buf[1] == 0x2B) && (buf[2] == 0x24) &&
+			(buf[3] == 0x03) && (buf[4] == 0x03) &&
+			(buf[5] == 0x02) && (buf[6] == 0x08) &&
+			(buf[7] == 0x01) && (buf[8] == 0x01) &&
+			(buf[9] == 0x0D)) {
+		oid = ONAK_OID_BRAINPOOLP512R1;
+	/* secp256k1 / 1.3.132.0.10 */
+	} else if ((buf[0] == 5) &&
+			(buf[1] == 0x2B) && (buf[2] == 0x81) &&
+			(buf[3] == 0x04) && (buf[4] == 0x00) &&
+			(buf[5] == 0x0A)) {
+		oid = ONAK_OID_SECP256K1;
+	} else {
+		oid = ONAK_OID_UNKNOWN;
+	}
+
+	return oid;
+}

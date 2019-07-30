@@ -81,6 +81,7 @@ unsigned int keylength(struct openpgp_packet *keydata)
 {
 	unsigned int length;
 	uint8_t keyofs;
+	enum onak_oid oid;
 
 	switch (keydata->data[0]) {
 	case 2:
@@ -97,101 +98,25 @@ unsigned int keylength(struct openpgp_packet *keydata)
 		case OPENPGP_PKALGO_ECDSA:
 		case OPENPGP_PKALGO_EDDSA:
 			/* Elliptic curve key size is based on OID */
-			/* Curve25519 / 1.3.6.1.4.1.3029.1.5.1 */
-			if ((keydata->data[keyofs] == 10) &&
-					(keydata->data[keyofs + 1] == 0x2B) &&
-					(keydata->data[keyofs + 2] == 0x06) &&
-					(keydata->data[keyofs + 3] == 0x01) &&
-					(keydata->data[keyofs + 4] == 0x04) &&
-					(keydata->data[keyofs + 5] == 0x01) &&
-					(keydata->data[keyofs + 6] == 0x97) &&
-					(keydata->data[keyofs + 7] == 0x55) &&
-					(keydata->data[keyofs + 8] == 0x01) &&
-					(keydata->data[keyofs + 9] == 0x05) &&
-					(keydata->data[keyofs + 10] == 0x01)) {
+			oid = onak_parse_oid(&keydata->data[keyofs],
+					keydata->length - keyofs);
+			if (oid == ONAK_OID_CURVE25519) {
 				length = 255;
-			/* Ed25519 / 1.3.6.1.4.1.11591.15.1 */
-			} else if ((keydata->data[keyofs] == 9) &&
-					(keydata->data[keyofs + 1] == 0x2B) &&
-					(keydata->data[keyofs + 2] == 0x06) &&
-					(keydata->data[keyofs + 3] == 0x01) &&
-					(keydata->data[keyofs + 4] == 0x04) &&
-					(keydata->data[keyofs + 5] == 0x01) &&
-					(keydata->data[keyofs + 6] == 0xDA) &&
-					(keydata->data[keyofs + 7] == 0x47) &&
-					(keydata->data[keyofs + 8] == 0x0F) &&
-					(keydata->data[keyofs + 9] == 0x01)) {
+			} else if (oid == ONAK_OID_ED25519) {
 				length = 255;
-			/* nistp256 / 1.2.840.10045.3.1.7 */
-			} else if ((keydata->data[keyofs] == 8) &&
-					(keydata->data[keyofs + 1] == 0x2A) &&
-					(keydata->data[keyofs + 2] == 0x86) &&
-					(keydata->data[keyofs + 3] == 0x48) &&
-					(keydata->data[keyofs + 4] == 0xCE) &&
-					(keydata->data[keyofs + 5] == 0x3D) &&
-					(keydata->data[keyofs + 6] == 0x03) &&
-					(keydata->data[keyofs + 7] == 0x01) &&
-					(keydata->data[keyofs + 8] == 0x07)) {
+			} else if (oid == ONAK_OID_NISTP256) {
 				length = 256;
-			/* nistp384 / 1.3.132.0.34 */
-			} else if ((keydata->data[keyofs] == 5) &&
-					(keydata->data[keyofs + 1] == 0x2B) &&
-					(keydata->data[keyofs + 2] == 0x81) &&
-					(keydata->data[keyofs + 3] == 0x04) &&
-					(keydata->data[keyofs + 4] == 0x00) &&
-					(keydata->data[keyofs + 5] == 0x22)) {
+			} else if (oid == ONAK_OID_NISTP384) {
 				length = 384;
-			/* nistp521 / 1.3.132.0.35 */
-			} else if ((keydata->data[keyofs] == 5) &&
-					(keydata->data[keyofs + 1] == 0x2B) &&
-					(keydata->data[keyofs + 2] == 0x81) &&
-					(keydata->data[keyofs + 3] == 0x04) &&
-					(keydata->data[keyofs + 4] == 0x00) &&
-					(keydata->data[keyofs + 5] == 0x23)) {
+			} else if (oid == ONAK_OID_NISTP521) {
 				length = 521;
-			/* brainpoolP256r1 / 1.3.36.3.3.2.8.1.1.7 */
-			} else if ((keydata->data[keyofs] == 9) &&
-					(keydata->data[keyofs + 1] == 0x2B) &&
-					(keydata->data[keyofs + 2] == 0x24) &&
-					(keydata->data[keyofs + 3] == 0x03) &&
-					(keydata->data[keyofs + 4] == 0x03) &&
-					(keydata->data[keyofs + 5] == 0x02) &&
-					(keydata->data[keyofs + 6] == 0x08) &&
-					(keydata->data[keyofs + 7] == 0x01) &&
-					(keydata->data[keyofs + 8] == 0x01) &&
-					(keydata->data[keyofs + 9] == 0x07)) {
+			} else if (oid == ONAK_OID_BRAINPOOLP256R1) {
 				length = 256;
-			/* brainpoolP384r1 / 1.3.36.3.3.2.8.1.1.11 */
-			} else if ((keydata->data[keyofs] == 9) &&
-					(keydata->data[keyofs + 1] == 0x2B) &&
-					(keydata->data[keyofs + 2] == 0x24) &&
-					(keydata->data[keyofs + 3] == 0x03) &&
-					(keydata->data[keyofs + 4] == 0x03) &&
-					(keydata->data[keyofs + 5] == 0x02) &&
-					(keydata->data[keyofs + 6] == 0x08) &&
-					(keydata->data[keyofs + 7] == 0x01) &&
-					(keydata->data[keyofs + 8] == 0x01) &&
-					(keydata->data[keyofs + 9] == 0x0B)) {
+			} else if (oid == ONAK_OID_BRAINPOOLP384R1) {
 				length = 384;
-			/* brainpoolP512r1 / 1.3.36.3.3.2.8.1.1.13 */
-			} else if ((keydata->data[keyofs] == 9) &&
-					(keydata->data[keyofs + 1] == 0x2B) &&
-					(keydata->data[keyofs + 2] == 0x24) &&
-					(keydata->data[keyofs + 3] == 0x03) &&
-					(keydata->data[keyofs + 4] == 0x03) &&
-					(keydata->data[keyofs + 5] == 0x02) &&
-					(keydata->data[keyofs + 6] == 0x08) &&
-					(keydata->data[keyofs + 7] == 0x01) &&
-					(keydata->data[keyofs + 8] == 0x01) &&
-					(keydata->data[keyofs + 9] == 0x0D)) {
+			} else if (oid == ONAK_OID_BRAINPOOLP512R1) {
 				length = 512;
-			/* secp256k1 / 1.3.132.0.10 */
-			} else if ((keydata->data[keyofs] == 5) &&
-					(keydata->data[keyofs + 1] == 0x2B) &&
-					(keydata->data[keyofs + 2] == 0x81) &&
-					(keydata->data[keyofs + 3] == 0x04) &&
-					(keydata->data[keyofs + 4] == 0x00) &&
-					(keydata->data[keyofs + 5] == 0x0A)) {
+			} else if (oid == ONAK_OID_SECP256K1) {
 				length = 256;
 			} else {
 				logthing(LOGTHING_ERROR,

@@ -93,4 +93,20 @@ struct openpgp_fingerprint *keysubkeys(struct openpgp_publickey *key);
 onak_status_t parse_subpackets(unsigned char *data, size_t len,
 		size_t *parselen, uint64_t *keyid, time_t *creation);
 
+enum onak_oid {
+	ONAK_OID_UNKNOWN = 0,
+	ONAK_OID_INVALID,
+	ONAK_OID_CURVE25519,
+	ONAK_OID_ED25519,
+	ONAK_OID_NISTP256,
+	ONAK_OID_NISTP384,
+	ONAK_OID_NISTP521,
+	ONAK_OID_BRAINPOOLP256R1,
+	ONAK_OID_BRAINPOOLP384R1,
+	ONAK_OID_BRAINPOOLP512R1,
+	ONAK_OID_SECP256K1,
+};
+
+enum onak_oid onak_parse_oid(uint8_t *buf, size_t len);
+
 #endif
