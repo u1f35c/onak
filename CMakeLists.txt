@@ -51,7 +51,7 @@ endif()
 # Backends
 
 # These have no dependencies and can always be compiled
-set(BACKENDS "file" "fs" "stacked")
+set(BACKENDS "file" "fs" "keyring" "stacked")
 
 # DB4 backend (add check for existence)
 LIST(APPEND BACKENDS db4)
