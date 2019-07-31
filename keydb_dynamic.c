@@ -291,10 +291,19 @@ struct onak_dbctx *keydb_dynamic_init(struct onak_db_config *dbcfg,
 		soname = NULL;
 		exit(EXIT_FAILURE);
 	}
-	free(soname);
-	soname = NULL;
 
 	privctx->loadeddbctx = backend_init(dbcfg, readonly);
+
+	if (privctx->loadeddbctx == NULL) {
+		logthing(LOGTHING_CRITICAL,
+				"Failed to initialise dynamic backend: %s",
+				soname);
+		free(soname);
+		soname = NULL;
+		exit(EXIT_FAILURE);
+	}
+	free(soname);
+	soname = NULL;
 
 	if (privctx->loadeddbctx != NULL) {
 		dbctx->cleanupdb = dynamic_cleanupdb;
