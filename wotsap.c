@@ -84,12 +84,16 @@ static void wotsap(struct onak_dbctx *dbctx, uint64_t keyid, char *dir)
 
 	/* Length of dir + "/" + "signatures" + NUL */
 	tmppath = malloc(strlen(dir) + 12);
+	if (tmppath == NULL) {
+		fprintf(stderr, "Couldn't allocate memory for directory\n");
+		goto err;
+	}
 
 	sprintf(tmppath, "%s/WOTVERSION", dir);
 	file = fopen(tmppath, "w");
 	if (file == NULL) {
 		fprintf(stderr, "Couldn't open %s\n", tmppath);
-		return;
+		goto err;
 	}
 	fprintf(file, "0.2\n");
 	fclose(file);
@@ -98,7 +102,7 @@ static void wotsap(struct onak_dbctx *dbctx, uint64_t keyid, char *dir)
 	file = fopen(tmppath, "w");
 	if (file == NULL) {
 		fprintf(stderr, "Couldn't open %s\n", tmppath);
-		return;
+		goto err;
 	}
 	fprintf(file, "This is a Web of Trust archive.\n");
 	fprintf(file, "The file format is documented at:\n");
@@ -110,21 +114,20 @@ static void wotsap(struct onak_dbctx *dbctx, uint64_t keyid, char *dir)
 	names = fopen(tmppath, "w");
 	if (names == NULL) {
 		fprintf(stderr, "Couldn't open %s\n", tmppath);
-		return;
+		goto err;
 	}
 	sprintf(tmppath, "%s/keys", dir);
 	keys = fopen(tmppath, "wb");
 	if (keys == NULL) {
 		fprintf(stderr, "Couldn't open %s\n", tmppath);
-		return;
+		goto err;
 	}
 	sprintf(tmppath, "%s/signatures", dir);
 	sigs = fopen(tmppath, "wb");
 	if (sigs == NULL) {
 		fprintf(stderr, "Couldn't open %s\n", tmppath);
-		return;
+		goto err;
 	}
-	free(tmppath);
 
 	dbctx->cached_getkeysigs(dbctx, keyid);
 	curkey = findinhash(keyid);
@@ -180,6 +183,8 @@ static void wotsap(struct onak_dbctx *dbctx, uint64_t keyid, char *dir)
 	fclose(sigs);
 	fclose(keys);
 	fclose(names);
+err:
+	free(tmppath);
 }
 
 int main(int argc, char *argv[])
