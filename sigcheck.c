@@ -55,7 +55,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 #endif
 	uint8_t keyheader[3];
 	uint8_t packetheader[5];
-	uint8_t v4trailer[6];
+	uint8_t trailer[10];
 	uint8_t hash[64];
 	uint8_t *hashdata[8];
 	size_t hashlen[8];
@@ -63,18 +63,18 @@ int check_packet_sighash(struct openpgp_publickey *key,
 	uint64_t keyid;
 	onak_status_t res;
 
-	keyheader[0] = 0x99;
-	keyheader[1] = key->publickey->length >> 8;
-	keyheader[2] = key->publickey->length & 0xFF;
-	hashdata[0] = keyheader;
-	hashlen[0] = 3;
-	hashdata[1] = key->publickey->data;
-	hashlen[1] = key->publickey->length;
-	chunks = 2;
-
 	switch (sig->data[0]) {
 	case 2:
 	case 3:
+		keyheader[0] = 0x99;
+		keyheader[1] = key->publickey->length >> 8;
+		keyheader[2] = key->publickey->length & 0xFF;
+		hashdata[0] = keyheader;
+		hashlen[0] = 3;
+		hashdata[1] = key->publickey->data;
+		hashlen[1] = key->publickey->length;
+		chunks = 2;
+
 		hashtype = sig->data[16];
 
 		if (packet != NULL) {
@@ -99,6 +99,15 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		sighash = &sig->data[17];
 		break;
 	case 4:
+		keyheader[0] = 0x99;
+		keyheader[1] = key->publickey->length >> 8;
+		keyheader[2] = key->publickey->length & 0xFF;
+		hashdata[0] = keyheader;
+		hashlen[0] = 3;
+		hashdata[1] = key->publickey->data;
+		hashlen[1] = key->publickey->length;
+		chunks = 2;
+
 		hashtype = sig->data[3];
 
 		/* Check to see if this is an X509 based signature */
@@ -167,14 +176,82 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		}
 		chunks++;
 
-		v4trailer[0] = 4;
-		v4trailer[1] = 0xFF;
-		v4trailer[2] = siglen >> 24;
-		v4trailer[3] = (siglen >> 16) & 0xFF;
-		v4trailer[4] = (siglen >> 8) & 0xFF;
-		v4trailer[5] = siglen & 0xFF;
-		hashdata[chunks] = v4trailer;
+		trailer[0] = 4;
+		trailer[1] = 0xFF;
+		trailer[2] = siglen >> 24;
+		trailer[3] = (siglen >> 16) & 0xFF;
+		trailer[4] = (siglen >> 8) & 0xFF;
+		trailer[5] = siglen & 0xFF;
+		hashdata[chunks] = trailer;
 		hashlen[chunks] = 6;
+		chunks++;
+
+		unhashedlen = (sig->data[siglen] << 8) +
+			sig->data[siglen + 1];
+		sighash = &sig->data[siglen + unhashedlen + 2];
+		break;
+	case 5:
+		keyheader[0] = 0x9A;
+		keyheader[1] = 0;
+		keyheader[2] = 0;
+		keyheader[3] = key->publickey->length >> 8;
+		keyheader[4] = key->publickey->length & 0xFF;
+		hashdata[0] = keyheader;
+		hashlen[0] = 5;
+		hashdata[1] = key->publickey->data;
+		hashlen[1] = key->publickey->length;
+		chunks = 2;
+
+		hashtype = sig->data[3];
+
+		if (packet != NULL) {
+			if (packet->tag == OPENPGP_PACKET_PUBLICSUBKEY) {
+				packetheader[0] = 0x9A;
+				packetheader[1] = 0;
+				packetheader[2] = 0;
+				packetheader[3] = packet->length >> 8;
+				packetheader[4] = packet->length & 0xFF;
+				hashdata[chunks] = packetheader;
+				hashlen[chunks] = 5;
+				chunks++;
+			} else if (packet->tag == OPENPGP_PACKET_UID ||
+					packet->tag == OPENPGP_PACKET_UAT) {
+				packetheader[0] = (packet->tag ==
+					OPENPGP_PACKET_UID) ?  0xB4 : 0xD1;
+				packetheader[1] = packet->length >> 24;
+				packetheader[2] = (packet->length >> 16) & 0xFF;
+				packetheader[3] = (packet->length >> 8) & 0xFF;
+				packetheader[4] = packet->length & 0xFF;
+				hashdata[chunks] = packetheader;
+				hashlen[chunks] = 5;
+				chunks++;
+			}
+			hashdata[chunks] = packet->data;
+			hashlen[chunks] = packet->length;
+			chunks++;
+		}
+
+		hashdata[chunks] = sig->data;
+		hashlen[chunks] = siglen = (sig->data[4] << 8) +
+			sig->data[5] + 6;;
+		if (siglen > sig->length) {
+			/* Signature data exceed packet length, bogus */
+			return 0;
+		}
+		chunks++;
+
+		trailer[0] = 5;
+		trailer[1] = 0xFF;
+		trailer[2] = 0;
+		trailer[3] = 0;
+		trailer[4] = 0;
+		trailer[5] = 0;
+		trailer[6] = siglen >> 24;
+		trailer[7] = (siglen >> 16) & 0xFF;
+		trailer[8] = (siglen >> 8) & 0xFF;
+		trailer[9] = siglen & 0xFF;
+		hashdata[chunks] = trailer;
+		hashlen[chunks] = 10;
 		chunks++;
 
 		unhashedlen = (sig->data[siglen] << 8) +
