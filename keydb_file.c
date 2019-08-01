@@ -143,20 +143,20 @@ static int file_store_key(struct onak_dbctx *dbctx,
 
 /**
  *	delete_key - Given a keyid delete the key from storage.
- *	@keyid: The keyid to delete.
+ *	@fp: The fingerprint of the key to delete.
  *	@intrans: If we're already in a transaction.
  *
  *	This function deletes a public key from whatever storage mechanism we
  *	are using. Returns 0 if the key existed.
  */
 static int file_delete_key(struct onak_dbctx *dbctx,
-		uint64_t keyid, bool intrans)
+		struct openpgp_fingerprint *fp, bool intrans)
 {
 	char *db_dir = (char *) dbctx->priv;
 	char keyfile[1024];
 
 	snprintf(keyfile, 1023, "%s/0x%" PRIX64, db_dir,
-			keyid & 0xFFFFFFFF);
+			fingerprint2keyid(fp) & 0xFFFFFFFF);
 
 	return unlink(keyfile);
 }

@@ -394,10 +394,11 @@ static int fs_store_key(struct onak_dbctx *dbctx,
 
 /**
  *	delete_key - Given a keyid delete the key from storage.
- *	@keyid: The keyid to delete.
+ *	@fp: The fingerprint of the key to delete.
  *	@intrans: If we're already in a transaction.
  */
-static int fs_delete_key(struct onak_dbctx *dbctx, uint64_t keyid, bool intrans)
+static int fs_delete_key(struct onak_dbctx *dbctx,
+		struct openpgp_fingerprint *fp, bool intrans)
 {
 	static char buffer[PATH_MAX];
 	int ret;
@@ -407,9 +408,11 @@ static int fs_delete_key(struct onak_dbctx *dbctx, uint64_t keyid, bool intrans)
 	struct openpgp_fingerprint *subkeyids = NULL;
 	uint64_t subkeyid;
 	int i = 0;
+	uint64_t keyid;
 
-	if ((keyid >> 32) == 0)
-		keyid = fs_getfullkeyid(dbctx, keyid);
+	keyid = fingerprint2keyid(fp);
+	if (keyid == 0)
+		return 1;
 
 	if (!intrans)
 		fs_starttrans(dbctx);

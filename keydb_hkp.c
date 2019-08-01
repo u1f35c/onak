@@ -271,13 +271,13 @@ static int hkp_store_key(struct onak_dbctx *dbctx,
 
 /**
  *	delete_key - Given a keyid delete the key from storage.
- *	@keyid: The keyid to delete.
+ *	@fp: The fingerprint of the key to delete.
  *	@intrans: If we're already in a transaction.
  *
  *	No op for HKP.
  */
 static int hkp_delete_key(struct onak_dbctx *dbctx,
-		uint64_t keyid, bool intrans)
+		struct openpgp_fingerprint *fp, bool intrans)
 {
 	return -1;
 }

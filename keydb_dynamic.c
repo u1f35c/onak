@@ -108,14 +108,15 @@ static int dynamic_store_key(struct onak_dbctx *dbctx,
 			publickey, intrans, update);
 }
 
-static int dynamic_delete_key(struct onak_dbctx *dbctx, uint64_t keyid,
+static int dynamic_delete_key(struct onak_dbctx *dbctx,
+		struct openpgp_fingerprint *fp,
 		bool intrans)
 {
 	struct onak_dynamic_dbctx *privctx =
 			(struct onak_dynamic_dbctx *) dbctx->priv;
 
 	return privctx->loadeddbctx->delete_key(privctx->loadeddbctx,
-			keyid, intrans);
+			fp, intrans);
 }
 
 static int dynamic_update_keys(struct onak_dbctx *dbctx,

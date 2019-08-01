@@ -71,7 +71,8 @@ static int stacked_store_key(struct onak_dbctx *dbctx,
 			publickey, intrans, update);
 }
 
-static int stacked_delete_key(struct onak_dbctx *dbctx, uint64_t keyid,
+static int stacked_delete_key(struct onak_dbctx *dbctx,
+		struct openpgp_fingerprint *fp,
 		bool intrans)
 {
 	struct onak_stacked_dbctx *privctx =
@@ -80,7 +81,7 @@ static int stacked_delete_key(struct onak_dbctx *dbctx, uint64_t keyid,
 			(struct onak_dbctx *) privctx->backends->object;
 
 	return backend->delete_key(backend,
-			keyid, intrans);
+			fp, intrans);
 }
 
 static int stacked_update_keys(struct onak_dbctx *dbctx,

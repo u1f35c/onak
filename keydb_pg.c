@@ -247,13 +247,14 @@ static int pg_fetch_key_text(struct onak_dbctx *dbctx,
 
 /**
  *	delete_key - Given a keyid delete the key from storage.
- *	@keyid: The keyid to delete.
+ *	@fp: The fingerprint of the key to delete.
  *	@intrans: If we're already in a transaction.
  *
  *	This function deletes a public key from whatever storage mechanism we
  *	are using. Returns 0 if the key existed.
  */
-static int pg_delete_key(struct onak_dbctx *dbctx, uint64_t keyid, bool intrans)
+static int pg_delete_key(struct onak_dbctx *dbctx,
+		struct openpgp_fingerprint *fp, bool intrans)
 {
 	PGconn *dbconn = (PGconn *) dbctx->priv;
 	PGresult *result = NULL;
@@ -262,11 +263,14 @@ static int pg_delete_key(struct onak_dbctx *dbctx, uint64_t keyid, bool intrans)
 	int found = 1;
 	int i;
 	Oid key_oid;
+	uint64_t keyid;
 
 	if (!intrans) {
 		result = PQexec(dbconn, "BEGIN");
 		PQclear(result);
 	}
+
+	keyid = fingerprint2keyid(fp);
 	
 	snprintf(statement, 1023,
 			"SELECT keydata FROM onak_keys WHERE keyid = '%"
@@ -347,6 +351,7 @@ static int pg_store_key(struct onak_dbctx *dbctx,
 	int i;
 	uint64_t keyid;
 	struct pg_fc_ctx fcctx;
+	struct openpgp_fingerprint fp;
 
 	if (!intrans) {
 		result = PQexec(dbconn, "BEGIN");
@@ -367,7 +372,8 @@ static int pg_store_key(struct onak_dbctx *dbctx,
 	 * it definitely needs updated.
 	 */
 	if (update) {
-		pg_delete_key(dbctx, keyid, true);
+		get_fingerprint(publickey->publickey, &fp);
+		pg_delete_key(dbctx, &fp, true);
 	}
 
 	next = publickey->next;

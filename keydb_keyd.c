@@ -187,19 +187,19 @@ static int keyd_fetch_key_fp(struct onak_dbctx *dbctx,
 
 /**
 *	delete_key - Given a keyid delete the key from storage.
-*	@keyid: The keyid to delete.
+ *	@fp: The fingerprint of the key to delete.
 *	@intrans: If we're already in a transaction.
 *
 *	This function deletes a public key from whatever storage mechanism we
 *	are using. Returns 0 if the key existed.
 */
 static int keyd_delete_key(struct onak_dbctx *dbctx,
-		uint64_t keyid, bool intrans)
+		struct openpgp_fingerprint *fp, bool intrans)
 {
 	int keyd_fd = (intptr_t) dbctx->priv;
 
 	if (keyd_send_cmd(keyd_fd, KEYD_CMD_DELETE)) {
-		write(keyd_fd, &keyid, sizeof(keyid));
+		write(keyd_fd, fp, sizeof(*fp));
 	}
 
 	return 0;

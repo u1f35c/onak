@@ -387,9 +387,16 @@ int main(int argc, char *argv[])
 				puts("Key not found");
 			}
 		} else if (!strcmp("delete", argv[optind])) {
-			dbctx->delete_key(dbctx,
-					dbctx->getfullkeyid(dbctx, keyid),
-					false);
+			if (!isfp) {
+				if (dbctx->fetch_key_id(dbctx, keyid, &keys,
+							true)) {
+					get_fingerprint(keys->publickey,
+							&fingerprint);
+					dbctx->delete_key(dbctx, &fingerprint,
+							true);
+				}
+			} else
+				dbctx->delete_key(dbctx, &fingerprint, false);
 		} else if (!strcmp("get", argv[optind])) {
 			if (!(ishex || isfp)) {
 				puts("Can't get a key on uid text."
@@ -448,7 +455,8 @@ int main(int argc, char *argv[])
 		} else if (!strcmp("reindex", argv[optind])) {
 			dbctx->starttrans(dbctx);
 			if (dbctx->fetch_key_id(dbctx, keyid, &keys, true)) {
-				dbctx->delete_key(dbctx, keyid, true);
+				get_fingerprint(keys->publickey, &fingerprint);
+				dbctx->delete_key(dbctx, &fingerprint, true);
 				cleankeys(&keys, config.clean_policies);
 				dbctx->store_key(dbctx, keys, true, false);
 			} else {

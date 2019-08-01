@@ -161,13 +161,13 @@ static int keyring_store_key(struct onak_dbctx *dbctx,
 
 /**
  *	delete_key - Given a keyid delete the key from storage.
- *	@keyid: The keyid to delete.
+ *	@fp: The fingerprint of the key to delete.
  *	@intrans: If we're already in a transaction.
  *
  *	We don't support removing keys from a keyring file.
  */
 static int keyring_delete_key(struct onak_dbctx *dbctx,
-		uint64_t keyid, bool intrans)
+		struct openpgp_fingerprint *fp, bool intrans)
 {
 	return 1;
 }
@@ -254,7 +254,7 @@ static int keyring_parse_keys(struct onak_keyring_dbctx *privctx)
 	 * Walk the keyring file, noting the start of each public key and the
 	 * total length of packets associated with it.
 	 */
-	pos = start = totlen = 0;
+	len = pos = start = totlen = 0;
 	while (((privctx->length - pos) > 5) && (privctx->file[pos] & 0x80)) {
 		if (privctx->file[pos] & 0x40) {
 			tag = privctx->file[pos] & 0x3F;

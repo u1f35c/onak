@@ -444,8 +444,9 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 				ret = 1;
 			}
 			if (ret == 0) {
-				bytes = read(fd, &keyid, sizeof(keyid));
-				if (bytes != sizeof(keyid)) {
+				bytes = read(fd, &fingerprint,
+						sizeof(fingerprint));
+				if (bytes != sizeof(fingerprint)) {
 					ret = 1;
 				}
 			}
@@ -455,7 +456,7 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 						", result: %d",
 						keyid,
 						dbctx->delete_key(dbctx,
-							keyid, false));
+							&fingerprint, false));
 			}
 			break;
 		case KEYD_CMD_GETFULLKEYID:

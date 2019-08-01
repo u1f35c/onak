@@ -104,13 +104,14 @@ struct onak_dbctx {
 
 /**
  * @brief Given a keyid delete the key from storage.
- * @param keyid The keyid to delete.
+ * @param fp The fingerprint of the key to delete.
  * @param intrans If we're already in a transaction.
  *
  * This function deletes a public key from whatever storage mechanism we
  * are using. Returns 0 if the key existed.
  */
-	int (*delete_key)(struct onak_dbctx *, uint64_t keyid, bool intrans);
+	int (*delete_key)(struct onak_dbctx *, struct openpgp_fingerprint *fp,
+			bool intrans);
 
 /**
  * @brief Trys to find the keys that contain the supplied text.

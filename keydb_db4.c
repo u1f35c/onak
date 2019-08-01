@@ -703,14 +703,15 @@ static int db4_fetch_key_skshash(struct onak_dbctx *dbctx,
 
 /**
  *	delete_key - Given a keyid delete the key from storage.
- *	@keyid: The keyid to delete.
+ *	@fp: The fingerprint of the key to delete.
  *	@intrans: If we're already in a transaction.
  *
  *	This function deletes a public key from whatever storage mechanism we
  *	are using. Returns 0 if the key existed.
  */
 static int db4_delete_key(struct onak_dbctx *dbctx,
-		uint64_t keyid, bool intrans)
+		struct openpgp_fingerprint *fp,
+		bool intrans)
 {
 	struct onak_db4_dbctx *privctx = (struct onak_db4_dbctx *) dbctx->priv;
 	struct openpgp_publickey *publickey = NULL;
@@ -729,20 +730,22 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 	struct ll *curword  = NULL;
 	bool deadlock = false;
 	struct skshash hash;
-	struct openpgp_fingerprint fingerprint;
+	uint64_t keyid;
 
 	if (!intrans) {
 		db4_starttrans(dbctx);
 	}
 
-	if (db4_fetch_key_id(dbctx, keyid, &publickey, true) == 0) {
+	if (db4_fetch_key_fp(dbctx, fp, &publickey, true) == 0) {
 		if (!intrans) {
 			db4_endtrans(dbctx);
 		}
 		return 1;
 	}
 
-	get_fingerprint(publickey->publickey, &fingerprint);
+	if (get_keyid(publickey, &keyid) != ONAK_E_OK) {
+		return 1;
+	}
 
 	/*
 	 * Walk through the uids removing the words from the worddb.
@@ -777,8 +780,8 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 			memset(&data, 0, sizeof(data));
 			key.data = curword->object;
 			key.size = strlen(key.data);
-			data.data = fingerprint.fp;
-			data.size = fingerprint.length;
+			data.data = fp->fp;
+			data.size = fp->length;
 
 			ret = cursor->c_get(cursor,
 				&key,
@@ -832,8 +835,8 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 		memset(&data, 0, sizeof(data));
 		key.data = &shortkeyid;
 		key.size = sizeof(shortkeyid);
-		data.data = fingerprint.fp;
-		data.size = fingerprint.length;
+		data.data = fp->fp;
+		data.size = fp->length;
 
 		ret = cursor->c_get(cursor,
 			&key,
@@ -860,8 +863,8 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 		memset(&data, 0, sizeof(data));
 		key.data = &keyid;
 		key.size = sizeof(keyid);
-		data.data = fingerprint.fp;
-		data.size = fingerprint.length;
+		data.data = fp->fp;
+		data.size = fp->length;
 
 		ret = cursor64->c_get(cursor64,
 			&key,
@@ -910,8 +913,8 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 			memset(&data, 0, sizeof(data));
 			key.data = &shortkeyid;
 			key.size = sizeof(shortkeyid);
-			data.data = fingerprint.fp;
-			data.size = fingerprint.length;
+			data.data = fp->fp;
+			data.size = fp->length;
 
 			ret = cursor->c_get(cursor,
 				&key,
@@ -938,8 +941,8 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 			memset(&data, 0, sizeof(data));
 			key.data = &subkeyid;
 			key.size = sizeof(subkeyid);
-			data.data = fingerprint.fp;
-			data.size = fingerprint.length;
+			data.data = fp->fp;
+			data.size = fp->length;
 
 			ret = cursor64->c_get(cursor64,
 				&key,
@@ -985,8 +988,8 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 			memset(&data, 0, sizeof(data));
 			key.data = hash.hash;
 			key.size = sizeof(hash.hash);
-			data.data = fingerprint.fp;
-			data.size = fingerprint.length;
+			data.data = fp->fp;
+			data.size = fp->length;
 
 			ret = cursor->c_get(cursor,
 				&key,
@@ -1016,20 +1019,10 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 	publickey = NULL;
 
 	if (!deadlock) {
-		key.data = fingerprint.fp;
-		key.size = fingerprint.length;
+		key.data = fp->fp;
+		key.size = fp->length;
 
-		keydb_fp(privctx, &fingerprint)->del(keydb_fp(privctx,
-					&fingerprint),
-				privctx->txn,
-				&key,
-				0); /* flags */
-
-		/* Delete old style 64 bit keyid */
-		key.data = &keyid;
-		key.size = sizeof(keyid);
-
-		keydb_id(privctx, keyid)->del(keydb_id(privctx, keyid),
+		keydb_fp(privctx, fp)->del(keydb_fp(privctx, fp),
 				privctx->txn,
 				&key,
 				0); /* flags */
@@ -1101,7 +1094,7 @@ static int db4_store_key(struct onak_dbctx *dbctx,
 	 * it definitely needs updated.
 	 */
 	if (update) {
-		deadlock = (db4_delete_key(dbctx, keyid, true) == -1);
+		deadlock = (db4_delete_key(dbctx, &fingerprint, true) == -1);
 	}
 
 	/*
