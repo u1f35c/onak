@@ -459,31 +459,6 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 							&fingerprint, false));
 			}
 			break;
-		case KEYD_CMD_GETFULLKEYID:
-			if (!keyd_write_reply(fd, KEYD_REPLY_OK)) {
-				ret = 1;
-			}
-			if (ret == 0) {
-				bytes = read(fd, &keyid, sizeof(keyid));
-				if (bytes != sizeof(keyid)) {
-					ret = 1;
-				}
-			}
-			if (ret == 0) {
-				keyid = dbctx->getfullkeyid(dbctx, keyid);
-				cmd = sizeof(keyid);
-				bytes = write(fd, &cmd, sizeof(cmd));
-				if (bytes != sizeof(cmd)) {
-					ret = 1;
-				}
-			}
-			if (ret == 0) {
-				bytes = write(fd, &keyid, sizeof(keyid));
-				if (bytes != sizeof(keyid)) {
-					ret = 1;
-				}
-			}
-			break;
 		case KEYD_CMD_KEYITER:
 			if (!keyd_write_reply(fd, KEYD_REPLY_OK)) {
 				ret = 1;

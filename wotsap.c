@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
 {
 	int optchar;
 	char *configfile = NULL, *dir = NULL;
-	uint64_t keyid = 0x2DA8B985;
+	uint64_t keyid = 0x94FA372B2DA8B985;
 	struct onak_dbctx *dbctx;
 
 	while ((optchar = getopt(argc, argv, "c:")) != -1 ) {
@@ -211,8 +211,7 @@ int main(int argc, char *argv[])
 	dbctx = config.dbinit(config.backend, true);
 	if (dbctx != NULL) {
 		inithash();
-		wotsap(dbctx, dbctx->getfullkeyid(dbctx, keyid),
-			dir ? dir : ".");
+		wotsap(dbctx, keyid, dir ? dir : ".");
 		destroyhash();
 		dbctx->cleanupdb(dbctx);
 	} else {

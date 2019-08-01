@@ -232,7 +232,6 @@ static int keyring_update_keys(struct onak_dbctx *dbctx,
  */
 #define NEED_KEYID2UID 1
 #define NEED_GETKEYSIGS 1
-#define NEED_GETFULLKEYID 1
 #define NEED_GET_FP 1
 #include "keydb.c"
 
@@ -448,7 +447,6 @@ struct onak_dbctx *keydb_keyring_init(struct onak_db_config *dbcfg,
 	dbctx->getkeysigs		= generic_getkeysigs;
 	dbctx->cached_getkeysigs	= generic_cached_getkeysigs;
 	dbctx->keyid2uid		= generic_keyid2uid;
-	dbctx->getfullkeyid		= generic_getfullkeyid;
 	dbctx->iterate_keys		= keyring_iterate_keys;
 
 	return dbctx;

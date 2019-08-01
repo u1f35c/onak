@@ -185,15 +185,6 @@ struct onak_dbctx {
 			uint64_t keyid);
 
 /**
- * @brief Maps a 32 bit key id to a 64 bit one.
- * @param keyid The 32 bit keyid.
- *
- * This function maps a 32 bit key id to the full 64 bit one. It returns the
- * full keyid. If the key isn't found a keyid of 0 is returned.
- */
-	uint64_t (*getfullkeyid)(struct onak_dbctx *, uint64_t keyid);
-
-/**
  * @brief call a function once for each key in the db.
  * @param iterfunc The function to call.
  * @param ctx A context pointer

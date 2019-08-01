@@ -361,31 +361,6 @@ static int keyd_fetch_key_skshash(struct onak_dbctx *dbctx,
 	return (count > 0) ? 1 : 0;
 }
 
-
-/**
- *	getfullkeyid - Maps a 32bit key id to a 64bit one.
- *	@keyid: The 32bit keyid.
- *
- *	This function maps a 32bit key id to the full 64bit one. It returns the
- *	full keyid. If the key isn't found a keyid of 0 is returned.
- */
-static uint64_t keyd_getfullkeyid(struct onak_dbctx *dbctx, uint64_t keyid)
-{
-	int keyd_fd = (intptr_t) dbctx->priv;
-	uint32_t cmd = KEYD_CMD_GETFULLKEYID;
-
-	if (keyd_send_cmd(keyd_fd, KEYD_CMD_GETFULLKEYID)) {
-		write(keyd_fd, &keyid, sizeof(keyid));
-		read(keyd_fd, &cmd, sizeof(cmd));
-		if (cmd != sizeof(keyid)) {
-			return 0;
-		}
-		read(keyd_fd, &keyid, sizeof(keyid));
-	}
-
-	return keyid;
-}
-
 /**
  *	iterate_keys - call a function once for each key in the db.
  *	@iterfunc: The function to call.
@@ -594,7 +569,6 @@ struct onak_dbctx *keydb_keyd_init(struct onak_db_config *dbcfg, bool readonly)
 	dbctx->getkeysigs		= generic_getkeysigs;
 	dbctx->cached_getkeysigs	= generic_cached_getkeysigs;
 	dbctx->keyid2uid		= generic_keyid2uid;
-	dbctx->getfullkeyid		= keyd_getfullkeyid;
 	dbctx->iterate_keys		= keyd_iterate_keys;
 
 	return dbctx;

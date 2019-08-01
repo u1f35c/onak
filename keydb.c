@@ -155,33 +155,6 @@ struct ll *generic_cached_getkeysigs(struct onak_dbctx *dbctx, uint64_t keyid)
 	return key->sigs;
 }
 
-#ifdef NEED_GETFULLKEYID
-/**
- *	getfullkeyid - Maps a 32bit key id to a 64bit one.
- *	@keyid: The 32bit keyid.
- *
- *	This function maps a 32bit key id to the full 64bit one. It returns the
- *	full keyid. If the key isn't found a keyid of 0 is returned.
- */
-uint64_t generic_getfullkeyid(struct onak_dbctx *dbctx, uint64_t keyid)
-{
-	struct openpgp_publickey *publickey = NULL;
-
-	if (keyid < 0x100000000LL) {
-		dbctx->fetch_key_id(dbctx, keyid, &publickey, false);
-		if (publickey != NULL) {
-			get_keyid(publickey, &keyid);
-			free_publickey(publickey);
-			publickey = NULL;
-		} else {
-			keyid = 0;
-		}
-	}
-	
-	return keyid;
-}
-#endif
-
 #ifdef NEED_UPDATEKEYS
 /**
  *	update_keys - Takes a list of public keys and updates them in the DB.

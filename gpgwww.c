@@ -69,22 +69,18 @@ int getkeyspath(struct onak_dbctx *dbctx,
 	struct openpgp_packet_list *packets = NULL;
 	struct openpgp_packet_list *list_end = NULL;
 	struct stats_key *keyinfoa, *keyinfob, *curkey;
-	uint64_t fullhave, fullwant;
 	int pathlen = 0;
-
-	fullhave = dbctx->getfullkeyid(dbctx, have);
-	fullwant = dbctx->getfullkeyid(dbctx, want);
 
 	/*
 	 * Make sure the keys we have and want are in the cache.
 	 */
-	dbctx->cached_getkeysigs(dbctx, fullhave);
-	dbctx->cached_getkeysigs(dbctx, fullwant);
+	dbctx->cached_getkeysigs(dbctx, have);
+	dbctx->cached_getkeysigs(dbctx, want);
 
-	if ((keyinfoa = findinhash(fullhave)) == NULL) {
+	if ((keyinfoa = findinhash(have)) == NULL) {
 		return 1;
 	}
-	if ((keyinfob = findinhash(fullwant)) == NULL) {
+	if ((keyinfob = findinhash(want)) == NULL) {
 		return 1;
 	}
 	
@@ -104,7 +100,7 @@ int getkeyspath(struct onak_dbctx *dbctx,
 			 */
 			curkey = findinhash(keyinfoa->parent);
 			while (curkey != NULL && curkey->keyid != 0) {
-	    			if (curkey->keyid != fullwant &&
+				if (curkey->keyid != want &&
 						dbctx->fetch_key_id(dbctx,
 						curkey->keyid,
 						&publickey, false)) {
@@ -126,7 +122,7 @@ int getkeyspath(struct onak_dbctx *dbctx,
 	/*
 	 * Add the destination key to the list of returned keys.
 	 */
-	if (dbctx->fetch_key_id(dbctx, fullwant, &publickey, false)) {
+	if (dbctx->fetch_key_id(dbctx, want, &publickey, false)) {
 		flatten_publickey(publickey,
 				&packets,
 				&list_end);

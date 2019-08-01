@@ -290,70 +290,6 @@ static int db4_upgradedb(struct onak_dbctx *dbctx)
 }
 
 /**
- *	getfullkeyid - Maps a 32bit key id to a 64bit one.
- *	@keyid: The 32bit keyid.
- *
- *	This function maps a 32bit key id to the full 64bit one. It returns the
- *	first full keyid that has this short keyid. If the key isn't found a
- *	keyid of 0 is returned.
- *
- *	FIXME: This should either return the fingerprint or ideally go away
- *	entirely.
- */
-static uint64_t db4_getfullkeyid(struct onak_dbctx *dbctx, uint64_t keyid)
-{
-	struct onak_db4_dbctx *privctx = (struct onak_db4_dbctx *) dbctx->priv;
-	DBT       key, data;
-	DBC      *cursor = NULL;
-	uint32_t  shortkeyid = 0;
-	int       ret = 0;
-	int       i;
-
-	if (keyid < 0x100000000LL) {
-		ret = privctx->id32db->cursor(privctx->id32db,
-				privctx->txn,
-				&cursor,
-				0);   /* flags */
-
-		if (ret != 0) {
-			return 0;
-		}
-
-		shortkeyid = keyid & 0xFFFFFFFF;
-
-		memset(&key, 0, sizeof(key));
-		memset(&data, 0, sizeof(data));
-		key.data = &shortkeyid;
-		key.size = sizeof(shortkeyid);
-		data.flags = DB_DBT_MALLOC;
-
-		ret = cursor->c_get(cursor,
-			&key,
-			&data,
-			DB_SET);
-
-		if (ret == 0) {
-			keyid = 0;
-			/* Only works for v4, not v3 or v5 */
-			for (i = 12; i < 20; i++) {
-				keyid <<= 8;
-				keyid |= ((uint8_t *) data.data)[i];
-			}
-
-			if (data.data != NULL) {
-				free(data.data);
-				data.data = NULL;
-			}
-		}
-
-		cursor->c_close(cursor);
-		cursor = NULL;
-	}
-
-	return keyid;
-}
-
-/**
  *	fetch_key_fp - Given a fingerprint fetch the key from storage.
  */
 static int db4_fetch_key_fp(struct onak_dbctx *dbctx,
@@ -1832,7 +1768,6 @@ struct onak_dbctx *keydb_db4_init(struct onak_db_config *dbcfg, bool readonly)
 	dbctx->getkeysigs		= generic_getkeysigs;
 	dbctx->cached_getkeysigs	= generic_cached_getkeysigs;
 	dbctx->keyid2uid		= generic_keyid2uid;
-	dbctx->getfullkeyid		= db4_getfullkeyid;
 	dbctx->iterate_keys		= db4_iterate_keys;
 
 	return dbctx;

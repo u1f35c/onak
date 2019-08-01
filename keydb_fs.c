@@ -706,7 +706,6 @@ struct onak_dbctx *keydb_fs_init(struct onak_db_config *dbcfg, bool readonly)
 	dbctx->getkeysigs		= generic_getkeysigs;
 	dbctx->cached_getkeysigs	= generic_cached_getkeysigs;
 	dbctx->keyid2uid		= generic_keyid2uid;
-	dbctx->getfullkeyid		= fs_getfullkeyid;
 	dbctx->iterate_keys		= fs_iterate_keys;
 
 	return dbctx;

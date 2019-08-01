@@ -231,7 +231,6 @@ static int stacked_fetch_key_skshash(struct onak_dbctx *dbctx,
  */
 #define NEED_KEYID2UID 1
 #define NEED_GETKEYSIGS 1
-#define NEED_GETFULLKEYID 1
 #define NEED_UPDATEKEYS 1
 #include "keydb.c"
 
@@ -281,23 +280,6 @@ static char *stacked_keyid2uid(struct onak_dbctx *dbctx,
 	res = backend->keyid2uid(backend, keyid);
 	if (!res) {
 		res = generic_keyid2uid(dbctx, keyid);
-	}
-
-	return res;
-}
-
-static uint64_t stacked_getfullkeyid(struct onak_dbctx *dbctx,
-		uint64_t keyid)
-{
-	struct onak_stacked_dbctx *privctx =
-			(struct onak_stacked_dbctx *) dbctx->priv;
-	struct onak_dbctx *backend =
-			(struct onak_dbctx *) privctx->backends->object;
-	uint64_t res = 0;
-
-	res = backend->getfullkeyid(backend, keyid);
-	if (res == 0) {
-		res = generic_getfullkeyid(dbctx, keyid);
 	}
 
 	return res;
@@ -393,7 +375,6 @@ struct onak_dbctx *keydb_stacked_init(struct onak_db_config *dbcfg,
 		dbctx->getkeysigs = stacked_getkeysigs;
 		dbctx->cached_getkeysigs = stacked_cached_getkeysigs;
 		dbctx->keyid2uid = stacked_keyid2uid;
-		dbctx->getfullkeyid = stacked_getfullkeyid;
 		dbctx->iterate_keys = stacked_iterate_keys;
 	}
 

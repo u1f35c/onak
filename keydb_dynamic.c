@@ -159,15 +159,6 @@ static char *dynamic_keyid2uid(struct onak_dbctx *dbctx,
 			keyid);
 }
 
-static uint64_t dynamic_getfullkeyid(struct onak_dbctx *dbctx,
-		uint64_t keyid)
-{
-	struct onak_dynamic_dbctx *privctx =
-			(struct onak_dynamic_dbctx *) dbctx->priv;
-
-	return privctx->loadeddbctx->getfullkeyid(privctx->loadeddbctx, keyid);
-}
-
 static int dynamic_iterate_keys(struct onak_dbctx *dbctx,
 		void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
 		void *ctx)
@@ -320,7 +311,6 @@ struct onak_dbctx *keydb_dynamic_init(struct onak_db_config *dbcfg,
 		dbctx->getkeysigs = dynamic_getkeysigs;
 		dbctx->cached_getkeysigs = dynamic_cached_getkeysigs;
 		dbctx->keyid2uid = dynamic_keyid2uid;
-		dbctx->getfullkeyid = dynamic_getfullkeyid;
 		dbctx->iterate_keys = dynamic_iterate_keys;
 	}
 

@@ -136,25 +136,21 @@ void dofindpath(struct onak_dbctx *dbctx,
 		uint64_t have, uint64_t want, bool html, int count)
 {
 	struct stats_key *keyinfoa, *keyinfob, *curkey;
-	uint64_t fullhave, fullwant;
 	int rec;
 	int pathnum;
 	char *uid;
 
-	fullhave = dbctx->getfullkeyid(dbctx, have);
-	fullwant = dbctx->getfullkeyid(dbctx, want);
-
 	/*
 	 * Make sure the keys we have and want are in the cache.
 	 */
-	(void) dbctx->cached_getkeysigs(dbctx, fullhave);
-	(void) dbctx->cached_getkeysigs(dbctx, fullwant);
+	(void) dbctx->cached_getkeysigs(dbctx, have);
+	(void) dbctx->cached_getkeysigs(dbctx, want);
 
-	if ((keyinfoa = findinhash(fullhave)) == NULL) {
+	if ((keyinfoa = findinhash(have)) == NULL) {
 		printf("Couldn't find key 0x%016" PRIX64 ".\n", have);
 		return;
 	}
-	if ((keyinfob = findinhash(fullwant)) == NULL) {
+	if ((keyinfob = findinhash(want)) == NULL) {
 		printf("Couldn't find key 0x%016" PRIX64 ".\n", want);
 		return;
 	}
@@ -203,7 +199,7 @@ void dofindpath(struct onak_dbctx *dbctx,
 						"User id not found])%s<BR>\n",
 						curkey->keyid,
 						curkey->keyid,
-						(curkey->keyid == fullwant) ?
+						(curkey->keyid == want) ?
 							"" : " signs");
 				} else if (html && uid != NULL) {
 					printf("<a href=\"lookup?op=get&search="
@@ -217,7 +213,7 @@ void dofindpath(struct onak_dbctx *dbctx,
 						curkey->keyid,
 						curkey->keyid,
 						txt2html(uid),
-						(curkey->keyid == fullwant) ?
+						(curkey->keyid == want) ?
 						"" : " signs");
 				} else {
 					printf("0x%016" PRIX64 " (%s)%s\n",
@@ -225,7 +221,7 @@ void dofindpath(struct onak_dbctx *dbctx,
 						(uid == NULL) ?
 							"[User id not found]" :
 							uid,
-						(curkey->keyid == fullwant) ?
+						(curkey->keyid == want) ?
 						"" : " signs");
 				}
 				if (uid != NULL) {

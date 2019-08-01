@@ -643,7 +643,6 @@ static int pg_iterate_keys(struct onak_dbctx *dbctx,
 /*
  * Include the basic keydb routines.
  */
-#define NEED_GETFULLKEYID 1
 #define NEED_UPDATEKEYS 1
 #define NEED_GET_FP 1
 #include "keydb.c"
@@ -712,7 +711,6 @@ struct onak_dbctx *keydb_pg_init(struct onak_db_config *dbcfg, bool readonly)
 	dbctx->getkeysigs		= pg_getkeysigs;
 	dbctx->cached_getkeysigs	= generic_cached_getkeysigs;
 	dbctx->keyid2uid		= pg_keyid2uid;
-	dbctx->getfullkeyid		= generic_getfullkeyid;
 	dbctx->iterate_keys		= pg_iterate_keys;
 
 	return dbctx;
