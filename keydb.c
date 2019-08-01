@@ -200,17 +200,16 @@ int generic_update_keys(struct onak_dbctx *dbctx,
 	struct openpgp_publickey *curkey = NULL;
 	struct openpgp_publickey *oldkey = NULL;
 	struct openpgp_publickey *prev = NULL;
+	struct openpgp_fingerprint fp;
 	int newkeys = 0;
 	bool intrans;
-	uint64_t keyid;
 
 	for (curkey = *keys; curkey != NULL; curkey = curkey->next) {
 		intrans = dbctx->starttrans(dbctx);
-		get_keyid(curkey, &keyid);
+		get_fingerprint(curkey->publickey, &fp);
 		logthing(LOGTHING_INFO,
-			"Fetching key 0x%" PRIX64 ", result: %d",
-			keyid,
-			dbctx->fetch_key_id(dbctx, keyid, &oldkey,
+			"Fetching key, result: %d",
+			dbctx->fetch_key_fp(dbctx, &fp, &oldkey,
 					intrans));
 
 		/*

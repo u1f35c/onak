@@ -294,7 +294,11 @@ static int db4_upgradedb(struct onak_dbctx *dbctx)
  *	@keyid: The 32bit keyid.
  *
  *	This function maps a 32bit key id to the full 64bit one. It returns the
- *	full keyid. If the key isn't found a keyid of 0 is returned.
+ *	first full keyid that has this short keyid. If the key isn't found a
+ *	keyid of 0 is returned.
+ *
+ *	FIXME: This should either return the fingerprint or ideally go away
+ *	entirely.
  */
 static uint64_t db4_getfullkeyid(struct onak_dbctx *dbctx, uint64_t keyid)
 {
@@ -329,14 +333,11 @@ static uint64_t db4_getfullkeyid(struct onak_dbctx *dbctx, uint64_t keyid)
 			DB_SET);
 
 		if (ret == 0) {
-			if (data.size == 8) {
-				keyid = * (uint64_t *) data.data;
-			} else {
-				keyid = 0;
-				for (i = 12; i < 20; i++) {
-					keyid <<= 8;
-					keyid |= ((uint8_t *) data.data)[i];
-				}
+			keyid = 0;
+			/* Only works for v4, not v3 or v5 */
+			for (i = 12; i < 20; i++) {
+				keyid <<= 8;
+				keyid |= ((uint8_t *) data.data)[i];
 			}
 
 			if (data.data != NULL) {
@@ -465,87 +466,68 @@ static int db4_fetch_key_id(struct onak_dbctx *dbctx, uint64_t keyid,
 	struct onak_db4_dbctx *privctx = (struct onak_db4_dbctx *) dbctx->priv;
 	struct openpgp_packet_list *packets = NULL;
 	DBT key, data;
+	DBC *cursor = NULL;
 	int ret = 0;
 	int numkeys = 0;
-	struct buffer_ctx fetchbuf;
+	uint32_t  shortkeyid = 0;
 	struct openpgp_fingerprint fingerprint;
-
-	if (keyid < 0x100000000LL) {
-		keyid = db4_getfullkeyid(dbctx, keyid);
-	}
-
-	memset(&key, 0, sizeof(key));
-	memset(&data, 0, sizeof(data));
-
-	data.size = 0;
-	data.data = NULL;
-
-	key.size = sizeof(keyid);
-	key.data = &keyid;
+	bool first;
 
 	if (!intrans) {
 		db4_starttrans(dbctx);
 	}
 
-	/*
-	 * First we try a legacy stored key where we used the 64 bit key ID
-	 * as the DB key.
-	 */
-	ret = keydb_id(privctx, keyid)->get(keydb_id(privctx, keyid),
-			privctx->txn,
-			&key,
-			&data,
-			0); /* flags*/
+	/* If the key ID fits in 32 bits assume it's a short key id */
+	if (keyid < 0x100000000LL) {
+		ret = privctx->id32db->cursor(privctx->id32db,
+				privctx->txn,
+				&cursor,
+				0);   /* flags */
 
-	if (ret == DB_NOTFOUND) {
-		/* If we didn't find the key ID try the 64 bit map DB */
+		shortkeyid = keyid & 0xFFFFFFFF;
 		memset(&key, 0, sizeof(key));
+		memset(&data, 0, sizeof(data));
+		key.data = &shortkeyid;
+		key.size = sizeof(shortkeyid);
+	} else {
+		ret = privctx->id64db->cursor(privctx->id64db,
+				privctx->txn,
+				&cursor,
+				0); /* flags*/
+
+		memset(&key, 0, sizeof(key));
+		memset(&data, 0, sizeof(data));
+		key.data = &keyid;
+		key.size = sizeof(keyid);
+	}
+
+	if (ret != 0) {
+		return 0;
+	}
+
+	memset(&data, 0, sizeof(data));
+	data.ulen = MAX_FINGERPRINT_LEN;
+	data.data = fingerprint.fp;
+	data.flags = DB_DBT_USERMEM;
+
+	first = true;
+	while (cursor->c_get(cursor, &key, &data,
+				first ? DB_SET : DB_NEXT_DUP) == 0) {
+		/* We got a match; retrieve the actual key */
+		fingerprint.length = data.size;
+
+		if (db4_fetch_key_fp(dbctx, &fingerprint,
+					publickey, true))
+			numkeys++;
+
 		memset(&data, 0, sizeof(data));
 		data.ulen = MAX_FINGERPRINT_LEN;
 		data.data = fingerprint.fp;
 		data.flags = DB_DBT_USERMEM;
-		key.size = sizeof(keyid);
-		key.data = &keyid;
-
-		ret = privctx->id64db->get(privctx->id64db,
-			privctx->txn,
-			&key,
-			&data,
-			0); /* flags*/
-
-		if (ret == 0) {
-			/* We got a match; retrieve the actual key */
-			fingerprint.length = data.size;
-
-			memset(&key, 0, sizeof(key));
-			memset(&data, 0, sizeof(data));
-			key.size = fingerprint.length;
-			key.data = fingerprint.fp;
-
-			ret = keydb_fp(privctx, &fingerprint)->get(
-				keydb_fp(privctx, &fingerprint),
-				privctx->txn,
-				&key,
-				&data,
-				0); /* flags*/
-		}
+		first = false;
 	}
-
-	if (ret == 0) {
-		fetchbuf.buffer = data.data;
-		fetchbuf.offset = 0;
-		fetchbuf.size = data.size;
-		read_openpgp_stream(buffer_fetchchar, &fetchbuf,
-				&packets, 0);
-		parse_keys(packets, publickey);
-		free_packet_list(packets);
-		packets = NULL;
-		numkeys++;
-	} else if (ret != DB_NOTFOUND) {
-		logthing(LOGTHING_ERROR,
-				"Problem retrieving key: %s",
-				db_strerror(ret));
-	}
+	cursor->c_close(cursor);
+	cursor = NULL;
 
 	if (!intrans) {
 		db4_endtrans(dbctx);
@@ -615,18 +597,9 @@ static int db4_fetch_key_text(struct onak_dbctx *dbctx, const char *search,
 		while (ret == 0 && strncmp(key.data, curword->object,
 					key.size) == 0 &&
 				((char *) curword->object)[key.size] == 0) {
-			if (data.size == 12) {
-				/* Old style creation + key id */
-				fingerprint.length = 8;
-				for (i = 4; i < 12; i++) {
-					fingerprint.fp[i - 4] =
-						((unsigned char *)
-							data.data)[i];
-				}
-			} else {
-				fingerprint.length = data.size;
-				memcpy(fingerprint.fp, data.data, data.size);
-			}
+
+			fingerprint.length = data.size;
+			memcpy(fingerprint.fp, data.data, data.size);
 
 			/*
 			 * Only add the keys containing this word if this is
@@ -669,20 +642,9 @@ static int db4_fetch_key_text(struct onak_dbctx *dbctx, const char *search,
 
 	db4_starttrans(dbctx);
 	for (i = 0; i < keylist.count; i++) {
-		if (keylist.keys[i].length == 8) {
-			keyid = 0;
-			for (int j = 0; j < 8; j++) {
-				keyid <<= 8;
-				keyid |= keylist.keys[i].fp[j];
-			}
-			numkeys += db4_fetch_key_id(dbctx, keyid,
-				publickey,
-				true);
-		} else {
-			numkeys += db4_fetch_key_fp(dbctx, &keylist.keys[i],
-				publickey,
-				true);
-		}
+		numkeys += db4_fetch_key_fp(dbctx, &keylist.keys[i],
+			publickey,
+			true);
 	}
 	array_free(&keylist);
 	free(searchtext);
@@ -718,7 +680,9 @@ static int db4_fetch_key_skshash(struct onak_dbctx *dbctx,
 	memset(&data, 0, sizeof(data));
 	key.data = (void *) hash->hash;
 	key.size = sizeof(hash->hash);
-	data.flags = DB_DBT_MALLOC;
+	data.ulen = MAX_FINGERPRINT_LEN;
+	data.data = fingerprint.fp;
+	data.flags = DB_DBT_USERMEM;
 
 	ret = cursor->c_get(cursor,
 		&key,
@@ -726,22 +690,9 @@ static int db4_fetch_key_skshash(struct onak_dbctx *dbctx,
 		DB_SET);
 
 	if (ret == 0) {
-		if (data.size == 8) {
-			/* Legacy key ID record */
-			keyid = *(uint64_t *) data.data;
-			count = db4_fetch_key_id(dbctx, keyid, publickey,
-				false);
-		} else {
-			fingerprint.length = data.size;
-			memcpy(fingerprint.fp, data.data, data.size);
-			count = db4_fetch_key_fp(dbctx, &fingerprint,
-				publickey, false);
-		}
-
-		if (data.data != NULL) {
-			free(data.data);
-			data.data = NULL;
-		}
+		fingerprint.length = data.size;
+		count = db4_fetch_key_fp(dbctx, &fingerprint,
+			publickey, false);
 	}
 
 	cursor->c_close(cursor);
@@ -819,32 +770,9 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 			data.size = sizeof(worddb_data);
 
 			/*
-			 * Old format word db data was the key creation time
-			 * followed by the 64 bit key id.
+			 * New style uses the fingerprint as the data
+			 * Old (unsupported) style was the 64 bit keyid
 			 */
-			worddb_data[ 0] = publickey->publickey->data[1];
-			worddb_data[ 1] = publickey->publickey->data[2];
-			worddb_data[ 2] = publickey->publickey->data[3];
-			worddb_data[ 3] = publickey->publickey->data[4];
-			worddb_data[ 4] = (keyid >> 56) & 0xFF;
-			worddb_data[ 5] = (keyid >> 48) & 0xFF;
-			worddb_data[ 6] = (keyid >> 40) & 0xFF;
-			worddb_data[ 7] = (keyid >> 32) & 0xFF;
-			worddb_data[ 8] = (keyid >> 24) & 0xFF;
-			worddb_data[ 9] = (keyid >> 16) & 0xFF;
-			worddb_data[10] = (keyid >>  8) & 0xFF;
-			worddb_data[11] = keyid & 0xFF;
-
-			ret = cursor->c_get(cursor,
-				&key,
-				&data,
-				DB_GET_BOTH);
-
-			if (ret == 0) {
-				cursor->c_del(cursor, 0);
-			}
-
-			/* New style just uses the fingerprint as the data */
 			memset(&key, 0, sizeof(key));
 			memset(&data, 0, sizeof(data));
 			key.data = curword->object;
@@ -897,26 +825,9 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 			&cursor64,
 			0);   /* flags */
 
+		/* 32 bit short key mapping to fingerprint */
 		shortkeyid = keyid & 0xFFFFFFFF;
 
-		/* Old style mapping to 64 bit key id */
-		memset(&key, 0, sizeof(key));
-		memset(&data, 0, sizeof(data));
-		key.data = &shortkeyid;
-		key.size = sizeof(shortkeyid);
-		data.data = &keyid;
-		data.size = sizeof(keyid);
-
-		ret = cursor->c_get(cursor,
-			&key,
-			&data,
-			DB_GET_BOTH);
-
-		if (ret == 0) {
-			cursor->c_del(cursor, 0);
-		}
-
-		/* New style mapping to fingerprint */
 		memset(&key, 0, sizeof(key));
 		memset(&data, 0, sizeof(data));
 		key.data = &shortkeyid;
@@ -994,23 +905,6 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 
 			shortkeyid = subkeyid & 0xFFFFFFFF;
 
-			/* Remove 32 bit keyid -> 64 bit keyid mapping */
-			memset(&key, 0, sizeof(key));
-			memset(&data, 0, sizeof(data));
-			key.data = &shortkeyid;
-			key.size = sizeof(shortkeyid);
-			data.data = &keyid;
-			data.size = sizeof(keyid);
-
-			ret = cursor->c_get(cursor,
-				&key,
-				&data,
-				DB_GET_BOTH);
-
-			if (ret == 0) {
-				cursor->c_del(cursor, 0);
-			}
-
 			/* Remove 32 bit keyid -> fingerprint mapping */
 			memset(&key, 0, sizeof(key));
 			memset(&data, 0, sizeof(data));
@@ -1086,24 +980,7 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 		if (ret == 0) {
 			get_skshash(publickey, &hash);
 
-			/* First delete old style keyid mapping */
-			memset(&key, 0, sizeof(key));
-			memset(&data, 0, sizeof(data));
-			key.data = hash.hash;
-			key.size = sizeof(hash.hash);
-			data.data = &keyid;
-			data.size = sizeof(keyid);
-
-			ret = cursor->c_get(cursor,
-				&key,
-				&data,
-				DB_GET_BOTH);
-
-			if (ret == 0) {
-				cursor->c_del(cursor, 0);
-			}
-
-			/* Then delete new style fingerprint mapping */
+			/* Remove SKS hash -> fingerprint mapping */
 			memset(&key, 0, sizeof(key));
 			memset(&data, 0, sizeof(data));
 			key.data = hash.hash;
@@ -1243,8 +1120,8 @@ static int db4_store_key(struct onak_dbctx *dbctx,
 		write_openpgp_stream(buffer_putchar, &storebuf, packets);
 
 		/*
-		 * Now we have the key data store it in the DB; the keyid is
-		 * the key.
+		 * Now we have the key data store it in the DB; the fingerprint
+		 * is the key.
 		 */
 		memset(&key, 0, sizeof(key));
 		memset(&data, 0, sizeof(data));
@@ -1278,7 +1155,8 @@ static int db4_store_key(struct onak_dbctx *dbctx,
 	}
 
 	/*
-	 * Walk through our uids storing the words into the db with the keyid.
+	 * Walk through our uids storing the words into the db with the
+	 * fingerprint.
 	 */
 	if (!deadlock) {
 		uids = keyuids(publickey, &primary);
