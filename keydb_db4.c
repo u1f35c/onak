@@ -472,12 +472,6 @@ static int db4_fetch_key_id(struct onak_dbctx *dbctx, uint64_t keyid,
 	return (numkeys);
 }
 
-
-int worddb_cmp(const void *d1, const void *d2)
-{
-	return memcmp(d1, d2, 12);
-}
-
 /**
  *	fetch_key_text - Trys to find the keys that contain the supplied text.
  *	@search: The text to search for.
