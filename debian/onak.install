@@ -1,2 +1,2 @@
 obj-*/onak.ini                                       etc
-obj-*/add obj-*/lookup obj-*/gpgwww obj-*/hashquery  usr/lib/cgi-bin/pks
+obj-*/cgi/add obj-*/cgi/lookup obj-*/cgi/gpgwww obj-*/cgi/hashquery  usr/lib/cgi-bin/pks

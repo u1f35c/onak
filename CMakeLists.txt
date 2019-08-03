@@ -130,21 +130,30 @@ target_compile_definitions(libonak PRIVATE
 target_sources(libonak PRIVATE keydb_${DBTYPE}.c)
 target_link_libraries(libonak ${LIBONAK_LIBRARIES})
 
+# Build files that have substitutions in them
+include_directories(${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR})
+configure_file("${CMAKE_SOURCE_DIR}/build-config.h.in"
+	"${CMAKE_BINARY_DIR}/build-config.h" @ONLY)
+
+configure_file("${CMAKE_SOURCE_DIR}/onak.ini.in"
+	"${CMAKE_BINARY_DIR}/onak.ini" @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/onak.ini
+	DESTINATION ${CMAKE_INSTALL_SYSCONFDIR})
+
+configure_file("${CMAKE_SOURCE_DIR}/onak-mail.pl.in"
+	"${CMAKE_BINARY_DIR}/onak-mail.pl" @ONLY)
+install(PROGRAMS ${CMAKE_BINARY_DIR}/onak-mail.pl
+	DESTINATION ${CMAKE_INSTALL_LIBDIR}/onak/)
+install(FILES onak-mail.pl.8 DESTINATION ${CMAKE_INSTALL_MANDIR}/man8/)
+
+# CGI directory
+add_subdirectory(cgi)
+
 # Executables start here
 
 # Swiss Army tool
 add_executable(onak onak.c)
 target_link_libraries(onak libonak)
-
-# CGI
-add_executable(add add.c)
-target_link_libraries(add libonak)
-add_executable(gpgwww gpgwww.c stats.c)
-target_link_libraries(gpgwww libonak)
-add_executable(hashquery hashquery.c)
-target_link_libraries(hashquery libonak)
-add_executable(lookup lookup.c)
-target_link_libraries(lookup libonak)
 
 # Tools that operate on the key DB
 add_executable(maxpath maxpath.c stats.c)
@@ -162,22 +171,6 @@ target_link_libraries(stripkey libonak)
 
 install(TARGETS onak splitkeys RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES onak.1 splitkeys.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1/)
-
-# Build files that have substitutions in them
-include_directories(${CMAKE_BINARY_DIR})
-configure_file("${CMAKE_SOURCE_DIR}/build-config.h.in"
-	"${CMAKE_BINARY_DIR}/build-config.h" @ONLY)
-
-configure_file("${CMAKE_SOURCE_DIR}/onak.ini.in"
-	"${CMAKE_BINARY_DIR}/onak.ini" @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/onak.ini
-	DESTINATION ${CMAKE_INSTALL_SYSCONFDIR})
-
-configure_file("${CMAKE_SOURCE_DIR}/onak-mail.pl.in"
-	"${CMAKE_BINARY_DIR}/onak-mail.pl" @ONLY)
-install(PROGRAMS ${CMAKE_BINARY_DIR}/onak-mail.pl
-	DESTINATION ${CMAKE_INSTALL_LIBDIR}/onak/)
-install(FILES onak-mail.pl.8 DESTINATION ${CMAKE_INSTALL_MANDIR}/man8/)
 
 # Basic unit tests
 enable_testing()
