@@ -58,7 +58,7 @@ struct onak_config config = {
 	.dbinit = NULL,
 #endif
 
-	.clean_policies = ONAK_CLEAN_CHECK_SIGHASH,
+	.clean_policies = ONAK_CLEAN_DROP_V3_KEYS | ONAK_CLEAN_CHECK_SIGHASH,
 
 	.bin_dir = NULL,
 	.mail_dir = NULL,
@@ -284,6 +284,15 @@ static bool parseconfigline(char *line)
 			config.syncsites = lladd(config.syncsites,
 				strdup(value));
 		/* [verification] section */
+		} else if (MATCH("verification", "drop_v3")) {
+			if (parsebool(value, config.clean_policies &
+					ONAK_CLEAN_DROP_V3_KEYS)) {
+				config.clean_policies |=
+					ONAK_CLEAN_DROP_V3_KEYS;
+			} else {
+				config.clean_policies &=
+					~ONAK_CLEAN_DROP_V3_KEYS;
+			}
 		} else if (MATCH("verification", "check_sighash")) {
 			if (parsebool(value, config.clean_policies &
 					ONAK_CLEAN_CHECK_SIGHASH)) {

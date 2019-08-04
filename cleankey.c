@@ -239,26 +239,37 @@ int clean_large_packets(struct openpgp_publickey *key)
  */
 int cleankeys(struct openpgp_publickey **keys, uint64_t policies)
 {
-	struct openpgp_publickey *curkey;
+	struct openpgp_publickey **curkey, *tmp;
 	int changed = 0, count = 0;
 
 	if (keys == NULL)
 		return 0;
 
-	curkey = *keys;
-	while (curkey != NULL) {
-		if (policies & ONAK_CLEAN_LARGE_PACKETS) {
-			count += clean_large_packets(curkey);
+	curkey = keys;
+	while (*curkey != NULL) {
+		if (policies & ONAK_CLEAN_DROP_V3_KEYS) {
+			if ((*curkey)->publickey->data[0] < 4) {
+				/* Remove the key from the list */
+				tmp = *curkey;
+				*curkey = tmp->next;
+				tmp->next = NULL;
+				free_publickey(tmp);
+				changed++;
+				continue;
+			}
 		}
-		count += dedupuids(curkey);
-		count += dedupsubkeys(curkey);
+		if (policies & ONAK_CLEAN_LARGE_PACKETS) {
+			count += clean_large_packets(*curkey);
+		}
+		count += dedupuids(*curkey);
+		count += dedupsubkeys(*curkey);
 		if (policies & ONAK_CLEAN_CHECK_SIGHASH) {
-			count += clean_key_sighashes(curkey);
+			count += clean_key_sighashes(*curkey);
 		}
 		if (count > 0) {
 			changed++;
 		}
-		curkey = curkey->next;
+		curkey = &(*curkey)->next;
 	}
 
 	return changed;

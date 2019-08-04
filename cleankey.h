@@ -23,6 +23,7 @@
 
 #define ONAK_CLEAN_CHECK_SIGHASH	(1 << 0)
 #define ONAK_CLEAN_LARGE_PACKETS	(1 << 1)
+#define ONAK_CLEAN_DROP_V3_KEYS		(1 << 2)
 #define ONAK_CLEAN_ALL			(uint64_t) -1
 
 /**

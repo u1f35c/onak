@@ -19,6 +19,9 @@ max_reply_keys=128
 ; Verify signature hashes - verify that the hash a signature claims to be
 ; over matches the hash of the data. Does not actually verify the signature.
 check_sighash=true
+; Drop v3 (and older) keys. These are long considered insecure, so unless there
+; is a good reason you should accept this default.
+drop_v3=true
 
 ; Settings related to the email interface to onak.
 [mail]
