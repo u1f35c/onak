@@ -36,12 +36,13 @@
 #endif
 #include "sha1x.h"
 
-int check_packet_sighash(struct openpgp_publickey *key,
+onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 			struct openpgp_packet *packet,
-			struct openpgp_packet *sig)
+			struct openpgp_packet *sig,
+			uint8_t *hashtype,
+			uint8_t *hash,
+			uint8_t **sighash)
 {
-	uint8_t hashtype;
-	uint8_t *sighash;
 	size_t siglen, unhashedlen;
 	struct sha1_ctx sha1_context;
 	struct sha1x_ctx sha1x_context;
@@ -56,7 +57,6 @@ int check_packet_sighash(struct openpgp_publickey *key,
 	uint8_t keyheader[5];
 	uint8_t packetheader[5];
 	uint8_t trailer[10];
-	uint8_t hash[64];
 	uint8_t *hashdata[8];
 	size_t hashlen[8];
 	int chunks, i;
@@ -75,7 +75,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		hashlen[1] = key->publickey->length;
 		chunks = 2;
 
-		hashtype = sig->data[16];
+		*hashtype = sig->data[16];
 
 		if (packet != NULL) {
 			if (packet->tag == OPENPGP_PACKET_PUBLICSUBKEY) {
@@ -96,7 +96,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		hashdata[chunks] = &sig->data[2];
 		hashlen[chunks] = 5;
 		chunks++;
-		sighash = &sig->data[17];
+		*sighash = &sig->data[17];
 		break;
 	case 4:
 		keyheader[0] = 0x99;
@@ -108,7 +108,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		hashlen[1] = key->publickey->length;
 		chunks = 2;
 
-		hashtype = sig->data[3];
+		*hashtype = sig->data[3];
 
 		/* Check to see if this is an X509 based signature */
 		if (sig->data[2] == 0 || sig->data[2] == 100) {
@@ -119,8 +119,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 						sig->length - 4, &len,
 						&keyid, NULL);
 			if (res != ONAK_E_OK) {
-				/* If it parses badly, reject it */
-				return 0;
+				return res;
 			}
 			if (keyid == 0 &&
 					/* No unhashed data */
@@ -133,12 +132,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 					sig->data[8 + len] == 0 &&
 					sig->data[9 + len] == 1 &&
 					sig->data[10 + len] == 1) {
-				get_keyid(key, &keyid);
-				logthing(LOGTHING_DEBUG,
-					"Skipping X509 signature on 0x%016"
-					PRIX64,
-					keyid);
-				return -1;
+				return ONAK_E_UNSUPPORTED_FEATURE;
 			}
 		}
 
@@ -172,7 +166,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 			sig->data[5] + 6;;
 		if (siglen > sig->length) {
 			/* Signature data exceed packet length, bogus */
-			return 0;
+			return ONAK_E_INVALID_PKT;
 		}
 		chunks++;
 
@@ -188,7 +182,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 
 		unhashedlen = (sig->data[siglen] << 8) +
 			sig->data[siglen + 1];
-		sighash = &sig->data[siglen + unhashedlen + 2];
+		*sighash = &sig->data[siglen + unhashedlen + 2];
 		break;
 	case 5:
 		keyheader[0] = 0x9A;
@@ -202,7 +196,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		hashlen[1] = key->publickey->length;
 		chunks = 2;
 
-		hashtype = sig->data[3];
+		*hashtype = sig->data[3];
 
 		if (packet != NULL) {
 			if (packet->tag == OPENPGP_PACKET_PUBLICSUBKEY) {
@@ -236,7 +230,7 @@ int check_packet_sighash(struct openpgp_publickey *key,
 			sig->data[5] + 6;;
 		if (siglen > sig->length) {
 			/* Signature data exceed packet length, bogus */
-			return 0;
+			return ONAK_E_INVALID_PKT;
 		}
 		chunks++;
 
@@ -256,17 +250,13 @@ int check_packet_sighash(struct openpgp_publickey *key,
 
 		unhashedlen = (sig->data[siglen] << 8) +
 			sig->data[siglen + 1];
-		sighash = &sig->data[siglen + unhashedlen + 2];
+		*sighash = &sig->data[siglen + unhashedlen + 2];
 		break;
 	default:
-		get_keyid(key, &keyid);
-		logthing(LOGTHING_ERROR,
-			"Unknown signature version %d on 0x%016" PRIX64,
-			sig->data[0], keyid);
-		return -1;
+		return ONAK_E_UNSUPPORTED_FEATURE;
 	}
 
-	switch (hashtype) {
+	switch (*hashtype) {
 	case OPENPGP_HASH_MD5:
 		md5_init(&md5_context);
 		for (i = 0; i < chunks; i++) {
@@ -332,18 +322,8 @@ int check_packet_sighash(struct openpgp_publickey *key,
 		break;
 #endif
 	default:
-		get_keyid(key, &keyid);
-		logthing(LOGTHING_ERROR,
-			"Unsupported signature hash type %d on 0x%016" PRIX64,
-			hashtype,
-			keyid);
-		return -1;
+		return ONAK_E_UNSUPPORTED_FEATURE;
 	}
 
-	logthing(LOGTHING_DEBUG, "Hash type: %d, %d chunks, "
-		"calculated: %02X%02X / actual: %02X%02X",
-		hashtype, chunks,
-		hash[0], hash[1], sighash[0], sighash[1]);
-
-	return (hash[0] == sighash[0] && hash[1] == sighash[1]);
+	return ONAK_E_OK;
 }

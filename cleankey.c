@@ -137,10 +137,28 @@ int clean_sighashes(struct openpgp_publickey *key,
 		struct openpgp_packet_list **sigs)
 {
 	struct openpgp_packet_list *tmpsig;
+	onak_status_t ret;
+	uint8_t hashtype;
+	uint8_t hash[64];
+	uint8_t *sighash;
 	int removed = 0;
+	uint64_t keyid;
 
 	while (*sigs != NULL) {
-		if (check_packet_sighash(key, sigdata, (*sigs)->packet) == 0) {
+		ret = calculate_packet_sighash(key, sigdata, (*sigs)->packet,
+				&hashtype, hash, &sighash);
+
+		if (ret == ONAK_E_UNSUPPORTED_FEATURE) {
+			get_keyid(key, &keyid);
+			logthing(LOGTHING_ERROR,
+				"Unsupported signature hash type %d on 0x%016"
+				PRIX64,
+				hashtype,
+				keyid);
+			sigs = &(*sigs)->next;
+		} else if (ret != ONAK_E_OK ||
+				!(hash[0] == sighash[0] &&
+					hash[1] == sighash[1])) {
 			tmpsig = *sigs;
 			*sigs = (*sigs)->next;
 			tmpsig->next = NULL;
