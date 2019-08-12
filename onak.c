@@ -389,11 +389,11 @@ int main(int argc, char *argv[])
 		} else if (!strcmp("delete", argv[optind])) {
 			if (!isfp) {
 				if (dbctx->fetch_key_id(dbctx, keyid, &keys,
-							true)) {
+							false)) {
 					get_fingerprint(keys->publickey,
 							&fingerprint);
 					dbctx->delete_key(dbctx, &fingerprint,
-							true);
+							false);
 				}
 			} else
 				dbctx->delete_key(dbctx, &fingerprint, false);
