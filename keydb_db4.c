@@ -655,7 +655,6 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 	int i;
 	char **uids = NULL;
 	char *primary = NULL;
-	unsigned char worddb_data[12];
 	struct ll *wordlist = NULL;
 	struct ll *curword  = NULL;
 	bool deadlock = false;
@@ -695,13 +694,6 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 
 		for (curword = wordlist; curword != NULL && !deadlock;
 				curword = curword->next) {
-			memset(&key, 0, sizeof(key));
-			memset(&data, 0, sizeof(data));
-			key.data = curword->object;
-			key.size = strlen(key.data);
-			data.data = worddb_data;
-			data.size = sizeof(worddb_data);
-
 			/*
 			 * New style uses the fingerprint as the data
 			 * Old (unsupported) style was the 64 bit keyid
@@ -823,7 +815,7 @@ static int db4_delete_key(struct onak_dbctx *dbctx,
 			memset(&key, 0, sizeof(key));
 			key.data = subkeyids[i].fp;
 			key.size = subkeyids[i].length;
-			privctx->subkeydb->del(privctx->subkeydb,
+			ret = privctx->subkeydb->del(privctx->subkeydb,
 					privctx->txn, &key, 0);
 			if (ret != 0 && ret != DB_NOTFOUND) {
 				logthing(LOGTHING_ERROR,
