@@ -636,6 +636,10 @@ static void fs_cleanupdb(struct onak_dbctx *dbctx)
 
 	/* Mmmm nothing to do here? */
 	close(privctx->lockfile_fd);
+
+	free(privctx);
+	dbctx->priv = NULL;
+	free(dbctx);
 }
 
 /**
