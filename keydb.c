@@ -170,16 +170,18 @@ struct ll *generic_cached_getkeysigs(struct onak_dbctx *dbctx, uint64_t keyid)
 int generic_update_keys(struct onak_dbctx *dbctx,
 		struct openpgp_publickey **keys, bool sendsync)
 {
-	struct openpgp_publickey *curkey = NULL;
+	struct openpgp_publickey **curkey, *tmp = NULL;
 	struct openpgp_publickey *oldkey = NULL;
-	struct openpgp_publickey *prev = NULL;
 	struct openpgp_fingerprint fp;
 	int newkeys = 0;
 	bool intrans;
 
-	for (curkey = *keys; curkey != NULL; curkey = curkey->next) {
+	curkey = keys;
+	while (*curkey != NULL) {
+		get_fingerprint((*curkey)->publickey, &fp);
+
 		intrans = dbctx->starttrans(dbctx);
-		get_fingerprint(curkey->publickey, &fp);
+
 		logthing(LOGTHING_INFO,
 			"Fetching key, result: %d",
 			dbctx->fetch_key_fp(dbctx, &fp, &oldkey,
@@ -192,37 +194,34 @@ int generic_update_keys(struct onak_dbctx *dbctx,
 		 * one that we send out.
 		 */
 		if (oldkey != NULL) {
-			merge_keys(oldkey, curkey);
-			if (curkey->sigs == NULL &&
-					curkey->uids == NULL &&
-					curkey->subkeys == NULL) {
-				if (prev == NULL) {
-					*keys = curkey->next;
-				} else {
-					prev->next = curkey->next;
-					curkey->next = NULL;
-					free_publickey(curkey);
-					curkey = prev;
-				}
+			merge_keys(oldkey, *curkey);
+			if ((*curkey)->sigs == NULL &&
+					(*curkey)->uids == NULL &&
+					(*curkey)->subkeys == NULL) {
+				tmp = *curkey;
+				*curkey = (*curkey)->next;
+				tmp->next = NULL;
+				free_publickey(tmp);
 			} else {
-				prev = curkey;
 				logthing(LOGTHING_INFO,
 					"Merged key; storing updated key.");
 				dbctx->store_key(dbctx, oldkey, intrans,
 					true);
+				curkey = &(*curkey)->next;
 			}
 			free_publickey(oldkey);
 			oldkey = NULL;
 		} else {
 			logthing(LOGTHING_INFO,
 				"Storing completely new key.");
-			dbctx->store_key(dbctx, curkey, intrans, false);
+			dbctx->store_key(dbctx, *curkey, intrans, false);
 			newkeys++;
+			curkey = &(*curkey)->next;
 		}
 		dbctx->endtrans(dbctx);
 	}
 
-	if (sendsync && keys != NULL) {
+	if (sendsync && keys != NULL && *keys != NULL) {
 		sendkeysync(*keys);
 	}
 

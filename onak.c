@@ -394,6 +394,8 @@ int main(int argc, char *argv[])
 							&fingerprint);
 					dbctx->delete_key(dbctx, &fingerprint,
 							false);
+					free_publickey(keys);
+					keys = NULL;
 				}
 			} else
 				dbctx->delete_key(dbctx, &fingerprint, false);
