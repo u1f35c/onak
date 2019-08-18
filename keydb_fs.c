@@ -435,6 +435,8 @@ static int fs_delete_key(struct onak_dbctx *dbctx,
 
 			wl = wl->next;
 		}
+		llfree(wordlist, free);
+		wordlist = NULL;
 
 		subkeyids = keysubkeys(pk);
 		i = 0;
@@ -462,6 +464,8 @@ static int fs_delete_key(struct onak_dbctx *dbctx,
 
 	keypath(buffer, sizeof(buffer), keyid, dbctx->config->location);
 	unlink(buffer);
+
+	free_publickey(pk);
 
 	if (!intrans)
 		fs_endtrans(dbctx);
