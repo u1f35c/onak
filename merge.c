@@ -163,17 +163,15 @@ struct openpgp_signedpacket_list *find_signed_packet(
  *	removes it if found. Assumes the packet can only exist a maximum of
  *	once in the list.
  */
-bool remove_signed_packet(struct openpgp_signedpacket_list **packet_list,
+static void remove_signed_packet(struct openpgp_signedpacket_list **packet_list,
 		struct openpgp_signedpacket_list **list_end,
 		struct openpgp_packet *packet)
 {
 	struct openpgp_signedpacket_list *cur = NULL;
 	struct openpgp_signedpacket_list *prev = NULL;
-	bool found = false;
 
-	for (cur = *packet_list; !found && (cur != NULL); cur = cur->next) {
+	for (cur = *packet_list; cur != NULL; cur = cur->next) {
 		if (compare_packets(cur->packet, packet) == 0) {
-			found = true;
 			if (prev == NULL) {
 				*packet_list = cur->next;
 			} else {
@@ -182,14 +180,14 @@ bool remove_signed_packet(struct openpgp_signedpacket_list **packet_list,
 			if (cur->next == NULL) {
 				*list_end = prev;
 			}
-			/*
-			 * TODO: Free the removed signed packet...
-			 */
+			cur->next = NULL;
+			free_signedpacket_list(cur);
+			break;
 		}
 		prev = cur;
 	}
 
-	return found;
+	return;
 }
 
 /**
