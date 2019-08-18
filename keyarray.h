@@ -65,6 +65,18 @@ void array_free(struct keyarray *array);
 bool array_add(struct keyarray *array, struct openpgp_fingerprint *fp);
 
 /**
+ * @brief Load a file into a keyarray
+ * @param array Pointer to the key array
+ * @param file The full path to the file to load
+ *
+ * Loads fingerprints from the supplied file into the provided keyarray. Does
+ * not re-initialise the array so can be called repeatedly to add multiple
+ * files. The file does not need to be sorted; array_add() is called for each
+ * key to ensure the array is suitable for binary searching with array_find()
+ */
+bool array_load(struct keyarray *array, const char *file);
+
+/**
  * @brief Compare two OpenPGP fingerprints
  * @param a Fingerprint 1
  * @param b Fingerprint 2

@@ -284,6 +284,8 @@ static bool parseconfigline(char *line)
 			config.syncsites = lladd(config.syncsites,
 				strdup(value));
 		/* [verification] section */
+		} else if (MATCH("verification", "blacklist")) {
+			array_load(&config.blacklist, value);
 		} else if (MATCH("verification", "drop_v3")) {
 			if (parsebool(value, config.clean_policies &
 					ONAK_CLEAN_DROP_V3_KEYS)) {
@@ -601,5 +603,8 @@ void cleanupconfig(void) {
 	if (config.mail_dir != NULL) {
 		free(config.mail_dir);
 		config.mail_dir = NULL;
+	}
+	if (config.blacklist.count != 0) {
+		array_free(&config.blacklist);
 	}
 }

@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "keyarray.h"
 #include "ll.h"
 
 /**
@@ -88,6 +89,9 @@ struct onak_config {
 
 	/** Pointer to the initialisation function for our loaded DB backend */
 	struct onak_dbctx *(*dbinit)(struct onak_db_config *, bool);
+
+	/** Blacklist of fingerprints to reject */
+	struct keyarray blacklist;
 
 	/** What policies should we use for cleaning keys? */
 	uint64_t clean_policies;

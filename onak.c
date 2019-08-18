@@ -241,7 +241,8 @@ int main(int argc, char *argv[])
 			dbctx = config.dbinit(config.backend, false);
 			logthing(LOGTHING_NOTICE, "Got %d new keys.",
 					dbctx->update_keys(dbctx, &keys,
-					false));
+						&config.blacklist,
+						false));
 			if (keys != NULL && update) {
 				flatten_publickey(keys,
 					&packets,

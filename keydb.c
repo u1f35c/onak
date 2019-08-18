@@ -168,7 +168,9 @@ struct ll *generic_cached_getkeysigs(struct onak_dbctx *dbctx, uint64_t keyid)
  *	the DB). Returns the number of entirely new keys added.
  */
 int generic_update_keys(struct onak_dbctx *dbctx,
-		struct openpgp_publickey **keys, bool sendsync)
+		struct openpgp_publickey **keys,
+		struct keyarray *blacklist,
+		bool sendsync)
 {
 	struct openpgp_publickey **curkey, *tmp = NULL;
 	struct openpgp_publickey *oldkey = NULL;
@@ -179,6 +181,14 @@ int generic_update_keys(struct onak_dbctx *dbctx,
 	curkey = keys;
 	while (*curkey != NULL) {
 		get_fingerprint((*curkey)->publickey, &fp);
+		if (blacklist && array_find(blacklist, &fp)) {
+			logthing(LOGTHING_INFO, "Ignoring blacklisted key.");
+			tmp = *curkey;
+			*curkey = (*curkey)->next;
+			tmp->next = NULL;
+			free_publickey(tmp);
+			continue;
+		}
 
 		intrans = dbctx->starttrans(dbctx);
 

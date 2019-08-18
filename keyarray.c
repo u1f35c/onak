@@ -16,6 +16,8 @@
  * this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <ctype.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -127,4 +129,71 @@ void array_free(struct keyarray *array)
 	array->count = array->size = 0;
 
 	return;
+}
+
+static uint8_t hex2bin(char c)
+{
+	if (c >= '0' && c <= '9') {
+		return (c - '0');
+	} else if (c >= 'a' && c <= 'f') {
+		return (c - 'a' + 10);
+	} else if (c >= 'A' && c <= 'F') {
+		return (c - 'A' + 10);
+	}
+
+	return 255;
+}
+
+bool array_load(struct keyarray *array, const char *file)
+{
+	struct openpgp_fingerprint fp;
+	char curline[1024];
+	FILE *fpfile;
+	int i;
+
+	fpfile = fopen(file, "r");
+
+	if (fpfile != NULL) {
+		if (!fgets(curline, sizeof(curline) - 1, fpfile)) {
+			fclose(fpfile);
+			return false;
+		}
+
+		while (!feof(fpfile)) {
+			/* Strip any trailing white space */
+			for (i = strlen(curline) - 1;
+					i >= 0 && isspace(curline[i]); i--) {
+				curline[i] = 0;
+			}
+			i++;
+			//if ((i % 2) != 0) {
+			//	break;
+			//}
+			i >>= 1;
+			if (curline[0] == '#') {
+				// Comment line, ignore
+			} else if (i == FINGERPRINT_V3_LEN ||
+					i == FINGERPRINT_V4_LEN ||
+					i == FINGERPRINT_V5_LEN) {
+				fp.length = i;
+				for (i = 0; i < fp.length; i++) {
+					fp.fp[i] = hex2bin(curline[i * 2]);
+					fp.fp[i] <<= 4;
+					fp.fp[i] |=
+						hex2bin(curline[i * 2 + 1]);
+				}
+				array_add(array, &fp);
+			} else {
+				printf("Bad line.\n");
+			}
+
+			if (!fgets(curline, sizeof(curline) - 1, fpfile)) {
+				break;
+			}
+		}
+
+		fclose(fpfile);
+	}
+
+	return (array->count != 0);
 }

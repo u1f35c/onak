@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <inttypes.h>
 
+#include "keyarray.h"
 #include "keystructs.h"
 #include "ll.h"
 
@@ -139,6 +140,7 @@ struct onak_dbctx {
 /**
  * @brief Takes a list of public keys and updates them in the DB.
  * @param keys The keys to update in the DB.
+ * @param blacklist A keyarray of fingerprints that shouldn't be added.
  * @param sendsync If we should send a keysync mail.
  *
  * Takes a list of keys and adds them to the database, merging them with
@@ -151,7 +153,9 @@ struct onak_dbctx {
  * with the update.
  */
 	int (*update_keys)(struct onak_dbctx *,
-			struct openpgp_publickey **keys, bool sendsync);
+			struct openpgp_publickey **keys,
+			struct keyarray *blacklist,
+			bool sendsync);
 
 /**
  * @brief Takes a keyid and returns the primary UID for it.

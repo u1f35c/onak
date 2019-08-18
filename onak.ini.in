@@ -16,6 +16,9 @@ max_reply_keys=128
 
 ; Settings related to key verification options available.
 [verification]
+; Blacklist certain fingerprints (e.g. EVIL32). One fingerprint per line,
+; comment lines start with #
+;blacklist=blacklist.txt
 ; Verify signature hashes - verify that the hash a signature claims to be
 ; over matches the hash of the data. Does not actually verify the signature.
 check_sighash=true

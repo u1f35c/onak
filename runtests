@@ -37,6 +37,7 @@ for t in libkeydb_*.so; do
 		sed -e "s;BUILDDIR;${BUILDDIR};" -e "s;WORKDIR;${WORKDIR};" \
 			-e "s;DB;${backend};" \
 			${TESTSDIR}/test-in.ini > ${WORKDIR}/test.ini
+		touch ${WORKDIR}/blacklist
 		for t in ${TESTSDIR}/$backend-*.t ${TESTSDIR}/all-*.t; do
 			total=`expr $total + 1`
 			mkdir ${WORKDIR}/db/

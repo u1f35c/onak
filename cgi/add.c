@@ -92,7 +92,8 @@ int main(int argc, char *argv[])
 			logthing(LOGTHING_INFO, "%d keys cleaned.",
 					count);
 
-			count = dbctx->update_keys(dbctx, &keys, true);
+			count = dbctx->update_keys(dbctx, &keys,
+					&config.blacklist, true);
 			logthing(LOGTHING_NOTICE, "Got %d new keys.",
 				count);
 

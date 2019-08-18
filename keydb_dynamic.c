@@ -120,13 +120,15 @@ static int dynamic_delete_key(struct onak_dbctx *dbctx,
 }
 
 static int dynamic_update_keys(struct onak_dbctx *dbctx,
-		struct openpgp_publickey **keys, bool sendsync)
+		struct openpgp_publickey **keys,
+		struct keyarray *blacklist,
+		bool sendsync)
 {
 	struct onak_dynamic_dbctx *privctx =
 			(struct onak_dynamic_dbctx *) dbctx->priv;
 
 	return privctx->loadeddbctx->update_keys(privctx->loadeddbctx,
-			keys, sendsync);
+			keys, blacklist, sendsync);
 }
 
 static struct ll *dynamic_getkeysigs(struct onak_dbctx *dbctx,
