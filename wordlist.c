@@ -106,6 +106,7 @@ struct ll *makewordlistfromkey(struct ll *wordlist,
 				wordlist = lladd(wordlist, strdup(wl->object));
 			}
 		}
+		llfree(words, NULL);
 		free(uids[i]);
 		uids[i] = NULL;
 	}
