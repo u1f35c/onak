@@ -391,6 +391,12 @@ void readconfig(const char *configfile) {
 		conffile = fopen(configfile, "r");
 	}
 
+	if (oldstyle) {
+		logthing(LOGTHING_CRITICAL, "Reading deprecated old-style "
+				"configuration file. This will not be "
+				"supported in the next release.");
+	}
+
 	if (conffile != NULL) {
 		if (!fgets(curline, 1023, conffile)) {
 			logthing(LOGTHING_CRITICAL,

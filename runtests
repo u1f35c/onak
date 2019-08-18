@@ -33,24 +33,7 @@ for t in libkeydb_*.so; do
 	backend=${t##libkeydb_}
 	backend=${backend%%.so}
 	if [ "`echo ${TESTSDIR}/$backend-*`" != "${TESTSDIR}/$backend-*" ]; then
-		echo "* testing $backend backend [conf]"
-		(sed -e "s;BUILDDIR;${BUILDDIR};" -e "s;WORKDIR;${WORKDIR};" \
-			${TESTSDIR}/test-in.conf ; \
-			echo db_backend $backend) > ${WORKDIR}/test.conf
-		for t in ${TESTSDIR}/$backend-*.t ${TESTSDIR}/all-*.t; do
-			total=`expr $total + 1`
-			mkdir ${WORKDIR}/db/
-			if ! $t ${WORKDIR}/test.conf $backend; then
-				echo "test $t failed" >&2
-				fail=`expr $fail + 1`
-			fi
-			rm -rf ${WORKDIR}/db/
-		done
-		rm ${WORKDIR}/test.conf
-	fi
-
-	if [ "`echo ${TESTSDIR}/$backend-*`" != "${TESTSDIR}/$backend-*" ]; then
-		echo "* testing $backend backend [ini]"
+		echo "* testing $backend backend"
 		sed -e "s;BUILDDIR;${BUILDDIR};" -e "s;WORKDIR;${WORKDIR};" \
 			-e "s;DB;${backend};" \
 			${TESTSDIR}/test-in.ini > ${WORKDIR}/test.ini
