@@ -72,10 +72,13 @@ DB *keydb_fp(struct onak_db4_dbctx *privctx, struct openpgp_fingerprint *fp)
 {
 	uint64_t keytrun;
 
-	keytrun = (fp->fp[4] << 24) |
-			(fp->fp[5] << 16) |
-			(fp->fp[6] <<  8) |
-			(fp->fp[7]);
+	keytrun = fp->fp[4];
+	keytrun <<= 8;
+	keytrun |= fp->fp[5];
+	keytrun <<= 8;
+	keytrun |= fp->fp[6];
+	keytrun <<= 8;
+	keytrun |= fp->fp[7];
 
 	return(privctx->dbconns[keytrun % privctx->numdbs]);
 }

@@ -379,8 +379,13 @@ static int fs_store_key(struct onak_dbctx *dbctx,
 		}
 
 		get_skshash(publickey, &hash);
-		hashid = (hash.hash[0] << 24) + (hash.hash[1] << 16) +
-				(hash.hash[2] << 8) + hash.hash[3];
+		hashid = hash.hash[0];
+		hashid <<= 8;
+		hashid |= hash.hash[1];
+		hashid <<= 8;
+		hashid |= hash.hash[2];
+		hashid <<= 8;
+		hashid |= hash.hash[3];
 		prove_path_to(hashid, "skshash", dbctx->config->location);
 		skshashpath(wbuffer, sizeof(wbuffer), &hash,
 			dbctx->config->location);
