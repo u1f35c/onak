@@ -403,7 +403,6 @@ static int db4_fetch_key_id(struct onak_dbctx *dbctx, uint64_t keyid,
 		bool intrans)
 {
 	struct onak_db4_dbctx *privctx = (struct onak_db4_dbctx *) dbctx->priv;
-	struct openpgp_packet_list *packets = NULL;
 	DBT key, data;
 	DBC *cursor = NULL;
 	int ret = 0;
@@ -490,7 +489,6 @@ static int db4_fetch_key_text(struct onak_dbctx *dbctx, const char *search,
 	DBC *cursor = NULL;
 	DBT key, data;
 	int ret;
-	uint64_t keyid;
 	int i;
 	int numkeys;
 	char *searchtext = NULL;
@@ -595,7 +593,6 @@ static int db4_fetch_key_skshash(struct onak_dbctx *dbctx,
 	struct onak_db4_dbctx *privctx = (struct onak_db4_dbctx *) dbctx->priv;
 	DBT       key, data;
 	DBC      *cursor = NULL;
-	uint64_t  keyid = 0;
 	int       ret;
 	int       count = 0;
 	struct openpgp_fingerprint fingerprint;

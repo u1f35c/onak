@@ -85,7 +85,7 @@ static int keyring_fetch_key(struct onak_keyring_dbctx *privctx,
 	if (index > privctx->count)
 		return 0;
 
-	buf.buffer = privctx->keys[index].start;
+	buf.buffer = (char *) privctx->keys[index].start;
 	buf.size = privctx->keys[index].len;
 	buf.offset = 0;
 
@@ -234,7 +234,6 @@ static int keyring_update_keys(struct onak_dbctx *dbctx,
  */
 #define NEED_KEYID2UID 1
 #define NEED_GETKEYSIGS 1
-#define NEED_GET_FP 1
 #include "keydb.c"
 
 static int keyring_parse_keys(struct onak_keyring_dbctx *privctx)
@@ -266,7 +265,7 @@ static int keyring_parse_keys(struct onak_keyring_dbctx *privctx)
 				len += privctx->file[pos + 2];
 				len += 192;
 				len += 1; /* Header */
-			} else if (len > 223 & len < 255) {
+			} else if (len > 223 && len < 255) {
 				// Unsupported
 			} else if (len == 255) {
 				len = privctx->file[pos + 2];
