@@ -63,6 +63,9 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 	uint64_t keyid;
 	onak_status_t res;
 
+	*hashtype = 0;
+	*sighash = NULL;
+
 	switch (sig->data[0]) {
 	case 2:
 	case 3:
@@ -108,8 +111,6 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 		hashlen[1] = key->publickey->length;
 		chunks = 2;
 
-		*hashtype = sig->data[3];
-
 		/* Check to see if this is an X509 based signature */
 		if (sig->data[2] == 0 || sig->data[2] == 100) {
 			size_t len;
@@ -135,6 +136,8 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 				return ONAK_E_UNSUPPORTED_FEATURE;
 			}
 		}
+
+		*hashtype = sig->data[3];
 
 		if (packet != NULL) {
 			if (packet->tag == OPENPGP_PACKET_PUBLICSUBKEY) {
@@ -262,21 +265,21 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 		for (i = 0; i < chunks; i++) {
 			md5_update(&md5_context, hashlen[i], hashdata[i]);
 		}
-		md5_digest(&md5_context, 16, hash);
+		md5_digest(&md5_context, MD5_DIGEST_SIZE, hash);
 		break;
 	case OPENPGP_HASH_SHA1:
 		sha1_init(&sha1_context);
 		for (i = 0; i < chunks; i++) {
 			sha1_update(&sha1_context, hashlen[i], hashdata[i]);
 		}
-		sha1_digest(&sha1_context, 20, hash);
+		sha1_digest(&sha1_context, SHA1_DIGEST_SIZE, hash);
 		break;
 	case OPENPGP_HASH_SHA1X:
 		sha1x_init(&sha1x_context);
 		for (i = 0; i < chunks; i++) {
 			sha1x_update(&sha1x_context, hashlen[i], hashdata[i]);
 		}
-		sha1x_digest(&sha1x_context, 20, hash);
+		sha1x_digest(&sha1x_context, SHA1X_DIGEST_SIZE, hash);
 		break;
 #ifdef HAVE_NETTLE
 	case OPENPGP_HASH_RIPEMD160:
