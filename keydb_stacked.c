@@ -87,6 +87,7 @@ static int stacked_delete_key(struct onak_dbctx *dbctx,
 static int stacked_update_keys(struct onak_dbctx *dbctx,
 		struct openpgp_publickey **keys,
 		struct keyarray *blacklist,
+		bool updateonly,
 		bool sendsync)
 {
 	struct onak_stacked_dbctx *privctx =
@@ -94,7 +95,8 @@ static int stacked_update_keys(struct onak_dbctx *dbctx,
 	struct onak_dbctx *backend =
 			(struct onak_dbctx *) privctx->backends->object;
 
-	return backend->update_keys(backend, keys, blacklist, sendsync);
+	return backend->update_keys(backend, keys, blacklist, updateonly,
+			sendsync);
 }
 
 static int stacked_iterate_keys(struct onak_dbctx *dbctx,

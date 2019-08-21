@@ -313,6 +313,15 @@ static bool parseconfigline(char *line)
 				config.clean_policies &=
 					~ONAK_CLEAN_LARGE_PACKETS;
 			}
+		} else if (MATCH("verification", "update_only")) {
+			if (parsebool(value, config.clean_policies &
+					ONAK_CLEAN_UPDATE_ONLY)) {
+				config.clean_policies |=
+					ONAK_CLEAN_UPDATE_ONLY;
+			} else {
+				config.clean_policies &=
+					~ONAK_CLEAN_UPDATE_ONLY;
+			}
 		} else {
 			return false;
 		}

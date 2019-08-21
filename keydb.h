@@ -141,6 +141,7 @@ struct onak_dbctx {
  * @brief Takes a list of public keys and updates them in the DB.
  * @param keys The keys to update in the DB.
  * @param blacklist A keyarray of fingerprints that shouldn't be added.
+ * @updateonly: Only update existing keys, don't add new ones.
  * @param sendsync If we should send a keysync mail.
  *
  * Takes a list of keys and adds them to the database, merging them with
@@ -155,6 +156,7 @@ struct onak_dbctx {
 	int (*update_keys)(struct onak_dbctx *,
 			struct openpgp_publickey **keys,
 			struct keyarray *blacklist,
+			bool updateonly,
 			bool sendsync);
 
 /**

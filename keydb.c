@@ -159,6 +159,8 @@ struct ll *generic_cached_getkeysigs(struct onak_dbctx *dbctx, uint64_t keyid)
 /**
  *	update_keys - Takes a list of public keys and updates them in the DB.
  *	@keys: The keys to update in the DB.
+ *	@blacklist: A keyarray of key fingerprints not to accept.
+ *	@updateonly: Only update existing keys, don't add new ones.
  *	@sendsync: Should we send a sync mail to our peers.
  *
  *	Takes a list of keys and adds them to the database, merging them with
@@ -170,12 +172,13 @@ struct ll *generic_cached_getkeysigs(struct onak_dbctx *dbctx, uint64_t keyid)
 int generic_update_keys(struct onak_dbctx *dbctx,
 		struct openpgp_publickey **keys,
 		struct keyarray *blacklist,
+		bool updateonly,
 		bool sendsync)
 {
 	struct openpgp_publickey **curkey, *tmp = NULL;
 	struct openpgp_publickey *oldkey = NULL;
 	struct openpgp_fingerprint fp;
-	int newkeys = 0;
+	int newkeys = 0, ret;
 	bool intrans;
 
 	curkey = keys;
@@ -192,10 +195,13 @@ int generic_update_keys(struct onak_dbctx *dbctx,
 
 		intrans = dbctx->starttrans(dbctx);
 
-		logthing(LOGTHING_INFO,
-			"Fetching key, result: %d",
-			dbctx->fetch_key_fp(dbctx, &fp, &oldkey,
-					intrans));
+		ret = dbctx->fetch_key_fp(dbctx, &fp, &oldkey, intrans);
+		if (ret == 0 && updateonly) {
+			logthing(LOGTHING_INFO,
+				"Skipping new key as update only set.");
+			curkey = &(*curkey)->next;
+			goto next;
+		}
 
 		/*
 		 * If we already have the key stored in the DB then merge it
@@ -228,6 +234,7 @@ int generic_update_keys(struct onak_dbctx *dbctx,
 			newkeys++;
 			curkey = &(*curkey)->next;
 		}
+next:
 		dbctx->endtrans(dbctx);
 	}
 

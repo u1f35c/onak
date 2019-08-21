@@ -224,6 +224,7 @@ static int keyring_iterate_keys(struct onak_dbctx *dbctx,
 static int keyring_update_keys(struct onak_dbctx *dbctx,
 		struct openpgp_publickey **keys,
 		struct keyarray *blacklist,
+		bool updateonly,
 		bool sendsync)
 {
 	return 0;

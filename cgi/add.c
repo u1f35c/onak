@@ -93,7 +93,9 @@ int main(int argc, char *argv[])
 					count);
 
 			count = dbctx->update_keys(dbctx, &keys,
-					&config.blacklist, true);
+				&config.blacklist,
+				config.clean_policies & ONAK_CLEAN_UPDATE_ONLY,
+				true);
 			logthing(LOGTHING_NOTICE, "Got %d new keys.",
 				count);
 

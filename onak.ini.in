@@ -25,6 +25,10 @@ check_sighash=true
 ; Drop v3 (and older) keys. These are long considered insecure, so unless there
 ; is a good reason you should accept this default.
 drop_v3=true
+; Only allow keys that already exist to be update; silently drop the addition
+; of any key we don't already know about. Useful for allowing updates to
+; curated keys without the addition of new keys.
+;update_only=false
 
 ; Settings related to the email interface to onak.
 [mail]

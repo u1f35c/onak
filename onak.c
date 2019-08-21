@@ -242,6 +242,8 @@ int main(int argc, char *argv[])
 			logthing(LOGTHING_NOTICE, "Got %d new keys.",
 					dbctx->update_keys(dbctx, &keys,
 						&config.blacklist,
+						(config.clean_policies &
+						 ONAK_CLEAN_UPDATE_ONLY),
 						false));
 			if (keys != NULL && update) {
 				flatten_publickey(keys,
