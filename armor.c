@@ -330,8 +330,8 @@ int armor_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
 	/*
 	 * Print armor header
 	 */
-	putchar_func(ctx, sizeof("-----BEGIN PGP PUBLIC KEY BLOCK-----\n") - 1,
-		(unsigned char *) "-----BEGIN PGP PUBLIC KEY BLOCK-----\n");
+	putchar_func(ctx, sizeof("-----BEGIN PGP PUBLIC KEY BLOCK-----\n\n") - 1,
+		(unsigned char *) "-----BEGIN PGP PUBLIC KEY BLOCK-----\n\n");
 
 	armor_init(&armor_ctx);
 	armor_ctx.putchar_func = putchar_func;
