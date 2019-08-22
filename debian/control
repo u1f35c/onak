@@ -12,6 +12,7 @@ Standards-Version: 3.9.8.0
 Homepage: https://www.earth.li/projectpurple/progs/onak.html
 Vcs-Browser: https://the.earth.li/gitweb/?p=onak.git;a=summary
 Vcs-Git: https://the.earth.li/git/onak.git
+Rules-Requires-Root: no
 
 Package: onak
 Architecture: any
