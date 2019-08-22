@@ -3,6 +3,8 @@ dist: bionic
 compiler:
   - clang
   - gcc
+git:
+  depth: false
 addons:
   apt:
     packages:
