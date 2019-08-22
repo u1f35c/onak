@@ -19,6 +19,14 @@ if [ "$1" = "configure" ]; then
     # Add the onak user
     adduser --system --home /var/lib/onak --no-create-home --disabled-login onak
 
+    # Take ownership of the database and spool directory
+    chown onak /var/lib/onak
+    chown onak /var/spool/onak
+
+    # Create our logfile
+    touch /var/log/onak.log
+    chown onak /var/log/onak.log
+
     #
     # If we're using a default config and there's no onak database, create it
     # by adding my key.
@@ -27,16 +35,8 @@ if [ "$1" = "configure" ]; then
             grep -q "^location=/var/lib/onak" /etc/onak.ini &&
             [ ! -e /var/lib/onak/num_keydb -a \
                 -e /usr/share/doc/onak/noodles.key.gz ]; then
-        zcat /usr/share/doc/onak/noodles.key | onak -b add
+        zcat /usr/share/doc/onak/noodles.key | runuser -u onak -- onak -b add
     fi
-
-    # Take ownership of the database and spool directory
-    chown -R onak /var/lib/onak
-    chown -R onak /var/spool/onak
-
-    # Create our logfile
-    touch /var/log/onak.log
-    chown onak /var/log/onak.log
 
     # Make the CGI tools setuid onak
     for i in /usr/lib/cgi-bin/pks/*
