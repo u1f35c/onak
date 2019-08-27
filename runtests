@@ -29,8 +29,8 @@ echo "WORKDIR : ${WORKDIR}"
 fail=0
 total=0
 
-for t in libkeydb_*.so; do
-	backend=${t##libkeydb_}
+for t in keydb/libkeydb_*.so; do
+	backend=${t##keydb/libkeydb_}
 	backend=${backend%%.so}
 	if [ "`echo ${TESTSDIR}/$backend-*`" != "${TESTSDIR}/$backend-*" ]; then
 		echo "* testing $backend backend"

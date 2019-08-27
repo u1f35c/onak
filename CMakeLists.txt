@@ -48,88 +48,6 @@ else()
 	target_sources(libonak PRIVATE md5.c sha1.c)
 endif()
 
-# Backends
-
-# These have no dependencies and can always be compiled
-set(BACKENDS "file" "fs" "keyring" "stacked")
-
-# DB4 backend (add check for existence)
-LIST(APPEND BACKENDS db4)
-set(BACKEND_db4_LIBS db-5.3)
-
-# HKP backend - needs libcurl
-pkg_check_modules(CURL libcurl)
-if (CURL_FOUND)
-	LIST(APPEND BACKENDS hkp)
-	set(BACKEND_hkp_INC ${CURL_INCLUDE_DIRS})
-	set(BACKEND_hkp_LIBS ${CURL_LIBRARIES})
-endif()
-
-# PostgreSQL backend - needs libpq
-pkg_check_modules(POSTGRESQL libpq)
-if (POSTGRESQL_FOUND)
-	LIST(APPEND BACKENDS pg)
-	set(BACKEND_pg_INC ${POSTGRESQL_INCLUDE_DIRS})
-	set(BACKEND_pg_LIBS ${POSTGRESQL_LIBRARIES})
-endif()
-
-# keyd backend - can be disabled entirely
-if (KEYD STREQUAL "ON")
-	LIST(APPEND BACKENDS keyd)
-
-	add_executable(keyd keyd.c)
-	target_link_libraries(keyd libonak)
-	add_executable(keydctl keydctl.c onak-conf.c)
-	target_link_libraries(keydctl libonak)
-	target_compile_definitions(keydctl PRIVATE
-		CONFIGDIR="${CMAKE_INSTALL_FULL_SYSCONFDIR}")
-
-	pkg_check_modules(SYSTEMD libsystemd)
-	if (SYSTEMD_FOUND)
-		set(HAVE_SYSTEMD true)
-		target_include_directories(keyd SYSTEM PUBLIC
-			${SYSTEMD_INCLUDE_DIRS})
-		target_link_libraries(keyd ${SYSTEMD_LIBRARIES})
-	endif()
-
-	install(TARGETS keydctl RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-	install(TARGETS keyd RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR})
-	install(FILES keyd.8 keydctl.8
-		DESTINATION ${CMAKE_INSTALL_MANDIR}/man8/)
-endif()
-
-
-# Now we have the DB type confirmed we can tidy up the libonak options
-
-if (DBTYPE STREQUAL "dynamic")
-	LIST(APPEND LIBONAK_LIBRARIES "dl")
-	foreach(BACKEND IN LISTS BACKENDS)
-		add_library(keydb_${BACKEND} SHARED keydb_${BACKEND}.c)
-		target_include_directories(keydb_${BACKEND} SYSTEM PUBLIC
-			${BACKEND_${BACKEND}_INC})
-		target_link_libraries(keydb_${BACKEND} libonak
-			${BACKEND_${BACKEND}_LIBS})
-		install(TARGETS keydb_${BACKEND} LIBRARY DESTINATION
-			${CMAKE_INSTALL_LIBDIR}/onak/backends/)
-	endforeach(BACKEND)
-else()
-	list (FIND BACKENDS ${DBTYPE} _index)
-	if (${_index} LESS 0)
-		message(FATAL_ERROR "${DBTYPE} is not a supported DB backend.")
-	endif()
-
-	LIST(APPEND LIBONAK_LIBRARIES ${BACKEND_${DBTYPE}_LIBS})
-endif()
-
-# For onak-conf.o compilation
-target_compile_definitions(libonak PRIVATE
-	CONFIGDIR="${CMAKE_INSTALL_FULL_SYSCONFDIR}"
-	DBINIT=keydb_${DBTYPE}_init)
-
-# DB Backend related options are known, so finish off libonak configuration
-target_sources(libonak PRIVATE keydb_${DBTYPE}.c)
-target_link_libraries(libonak ${LIBONAK_LIBRARIES})
-
 # Build files that have substitutions in them
 include_directories(${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR})
 configure_file("${CMAKE_SOURCE_DIR}/build-config.h.in"
@@ -145,6 +63,31 @@ configure_file("${CMAKE_SOURCE_DIR}/onak-mail.pl.in"
 install(PROGRAMS ${CMAKE_BINARY_DIR}/onak-mail.pl
 	DESTINATION ${CMAKE_INSTALL_LIBDIR}/onak/)
 install(FILES onak-mail.pl.8 DESTINATION ${CMAKE_INSTALL_MANDIR}/man8/)
+
+# Key database backends
+add_subdirectory(keydb)
+
+# Now we have the DB type confirmed we can tidy up the libonak options
+
+if (DBTYPE STREQUAL "dynamic")
+	LIST(APPEND LIBONAK_LIBRARIES "dl")
+else()
+	list (FIND BACKENDS ${DBTYPE} _index)
+	if (${_index} LESS 0)
+		message(FATAL_ERROR "${DBTYPE} is not a supported DB backend.")
+	endif()
+
+	LIST(APPEND LIBONAK_LIBRARIES ${BACKEND_${DBTYPE}_LIBS})
+endif()
+
+# For onak-conf.o compilation
+target_compile_definitions(libonak PRIVATE
+	CONFIGDIR="${CMAKE_INSTALL_FULL_SYSCONFDIR}"
+	DBINIT=keydb_${DBTYPE}_init)
+
+# DB Backend related options are known, so finish off libonak configuration
+target_sources(libonak PRIVATE keydb/keydb_${DBTYPE}.c)
+target_link_libraries(libonak ${LIBONAK_LIBRARIES})
 
 # CGI directory
 add_subdirectory(cgi)
