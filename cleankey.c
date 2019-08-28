@@ -255,7 +255,8 @@ int clean_large_packets(struct openpgp_publickey *key)
  *	made, otherwise the number of keys cleaned. Note that some options
  *	may result in keys being removed entirely from the list.
  */
-int cleankeys(struct openpgp_publickey **keys, uint64_t policies)
+int cleankeys(struct onak_dbctx *dbctx, struct openpgp_publickey **keys,
+		uint64_t policies)
 {
 	struct openpgp_publickey **curkey, *tmp;
 	int changed = 0, count = 0;

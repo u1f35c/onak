@@ -252,7 +252,8 @@ int main(int argc, char *argv[])
 					result,
 					search);
 				puts("<pre>");
-				cleankeys(&publickey, config.clean_policies);
+				cleankeys(dbctx, &publickey,
+						config.clean_policies);
 				flatten_publickey(publickey,
 							&packets,
 							&list_end);

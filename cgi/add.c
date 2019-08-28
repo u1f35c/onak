@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 			catchsignals();
 			dbctx = config.dbinit(config.backend, false);
 			
-			count = cleankeys(&keys, config.clean_policies);
+			count = cleankeys(dbctx, &keys, config.clean_policies);
 			logthing(LOGTHING_INFO, "%d keys cleaned.",
 					count);
 

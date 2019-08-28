@@ -19,6 +19,7 @@
 #ifndef __CLEANKEY_H__
 #define __CLEANKEY_H__
 
+#include "keydb.h"
 #include "keystructs.h"
 
 #define ONAK_CLEAN_CHECK_SIGHASH	(1 << 0)
@@ -29,6 +30,7 @@
 
 /**
  *	cleankeys - Apply all available cleaning options on a list of keys.
+ *	@dbctx: A database context suitable for looking up signing keys
  *	@publickey: The list of keys to clean.
  *	@policies: The cleaning policies to apply.
  *
@@ -38,6 +40,7 @@
  *	made, otherwise the number of keys cleaned. Note that some options
  *	may result in keys being removed entirely from the list.
  */
-int cleankeys(struct openpgp_publickey **keys, uint64_t policies);
+int cleankeys(struct onak_dbctx *dbctx, struct openpgp_publickey **keys,
+		uint64_t policies);
 
 #endif

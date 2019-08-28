@@ -234,11 +234,12 @@ int main(int argc, char *argv[])
 			logthing(LOGTHING_INFO, "Finished reading %d keys.",
 					result);
 
-			result = cleankeys(&keys, config.clean_policies);
+			dbctx = config.dbinit(config.backend, false);
+			result = cleankeys(dbctx, &keys,
+					config.clean_policies);
 			logthing(LOGTHING_INFO, "%d keys cleaned.",
 					result);
 
-			dbctx = config.dbinit(config.backend, false);
 			logthing(LOGTHING_NOTICE, "Got %d new keys.",
 					dbctx->update_keys(dbctx, &keys,
 						&config.blacklist,
@@ -275,6 +276,7 @@ int main(int argc, char *argv[])
 			logthing(LOGTHING_NOTICE, "No changes.");
 		}
 	} else if (!strcmp("clean", argv[optind])) {
+		dbctx = config.dbinit(config.backend, true);
 		if (binary) {
 			result = read_openpgp_stream(stdin_getchar, NULL,
 				 &packets, 0);
@@ -292,7 +294,7 @@ int main(int argc, char *argv[])
 					result);
 
 			if (keys != NULL) {
-				result = cleankeys(&keys,
+				result = cleankeys(dbctx, &keys,
 						config.clean_policies);
 				logthing(LOGTHING_INFO, "%d keys cleaned.",
 						result);
@@ -322,6 +324,7 @@ int main(int argc, char *argv[])
 			free_publickey(keys);
 			keys = NULL;
 		}
+		dbctx->cleanupdb(dbctx);
 	} else if (!strcmp("dumpconfig", argv[optind])) {
 		if ((argc - optind) == 2) {
 			writeconfig(argv[optind + 1]);
@@ -462,7 +465,7 @@ int main(int argc, char *argv[])
 			if (dbctx->fetch_key_id(dbctx, keyid, &keys, true)) {
 				get_fingerprint(keys->publickey, &fingerprint);
 				dbctx->delete_key(dbctx, &fingerprint, true);
-				cleankeys(&keys, config.clean_policies);
+				cleankeys(dbctx, &keys, config.clean_policies);
 				dbctx->store_key(dbctx, keys, true, false);
 			} else {
 				puts("Key not found");
