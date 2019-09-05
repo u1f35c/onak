@@ -26,6 +26,9 @@
 #include <sys/types.h>
 typedef size_t md5_uintptr;
 
+/* Length in bytes of the MD5 digest */
+#define MD5_DIGEST_SIZE 16
+
 /* Structure to save state of computation between the single steps.  */
 struct md5_ctx
 {
