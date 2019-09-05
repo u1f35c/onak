@@ -87,7 +87,9 @@ onak_status_t get_keyid(struct openpgp_publickey *publickey, uint64_t *keyid)
 onak_status_t get_fingerprint(struct openpgp_packet *packet,
 	struct openpgp_fingerprint *fingerprint)
 {
+#ifdef HAVE_NETTLE
 	struct sha256_ctx sha2_ctx;
+#endif
 	struct sha1_ctx sha_ctx;
 	struct md5_ctx md5_context;
 	unsigned char c;
@@ -136,6 +138,7 @@ onak_status_t get_fingerprint(struct openpgp_packet *packet,
 		sha1_digest(&sha_ctx, fingerprint->length, fingerprint->fp);
 
 		break;
+#ifdef HAVE_NETTLE
 	case 5:
 		sha256_init(&sha2_ctx);
 		/* RFC4880bis 12.2 */
@@ -155,6 +158,7 @@ onak_status_t get_fingerprint(struct openpgp_packet *packet,
 		sha256_digest(&sha2_ctx, fingerprint->length, fingerprint->fp);
 
 		break;
+#endif
 	default:
 		return ONAK_E_UNKNOWN_VER;
 	}
