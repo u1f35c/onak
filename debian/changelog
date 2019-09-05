@@ -3,6 +3,7 @@ onak (0.5.0+wip-1) UNRELEASED; urgency=low
   * Bump debhelper compat level to 10
   * Set Rules-Requires-Root to no
   * Cleanup postinst to avoid recursive chown of database
+  * Add dependency on pkg-config
 
  -- Jonathan McDowell <noodles@earth.li>  Thu, 22 Aug 2019 07:18:49 +0100
 
