@@ -232,10 +232,15 @@ static int sock_init(const char *sockname)
 
 		if (ret != -1) {
 			ret = listen(fd, 5);
-			if (ret == -1) {
-				close(fd);
-				fd = -1;
-			}
+		}
+
+		if (ret == -1) {
+			logthing(LOGTHING_ERROR,
+				"Couldn't open socket to listen on: %s (%d)",
+				strerror(errno),
+				errno);
+			close(fd);
+			fd = -1;
 		}
 #ifdef HAVE_SYSTEMD
 	}
