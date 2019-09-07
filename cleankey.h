@@ -26,6 +26,8 @@
 #define ONAK_CLEAN_LARGE_PACKETS	(1 << 1)
 #define ONAK_CLEAN_DROP_V3_KEYS		(1 << 2)
 #define ONAK_CLEAN_UPDATE_ONLY		(1 << 3)
+#define ONAK_CLEAN_VERIFY_SIGNATURES	(1 << 4)
+#define ONAK_CLEAN_NEED_OTHER_SIG	(1 << 5)
 #define ONAK_CLEAN_ALL			(uint64_t) -1
 
 /**

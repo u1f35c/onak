@@ -10,6 +10,8 @@ if ("x${CMAKE_INSTALL_FULL_RUNSTATEDIR}" STREQUAL "x")
 		${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/run)
 endif()
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+
 # Configuration options from the user
 set(DBTYPE "dynamic" CACHE STRING
 	"Configure the default database backend to use" )
@@ -34,7 +36,7 @@ endif()
 # Core objects
 add_library(libonak STATIC armor.c charfuncs.c cleankey.c cleanup.c decodekey.c
 	getcgi.c hash.c keyarray.c keyid.c keyindex.c ll.c log.c marshal.c
-	mem.c merge.c onak-conf.c parsekey.c photoid.c sigcheck.c sendsync.c
+	mem.c merge.c onak-conf.c parsekey.c photoid.c rsa.c sigcheck.c sendsync.c
 	sha1x.c wordlist.c)
 set(LIBONAK_LIBRARIES "")
 
@@ -46,6 +48,18 @@ if (NETTLE_FOUND)
 	LIST(APPEND LIBONAK_LIBRARIES ${NETTLE_LIBRARIES})
 else()
 	target_sources(libonak PRIVATE md5.c sha1.c)
+endif()
+
+# We need libhogweed and libgmp to be able to do more than hash calculations
+pkg_check_modules(HOGWEED hogweed)
+if (HOGWEED_FOUND)
+	find_package(GMP)
+endif()
+if (GMP_FOUND)
+	set(HAVE_CRYPTO true)
+	target_include_directories(libonak SYSTEM PUBLIC
+			${GMP_INCLUDE_DIRS} ${HOGWEED_INCLUDE_DIRS})
+	LIST(APPEND LIBONAK_LIBRARIES ${GMP_LIBRARY} ${HOGWEED_LIBRARIES})
 endif()
 
 # Build files that have substitutions in them

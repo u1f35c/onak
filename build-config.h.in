@@ -3,6 +3,7 @@
 
 #define ONAK_VERSION "@VERSION@"
 
+#cmakedefine HAVE_CRYPTO 1
 #cmakedefine HAVE_NETTLE 1
 #cmakedefine HAVE_SYSTEMD 1
 #cmakedefine WORDS_BIGENDIAN 1

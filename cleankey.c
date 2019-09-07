@@ -17,10 +17,11 @@
  */
 
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
 
+#include "build-config.h"
 #include "cleankey.h"
+#include "decodekey.h"
 #include "keyid.h"
 #include "keystructs.h"
 #include "log.h"
@@ -132,19 +133,32 @@ int dedupsubkeys(struct openpgp_publickey *key)
  *	hash cannot be checked (eg we don't support that hash type) we err
  *	on the side of caution and keep it.
  */
-int clean_sighashes(struct openpgp_publickey *key,
+int clean_sighashes(struct onak_dbctx *dbctx,
+		struct openpgp_publickey *key,
 		struct openpgp_packet *sigdata,
-		struct openpgp_packet_list **sigs)
+		struct openpgp_packet_list **sigs,
+		bool fullverify,
+		bool *selfsig, bool *othersig)
 {
 	struct openpgp_packet_list *tmpsig;
+	struct openpgp_publickey *sigkey = NULL;
 	onak_status_t ret;
 	uint8_t hashtype;
 	uint8_t hash[64];
 	uint8_t *sighash;
 	int removed = 0;
-	uint64_t keyid;
+	uint64_t keyid, sigid;
+	bool remove;
 
+	get_keyid(key, &keyid);
+	if (othersig != NULL) {
+		*othersig = false;
+	}
+	if (selfsig != NULL) {
+		*selfsig = false;
+	}
 	while (*sigs != NULL) {
+		remove = false;
 		ret = calculate_packet_sighash(key, sigdata, (*sigs)->packet,
 				&hashtype, hash, &sighash);
 
@@ -155,10 +169,57 @@ int clean_sighashes(struct openpgp_publickey *key,
 				PRIX64,
 				hashtype,
 				keyid);
-			sigs = &(*sigs)->next;
-		} else if (ret != ONAK_E_OK ||
+			if (fullverify) {
+				remove = true;
+			}
+		} else if (ret != ONAK_E_OK || (!fullverify &&
 				!(hash[0] == sighash[0] &&
-					hash[1] == sighash[1])) {
+					hash[1] == sighash[1]))) {
+			remove = true;
+		}
+
+#if HAVE_CRYPTO
+		if (fullverify && !remove) {
+			sig_info((*sigs)->packet, &sigid, NULL);
+
+			/* Start by assuming it's a bad sig */
+
+			remove = true;
+			if (sigid == keyid) {
+				ret = onak_check_hash_sig(key, (*sigs)->packet,
+						hash, hashtype);
+
+				/* We have a valid self signature */
+				if (ret == ONAK_E_OK) {
+					remove = false;
+					if (selfsig != NULL) {
+						*selfsig = true;
+					}
+				}
+			}
+
+			if (remove && dbctx->fetch_key_id(dbctx, sigid,
+						&sigkey, false)) {
+
+				ret = onak_check_hash_sig(sigkey,
+						(*sigs)->packet,
+						hash, hashtype);
+
+				/* Got a valid signature */
+				if (ret == ONAK_E_OK) {
+					remove = false;
+					if (othersig != NULL) {
+						*othersig = true;
+					}
+				}
+
+				free_publickey(sigkey);
+				sigkey = NULL;
+			}
+		}
+#endif
+
+		if (remove) {
 			tmpsig = *sigs;
 			*sigs = (*sigs)->next;
 			tmpsig->next = NULL;
@@ -172,27 +233,46 @@ int clean_sighashes(struct openpgp_publickey *key,
 	return removed;
 }
 
-int clean_list_sighashes(struct openpgp_publickey *key,
-			struct openpgp_signedpacket_list *siglist)
+int clean_list_sighashes(struct onak_dbctx *dbctx,
+			struct openpgp_publickey *key,
+			struct openpgp_signedpacket_list **siglist,
+			bool fullverify, bool needother)
 {
+	struct openpgp_signedpacket_list *tmp = NULL;
+	bool selfsig, othersig;
 	int removed = 0;
 
-	while (siglist != NULL) {
-		removed += clean_sighashes(key, siglist->packet,
-			&siglist->sigs);
-		siglist = siglist->next;
+	while (siglist != NULL && *siglist != NULL) {
+		selfsig = othersig = false;
+
+		removed += clean_sighashes(dbctx, key, (*siglist)->packet,
+			&(*siglist)->sigs, fullverify, &selfsig, &othersig);
+
+		if (fullverify && (!selfsig || (needother && !othersig))) {
+			/* Remove the UID/subkey if there's no selfsig */
+			tmp = *siglist;
+			*siglist = (*siglist)->next;
+			tmp->next = NULL;
+			free_signedpacket_list(tmp);
+		} else {
+			siglist = &(*siglist)->next;
+		}
 	}
 
 	return removed;
 }
 
-int clean_key_sighashes(struct openpgp_publickey *key)
+int clean_key_signatures(struct onak_dbctx *dbctx,
+		struct openpgp_publickey *key, bool fullverify, bool needother)
 {
 	int removed;
 
-	removed = clean_sighashes(key, NULL, &key->sigs);
-	removed += clean_list_sighashes(key, key->uids);
-	removed += clean_list_sighashes(key, key->subkeys);
+	removed = clean_sighashes(dbctx, key, NULL, &key->sigs, fullverify,
+			NULL, NULL);
+	removed += clean_list_sighashes(dbctx, key, &key->uids, fullverify,
+			needother);
+	removed += clean_list_sighashes(dbctx, key, &key->subkeys, fullverify,
+			false);
 
 	return removed;
 }
@@ -268,7 +348,7 @@ int cleankeys(struct onak_dbctx *dbctx, struct openpgp_publickey **keys,
 	while (*curkey != NULL) {
 		if (policies & ONAK_CLEAN_DROP_V3_KEYS) {
 			if ((*curkey)->publickey->data[0] < 4) {
-				/* Remove the key from the list */
+				/* Remove the key from the list if it's < v4 */
 				tmp = *curkey;
 				*curkey = tmp->next;
 				tmp->next = NULL;
@@ -282,13 +362,24 @@ int cleankeys(struct onak_dbctx *dbctx, struct openpgp_publickey **keys,
 		}
 		count += dedupuids(*curkey);
 		count += dedupsubkeys(*curkey);
-		if (policies & ONAK_CLEAN_CHECK_SIGHASH) {
-			count += clean_key_sighashes(*curkey);
+		if (policies & (ONAK_CLEAN_CHECK_SIGHASH |
+					ONAK_CLEAN_VERIFY_SIGNATURES)) {
+			count += clean_key_signatures(dbctx, *curkey,
+				policies & ONAK_CLEAN_VERIFY_SIGNATURES,
+				policies & ONAK_CLEAN_NEED_OTHER_SIG);
 		}
 		if (count > 0) {
 			changed++;
 		}
-		curkey = &(*curkey)->next;
+		if ((*curkey)->uids == NULL) {
+			/* No valid UIDS so remove the key from the list */
+			tmp = *curkey;
+			*curkey = tmp->next;
+			tmp->next = NULL;
+			free_publickey(tmp);
+		} else {
+			curkey = &(*curkey)->next;
+		}
 	}
 
 	return changed;

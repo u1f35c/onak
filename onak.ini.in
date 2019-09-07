@@ -25,10 +25,19 @@ check_sighash=true
 ; Drop v3 (and older) keys. These are long considered insecure, so unless there
 ; is a good reason you should accept this default.
 drop_v3=true
+; Specify that a key must have a certificate from another key in order for it
+; to be accepted. Only valid when verify_signatures is set, meaning new keys
+; can only be added if they are certified by keys already present.
+;require_other_sig=false
 ; Only allow keys that already exist to be update; silently drop the addition
 ; of any key we don't already know about. Useful for allowing updates to
 ; curated keys without the addition of new keys.
 ;update_only=false
+; Verify signatures, dropping those that cannot or do not validate. Keys/UIDS
+; that lack valid self signatures will also be dropped. Note that in order to
+; valid a signature the signing key must be present in the key database, so
+; multiple passes may be required to import new keyrings fully.
+;verify_signatures=false
 
 ; Settings related to the email interface to onak.
 [mail]

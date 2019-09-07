@@ -313,6 +313,21 @@ static bool parseconfigline(char *line)
 				config.clean_policies &=
 					~ONAK_CLEAN_LARGE_PACKETS;
 			}
+		} else if (MATCH("verification", "require_other_sig")) {
+#if HAVE_CRYPTO
+			if (parsebool(value, config.clean_policies &
+					ONAK_CLEAN_NEED_OTHER_SIG)) {
+				config.clean_policies |=
+					ONAK_CLEAN_NEED_OTHER_SIG;
+			} else {
+				config.clean_policies &=
+					~ONAK_CLEAN_NEED_OTHER_SIG;
+			}
+#else
+			logthing(LOGTHING_ERROR,
+					"Compiled without crypto support, "
+					"require_other_sig not available.");
+#endif
 		} else if (MATCH("verification", "update_only")) {
 			if (parsebool(value, config.clean_policies &
 					ONAK_CLEAN_UPDATE_ONLY)) {
@@ -322,6 +337,21 @@ static bool parseconfigline(char *line)
 				config.clean_policies &=
 					~ONAK_CLEAN_UPDATE_ONLY;
 			}
+		} else if (MATCH("verification", "verify_signatures")) {
+#if HAVE_CRYPTO
+			if (parsebool(value, config.clean_policies &
+					ONAK_CLEAN_VERIFY_SIGNATURES)) {
+				config.clean_policies |=
+					ONAK_CLEAN_VERIFY_SIGNATURES;
+			} else {
+				config.clean_policies &=
+					~ONAK_CLEAN_VERIFY_SIGNATURES;
+			}
+#else
+			logthing(LOGTHING_ERROR,
+					"Compiled without crypto support, "
+					"verify_signatures not available.");
+#endif
 		} else {
 			return false;
 		}
