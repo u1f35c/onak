@@ -48,6 +48,17 @@
 #include <nettle/eddsa.h>
 #include <nettle/rsa.h>
 #include "rsa.h"
+
+#ifndef nettle_get_secp_256r1
+#define nettle_get_secp_256r1() &nettle_secp_256r1
+#endif
+#ifndef nettle_get_secp_384r1
+#define nettle_get_secp_384r1() &nettle_secp_384r1
+#endif
+#ifndef nettle_get_secp_521r1
+#define nettle_get_secp_521r1() &nettle_secp_521r1
+#endif
+
 #endif
 
 /* Take an MPI from a buffer and import it into a GMP mpz_t */
