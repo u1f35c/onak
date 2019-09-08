@@ -19,6 +19,9 @@ max_reply_keys=128
 ; Blacklist certain fingerprints (e.g. EVIL32). One fingerprint per line,
 ; comment lines start with #
 ;blacklist=blacklist.txt
+; Check the size of packets, dropping overly large UIDs / signature packets
+; as per draft-dkg-openpgp-abuse-resistant-keystore 4.1
+;check_packet_size=false
 ; Verify signature hashes - verify that the hash a signature claims to be
 ; over matches the hash of the data. Does not actually verify the signature.
 check_sighash=true
