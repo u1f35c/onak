@@ -1,9 +1,9 @@
-* Check keys on import?
-   * Non self-signed user IDs
-   * Non self-signed subkeys
-   * Invalid revocations
-   * Signatures marked as non-exportable
-   * PKS subkey damage
+* Further key checks on import:
+  * Invalid revocations
+  * Signatures marked as non-exportable
+  * PKS subkey damage
+* SKS Gossip protocol support
+* Split core PGP functionality out to a standalone library
 * Better signature subpacket parsing (primary UID for example).
 * Better merging of signatures; need to compare subpackets on Type 4 packets
   and choose which we should use (how? most recent date?)
@@ -13,10 +13,4 @@
 * Do pathlengths for similar email addresses to help aide keysigning.
   (ie "Find me the keys furthest from mine that end ox.ac.uk'")
   Suggested by Jochen Voss <voss@mathematik.uni-kl.de>.
-* Other stats. most signed? signs most?
-* DB access modules as a library to allow runtime configuration of it?
-* Clean up gcc warnings (`ll' length modifier especially! Also inline & wrong
-  signedness for lo_read/write)
-* Test library?
-* Full email interface support (ADD, INDEX etc)
-* More comments.
+* Resurrect statistics functionality. Add other stats. most signed? signs most?
