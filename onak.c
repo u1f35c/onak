@@ -56,7 +56,10 @@ void find_keys(struct onak_dbctx *dbctx,
 	if (ishex) {
 		count = dbctx->fetch_key_id(dbctx, keyid, &publickey,
 				false);
-	} else if (isfp) {
+	} else if (isfp && exact) {
+		count = dbctx->fetch_key(dbctx, fingerprint,
+				&publickey, false);
+	} else if (isfp && !exact) {
 		count = dbctx->fetch_key_fp(dbctx, fingerprint,
 				&publickey, false);
 	} else {
@@ -165,6 +168,7 @@ int main(int argc, char *argv[])
 	char				*end = NULL;
 	uint64_t			 keyid = 0;
 	int				 i;
+	bool				 exact = false;
 	bool				 ishex = false;
 	bool				 isfp = false;
 	bool				 update = false;
@@ -177,13 +181,16 @@ int main(int argc, char *argv[])
 	struct onak_dbctx		*dbctx;
 	struct openpgp_fingerprint	 fingerprint;
 
-	while ((optchar = getopt(argc, argv, "bc:fsuv")) != -1 ) {
+	while ((optchar = getopt(argc, argv, "bc:efsuv")) != -1 ) {
 		switch (optchar) {
 		case 'b': 
 			binary = true;
 			break;
 		case 'c':
 			configfile = strdup(optarg);
+			break;
+		case 'e':
+			exact = true;
 			break;
 		case 'f': 
 			dispfp = true;
@@ -366,11 +373,11 @@ int main(int argc, char *argv[])
 		if (!strcmp("index", argv[optind])) {
 			find_keys(dbctx, search, keyid, &fingerprint, ishex,
 					isfp, dispfp, skshash,
-					false, false);
+					exact, false);
 		} else if (!strcmp("vindex", argv[optind])) {
 			find_keys(dbctx, search, keyid, &fingerprint, ishex,
 					isfp, dispfp, skshash,
-					false, true);
+					exact, true);
 		} else if (!strcmp("getphoto", argv[optind])) {
 			if (!ishex) {
 				puts("Can't get a key on uid text."

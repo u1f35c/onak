@@ -300,6 +300,41 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 				}
 			}
 			break;
+		case KEYD_CMD_GET:
+			if (!keyd_write_reply(fd, KEYD_REPLY_OK)) {
+				ret = 1;
+			}
+			if (ret == 0) {
+				if ((read(fd, &bytes, 1) != 1) ||
+						(bytes > MAX_FINGERPRINT_LEN)) {
+					ret = 1;
+				} else {
+					fingerprint.length = bytes;
+					bytes = read(fd, fingerprint.fp,
+						fingerprint.length);
+					if (bytes != fingerprint.length) {
+						ret = 1;
+					}
+				}
+			}
+			if (ret == 0) {
+				logthing(LOGTHING_INFO,
+						"Fetching by fingerprint"
+						", result: %d",
+						dbctx->fetch_key(dbctx,
+							&fingerprint,
+							&key, false));
+				if (key != NULL) {
+					keyd_write_key(fd, key);
+					free_publickey(key);
+					key = NULL;
+				} else {
+					if (!keyd_write_size(fd, 0)) {
+						ret = 1;
+					}
+				}
+			}
+			break;
 		case KEYD_CMD_GET_ID:
 			if (!keyd_write_reply(fd, KEYD_REPLY_OK)) {
 				ret = 1;
@@ -364,7 +399,6 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 				}
 			}
 			break;
-
 		case KEYD_CMD_GET_TEXT:
 			if (!keyd_write_reply(fd, KEYD_REPLY_OK)) {
 				ret = 1;

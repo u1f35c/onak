@@ -285,8 +285,10 @@ struct onak_dbctx *keydb_file_init(struct onak_db_config *dbcfg, bool readonly)
 	dbctx->cleanupdb		= file_cleanupdb;
 	dbctx->starttrans		= file_starttrans;
 	dbctx->endtrans			= file_endtrans;
-	dbctx->fetch_key_id		= file_fetch_key_id;
+	/* Our fetch fp doesn't look at subkeys */
+	dbctx->fetch_key		= generic_fetch_key_fp;
 	dbctx->fetch_key_fp		= generic_fetch_key_fp;
+	dbctx->fetch_key_id		= file_fetch_key_id;
 	dbctx->fetch_key_text		= file_fetch_key_text;
 	dbctx->store_key		= file_store_key;
 	dbctx->update_keys		= generic_update_keys;

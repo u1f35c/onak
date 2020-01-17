@@ -295,10 +295,11 @@ static int db4_upgradedb(struct onak_dbctx *dbctx)
 /**
  *	fetch_key_fp - Given a fingerprint fetch the key from storage.
  */
-static int db4_fetch_key_fp(struct onak_dbctx *dbctx,
+static int db4_fetch_key_int(struct onak_dbctx *dbctx,
 		struct openpgp_fingerprint *fingerprint,
 		struct openpgp_publickey **publickey,
-		bool intrans)
+		bool intrans,
+		bool dosubkey)
 {
 	struct onak_db4_dbctx *privctx = (struct onak_db4_dbctx *) dbctx->priv;
 	struct openpgp_packet_list *packets = NULL;
@@ -328,7 +329,7 @@ static int db4_fetch_key_fp(struct onak_dbctx *dbctx,
 			&data,
 			0); /* flags*/
 
-	if (ret == DB_NOTFOUND) {
+	if (ret == DB_NOTFOUND && dosubkey) {
 		/* If we didn't find the key ID see if it's a subkey ID */
 		memset(&key, 0, sizeof(key));
 		memset(&data, 0, sizeof(data));
@@ -384,6 +385,22 @@ static int db4_fetch_key_fp(struct onak_dbctx *dbctx,
 	}
 
 	return (numkeys);
+}
+
+static int db4_fetch_key(struct onak_dbctx *dbctx,
+		struct openpgp_fingerprint *fingerprint,
+		struct openpgp_publickey **publickey,
+		bool intrans)
+{
+	return db4_fetch_key_int(dbctx, fingerprint, publickey, intrans, false);
+}
+
+static int db4_fetch_key_fp(struct onak_dbctx *dbctx,
+		struct openpgp_fingerprint *fingerprint,
+		struct openpgp_publickey **publickey,
+		bool intrans)
+{
+	return db4_fetch_key_int(dbctx, fingerprint, publickey, intrans, true);
 }
 
 /**
@@ -1744,8 +1761,9 @@ struct onak_dbctx *keydb_db4_init(struct onak_db_config *dbcfg, bool readonly)
 	dbctx->cleanupdb		= db4_cleanupdb;
 	dbctx->starttrans		= db4_starttrans;
 	dbctx->endtrans			= db4_endtrans;
-	dbctx->fetch_key_id		= db4_fetch_key_id;
+	dbctx->fetch_key		= db4_fetch_key;
 	dbctx->fetch_key_fp		= db4_fetch_key_fp;
+	dbctx->fetch_key_id		= db4_fetch_key_id;
 	dbctx->fetch_key_text		= db4_fetch_key_text;
 	dbctx->fetch_key_skshash	= db4_fetch_key_skshash;
 	dbctx->store_key		= db4_store_key;

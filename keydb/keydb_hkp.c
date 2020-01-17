@@ -144,24 +144,6 @@ static int hkp_fetch_key_url(struct onak_dbctx *dbctx,
 }
 
 /**
- *	hkp_fetch_key_id - Given a keyid fetch the key from HKP server.
- */
-static int hkp_fetch_key_id(struct onak_dbctx *dbctx,
-		uint64_t keyid,
-		struct openpgp_publickey **publickey,
-		bool intrans)
-{
-	struct onak_hkp_dbctx *privctx = (struct onak_hkp_dbctx *) dbctx->priv;
-	char keyurl[1024];
-
-	snprintf(keyurl, sizeof(keyurl),
-			"%s/lookup?op=get&search=0x%08" PRIX64,
-			privctx->hkpbase, keyid);
-
-	return (hkp_fetch_key_url(dbctx, keyurl, publickey, intrans));
-}
-
-/**
  *	hkp_fetch_key_fp - Given a fingerprint fetch the key from HKP server.
  */
 static int hkp_fetch_key_fp(struct onak_dbctx *dbctx,
@@ -187,6 +169,24 @@ static int hkp_fetch_key_fp(struct onak_dbctx *dbctx,
 	for (i = 0; i < fingerprint->length; i++) {
 		ofs += sprintf(&keyurl[ofs], "%02X", fingerprint->fp[i]);
 	}
+
+	return (hkp_fetch_key_url(dbctx, keyurl, publickey, intrans));
+}
+
+/**
+ *	hkp_fetch_key_id - Given a keyid fetch the key from HKP server.
+ */
+static int hkp_fetch_key_id(struct onak_dbctx *dbctx,
+		uint64_t keyid,
+		struct openpgp_publickey **publickey,
+		bool intrans)
+{
+	struct onak_hkp_dbctx *privctx = (struct onak_hkp_dbctx *) dbctx->priv;
+	char keyurl[1024];
+
+	snprintf(keyurl, sizeof(keyurl),
+			"%s/lookup?op=get&search=0x%08" PRIX64,
+			privctx->hkpbase, keyid);
 
 	return (hkp_fetch_key_url(dbctx, keyurl, publickey, intrans));
 }
@@ -322,6 +322,7 @@ static void hkp_endtrans(struct onak_dbctx *dbctx)
 #define NEED_KEYID2UID 1
 #define NEED_GETKEYSIGS 1
 #define NEED_UPDATEKEYS 1
+#define NEED_GET 1
 #include "keydb.c"
 
 /**
@@ -363,8 +364,9 @@ struct onak_dbctx *keydb_hkp_init(struct onak_db_config *dbcfg, bool readonly)
 	dbctx->cleanupdb		= hkp_cleanupdb;
 	dbctx->starttrans		= hkp_starttrans;
 	dbctx->endtrans			= hkp_endtrans;
-	dbctx->fetch_key_id		= hkp_fetch_key_id;
+	dbctx->fetch_key		= generic_fetch_key;
 	dbctx->fetch_key_fp		= hkp_fetch_key_fp;
+	dbctx->fetch_key_id		= hkp_fetch_key_id;
 	dbctx->fetch_key_text		= hkp_fetch_key_text;
 	dbctx->store_key		= hkp_store_key;
 	dbctx->update_keys		= generic_update_keys;

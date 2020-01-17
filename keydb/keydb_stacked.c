@@ -134,7 +134,8 @@ static void store_on_fallback(struct onak_stacked_dbctx *privctx,
  * reach the end or get a successful result.
  */
 
-static int stacked_fetch_key_id(struct onak_dbctx *dbctx, uint64_t keyid,
+static int stacked_fetch_key(struct onak_dbctx *dbctx,
+		struct openpgp_fingerprint *fingerprint,
 		struct openpgp_publickey **publickey, bool intrans)
 {
 	struct onak_stacked_dbctx *privctx =
@@ -146,7 +147,7 @@ static int stacked_fetch_key_id(struct onak_dbctx *dbctx, uint64_t keyid,
 	for (cur = privctx->backends; cur != NULL && res == 0;
 			cur = cur->next) {
 		backend = (struct onak_dbctx *) cur->object;
-		res = backend->fetch_key_id(backend, keyid, publickey,
+		res = backend->fetch_key(backend, fingerprint, publickey,
 				intrans);
 	}
 
@@ -171,6 +172,29 @@ static int stacked_fetch_key_fp(struct onak_dbctx *dbctx,
 			cur = cur->next) {
 		backend = (struct onak_dbctx *) cur->object;
 		res = backend->fetch_key_fp(backend, fingerprint, publickey,
+				intrans);
+	}
+
+	if (privctx->store_on_fallback && cur != privctx->backends) {
+		store_on_fallback(privctx, *publickey, intrans);
+	}
+
+	return res;
+}
+
+static int stacked_fetch_key_id(struct onak_dbctx *dbctx, uint64_t keyid,
+		struct openpgp_publickey **publickey, bool intrans)
+{
+	struct onak_stacked_dbctx *privctx =
+			(struct onak_stacked_dbctx *) dbctx->priv;
+	struct onak_dbctx *backend;
+	struct ll *cur;
+	int res = 0;
+
+	for (cur = privctx->backends; cur != NULL && res == 0;
+			cur = cur->next) {
+		backend = (struct onak_dbctx *) cur->object;
+		res = backend->fetch_key_id(backend, keyid, publickey,
 				intrans);
 	}
 
@@ -369,8 +393,9 @@ struct onak_dbctx *keydb_stacked_init(struct onak_db_config *dbcfg,
 		dbctx->cleanupdb = stacked_cleanupdb;
 		dbctx->starttrans = stacked_starttrans;
 		dbctx->endtrans = stacked_endtrans;
-		dbctx->fetch_key_id = stacked_fetch_key_id;
+		dbctx->fetch_key = stacked_fetch_key;
 		dbctx->fetch_key_fp = stacked_fetch_key_fp;
+		dbctx->fetch_key_id = stacked_fetch_key_id;
 		dbctx->fetch_key_text = stacked_fetch_key_text;
 		dbctx->fetch_key_skshash = stacked_fetch_key_skshash;
 		dbctx->store_key = stacked_store_key;

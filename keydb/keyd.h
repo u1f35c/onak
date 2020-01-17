@@ -45,6 +45,7 @@ enum keyd_ops {
 	KEYD_CMD_GET_SKSHASH,
 	KEYD_CMD_GET_FP,
 	KEYD_CMD_UPDATE,
+	KEYD_CMD_GET,
 	KEYD_CMD_LAST			/* Placeholder */
 };
 

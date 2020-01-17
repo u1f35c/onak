@@ -265,6 +265,9 @@ static int generic_fetch_key_fp(struct onak_dbctx *dbctx,
 	 * keys need the top 64 bits.  This doesn't work for v3 keys,
 	 * but there's no way to map from v3 fingerprint to v3 key ID so
 	 * if the backend can't do it we're going to fail anyway.
+	 *
+	 * We are also assuming they store a single key based on the ID, so
+	 * we are implementing fetch_key rather than fetch_key_fp
 	 */
 	keyid = 0;
 	if (fingerprint->length == 20) {
@@ -281,5 +284,46 @@ static int generic_fetch_key_fp(struct onak_dbctx *dbctx,
 	}
 
 	return dbctx->fetch_key_id(dbctx, keyid, publickey, intrans);
+}
+#endif
+
+#ifdef NEED_GET
+/*
+ * This fetches a key by fingerprint from the back end, then filters
+ * out what we got back to ensure it's the primary key that matches the
+ * fingerprint, and that only one is returned.
+ */
+static int generic_fetch_key(struct onak_dbctx *dbctx,
+		struct openpgp_fingerprint *fingerprint,
+		struct openpgp_publickey **publickey,
+		bool intrans)
+{
+	struct openpgp_publickey *curkey, **newkey;
+	struct openpgp_publickey *keys;
+	struct openpgp_fingerprint fp;
+	int count;
+
+	/* Find the last key in the provided set of keys */
+	for (newkey = publickey; *newkey != NULL; newkey = &(*newkey)->next)
+		;
+
+	keys = NULL;
+	dbctx->fetch_key_fp(dbctx, fingerprint, &keys, intrans);
+
+	count = 0;
+	for (curkey = keys; curkey != NULL; curkey = curkey->next) {
+		if (get_fingerprint(curkey->publickey, &fp) == ONAK_E_OK) {
+			if (fingerprint_cmp(fingerprint, &fp) == 0) {
+				*newkey = curkey;
+				curkey = curkey->next;
+				(*newkey)->next = NULL;
+				count = 1;
+				break;
+			}
+		}
+	}
+	free_publickey(keys);
+
+	return count;
 }
 #endif

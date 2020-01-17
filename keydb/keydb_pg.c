@@ -644,6 +644,7 @@ static int pg_iterate_keys(struct onak_dbctx *dbctx,
  * Include the basic keydb routines.
  */
 #define NEED_UPDATEKEYS 1
+#define NEED_GET 1
 #define NEED_GET_FP 1
 #include "keydb.c"
 
@@ -702,8 +703,9 @@ struct onak_dbctx *keydb_pg_init(struct onak_db_config *dbcfg, bool readonly)
 	dbctx->cleanupdb		= pg_cleanupdb;
 	dbctx->starttrans		= pg_starttrans;
 	dbctx->endtrans			= pg_endtrans;
-	dbctx->fetch_key_id		= pg_fetch_key_id;
+	dbctx->fetch_key		= generic_fetch_key;
 	dbctx->fetch_key_fp		= generic_fetch_key_fp;
+	dbctx->fetch_key_id		= pg_fetch_key_id;
 	dbctx->fetch_key_text		= pg_fetch_key_text;
 	dbctx->store_key		= pg_store_key;
 	dbctx->update_keys		= generic_update_keys;

@@ -54,14 +54,15 @@ static void dynamic_endtrans(struct onak_dbctx *dbctx)
 	privctx->loadeddbctx->endtrans(privctx->loadeddbctx);
 }
 
-static int dynamic_fetch_key_id(struct onak_dbctx *dbctx, uint64_t keyid,
+static int dynamic_fetch_key(struct onak_dbctx *dbctx,
+		struct openpgp_fingerprint *fingerprint,
 		struct openpgp_publickey **publickey, bool intrans)
 {
 	struct onak_dynamic_dbctx *privctx =
 			(struct onak_dynamic_dbctx *) dbctx->priv;
 
-	return privctx->loadeddbctx->fetch_key_id(privctx->loadeddbctx, keyid,
-			publickey, intrans);
+	return privctx->loadeddbctx->fetch_key(privctx->loadeddbctx,
+			fingerprint, publickey, intrans);
 }
 
 static int dynamic_fetch_key_fp(struct onak_dbctx *dbctx,
@@ -71,8 +72,22 @@ static int dynamic_fetch_key_fp(struct onak_dbctx *dbctx,
 	struct onak_dynamic_dbctx *privctx =
 			(struct onak_dynamic_dbctx *) dbctx->priv;
 
-	return privctx->loadeddbctx->fetch_key_fp(privctx->loadeddbctx,
+	if (privctx->loadeddbctx->fetch_key_fp)
+		return privctx->loadeddbctx->fetch_key_fp(privctx->loadeddbctx,
 			fingerprint, publickey, intrans);
+	else
+		return privctx->loadeddbctx->fetch_key(privctx->loadeddbctx,
+			fingerprint, publickey, intrans);
+}
+
+static int dynamic_fetch_key_id(struct onak_dbctx *dbctx, uint64_t keyid,
+		struct openpgp_publickey **publickey, bool intrans)
+{
+	struct onak_dynamic_dbctx *privctx =
+			(struct onak_dynamic_dbctx *) dbctx->priv;
+
+	return privctx->loadeddbctx->fetch_key_id(privctx->loadeddbctx, keyid,
+			publickey, intrans);
 }
 
 static int dynamic_fetch_key_text(struct onak_dbctx *dbctx,
@@ -304,8 +319,9 @@ struct onak_dbctx *keydb_dynamic_init(struct onak_db_config *dbcfg,
 		dbctx->cleanupdb = dynamic_cleanupdb;
 		dbctx->starttrans = dynamic_starttrans;
 		dbctx->endtrans = dynamic_endtrans;
-		dbctx->fetch_key_id = dynamic_fetch_key_id;
+		dbctx->fetch_key = dynamic_fetch_key;
 		dbctx->fetch_key_fp = dynamic_fetch_key_fp;
+		dbctx->fetch_key_id = dynamic_fetch_key_id;
 		dbctx->fetch_key_text = dynamic_fetch_key_text;
 		dbctx->fetch_key_skshash = dynamic_fetch_key_skshash;
 		dbctx->store_key = dynamic_store_key;

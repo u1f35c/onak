@@ -91,11 +91,9 @@ static bool keyd_send_cmd(int fd, enum keyd_ops _cmd)
  *
  *	This function returns a public key from whatever storage mechanism we
  *	are using.
- *
- *      TODO: What about keyid collisions? Should we use fingerprint instead?
  */
-static int keyd_fetch_key_id(struct onak_dbctx *dbctx,
-		uint64_t keyid,
+static int keyd_fetch_key(struct onak_dbctx *dbctx,
+		struct openpgp_fingerprint *fingerprint,
 		struct openpgp_publickey **publickey,
 		bool intrans)
 {
@@ -104,9 +102,16 @@ static int keyd_fetch_key_id(struct onak_dbctx *dbctx,
 	struct openpgp_packet_list *packets = NULL;
 	ssize_t                     bytes = 0;
 	ssize_t                     count = 0;
+	uint8_t                     size;
 
-	if (keyd_send_cmd(keyd_fd, KEYD_CMD_GET_ID)) {
-		write(keyd_fd, &keyid, sizeof(keyid));
+	if (fingerprint->length > MAX_FINGERPRINT_LEN) {
+		return 0;
+	}
+
+	if (keyd_send_cmd(keyd_fd, KEYD_CMD_GET)) {
+		size = fingerprint->length;
+		write(keyd_fd, &size, sizeof(size));
+		write(keyd_fd, fingerprint->fp, size);
 		keybuf.offset = 0;
 		read(keyd_fd, &keybuf.size, sizeof(keybuf.size));
 		if (keybuf.size > 0) {
@@ -156,6 +161,48 @@ static int keyd_fetch_key_fp(struct onak_dbctx *dbctx,
 		size = fingerprint->length;
 		write(keyd_fd, &size, sizeof(size));
 		write(keyd_fd, fingerprint->fp, size);
+		keybuf.offset = 0;
+		read(keyd_fd, &keybuf.size, sizeof(keybuf.size));
+		if (keybuf.size > 0) {
+			keybuf.buffer = malloc(keybuf.size);
+			bytes = count = 0;
+			logthing(LOGTHING_TRACE,
+					"Getting %d bytes of key data.",
+					keybuf.size);
+			while (bytes >= 0 && count < keybuf.size) {
+				bytes = read(keyd_fd, &keybuf.buffer[count],
+						keybuf.size - count);
+				logthing(LOGTHING_TRACE,
+						"Read %d bytes.", bytes);
+				count += bytes;
+			}
+			read_openpgp_stream(buffer_fetchchar, &keybuf,
+					&packets, 0);
+			parse_keys(packets, publickey);
+			free_packet_list(packets);
+			packets = NULL;
+			free(keybuf.buffer);
+			keybuf.buffer = NULL;
+			keybuf.size = 0;
+		}
+	}
+
+	return (count > 0) ? 1 : 0;
+}
+
+static int keyd_fetch_key_id(struct onak_dbctx *dbctx,
+		uint64_t keyid,
+		struct openpgp_publickey **publickey,
+		bool intrans)
+{
+	int keyd_fd = (intptr_t) dbctx->priv;
+	struct buffer_ctx           keybuf;
+	struct openpgp_packet_list *packets = NULL;
+	ssize_t                     bytes = 0;
+	ssize_t                     count = 0;
+
+	if (keyd_send_cmd(keyd_fd, KEYD_CMD_GET_ID)) {
+		write(keyd_fd, &keyid, sizeof(keyid));
 		keybuf.offset = 0;
 		read(keyd_fd, &keybuf.size, sizeof(keybuf.size));
 		if (keybuf.size > 0) {
@@ -559,8 +606,9 @@ struct onak_dbctx *keydb_keyd_init(struct onak_db_config *dbcfg, bool readonly)
 	dbctx->cleanupdb		= keyd_cleanupdb;
 	dbctx->starttrans		= keyd_starttrans;
 	dbctx->endtrans			= keyd_endtrans;
-	dbctx->fetch_key_id		= keyd_fetch_key_id;
+	dbctx->fetch_key		= keyd_fetch_key;
 	dbctx->fetch_key_fp		= keyd_fetch_key_fp;
+	dbctx->fetch_key_id		= keyd_fetch_key_id;
 	dbctx->fetch_key_text		= keyd_fetch_key_text;
 	dbctx->fetch_key_skshash	= keyd_fetch_key_skshash;
 	dbctx->store_key		= keyd_store_key;

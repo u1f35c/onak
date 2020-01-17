@@ -56,15 +56,30 @@ struct onak_dbctx {
 	void (*endtrans)(struct onak_dbctx *);
 
 /**
+ * @brief Given a fingerprint fetch the key from storage.
+ * @param fp The fingerprint to fetch.
+ * @param fpsize Number of bytes in the fingerprint (16 for v3, 20 for v4)
+ * @param publickey A pointer to a structure to return the key in.
+ * @param intrans  If we're already in a transaction.
+ *
+ * This function returns a public key from whatever storage mechanism we
+ * are using. This only searches for the fingerprint of the primary key
+ * and will thus only ever return at most a single key.
+ */
+	int (*fetch_key)(struct onak_dbctx *,
+			struct openpgp_fingerprint *fingerprint,
+			struct openpgp_publickey **publickey,
+			bool intrans);
+
+/**
  * @brief Given a keyid fetch the key from storage.
  * @param keyid The keyid to fetch.
  * @param publickey A pointer to a structure to return the key in.
  * @param intrans  If we're already in a transaction.
  *
  * This function returns a public key from whatever storage mechanism we
- * are using.
- *
- * TODO: What about keyid collisions? Should we use fingerprint instead?
+ * are using. It may return multiple keys in the case where there are
+ * colliding keyids.
  */
 	int (*fetch_key_id)(struct onak_dbctx *,
 			uint64_t keyid,
@@ -79,12 +94,37 @@ struct onak_dbctx {
  * @param intrans  If we're already in a transaction.
  *
  * This function returns a public key from whatever storage mechanism we
- * are using.
+ * are using. Although the fingerprint should be unique this function may
+ * also search subkeys, which could be bound to multiple primary keys. As
+ * a result multiple keys may be returned.
  */
 	int (*fetch_key_fp)(struct onak_dbctx *,
 			struct openpgp_fingerprint *fingerprint,
 			struct openpgp_publickey **publickey,
 			bool intrans);
+
+/**
+ * @brief Tries to find the keys that contain the supplied text.
+ * @param search The text to search for.
+ * @param publickey A pointer to a structure to return the key in.
+ *
+ * This function searches for the supplied text and returns the keys that
+ * contain it. It is likely it will return multiple keys.
+ */
+	int (*fetch_key_text)(struct onak_dbctx *, const char *search,
+			struct openpgp_publickey **publickey);
+
+/**
+ * @brief Tries to find the keys from an SKS hash
+ * @param hash The hash to search for.
+ * @param publickey A pointer to a structure to return the key in.
+ *
+ * This function looks for the key that is referenced by the supplied
+ * SKS hash and returns it.
+ */
+	int (*fetch_key_skshash)(struct onak_dbctx *,
+			const struct skshash *hash,
+			struct openpgp_publickey **publickey);
 
 /**
  * @brief Takes a key and stores it.
@@ -113,29 +153,6 @@ struct onak_dbctx {
  */
 	int (*delete_key)(struct onak_dbctx *, struct openpgp_fingerprint *fp,
 			bool intrans);
-
-/**
- * @brief Trys to find the keys that contain the supplied text.
- * @param search The text to search for.
- * @param publickey A pointer to a structure to return the key in.
- *
- * This function searches for the supplied text and returns the keys that
- * contain it.
- */
-	int (*fetch_key_text)(struct onak_dbctx *, const char *search,
-			struct openpgp_publickey **publickey);
-
-/**
- * @brief Tries to find the keys from an SKS hash
- * @param hash The hash to search for.
- * @param publickey A pointer to a structure to return the key in.
- *
- * This function looks for the key that is referenced by the supplied
- * SKS hash and returns it.
- */
-	int (*fetch_key_skshash)(struct onak_dbctx *,
-			const struct skshash *hash,
-			struct openpgp_publickey **publickey);
 
 /**
  * @brief Takes a list of public keys and updates them in the DB.

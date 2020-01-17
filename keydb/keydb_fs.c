@@ -633,6 +633,7 @@ static int fs_iterate_keys(struct onak_dbctx *dbctx,
 #define NEED_KEYID2UID 1
 #define NEED_GETKEYSIGS 1
 #define NEED_UPDATEKEYS 1
+#define NEED_GET 1
 #define NEED_GET_FP 1
 #include "keydb.c"
 
@@ -709,8 +710,9 @@ struct onak_dbctx *keydb_fs_init(struct onak_db_config *dbcfg, bool readonly)
 	dbctx->cleanupdb		= fs_cleanupdb;
 	dbctx->starttrans		= fs_starttrans;
 	dbctx->endtrans			= fs_endtrans;
-	dbctx->fetch_key_id		= fs_fetch_key_id;
+	dbctx->fetch_key		= generic_fetch_key;
 	dbctx->fetch_key_fp		= generic_fetch_key_fp;
+	dbctx->fetch_key_id		= fs_fetch_key_id;
 	dbctx->fetch_key_text		= fs_fetch_key_text;
 	dbctx->fetch_key_skshash	= fs_fetch_key_skshash;
 	dbctx->store_key		= fs_store_key;

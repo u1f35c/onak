@@ -75,7 +75,7 @@ static void keyring_endtrans(struct onak_dbctx *dbctx)
 /**
  * keyring_fetch_key - fetch a key given its index
  */
-static int keyring_fetch_key(struct onak_keyring_dbctx *privctx,
+static int keyring_fetch_key_idx(struct onak_keyring_dbctx *privctx,
 		unsigned int index,
 		struct openpgp_publickey **publickey)
 {
@@ -97,7 +97,11 @@ static int keyring_fetch_key(struct onak_keyring_dbctx *privctx,
 	return 1;
 }
 
-static int keyring_fetch_key_fp(struct onak_dbctx *dbctx,
+/*
+ * We only index the primary fingerprint of the key, so will only return one
+ * key at most from this function.
+ */
+static int keyring_fetch_key(struct onak_dbctx *dbctx,
 			struct openpgp_fingerprint *fingerprint,
 			struct openpgp_publickey **publickey,
 			bool intrans)
@@ -112,7 +116,7 @@ static int keyring_fetch_key_fp(struct onak_dbctx *dbctx,
 	}
 
 	if (i < privctx->count) {
-		return keyring_fetch_key(privctx, i, publickey);
+		return keyring_fetch_key_idx(privctx, i, publickey);
 	}
 
 	return 0;
@@ -136,7 +140,7 @@ static int keyring_fetch_key_id(struct onak_dbctx *dbctx,
 	count = 0;
 	for (i = 0; i < privctx->count; i++) {
 		if (fingerprint2keyid(&privctx->keys[i].fp) == keyid) {
-			if (keyring_fetch_key(privctx, i, publickey))
+			if (keyring_fetch_key_idx(privctx, i, publickey))
 				count++;
 		}
 	}
@@ -211,7 +215,7 @@ static int keyring_iterate_keys(struct onak_dbctx *dbctx,
 
 	count = 0;
 	for (i = 0; i < privctx->count; i++) {
-		if (keyring_fetch_key(privctx, i, &key)) {
+		if (keyring_fetch_key_idx(privctx, i, &key)) {
 			iterfunc(ctx, key);
 			free_publickey(key);
 			key = NULL;
@@ -327,7 +331,8 @@ static int keyring_parse_keys(struct onak_keyring_dbctx *privctx)
 				 * We need to fetch the key to calculate the
 				 * fingerprint.
 				 */
-				keyring_fetch_key(privctx, privctx->count - 1,
+				keyring_fetch_key_idx(privctx,
+						privctx->count - 1,
 						&key);
 				get_fingerprint(key->publickey,
 					&privctx->keys[privctx->count - 1].fp);
@@ -440,8 +445,10 @@ struct onak_dbctx *keydb_keyring_init(struct onak_db_config *dbcfg,
 	dbctx->cleanupdb		= keyring_cleanupdb;
 	dbctx->starttrans		= keyring_starttrans;
 	dbctx->endtrans			= keyring_endtrans;
+	dbctx->fetch_key		= keyring_fetch_key;
+	/* We don't index by subkey fingerprint, so fallback to fetch_key */
+	dbctx->fetch_key_fp		= keyring_fetch_key;
 	dbctx->fetch_key_id		= keyring_fetch_key_id;
-	dbctx->fetch_key_fp		= keyring_fetch_key_fp;
 	dbctx->fetch_key_text		= keyring_fetch_key_text;
 	dbctx->store_key		= keyring_store_key;
 	dbctx->update_keys		= keyring_update_keys;
