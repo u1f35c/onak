@@ -141,7 +141,7 @@ int clean_sighashes(struct onak_dbctx *dbctx,
 		bool *selfsig, bool *othersig)
 {
 	struct openpgp_packet_list *tmpsig;
-	struct openpgp_publickey *sigkey = NULL;
+	struct openpgp_publickey *sigkeys = NULL, *curkey;
 	onak_status_t ret;
 	uint8_t hashtype;
 	uint8_t hash[64];
@@ -198,10 +198,20 @@ int clean_sighashes(struct onak_dbctx *dbctx,
 				}
 			}
 
-			if (remove && dbctx->fetch_key_id(dbctx, sigid,
-						&sigkey, false)) {
+			if (remove) {
+				dbctx->fetch_key_id(dbctx, sigid,
+						&sigkeys, false);
+			}
 
-				ret = onak_check_hash_sig(sigkey,
+			/*
+			 * A 64 bit collision is probably a sign of something
+			 * sneaky happening, but if the signature verifies we
+			 * should keep it.
+			 */
+			for (curkey = sigkeys; curkey != NULL;
+					curkey = curkey->next) {
+
+				ret = onak_check_hash_sig(curkey,
 						(*sigs)->packet,
 						hash, hashtype);
 
@@ -211,11 +221,12 @@ int clean_sighashes(struct onak_dbctx *dbctx,
 					if (othersig != NULL) {
 						*othersig = true;
 					}
+					break;
 				}
-
-				free_publickey(sigkey);
-				sigkey = NULL;
 			}
+
+			free_publickey(sigkeys);
+			sigkeys = NULL;
 		}
 #endif
 
