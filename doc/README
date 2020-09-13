@@ -47,7 +47,7 @@ Once make has completed you'll end up with various binaries:
   mathopd.conf file provided that I used for testing, but I'm now using
   Apache for the public test rig as it's already present on the host
   running it.
- 
+
 * splitkeys
   Utility to take a keyring and split it up into a bunch of smaller ones.
 
@@ -99,11 +99,10 @@ please let me know and I'll add them.
 
 * pks
   http://sf.net/projects/pks/
-  The prodominant keyserver I believe; what I used to run on
-  wwwkeys.uk.pgp.net. Had a spurt of activity a year or two ago, but
-  seems to have died off again. The main issue with pks is that it lacks
-  support for keys with multiple subkeys bound to them and older
-  versions unfortunately mangle them.
+  The original mainstream keyserver; what I used to run on
+  wwwkeys.uk.pgp.net. Died off due to lack of support for more modern
+  key features such as multiple subkeys, to the extent that it would
+  manage them. Largely replaced by SKS.
 
 * CryptNET Keyserver
   http://www.cryptnet.net/fsp/cks/
@@ -111,15 +110,21 @@ please let me know and I'll add them.
   when I looked at it there was no support for syncing via email which
   means it can't replace a pks server to act as part of pgp.net.
 
+* Hockeypuck
+  https://hockeypuck.io/
+  Written in Go and with support for the SKS synchronisation protocol.
+
 * OpenPKSD
   http://openpksd.org/
   Don't really know a lot about this. Primarily Japanese development
   AFAICT.
 
 * SKS
-  http://sks.sourceforge.net/
-  A reasonably new keyserver concentrating more on the whole issue of
-  syncronization between keyservers. Seems to be gaining in popularity.
+  https://github.com/SKS-Keyserver/sks-keyserver
+  Probably the most popular keyserver currently. Improves dramatically
+  on the email synchronisation method by using an HTTP based set
+  reconciliation approach ensuring the keyserver network eventually
+  reaches consistency.
 
 
 Contacting the author:
