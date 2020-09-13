@@ -5,6 +5,9 @@
 
 #cmakedefine HAVE_CRYPTO 1
 #cmakedefine HAVE_NETTLE 1
+#cmakedefine HAVE_NETTLE_GET_SECP_256R1 1
+#cmakedefine HAVE_NETTLE_GET_SECP_384R1 1
+#cmakedefine HAVE_NETTLE_GET_SECP_521R1 1
 #cmakedefine HAVE_SYSTEMD 1
 #cmakedefine WORDS_BIGENDIAN 1
 

@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 project(onak VERSION 0.6.0 LANGUAGES C)
 
+include(CheckSymbolExists)
 include(FindPkgConfig)
 include(GNUInstallDirs)
 include(TestBigEndian)
@@ -60,6 +61,13 @@ if (GMP_FOUND)
 	target_include_directories(libonak SYSTEM PUBLIC
 			${GMP_INCLUDE_DIRS} ${HOGWEED_INCLUDE_DIRS})
 	LIST(APPEND LIBONAK_LIBRARIES ${GMP_LIBRARY} ${HOGWEED_LIBRARIES})
+
+	set(CMAKE_REQUIRED_INCLUDES ${NETTLE_INCLUDE_DIRS})
+	set(CMAKE_REQUIRED_LIBRARIES ${NETTLE_LIBRARIES} ${HOGWEED_LIBRARIES})
+	# API change in later version of Nettle
+	CHECK_SYMBOL_EXISTS(nettle_get_secp_256r1 "nettle/ecc-curve.h" HAVE_NETTLE_GET_SECP_256R1)
+	CHECK_SYMBOL_EXISTS(nettle_get_secp_384r1 "nettle/ecc-curve.h" HAVE_NETTLE_GET_SECP_384R1)
+	CHECK_SYMBOL_EXISTS(nettle_get_secp_521r1 "nettle/ecc-curve.h" HAVE_NETTLE_GET_SECP_521R1)
 endif()
 
 # Build files that have substitutions in them

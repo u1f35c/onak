@@ -49,13 +49,13 @@
 #include <nettle/rsa.h>
 #include "rsa.h"
 
-#ifndef nettle_get_secp_256r1
+#ifndef HAVE_NETTLE_GET_SECP_256R1
 #define nettle_get_secp_256r1() &nettle_secp_256r1
 #endif
-#ifndef nettle_get_secp_384r1
+#ifndef HAVE_NETTLE_GET_SECP_384R1
 #define nettle_get_secp_384r1() &nettle_secp_384r1
 #endif
-#ifndef nettle_get_secp_521r1
+#ifndef HAVE_NETTLE_GET_SECP_521R1
 #define nettle_get_secp_521r1() &nettle_secp_521r1
 #endif
 
