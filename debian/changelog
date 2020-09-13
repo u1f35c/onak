@@ -1,4 +1,4 @@
-onak (0.6.0-1) UNRELEASED; urgency=low
+onak (0.6.1-1) UNRELEASED; urgency=low
 
   * New upstream release
   * Bump debhelper compat level to 10

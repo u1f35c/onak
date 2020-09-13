@@ -362,3 +362,7 @@
 * Various pieces of work removing support for 32 bit key IDs and coping
   with colliding 64 bit key IDs.
 * Remove support for libnettle versions that lack the full SHA2 suite
+
+0.6.1 - 13th September 2020
+
+* Fixes for compilation without nettle + with later releases of nettle
