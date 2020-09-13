@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
-project(onak VERSION 0.5.0 LANGUAGES C)
+project(onak VERSION 0.6.0 LANGUAGES C)
 
 include(FindPkgConfig)
 include(GNUInstallDirs)

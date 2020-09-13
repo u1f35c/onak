@@ -343,3 +343,22 @@
 * Include statistics for fetch by SKS hash in 'keydctl status'
 * Pull key updates into keyd protocol rather than using delete/store
 * Various robustness cleanups from American Fuzzy Lop testing
+
+0.6.0 - 13th September 2020
+
+* Move to CMake over autoconf
+* Add support for issuer fingerprint subpackets
+* Add experimental support for v5 keys
+* Add read-only OpenPGP keyring backed DB backend
+* Move various bits into their own subdirectories in the source tree
+* Add support for full signature verification
+* Drop v3 keys by default when cleaning keys
+* Various code cleanups
+* Implement pieces of draft-dkg-openpgp-abuse-resistant-keystore-03
+* Add support for a fingerprint blacklist (e.g. Evil32)
+* Deprecate the .conf configuration file format
+* Drop version info from armored output
+* Add option to deny new keys and only allow updates to existing keys
+* Various pieces of work removing support for 32 bit key IDs and coping
+  with colliding 64 bit key IDs.
+* Remove support for libnettle versions that lack the full SHA2 suite

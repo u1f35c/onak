@@ -1,6 +1,6 @@
-onak 0.5.0
-Copyright 2003-2016 Jonathan McDowell
-http://www.earth.li/projectpurple/progs/onak.html
+onak 0.6.0
+Copyright 2003-2020 Jonathan McDowell
+https://www.earth.li/projectpurple/progs/onak.html
 
 
 Introduction:
@@ -139,16 +139,20 @@ Obtaining later versions:
 
 onak lives at:
 
-http://www.earth.li/projectpurple/progs/onak.html
+https://www.earth.li/projectpurple/progs/onak.html
 
 Development is carried out using git; you can access the repository
 with something like:
 
-git clone git://the.earth.li/onak.git
+git clone https://the.earth.li/git/onak.git
 
 or it can be browsed via gitweb at:
 
-http://the.earth.li/gitweb/?p=onak.git;a=summary
+https://the.earth.li/gitweb/?p=onak.git;a=summary
+
+It is also mirrored on GitHub at:
+
+https://github.com/u1f35c/onak
 
 
 License:
