@@ -11,6 +11,7 @@ addons:
       - cmake
       - libdb-dev
       - libcurl4-gnutls-dev
+      - libpq-dev
       - libsystemd-dev
       - nettle-dev
 before_script:
