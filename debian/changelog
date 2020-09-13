@@ -6,6 +6,7 @@ onak (0.6.1-1) UNRELEASED; urgency=low
   * Cleanup postinst to avoid recursive chown of database
   * Add dependency on pkg-config
   * Remove --with=systemd from dh call.
+  * Rename debian/NEWS.Debian to debian/NEWS
 
  -- Jonathan McDowell <noodles@earth.li>  Thu, 22 Aug 2019 07:18:49 +0100
 
