@@ -1,4 +1,4 @@
-onak (0.6.1-1) UNRELEASED; urgency=low
+onak (0.6.1-1) unstable; urgency=low
 
   * New upstream release
   * Bump debhelper compat level to 10
@@ -9,7 +9,7 @@ onak (0.6.1-1) UNRELEASED; urgency=low
   * Rename debian/NEWS.Debian to debian/NEWS
   * Bump Debian Standards-Version to 4.5.0
 
- -- Jonathan McDowell <noodles@earth.li>  Thu, 22 Aug 2019 07:18:49 +0100
+ -- Jonathan McDowell <noodles@earth.li>  Sun, 13 Sep 2020 12:11:12 +0100
 
 onak (0.5.0-1) unstable; urgency=low
 
