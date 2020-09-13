@@ -16,8 +16,11 @@
  * this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "build-config.h"
+
 #include <string.h>
 
+#ifdef HAVE_NETTLE
 #include <nettle/ripemd160.h>
 #include <nettle/rsa.h>
 #include <nettle/sha.h>
@@ -77,3 +80,4 @@ int rsa_sha384_verify_digest(const struct rsa_public_key *key,
 
 	return rsa_pkcs1_verify(key, sizeof(buf), buf, s);
 }
+#endif /* HAVE_NETTLE */
