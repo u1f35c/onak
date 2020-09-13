@@ -5,6 +5,7 @@ onak (0.6.1-1) UNRELEASED; urgency=low
   * Set Rules-Requires-Root to no
   * Cleanup postinst to avoid recursive chown of database
   * Add dependency on pkg-config
+  * Remove --with=systemd from dh call.
 
  -- Jonathan McDowell <noodles@earth.li>  Thu, 22 Aug 2019 07:18:49 +0100
 

@@ -4,7 +4,7 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 CFLAGS += -std=gnu99
 
 %:
-	dh "$@" --with systemd
+	dh "$@"
 
 override_dh_installinit:
 	dh_installinit --no-start
