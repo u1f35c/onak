@@ -231,7 +231,7 @@ int list_subkeys(struct onak_dbctx *dbctx,
 		struct openpgp_signedpacket_list *subkeys, bool verbose,
 		bool html)
 {
-	struct tm	*created = NULL;
+	struct tm	created;
 	time_t		created_time = 0;
 	int	 	type = 0;
 	int	 	length = 0;
@@ -244,7 +244,7 @@ int list_subkeys(struct onak_dbctx *dbctx,
 					(subkeys->packet->data[2] << 16) +
 					(subkeys->packet->data[3] << 8) +
 					subkeys->packet->data[4];
-			created = gmtime(&created_time);
+			gmtime_r(&created_time, &created);
 
 			switch (subkeys->packet->data[0]) {
 			case 2:
@@ -270,9 +270,9 @@ int list_subkeys(struct onak_dbctx *dbctx,
 				length,
 				pkalgo2char(type),
 				keyid,
-				created->tm_year + 1900,
-				created->tm_mon + 1,
-				created->tm_mday);
+				created.tm_year + 1900,
+				created.tm_mon + 1,
+				created.tm_mday);
 
 		}
 		if (verbose) {
@@ -348,12 +348,13 @@ int key_index(struct onak_dbctx *dbctx,
 			bool skshash, bool html)
 {
 	struct openpgp_signedpacket_list	*curuid = NULL;
-	struct tm				*created = NULL;
+	struct tm				 created;
 	time_t					 created_time = 0;
 	int					 type = 0;
 	int					 length = 0;
 	char					 buf[1024];
 	uint64_t				 keyid;
+
 
 	if (html) {
 		puts("<pre>");
@@ -364,7 +365,7 @@ int key_index(struct onak_dbctx *dbctx,
 					(keys->publickey->data[2] << 16) +
 					(keys->publickey->data[3] << 8) +
 					keys->publickey->data[4];
-		created = gmtime(&created_time);
+		gmtime_r(&created_time, &created);
 
 		switch (keys->publickey->data[0]) {
 		case 2:
@@ -393,17 +394,17 @@ int key_index(struct onak_dbctx *dbctx,
 				pkalgo2char(type),
 				keyid,
 				keyid,
-				created->tm_year + 1900,
-				created->tm_mon + 1,
-				created->tm_mday);
+				created.tm_year + 1900,
+				created.tm_mon + 1,
+				created.tm_mday);
 		} else {
 			printf("pub  %5d%c/0x%016" PRIX64 " %04d/%02d/%02d ",
 				length,
 				pkalgo2char(type),
 				keyid,
-				created->tm_year + 1900,
-				created->tm_mon + 1,
-				created->tm_mday);
+				created.tm_year + 1900,
+				created.tm_mon + 1,
+				created.tm_mday);
 		}
 
 		curuid = keys->uids;

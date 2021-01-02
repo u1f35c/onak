@@ -150,6 +150,7 @@ static void keyd_status(void)
 {
 	uint32_t reply;
 	struct keyd_stats stats;
+	char started[26];	/* ctime(3) says 26 is the necessary size */
 
 	if (keyd_do_command(KEYD_CMD_VERSION, &reply, sizeof(reply)) == -1) {
 		printf("Got failure asking for keyd version.\n");
@@ -162,7 +163,7 @@ static void keyd_status(void)
 		return;
 	}
 
-	printf("keyd running since %s", ctime(&stats.started));
+	printf("keyd running since %s", ctime_r(&stats.started, started));
 	printf("%d client connections received\n", stats.connects);
 
 	printf("Command statistics:\n");

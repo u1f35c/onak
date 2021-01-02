@@ -133,19 +133,19 @@ loglevels getlogthreshold(void)
  */
 static void vflog(FILE *logfile, const char *format, va_list ap)
 {
-	struct tm *timestamp = NULL;
-	time_t     timer = 0;
+	struct tm timestamp;
+	time_t    timer = 0;
 
 	timer = time(NULL);
-	timestamp = localtime(&timer);
+	localtime_r(&timer, &timestamp);
 
 	fprintf(logfile, "[%02d/%02d/%4d %02d:%02d:%02d] %s[%d]: ",
-			timestamp->tm_mday,
-			timestamp->tm_mon + 1,
-			timestamp->tm_year + 1900,
-			timestamp->tm_hour,
-			timestamp->tm_min,
-			timestamp->tm_sec,
+			timestamp.tm_mday,
+			timestamp.tm_mon + 1,
+			timestamp.tm_year + 1900,
+			timestamp.tm_hour,
+			timestamp.tm_min,
+			timestamp.tm_sec,
 			(logappname == NULL) ? "" : logappname,
 			getpid());
 	vfprintf(logfile, format, ap);
