@@ -315,7 +315,6 @@ static int generic_fetch_key(struct onak_dbctx *dbctx,
 		if (get_fingerprint(curkey->publickey, &fp) == ONAK_E_OK) {
 			if (fingerprint_cmp(fingerprint, &fp) == 0) {
 				*newkey = curkey;
-				curkey = curkey->next;
 				(*newkey)->next = NULL;
 				count = 1;
 				break;
