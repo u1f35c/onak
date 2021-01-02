@@ -409,6 +409,7 @@ onak_status_t onak_check_hash_sig(struct openpgp_publickey *sigkey,
 		ret = ecdsa_verify(&pubkey.ecc,
 				SHA1_DIGEST_SIZE, hash, &dsasig) ?
 			ONAK_E_OK : ONAK_E_BAD_SIGNATURE;
+		break;
 	case KEYHASH(OPENPGP_PKALGO_ECDSA, OPENPGP_HASH_SHA256):
 		ret = ecdsa_verify(&pubkey.ecc,
 				SHA256_DIGEST_SIZE, hash, &dsasig) ?
