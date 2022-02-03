@@ -151,9 +151,6 @@ int clean_sighashes(struct onak_dbctx *dbctx,
 	bool remove;
 
 	get_keyid(key, &keyid);
-	if (othersig != NULL) {
-		*othersig = false;
-	}
 	if (selfsig != NULL) {
 		*selfsig = false;
 	}
@@ -249,17 +246,19 @@ int clean_list_sighashes(struct onak_dbctx *dbctx,
 			struct openpgp_signedpacket_list **siglist,
 			bool fullverify, bool needother)
 {
-	struct openpgp_signedpacket_list *tmp = NULL;
+	struct openpgp_signedpacket_list **orig, *tmp = NULL;
 	bool selfsig, othersig;
 	int removed = 0;
 
+	othersig = false;
+	orig = siglist;
 	while (siglist != NULL && *siglist != NULL) {
-		selfsig = othersig = false;
+		selfsig = false;
 
 		removed += clean_sighashes(dbctx, key, (*siglist)->packet,
 			&(*siglist)->sigs, fullverify, &selfsig, &othersig);
 
-		if (fullverify && (!selfsig || (needother && !othersig))) {
+		if (fullverify && !selfsig) {
 			/* Remove the UID/subkey if there's no selfsig */
 			tmp = *siglist;
 			*siglist = (*siglist)->next;
@@ -267,6 +266,20 @@ int clean_list_sighashes(struct onak_dbctx *dbctx,
 			free_signedpacket_list(tmp);
 		} else {
 			siglist = &(*siglist)->next;
+		}
+	}
+
+	/*
+	 * We need at least one UID to have a signature from another key,
+	 * otherwise we remove all of them if needother is set.
+	 */
+	if (needother && fullverify && !othersig) {
+		siglist = orig;
+		while (siglist != NULL && *siglist != NULL) {
+			tmp = *siglist;
+			*siglist = (*siglist)->next;
+			tmp->next = NULL;
+			free_signedpacket_list(tmp);
 		}
 	}
 
@@ -350,7 +363,9 @@ int cleankeys(struct onak_dbctx *dbctx, struct openpgp_publickey **keys,
 		uint64_t policies)
 {
 	struct openpgp_publickey **curkey, *tmp;
+	struct openpgp_fingerprint fp;
 	int changed = 0, count = 0;
+	bool needother;
 
 	if (keys == NULL)
 		return 0;
@@ -375,9 +390,24 @@ int cleankeys(struct onak_dbctx *dbctx, struct openpgp_publickey **keys,
 		count += dedupsubkeys(*curkey);
 		if (policies & (ONAK_CLEAN_CHECK_SIGHASH |
 					ONAK_CLEAN_VERIFY_SIGNATURES)) {
+
+			needother = policies & ONAK_CLEAN_NEED_OTHER_SIG;
+			if (needother) {
+				/*
+				 * Check if we already have the key; if we do
+				 * then we can skip the check to make sure we
+				 * have signatures from other keys.
+				 */
+				get_fingerprint((*curkey)->publickey, &fp);
+				tmp = NULL;
+				needother = dbctx->fetch_key(dbctx, &fp,
+						&tmp, false) == 0;
+				free_publickey(tmp);
+			}
+
 			count += clean_key_signatures(dbctx, *curkey,
 				policies & ONAK_CLEAN_VERIFY_SIGNATURES,
-				policies & ONAK_CLEAN_NEED_OTHER_SIG);
+				needother);
 		}
 		if (count > 0) {
 			changed++;
