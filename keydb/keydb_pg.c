@@ -290,12 +290,6 @@ static int pg_delete_key(struct onak_dbctx *dbctx,
 		PQclear(result);
 
 		snprintf(statement, 1023,
-			"DELETE FROM onak_keys WHERE keyid = '%" PRIX64 "'",
-			keyid);
-		result = PQexec(dbconn, statement);
-		PQclear(result);
-
-		snprintf(statement, 1023,
 			"DELETE FROM onak_sigs WHERE signee = '%" PRIX64 "'",
 			keyid);
 		result = PQexec(dbconn, statement);
@@ -303,6 +297,12 @@ static int pg_delete_key(struct onak_dbctx *dbctx,
 
 		snprintf(statement, 1023,
 			"DELETE FROM onak_uids WHERE keyid = '%" PRIX64 "'",
+			keyid);
+		result = PQexec(dbconn, statement);
+		PQclear(result);
+
+		snprintf(statement, 1023,
+			"DELETE FROM onak_keys WHERE keyid = '%" PRIX64 "'",
 			keyid);
 		result = PQexec(dbconn, statement);
 	} else if (PQresultStatus(result) != PGRES_TUPLES_OK) {
