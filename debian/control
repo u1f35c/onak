@@ -3,7 +3,7 @@ Section: net
 Priority: optional
 Maintainer: Jonathan McDowell <noodles@earth.li>
 Build-Depends: cmake,
-	debhelper (>= 10),
+	debhelper-compat (= 13),
 	libcurl4-gnutls-dev | libcurl-dev,
 	libdb-dev,
 	libsystemd-dev (>= 214) [linux-any] | libsystemd-daemon-dev [linux-any],
