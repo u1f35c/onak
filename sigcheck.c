@@ -290,6 +290,7 @@ onak_status_t onak_check_hash_sig(struct openpgp_publickey *sigkey,
 	onak_status_t ret;
 	struct onak_key_material pubkey;
 	struct dsa_signature dsasig;
+	uint8_t sigkeytype;
 	uint8_t edsig[64];
 	uint64_t keyid;
 	int len, ofs;
@@ -306,29 +307,51 @@ onak_status_t onak_check_hash_sig(struct openpgp_publickey *sigkey,
 		goto out;
 	}
 
+	if (sig->data[0] == 3) {
+		/* Must be 5 bytes hashed */
+		if (sig->data[1] != 5) {
+			ret = ONAK_E_INVALID_PARAM;
+			goto out;
+		}
+
+		/* Need at least 19 bytes for the sig header */
+		if (sig->length < 19) {
+			ret = ONAK_E_INVALID_PKT;
+			goto out;
+		}
+
+		/* Skip to the signature material */
+		ofs += 19;
+		sigkeytype = sig->data[15];
+	} else if (sig->data[0] >= 4) {
+		/* Skip the hashed data */
+		ofs = (sig->data[4] << 8) + sig->data[5] + 6;
+		if (sig->length < ofs + 2) {
+			ret = ONAK_E_INVALID_PKT;
+			goto out;
+		}
+		/* Skip the unhashed data */
+		ofs += (sig->data[ofs] << 8) + sig->data[ofs + 1] + 2;
+		if (sig->length < ofs + 2) {
+			ret = ONAK_E_INVALID_PKT;
+			goto out;
+		}
+		/* Skip the sig hash bytes */
+		ofs += 2;
+		sigkeytype = sig->data[2];
+	} else {
+		ret = ONAK_E_UNSUPPORTED_FEATURE;
+		goto out;
+	}
+
 	/* Is the key the same type as the signature we're checking? */
-	if (pubkey.type != sig->data[2]) {
+	if (pubkey.type != sigkeytype) {
 		ret = ONAK_E_INVALID_PARAM;
 		goto out;
 	}
 
-	/* Skip the hashed data */
-	ofs = (sig->data[4] << 8) + sig->data[5] + 6;
-	if (sig->length < ofs + 2) {
-		ret = ONAK_E_INVALID_PKT;
-		goto out;
-	}
-	/* Skip the unhashed data */
-	ofs += (sig->data[ofs] << 8) + sig->data[ofs + 1] + 2;
-	if (sig->length < ofs + 2) {
-		ret = ONAK_E_INVALID_PKT;
-		goto out;
-	}
-	/* Skip the sig hash bytes */
-	ofs += 2;
-
 	/* Parse the actual signature values */
-	switch (sig->data[2]) {
+	switch (sigkeytype) {
 	case OPENPGP_PKALGO_ECDSA:
 	case OPENPGP_PKALGO_DSA:
 		mpz_init(dsasig.r);
@@ -478,7 +501,7 @@ onak_status_t onak_check_hash_sig(struct openpgp_publickey *sigkey,
 	}
 
 sigerr:
-	switch (sig->data[2]) {
+	switch (sigkeytype) {
 	case OPENPGP_PKALGO_ECDSA:
 	case OPENPGP_PKALGO_EDDSA:
 	case OPENPGP_PKALGO_DSA:
