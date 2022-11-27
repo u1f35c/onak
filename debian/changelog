@@ -1,3 +1,12 @@
+onak (0.6.2-1) unstable; urgency=low
+
+  * New upstream release
+  * Bump debhelper compat level to 13
+  * Use /run/onak for keyd socket
+  * Bump Debian Standards-Version to 4.6.1
+
+ -- Jonathan McDowell <noodles@earth.li>  Sun, 27 Nov 2022 19:41:19 +0000
+
 onak (0.6.1-1) unstable; urgency=low
 
   * New upstream release

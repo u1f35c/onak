@@ -366,3 +366,11 @@
 0.6.1 - 13th September 2020
 
 * Fixes for compilation without nettle + with later releases of nettle
+
+0.6.2 - 27th November 2022
+
+* Don't take creation time from unhashed subpackets
+* Fix ECDSA/SHA1 signature check
+* Fix handling of other signature requirement
+* Fix deletion of keys with PostgreSQL backend
+* Add support for verifying v3 signature packets
