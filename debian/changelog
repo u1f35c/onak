@@ -1,3 +1,10 @@
+onak (0.6.2-2) UNRELEASED; urgency=low
+
+  * Switch to RuntimeDirectory in systemd service file. Thanks to Guillem
+    Jover for the pointer.
+
+ -- Jonathan McDowell <noodles@earth.li>  Mon, 02 Jan 2023 15:55:04 +0000
+
 onak (0.6.2-1) unstable; urgency=low
 
   * New upstream release
