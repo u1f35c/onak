@@ -4,8 +4,11 @@
 set(BACKENDS "file" "fs" "keyring" "stacked")
 
 # DB4 backend (add check for existence)
-LIST(APPEND BACKENDS db4)
-set(BACKEND_db4_LIBS db-5.3)
+find_package(BDB)
+if (BDB_FOUND)
+	LIST(APPEND BACKENDS db4)
+	set(BACKEND_db4_LIBS db)
+endif()
 
 # HKP backend - needs libcurl
 pkg_check_modules(CURL libcurl)
