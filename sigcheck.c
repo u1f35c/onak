@@ -21,23 +21,13 @@
 
 #include "build-config.h"
 #include "decodekey.h"
+#include "hash-helper.h"
 #include "keyid.h"
 #include "keystructs.h"
 #include "log.h"
 #include "onak.h"
 #include "openpgp.h"
 #include "sigcheck.h"
-
-#ifdef HAVE_NETTLE
-#include <nettle/md5.h>
-#include <nettle/ripemd160.h>
-#include <nettle/sha.h>
-#else
-#include "md5.h"
-#include "sha1.h"
-#endif
-
-#include "sha1x.h"
 
 #ifdef HAVE_CRYPTO
 #include <gmp.h>
@@ -530,27 +520,17 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 			uint8_t **sighash)
 {
 	size_t siglen, unhashedlen;
-	struct sha1_ctx sha1_context;
-	struct sha1x_ctx sha1x_context;
-	struct md5_ctx md5_context;
-#ifdef HAVE_NETTLE
-	struct ripemd160_ctx ripemd160_context;
-	struct sha224_ctx sha224_context;
-	struct sha256_ctx sha256_context;
-	struct sha384_ctx sha384_context;
-	struct sha512_ctx sha512_context;
-#endif
+	struct onak_hash_data hashdata;
 	uint8_t keyheader[5];
 	uint8_t packetheader[5];
 	uint8_t trailer[10];
-	uint8_t *hashdata[8];
-	size_t hashlen[8];
-	int chunks, i;
+	int i;
 	uint64_t keyid;
 	onak_status_t res;
 
 	*hashtype = 0;
 	*sighash = NULL;
+	memset(&hashdata, 0, sizeof(hashdata));
 
 	switch (sig->data[0]) {
 	case 2:
@@ -558,11 +538,11 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 		keyheader[0] = 0x99;
 		keyheader[1] = key->publickey->length >> 8;
 		keyheader[2] = key->publickey->length & 0xFF;
-		hashdata[0] = keyheader;
-		hashlen[0] = 3;
-		hashdata[1] = key->publickey->data;
-		hashlen[1] = key->publickey->length;
-		chunks = 2;
+		hashdata.data[0] = keyheader;
+		hashdata.len[0] = 3;
+		hashdata.data[1] = key->publickey->data;
+		hashdata.len[1] = key->publickey->length;
+		hashdata.chunks = 2;
 
 		*hashtype = sig->data[16];
 
@@ -571,31 +551,31 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 				packetheader[0] = 0x99;
 				packetheader[1] = packet->length >> 8;
 				packetheader[2] = packet->length & 0xFF;
-				hashdata[chunks] = packetheader;
-				hashlen[chunks] = 3;
-				chunks++;
+				hashdata.data[hashdata.chunks] = packetheader;
+				hashdata.len[hashdata.chunks] = 3;
+				hashdata.chunks++;
 			}
 
 			// TODO: Things other than UIDS/subkeys?
-			hashdata[chunks] = packet->data;
-			hashlen[chunks] = packet->length;
-			chunks++;
+			hashdata.data[hashdata.chunks] = packet->data;
+			hashdata.len[hashdata.chunks] = packet->length;
+			hashdata.chunks++;
 		}
 
-		hashdata[chunks] = &sig->data[2];
-		hashlen[chunks] = 5;
-		chunks++;
+		hashdata.data[hashdata.chunks] = &sig->data[2];
+		hashdata.len[hashdata.chunks] = 5;
+		hashdata.chunks++;
 		*sighash = &sig->data[17];
 		break;
 	case 4:
 		keyheader[0] = 0x99;
 		keyheader[1] = key->publickey->length >> 8;
 		keyheader[2] = key->publickey->length & 0xFF;
-		hashdata[0] = keyheader;
-		hashlen[0] = 3;
-		hashdata[1] = key->publickey->data;
-		hashlen[1] = key->publickey->length;
-		chunks = 2;
+		hashdata.data[0] = keyheader;
+		hashdata.len[0] = 3;
+		hashdata.data[1] = key->publickey->data;
+		hashdata.len[1] = key->publickey->length;
+		hashdata.chunks = 2;
 
 		/* Check to see if this is an X509 based signature */
 		if (sig->data[2] == 0 || sig->data[2] == 100) {
@@ -630,9 +610,9 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 				packetheader[0] = 0x99;
 				packetheader[1] = packet->length >> 8;
 				packetheader[2] = packet->length & 0xFF;
-				hashdata[chunks] = packetheader;
-				hashlen[chunks] = 3;
-				chunks++;
+				hashdata.data[hashdata.chunks] = packetheader;
+				hashdata.len[hashdata.chunks] = 3;
+				hashdata.chunks++;
 			} else if (packet->tag == OPENPGP_PACKET_UID ||
 					packet->tag == OPENPGP_PACKET_UAT) {
 				packetheader[0] = (packet->tag ==
@@ -641,23 +621,23 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 				packetheader[2] = (packet->length >> 16) & 0xFF;
 				packetheader[3] = (packet->length >> 8) & 0xFF;
 				packetheader[4] = packet->length & 0xFF;
-				hashdata[chunks] = packetheader;
-				hashlen[chunks] = 5;
-				chunks++;
+				hashdata.data[hashdata.chunks] = packetheader;
+				hashdata.len[hashdata.chunks] = 5;
+				hashdata.chunks++;
 			}
-			hashdata[chunks] = packet->data;
-			hashlen[chunks] = packet->length;
-			chunks++;
+			hashdata.data[hashdata.chunks] = packet->data;
+			hashdata.len[hashdata.chunks] = packet->length;
+			hashdata.chunks++;
 		}
 
-		hashdata[chunks] = sig->data;
-		hashlen[chunks] = siglen = (sig->data[4] << 8) +
+		hashdata.data[hashdata.chunks] = sig->data;
+		hashdata.len[hashdata.chunks] = siglen = (sig->data[4] << 8) +
 			sig->data[5] + 6;;
 		if (siglen > sig->length) {
 			/* Signature data exceed packet length, bogus */
 			return ONAK_E_INVALID_PKT;
 		}
-		chunks++;
+		hashdata.chunks++;
 
 		trailer[0] = 4;
 		trailer[1] = 0xFF;
@@ -665,9 +645,9 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 		trailer[3] = (siglen >> 16) & 0xFF;
 		trailer[4] = (siglen >> 8) & 0xFF;
 		trailer[5] = siglen & 0xFF;
-		hashdata[chunks] = trailer;
-		hashlen[chunks] = 6;
-		chunks++;
+		hashdata.data[hashdata.chunks] = trailer;
+		hashdata.len[hashdata.chunks] = 6;
+		hashdata.chunks++;
 
 		unhashedlen = (sig->data[siglen] << 8) +
 			sig->data[siglen + 1];
@@ -679,11 +659,11 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 		keyheader[2] = 0;
 		keyheader[3] = key->publickey->length >> 8;
 		keyheader[4] = key->publickey->length & 0xFF;
-		hashdata[0] = keyheader;
-		hashlen[0] = 5;
-		hashdata[1] = key->publickey->data;
-		hashlen[1] = key->publickey->length;
-		chunks = 2;
+		hashdata.data[0] = keyheader;
+		hashdata.len[0] = 5;
+		hashdata.data[1] = key->publickey->data;
+		hashdata.len[1] = key->publickey->length;
+		hashdata.chunks = 2;
 
 		*hashtype = sig->data[3];
 
@@ -694,9 +674,9 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 				packetheader[2] = 0;
 				packetheader[3] = packet->length >> 8;
 				packetheader[4] = packet->length & 0xFF;
-				hashdata[chunks] = packetheader;
-				hashlen[chunks] = 5;
-				chunks++;
+				hashdata.data[hashdata.chunks] = packetheader;
+				hashdata.len[hashdata.chunks] = 5;
+				hashdata.chunks++;
 			} else if (packet->tag == OPENPGP_PACKET_UID ||
 					packet->tag == OPENPGP_PACKET_UAT) {
 				packetheader[0] = (packet->tag ==
@@ -705,23 +685,23 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 				packetheader[2] = (packet->length >> 16) & 0xFF;
 				packetheader[3] = (packet->length >> 8) & 0xFF;
 				packetheader[4] = packet->length & 0xFF;
-				hashdata[chunks] = packetheader;
-				hashlen[chunks] = 5;
-				chunks++;
+				hashdata.data[hashdata.chunks] = packetheader;
+				hashdata.len[hashdata.chunks] = 5;
+				hashdata.chunks++;
 			}
-			hashdata[chunks] = packet->data;
-			hashlen[chunks] = packet->length;
-			chunks++;
+			hashdata.data[hashdata.chunks] = packet->data;
+			hashdata.len[hashdata.chunks] = packet->length;
+			hashdata.chunks++;
 		}
 
-		hashdata[chunks] = sig->data;
-		hashlen[chunks] = siglen = (sig->data[4] << 8) +
+		hashdata.data[hashdata.chunks] = sig->data;
+		hashdata.len[hashdata.chunks] = siglen = (sig->data[4] << 8) +
 			sig->data[5] + 6;;
 		if (siglen > sig->length) {
 			/* Signature data exceed packet length, bogus */
 			return ONAK_E_INVALID_PKT;
 		}
-		chunks++;
+		hashdata.chunks++;
 
 		trailer[0] = 5;
 		trailer[1] = 0xFF;
@@ -733,9 +713,9 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 		trailer[7] = (siglen >> 16) & 0xFF;
 		trailer[8] = (siglen >> 8) & 0xFF;
 		trailer[9] = siglen & 0xFF;
-		hashdata[chunks] = trailer;
-		hashlen[chunks] = 10;
-		chunks++;
+		hashdata.data[hashdata.chunks] = trailer;
+		hashdata.len[hashdata.chunks] = 10;
+		hashdata.chunks++;
 
 		unhashedlen = (sig->data[siglen] << 8) +
 			sig->data[siglen + 1];
@@ -745,74 +725,9 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 		return ONAK_E_UNSUPPORTED_FEATURE;
 	}
 
-	switch (*hashtype) {
-	case OPENPGP_HASH_MD5:
-		md5_init(&md5_context);
-		for (i = 0; i < chunks; i++) {
-			md5_update(&md5_context, hashlen[i], hashdata[i]);
-		}
-		md5_digest(&md5_context, MD5_DIGEST_SIZE, hash);
-		break;
-	case OPENPGP_HASH_SHA1:
-		sha1_init(&sha1_context);
-		for (i = 0; i < chunks; i++) {
-			sha1_update(&sha1_context, hashlen[i], hashdata[i]);
-		}
-		sha1_digest(&sha1_context, SHA1_DIGEST_SIZE, hash);
-		break;
-	case OPENPGP_HASH_SHA1X:
-		sha1x_init(&sha1x_context);
-		for (i = 0; i < chunks; i++) {
-			sha1x_update(&sha1x_context, hashlen[i], hashdata[i]);
-		}
-		sha1x_digest(&sha1x_context, SHA1X_DIGEST_SIZE, hash);
-		break;
-#ifdef HAVE_NETTLE
-	case OPENPGP_HASH_RIPEMD160:
-		ripemd160_init(&ripemd160_context);
-		for (i = 0; i < chunks; i++) {
-			ripemd160_update(&ripemd160_context, hashlen[i],
-				hashdata[i]);
-		}
-		ripemd160_digest(&ripemd160_context, RIPEMD160_DIGEST_SIZE,
-			hash);
-		break;
-	case OPENPGP_HASH_SHA224:
-		sha224_init(&sha224_context);
-		for (i = 0; i < chunks; i++) {
-			sha224_update(&sha224_context, hashlen[i],
-				hashdata[i]);
-		}
-		sha224_digest(&sha224_context, SHA224_DIGEST_SIZE, hash);
-		break;
-	case OPENPGP_HASH_SHA256:
-		sha256_init(&sha256_context);
-		for (i = 0; i < chunks; i++) {
-			sha256_update(&sha256_context, hashlen[i],
-				hashdata[i]);
-		}
-		sha256_digest(&sha256_context, SHA256_DIGEST_SIZE, hash);
-		break;
-	case OPENPGP_HASH_SHA384:
-		sha384_init(&sha384_context);
-		for (i = 0; i < chunks; i++) {
-			sha384_update(&sha384_context, hashlen[i],
-				hashdata[i]);
-		}
-		sha384_digest(&sha384_context, SHA384_DIGEST_SIZE, hash);
-		break;
-	case OPENPGP_HASH_SHA512:
-		sha512_init(&sha512_context);
-		for (i = 0; i < chunks; i++) {
-			sha512_update(&sha512_context, hashlen[i],
-				hashdata[i]);
-		}
-		sha512_digest(&sha512_context, SHA512_DIGEST_SIZE, hash);
-		break;
-#endif
-	default:
-		return ONAK_E_UNSUPPORTED_FEATURE;
-	}
+	hashdata.hashtype = *hashtype;
 
-	return ONAK_E_OK;
+	res = onak_hash(&hashdata, hash);
+
+	return res;
 }
