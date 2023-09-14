@@ -187,6 +187,9 @@ int main(int argc, char *argv[])
 			binary = true;
 			break;
 		case 'c':
+			if (configfile != NULL) {
+				free(configfile);
+			}
 			configfile = strdup(optarg);
 			break;
 		case 'e':

@@ -139,7 +139,7 @@ void unescape_url(char *url)
 char **getcgivars(int argc, char *argv[]) 
 {
 	int i;
-	char *request_method;
+	char *request_method, *env;
 	int content_length, paircount;
 	char *cgiinput = NULL;
 	char **cgivars = NULL;
@@ -161,27 +161,31 @@ char **getcgivars(int argc, char *argv[])
 		return NULL;
 	} else if (!strcmp(request_method, "GET") ||
 			!strcmp(request_method, "HEAD")) {
-		cgiinput=strdup(getenv("QUERY_STRING"));
+		env = getenv("QUERY_STRING");
+		if (env != NULL) {
+			cgiinput = strdup(env);
+		}
 	} else if (!strcmp(request_method, "POST")) {
-		if (getenv("CONTENT_TYPE") != NULL &&
-				strcasecmp(getenv("CONTENT_TYPE"),
-					"application/x-www-form-urlencoded")) {
+		env = getenv("CONTENT_TYPE");
+		if ((env != NULL) && strcasecmp(env,
+				"application/x-www-form-urlencoded")) {
 			printf("getcgivars(): Unsupported Content-Type.\n");
 			exit(1);
 		}
-		
-		if (!(content_length = atoi(getenv("CONTENT_LENGTH")))) {
+
+		env = getenv("CONTENT_LENGTH");
+		if ((env == NULL) || !(content_length = atoi(env))) {
 			printf("getcgivars(): No Content-Length was sent with"
 					" the POST request.\n");
 			exit(1);
 		}
-		
-		if (!(cgiinput= (char *) malloc(content_length+1))) {
+
+		if (!(cgiinput = (char *) malloc(content_length+1))) {
 			printf("getcgivars(): Could not malloc for "
 					"cgiinput.\n");
 			exit(1);
 		}
-		
+
 		if (!fread(cgiinput, content_length, 1, stdin)) {
 			printf("Couldn't read CGI input from STDIN.\n");
 			exit(1);
@@ -192,6 +196,11 @@ char **getcgivars(int argc, char *argv[])
 	} else {
 		printf("getcgivars(): unsupported REQUEST_METHOD\n");
 		exit(1);
+	}
+
+	/* If we didn't get any cgiinput info, nothing to return */
+	if (cgiinput == NULL) {
+		return NULL;
 	}
 
 	/* Change all plusses back to spaces */

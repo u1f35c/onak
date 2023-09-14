@@ -263,6 +263,12 @@ static onak_status_t onak_parse_key_material(struct openpgp_packet *pk,
 		return ONAK_E_UNSUPPORTED_FEATURE;
 	}
 
+	/*
+	 * Keep scan-build happy; we bump this in MPI_TO_MPZ and then don't use
+	 * it again the last time we do so.
+	 */
+	(void)ofs;
+
 	key->type = pk->data[5];
 
 	if (ret != ONAK_E_OK) {
@@ -311,7 +317,7 @@ onak_status_t onak_check_hash_sig(struct openpgp_publickey *sigkey,
 		}
 
 		/* Skip to the signature material */
-		ofs += 19;
+		ofs = 19;
 		sigkeytype = sig->data[15];
 	} else if (sig->data[0] >= 4) {
 		/* Skip the hashed data */

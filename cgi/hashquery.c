@@ -42,7 +42,7 @@ void doerror(char *error)
 
 int main(int argc, char *argv[])
 {
-	char *request_method;
+	char *request_method, *env;
 	int count, found, i;
 	uint8_t **hashes;
 	struct buffer_ctx cgipostbuf;
@@ -57,7 +57,8 @@ int main(int argc, char *argv[])
 		doerror("hashquery must be a HTTP POST request.\n");
 	}
 
-	if (!(cgipostbuf.size = atoi(getenv("CONTENT_LENGTH")))) {
+	env = getenv("CONTENT_LENGTH");
+	if ((env == NULL) || !(cgipostbuf.size = atoi(env))) {
 		doerror("Must provide a content length.\n");
 	}
 

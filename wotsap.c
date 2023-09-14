@@ -197,6 +197,9 @@ int main(int argc, char *argv[])
 	while ((optchar = getopt(argc, argv, "c:")) != -1 ) {
 		switch (optchar) {
 		case 'c':
+			if (configfile != NULL) {
+				free(configfile);
+			}
 			configfile = strdup(optarg);
 			break;
 		}
