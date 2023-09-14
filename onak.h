@@ -29,6 +29,7 @@ typedef enum {
 	ONAK_E_UNSUPPORTED_FEATURE,
 	ONAK_E_BAD_SIGNATURE,
 	ONAK_E_WEAK_SIGNATURE,
+	ONAK_E_IO_ERROR,
 } onak_status_t;
 
 #endif /* __ONAK_H__ */

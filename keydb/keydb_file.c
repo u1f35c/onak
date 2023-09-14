@@ -29,6 +29,7 @@
 #include <unistd.h>
 
 #include "charfuncs.h"
+#include "key-store.h"
 #include "keydb.h"
 #include "keyid.h"
 #include "keystructs.h"
@@ -78,21 +79,19 @@ static int file_fetch_key_id(struct onak_dbctx *dbctx,
 	char *db_dir = (char *) dbctx->priv;
 	struct openpgp_packet_list *packets = NULL;
 	char keyfile[1024];
-	int fd = -1;
+	onak_status_t res;
 
 	snprintf(keyfile, 1023, "%s/0x%" PRIX64, db_dir,
 			keyid & 0xFFFFFFFF);
-	fd = open(keyfile, O_RDONLY); // | O_SHLOCK);
+	res = onak_read_openpgp_file(keyfile, &packets);
 
-	if (fd > -1) {
-		read_openpgp_stream(file_fetchchar, &fd, &packets, 0);
+	if (res == ONAK_E_OK) {
 		parse_keys(packets, publickey);
 		free_packet_list(packets);
 		packets = NULL;
-		close(fd);
 	}
 
-	return (fd > -1);
+	return (res == ONAK_E_OK);
 }
 
 /**
@@ -199,8 +198,8 @@ static int file_iterate_keys(struct onak_dbctx *dbctx,
 	struct openpgp_publickey   *key = NULL;
 	DIR                        *dir;
 	char                        keyfile[1024];
-	int                         fd = -1;
 	struct dirent              *curfile = NULL;
+	onak_status_t               res;
 
 	dir = opendir(db_dir);
 
@@ -211,13 +210,10 @@ static int file_iterate_keys(struct onak_dbctx *dbctx,
 				snprintf(keyfile, 1023, "%s/%s",
 						db_dir,
 						curfile->d_name);
-				fd = open(keyfile, O_RDONLY);
+				res = onak_read_openpgp_file(keyfile,
+						&packets);
 
-				if (fd > -1) {
-					read_openpgp_stream(file_fetchchar,
-							&fd,
-							&packets,
-							0);
+				if (res == ONAK_E_OK) {
 					parse_keys(packets, &key);
 
 					iterfunc(ctx, key);
@@ -226,7 +222,6 @@ static int file_iterate_keys(struct onak_dbctx *dbctx,
 					key = NULL;
 					free_packet_list(packets);
 					packets = NULL;
-					close(fd);
 				}
 				numkeys++;
 			}

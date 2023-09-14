@@ -36,9 +36,9 @@ endif()
 
 # Core objects
 add_library(libonak STATIC armor.c charfuncs.c cleankey.c cleanup.c decodekey.c
-	getcgi.c hash.c hash-helper.c keyarray.c keyid.c keyindex.c ll.c log.c
-	marshal.c mem.c merge.c onak-conf.c parsekey.c photoid.c rsa.c
-	sigcheck.c sendsync.c sha1x.c wordlist.c)
+	getcgi.c hash.c hash-helper.c key-store.c keyarray.c keyid.c keyindex.c
+	ll.c log.c marshal.c mem.c merge.c onak-conf.c parsekey.c photoid.c
+	rsa.c sigcheck.c sendsync.c sha1x.c wordlist.c)
 set(LIBONAK_LIBRARIES "")
 
 # Ideally use Nettle, fall back to our own md5/sha1 routines otherwise

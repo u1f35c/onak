@@ -32,6 +32,7 @@
 
 #include "charfuncs.h"
 #include "decodekey.h"
+#include "key-store.h"
 #include "keydb.h"
 #include "keyid.h"
 #include "keystructs.h"
@@ -258,8 +259,9 @@ static int fs_fetch_key_id(struct onak_dbctx *dbctx,
 	      bool intrans)
 {
 	static char buffer[PATH_MAX];
-	int ret = 0, fd;
+	int ret = 0;
 	struct openpgp_packet_list *packets = NULL;
+	onak_status_t res;
 
 	if (!intrans)
 		fs_starttrans(dbctx);
@@ -268,20 +270,20 @@ static int fs_fetch_key_id(struct onak_dbctx *dbctx,
 		keyid = fs_getfullkeyid(dbctx, keyid);
 
 	keypath(buffer, sizeof(buffer), keyid, dbctx->config->location);
-	fd = open(buffer, O_RDONLY);
-	if (fd == -1 && errno == ENOENT) {
+	res = onak_read_openpgp_file(buffer,
+					&packets);
+	if (res == ONAK_E_NOT_FOUND) {
 		subkeypath(buffer, sizeof(buffer), keyid,
 			dbctx->config->location);
-		fd = open(buffer, O_RDONLY);
+		res = onak_read_openpgp_file(buffer,
+					&packets);
 	}
 
-	if (fd != -1) {
+	if (res == ONAK_E_OK) {
 		/* File is present, load it in... */
-		read_openpgp_stream(file_fetchchar, &fd, &packets, 0);
 		parse_keys(packets, publickey);
 		free_packet_list(packets);
 		packets = NULL;
-		close(fd);
 		ret = 1;
 	}
 
@@ -593,16 +595,16 @@ static int fs_fetch_key_skshash(struct onak_dbctx *dbctx,
 	      struct openpgp_publickey **publickey)
 {
 	static char buffer[PATH_MAX];
-	int ret = 0, fd;
+	int ret = 0;
 	struct openpgp_packet_list *packets = NULL;
+	onak_status_t res;
 
 	skshashpath(buffer, sizeof(buffer), hash, dbctx->config->location);
-	if ((fd = open(buffer, O_RDONLY)) != -1) {
-		read_openpgp_stream(file_fetchchar, &fd, &packets, 0);
+	res = onak_read_openpgp_file(buffer, &packets);
+	if (res == ONAK_E_OK) {
 		parse_keys(packets, publickey);
 		free_packet_list(packets);
 		packets = NULL;
-		close(fd);
 		ret = 1;
 	}
 
