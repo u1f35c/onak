@@ -28,6 +28,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include "build-config.h"
 #include "charfuncs.h"
 #include "keyd.h"
 #include "keydb.h"
@@ -46,7 +47,7 @@
  *	operations on the database to help speed it all up, or if we want
  *	something to only succeed if all relevant operations are successful.
  */
-static bool keyd_starttrans(struct onak_dbctx *dbctx)
+static bool keyd_starttrans(__unused struct onak_dbctx *dbctx)
 {
 	return true;
 }
@@ -56,7 +57,7 @@ static bool keyd_starttrans(struct onak_dbctx *dbctx)
  *
  *	Ends a transaction.
  */
-static void keyd_endtrans(struct onak_dbctx *dbctx)
+static void keyd_endtrans(__unused struct onak_dbctx *dbctx)
 {
 	return;
 }
@@ -95,7 +96,7 @@ static bool keyd_send_cmd(int fd, enum keyd_ops _cmd)
 static int keyd_fetch_key(struct onak_dbctx *dbctx,
 		struct openpgp_fingerprint *fingerprint,
 		struct openpgp_publickey **publickey,
-		bool intrans)
+		__unused bool intrans)
 {
 	int keyd_fd = (intptr_t) dbctx->priv;
 	struct buffer_ctx           keybuf;
@@ -144,7 +145,7 @@ static int keyd_fetch_key(struct onak_dbctx *dbctx,
 static int keyd_fetch_key_fp(struct onak_dbctx *dbctx,
 		struct openpgp_fingerprint *fingerprint,
 		struct openpgp_publickey **publickey,
-		bool intrans)
+		__unused bool intrans)
 {
 	int keyd_fd = (intptr_t) dbctx->priv;
 	struct buffer_ctx           keybuf;
@@ -193,7 +194,7 @@ static int keyd_fetch_key_fp(struct onak_dbctx *dbctx,
 static int keyd_fetch_key_id(struct onak_dbctx *dbctx,
 		uint64_t keyid,
 		struct openpgp_publickey **publickey,
-		bool intrans)
+		__unused bool intrans)
 {
 	int keyd_fd = (intptr_t) dbctx->priv;
 	struct buffer_ctx           keybuf;
@@ -241,7 +242,8 @@ static int keyd_fetch_key_id(struct onak_dbctx *dbctx,
 *	are using. Returns 0 if the key existed.
 */
 static int keyd_delete_key(struct onak_dbctx *dbctx,
-		struct openpgp_fingerprint *fp, bool intrans)
+		struct openpgp_fingerprint *fp,
+		__unused bool intrans)
 {
 	int keyd_fd = (intptr_t) dbctx->priv;
 
@@ -267,7 +269,8 @@ static int keyd_delete_key(struct onak_dbctx *dbctx,
  *	it?
  */
 static int keyd_store_key(struct onak_dbctx *dbctx,
-		struct openpgp_publickey *publickey, bool intrans,
+		struct openpgp_publickey *publickey,
+		__unused bool intrans,
 		bool update)
 {
 	int keyd_fd = (intptr_t) dbctx->priv;
@@ -527,7 +530,8 @@ static void keyd_cleanupdb(struct onak_dbctx *dbctx)
  *	this file are called in order to allow the DB to be initialized ready
  *	for access.
  */
-struct onak_dbctx *keydb_keyd_init(struct onak_db_config *dbcfg, bool readonly)
+struct onak_dbctx *keydb_keyd_init(struct onak_db_config *dbcfg,
+		__unused bool readonly)
 {
 	struct sockaddr_un sock;
 	uint32_t	   cmd = KEYD_CMD_UNKNOWN;

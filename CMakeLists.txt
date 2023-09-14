@@ -23,6 +23,21 @@ option(KEYD
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 TEST_BIG_ENDIAN(WORDS_BIGENDIAN)
 
+include(CheckCSourceCompiles)
+check_c_source_compiles(
+	"
+		#include <stdlib.h>
+		static void f(__attribute__((unused))) {}
+		int main(void) { f(); return 0;}
+	"
+	HAVE___ATTRIBUTE__UNUSED
+)
+if (HAVE___ATTRIBUTE__UNUSED)
+	set(UNUSED_ATTRIB "__attribute__((unused))")
+else()
+	set(UNUSED_ATTRIB "")
+endif()
+
 # Pick up a git based version number for development builds
 find_package(Git)
 if (GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")

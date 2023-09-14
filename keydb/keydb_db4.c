@@ -31,6 +31,7 @@
 
 #include <db.h>
 
+#include "build-config.h"
 #include "charfuncs.h"
 #include "keyarray.h"
 #include "keydb.h"
@@ -92,7 +93,7 @@ DB *keydb_fp(struct onak_db4_dbctx *privctx, struct openpgp_fingerprint *fp)
 #if (DB_VERSION_MAJOR == 4) && (DB_VERSION_MINOR < 3)
 static void db4_errfunc(const char *errpfx, const char *errmsg)
 #else
-static void db4_errfunc(const DB_ENV *edbenv, const char *errpfx,
+static void db4_errfunc(__unused const DB_ENV *edbenv, const char *errpfx,
 		const char *errmsg)
 #endif
 {

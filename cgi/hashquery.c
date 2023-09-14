@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <unistd.h>
 
+#include "build-config.h"
 #include "charfuncs.h"
 #include "cleanup.h"
 #include "keydb.h"
@@ -40,7 +41,7 @@ void doerror(char *error)
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc, char *argv[])
+int main(__unused int argc, __unused char *argv[])
 {
 	char *request_method, *env;
 	int count, found, i;

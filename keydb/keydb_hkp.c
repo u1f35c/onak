@@ -107,7 +107,7 @@ static size_t hkp_curl_recv_data(void *buffer, size_t size, size_t nmemb,
 static int hkp_fetch_key_url(struct onak_dbctx *dbctx,
 		char *url,
 		struct openpgp_publickey **publickey,
-		bool intrans)
+		__unused bool intrans)
 {
 	struct onak_hkp_dbctx *privctx = (struct onak_hkp_dbctx *) dbctx->priv;
 	struct openpgp_packet_list *packets = NULL;
@@ -149,7 +149,7 @@ static int hkp_fetch_key_url(struct onak_dbctx *dbctx,
 static int hkp_fetch_key_fp(struct onak_dbctx *dbctx,
 		struct openpgp_fingerprint *fingerprint,
 		struct openpgp_publickey **publickey,
-		bool intrans)
+		__unused bool intrans)
 {
 	struct onak_hkp_dbctx *privctx = (struct onak_hkp_dbctx *) dbctx->priv;
 	char keyurl[1024];
@@ -223,8 +223,9 @@ static int hkp_fetch_key_text(struct onak_dbctx *dbctx,
  *
  */
 static int hkp_store_key(struct onak_dbctx *dbctx,
-		struct openpgp_publickey *publickey, bool intrans,
-		bool update)
+		struct openpgp_publickey *publickey,
+		__unused bool intrans,
+		__unused bool update)
 {
 	struct onak_hkp_dbctx *privctx = (struct onak_hkp_dbctx *) dbctx->priv;
 	struct openpgp_packet_list *packets = NULL;
@@ -276,8 +277,8 @@ static int hkp_store_key(struct onak_dbctx *dbctx,
  *
  *	No op for HKP.
  */
-static int hkp_delete_key(struct onak_dbctx *dbctx,
-		struct openpgp_fingerprint *fp, bool intrans)
+static int hkp_delete_key(__unused struct onak_dbctx *dbctx,
+		__unused struct openpgp_fingerprint *fp, __unused bool intrans)
 {
 	return -1;
 }
@@ -289,9 +290,9 @@ static int hkp_delete_key(struct onak_dbctx *dbctx,
  *
  *	Not applicable for HKP backend.
  */
-static int hkp_iterate_keys(struct onak_dbctx *dbctx,
-		void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
-		void *ctx)
+static int hkp_iterate_keys(__unused struct onak_dbctx *dbctx,
+		__unused void (*iterfunc)(void *ctx, struct openpgp_publickey *key),
+		__unused void *ctx)
 {
 	return 0;
 }
@@ -301,7 +302,7 @@ static int hkp_iterate_keys(struct onak_dbctx *dbctx,
  *
  *	This is just a no-op for HKP access.
  */
-static bool hkp_starttrans(struct onak_dbctx *dbctx)
+static bool hkp_starttrans(__unused struct onak_dbctx *dbctx)
 {
 	return true;
 }
@@ -311,7 +312,7 @@ static bool hkp_starttrans(struct onak_dbctx *dbctx)
  *
  *	This is just a no-op for HKP access.
  */
-static void hkp_endtrans(struct onak_dbctx *dbctx)
+static void hkp_endtrans(__unused struct onak_dbctx *dbctx)
 {
 	return;
 }
@@ -348,7 +349,8 @@ static void hkp_cleanupdb(struct onak_dbctx *dbctx)
  *
  *	We initialize CURL here.
  */
-struct onak_dbctx *keydb_hkp_init(struct onak_db_config *dbcfg, bool readonly)
+struct onak_dbctx *keydb_hkp_init(struct onak_db_config *dbcfg,
+		__unused bool readonly)
 {
 	struct onak_dbctx *dbctx;
 	struct onak_hkp_dbctx *privctx;

@@ -11,4 +11,6 @@
 #cmakedefine HAVE_SYSTEMD 1
 #cmakedefine WORDS_BIGENDIAN 1
 
+#define __unused @UNUSED_ATTRIB@
+
 #endif /* __CONFIG_H__ */

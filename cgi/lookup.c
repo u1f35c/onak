@@ -50,7 +50,7 @@ void find_keys(struct onak_dbctx *dbctx,
 		char *search, uint64_t keyid,
 		struct openpgp_fingerprint *fingerprint,
 		bool ishex, bool isfp, bool dispfp, bool skshash,
-		bool exact, bool verbose, bool mrhkp)
+		__unused bool exact, bool verbose, bool mrhkp)
 {
 	struct openpgp_publickey *publickey = NULL;
 	int count = 0;

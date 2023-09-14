@@ -29,6 +29,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "build-config.h"
 #include "charfuncs.h"
 #include "keyarray.h"
 #include "keydb.h"
@@ -57,7 +58,7 @@ struct onak_keyring_dbctx {
  *
  *	This is just a no-op for keyring file access.
  */
-static bool keyring_starttrans(struct onak_dbctx *dbctx)
+static bool keyring_starttrans(__unused struct onak_dbctx *dbctx)
 {
 	return true;
 }
@@ -67,7 +68,7 @@ static bool keyring_starttrans(struct onak_dbctx *dbctx)
  *
  *	This is just a no-op for keyring file access.
  */
-static void keyring_endtrans(struct onak_dbctx *dbctx)
+static void keyring_endtrans(__unused struct onak_dbctx *dbctx)
 {
 	return;
 }
@@ -104,7 +105,7 @@ static int keyring_fetch_key_idx(struct onak_keyring_dbctx *privctx,
 static int keyring_fetch_key(struct onak_dbctx *dbctx,
 			struct openpgp_fingerprint *fingerprint,
 			struct openpgp_publickey **publickey,
-			bool intrans)
+			__unused bool intrans)
 {
 	struct onak_keyring_dbctx *privctx =
 		(struct onak_keyring_dbctx *) dbctx->priv;
@@ -131,7 +132,7 @@ static int keyring_fetch_key(struct onak_dbctx *dbctx,
 static int keyring_fetch_key_id(struct onak_dbctx *dbctx,
 		uint64_t keyid,
 		struct openpgp_publickey **publickey,
-		bool intrans)
+		__unused bool intrans)
 {
 	struct onak_keyring_dbctx *privctx =
 		(struct onak_keyring_dbctx *) dbctx->priv;
@@ -156,9 +157,10 @@ static int keyring_fetch_key_id(struct onak_dbctx *dbctx,
  *
  *	We don't support storing keys into a keyring file.
  */
-static int keyring_store_key(struct onak_dbctx *dbctx,
-		struct openpgp_publickey *publickey, bool intrans,
-		bool update)
+static int keyring_store_key(__unused struct onak_dbctx *dbctx,
+		__unused struct openpgp_publickey *publickey,
+		__unused bool intrans,
+		__unused bool update)
 {
 	return 0;
 }
@@ -170,8 +172,8 @@ static int keyring_store_key(struct onak_dbctx *dbctx,
  *
  *	We don't support removing keys from a keyring file.
  */
-static int keyring_delete_key(struct onak_dbctx *dbctx,
-		struct openpgp_fingerprint *fp, bool intrans)
+static int keyring_delete_key(__unused struct onak_dbctx *dbctx,
+		__unused struct openpgp_fingerprint *fp, __unused bool intrans)
 {
 	return 1;
 }
@@ -186,9 +188,9 @@ static int keyring_delete_key(struct onak_dbctx *dbctx,
  *
  *	TODO: Write for flat file access. Some sort of grep?
  */
-static int keyring_fetch_key_text(struct onak_dbctx *dbctx,
-		const char *search,
-		struct openpgp_publickey **publickey)
+static int keyring_fetch_key_text(__unused struct onak_dbctx *dbctx,
+		__unused const char *search,
+		__unused struct openpgp_publickey **publickey)
 {
 	return 0;
 }
@@ -225,11 +227,11 @@ static int keyring_iterate_keys(struct onak_dbctx *dbctx,
 	return count;
 }
 
-static int keyring_update_keys(struct onak_dbctx *dbctx,
-		struct openpgp_publickey **keys,
-		struct keyarray *blacklist,
-		bool updateonly,
-		bool sendsync)
+static int keyring_update_keys(__unused struct onak_dbctx *dbctx,
+		__unused struct openpgp_publickey **keys,
+		__unused struct keyarray *blacklist,
+		__unused bool updateonly,
+		__unused bool sendsync)
 {
 	return 0;
 }
@@ -379,7 +381,7 @@ static void keyring_cleanupdb(struct onak_dbctx *dbctx)
  *	This is just a no-op for flat file access.
  */
 struct onak_dbctx *keydb_keyring_init(struct onak_db_config *dbcfg,
-		bool readonly)
+		__unused bool readonly)
 {
 	struct onak_keyring_dbctx *privctx;
 	struct onak_dbctx *dbctx;

@@ -20,6 +20,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "build-config.h"
 #include "charfuncs.h"
 
 /*
@@ -94,7 +95,7 @@ int file_putchar(void *fd, size_t count, void *c)
 /*
  * Gets a char from stdin.
  */
-int stdin_getchar(void *ctx, size_t count, void *c)
+int stdin_getchar(__unused void *ctx, size_t count, void *c)
 {
 	return (fread(c, 1, count, stdin) != count);
 }
@@ -102,7 +103,7 @@ int stdin_getchar(void *ctx, size_t count, void *c)
 /*
  * Puts a char to stdout.
  */
-int stdout_putchar(void *ctx, size_t count, void *c)
+int stdout_putchar(__unused void *ctx, size_t count, void *c)
 {
 	return (fwrite(c, 1, count, stdout) != count);
 }

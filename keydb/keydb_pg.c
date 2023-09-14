@@ -28,6 +28,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "build-config.h"
 #include "hash.h"
 #include "keydb.h"
 #include "keyid.h"
@@ -671,7 +672,8 @@ static void pg_cleanupdb(struct onak_dbctx *dbctx)
  *	this file are called in order to allow the DB to be initialized ready
  *	for access.
  */
-struct onak_dbctx *keydb_pg_init(struct onak_db_config *dbcfg, bool readonly)
+struct onak_dbctx *keydb_pg_init(struct onak_db_config *dbcfg,
+		__unused bool readonly)
 {
 	struct onak_dbctx *dbctx;
 	PGconn *dbconn;

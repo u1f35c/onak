@@ -622,9 +622,10 @@ static int fs_fetch_key_skshash(struct onak_dbctx *dbctx,
  *
  *	Returns the number of keys we iterated over.
  */
-static int fs_iterate_keys(struct onak_dbctx *dbctx,
-		void (*iterfunc)(void *ctx,
-		struct openpgp_publickey *key),	void *ctx)
+static int fs_iterate_keys(__unused struct onak_dbctx *dbctx,
+		__unused void (*iterfunc)(void *ctx,
+			struct openpgp_publickey *key),
+		__unused void *ctx)
 {
 	return 0;
 }

@@ -28,6 +28,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "build-config.h"
 #include "charfuncs.h"
 #include "key-store.h"
 #include "keydb.h"
@@ -44,7 +45,7 @@
  *
  *	This is just a no-op for flat file access.
  */
-static bool file_starttrans(struct onak_dbctx *dbctx)
+static bool file_starttrans(__unused struct onak_dbctx *dbctx)
 {
 	return true;
 }
@@ -54,7 +55,7 @@ static bool file_starttrans(struct onak_dbctx *dbctx)
  *
  *	This is just a no-op for flat file access.
  */
-static void file_endtrans(struct onak_dbctx *dbctx)
+static void file_endtrans(__unused struct onak_dbctx *dbctx)
 {
 	return;
 }
@@ -74,7 +75,7 @@ static void file_endtrans(struct onak_dbctx *dbctx)
 static int file_fetch_key_id(struct onak_dbctx *dbctx,
 		uint64_t keyid,
 		struct openpgp_publickey **publickey,
-		bool intrans)
+		__unused bool intrans)
 {
 	char *db_dir = (char *) dbctx->priv;
 	struct openpgp_packet_list *packets = NULL;
@@ -106,8 +107,8 @@ static int file_fetch_key_id(struct onak_dbctx *dbctx,
  *	the file.
  */
 static int file_store_key(struct onak_dbctx *dbctx,
-		struct openpgp_publickey *publickey, bool intrans,
-		bool update)
+		struct openpgp_publickey *publickey, __unused bool intrans,
+		__unused bool update)
 {
 	char *db_dir = (char *) dbctx->priv;
 	struct openpgp_packet_list *packets = NULL;
@@ -149,7 +150,7 @@ static int file_store_key(struct onak_dbctx *dbctx,
  *	are using. Returns 0 if the key existed.
  */
 static int file_delete_key(struct onak_dbctx *dbctx,
-		struct openpgp_fingerprint *fp, bool intrans)
+		struct openpgp_fingerprint *fp, __unused bool intrans)
 {
 	char *db_dir = (char *) dbctx->priv;
 	char keyfile[1024];
@@ -170,9 +171,9 @@ static int file_delete_key(struct onak_dbctx *dbctx,
  *
  *	TODO: Write for flat file access. Some sort of grep?
  */
-static int file_fetch_key_text(struct onak_dbctx *dbctx,
-		const char *search,
-		struct openpgp_publickey **publickey)
+static int file_fetch_key_text(__unused struct onak_dbctx *dbctx,
+		__unused const char *search,
+		__unused struct openpgp_publickey **publickey)
 {
 	return 0;
 }
@@ -265,7 +266,8 @@ static void file_cleanupdb(struct onak_dbctx *dbctx)
  *
  *	This is just a no-op for flat file access.
  */
-struct onak_dbctx *keydb_file_init(struct onak_db_config *dbcfg, bool readonly)
+struct onak_dbctx *keydb_file_init(struct onak_db_config *dbcfg,
+		__unused bool readonly)
 {
 	struct onak_dbctx *dbctx;
 

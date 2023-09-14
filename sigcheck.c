@@ -116,7 +116,7 @@ static void onak_free_key_material(struct onak_key_material *key)
 static onak_status_t onak_parse_key_material(struct openpgp_packet *pk,
 		struct onak_key_material *key)
 {
-	int i, len, ofs;
+	int len, ofs;
 	enum onak_oid oid;
 	mpz_t x, y;
 	onak_status_t ret = ONAK_E_OK;
@@ -288,7 +288,6 @@ onak_status_t onak_check_hash_sig(struct openpgp_publickey *sigkey,
 	struct dsa_signature dsasig;
 	uint8_t sigkeytype;
 	uint8_t edsig[64];
-	uint64_t keyid;
 	int len, ofs;
 	mpz_t s;
 
@@ -530,7 +529,6 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 	uint8_t keyheader[5];
 	uint8_t packetheader[5];
 	uint8_t trailer[10];
-	int i;
 	uint64_t keyid;
 	onak_status_t res;
 
