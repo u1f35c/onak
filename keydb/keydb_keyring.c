@@ -373,7 +373,7 @@ static void keyring_cleanupdb(struct onak_dbctx *dbctx)
 	if (dbctx != NULL) {
 		free(dbctx);
 	}
-};
+}
 
 /**
  *	initdb - Initialize the key database.
