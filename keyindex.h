@@ -47,4 +47,12 @@ int key_index(struct onak_dbctx *dbctx,
  *	machine readable list of them.
  */
 int mrkey_index(struct openpgp_publickey *keys);
+
+/**
+ *	txt2html - Takes a string and converts it to HTML.
+ *	@string: The string to HTMLize.
+ *
+ *	Takes a string and escapes any HTML entities.
+ */
+const char *txt2html(const char *string);
 #endif

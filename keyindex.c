@@ -24,7 +24,6 @@
 #include <time.h>
 
 #include "decodekey.h"
-#include "getcgi.h"
 #include "keydb.h"
 #include "keyid.h"
 #include "keyindex.h"
@@ -72,6 +71,54 @@ char pkalgo2char(uint8_t algo)
 	}
 
 	return typech;
+}
+
+/**
+ *	txt2html - Takes a string and converts it to HTML.
+ *	@string: The string to HTMLize.
+ *
+ *	Takes a string and escapes any HTML entities.
+ */
+const char *txt2html(const char *string)
+{
+	static char buf[1024];
+	char *ptr = NULL;
+	char *nextptr = NULL;
+
+	if (strlen(string) > 1000) {
+		return string;
+	}
+
+	memset(buf, 0, 1024);
+
+	ptr = strchr(string, '<');
+	if (ptr != NULL) {
+		nextptr = ptr + 1;
+		*ptr = 0;
+		strncpy(buf, string, 1023);
+		strncat(buf, "&lt;", 1023 - strlen(buf));
+		string = nextptr;
+	}
+
+	ptr = strchr(string, '>');
+	if (ptr != NULL) {
+		nextptr = ptr + 1;
+		*ptr = 0;
+		strncat(buf, string, 1023 - strlen(buf));
+		strncat(buf, "&gt;", 1023 - strlen(buf));
+		string = nextptr;
+	}
+
+	/*
+	 * TODO: We need to while() this really as each entity may appear more
+	 * than once. We need to start with & and ; as we replace with those
+	 * throughout. Fuck it for the moment though; it's Easter and < & > are
+	 * the most common and tend to only appear once.
+	 */
+
+	strncat(buf, string, 1023 - strlen(buf));
+
+	return buf;
 }
 
 /*

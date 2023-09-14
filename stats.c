@@ -21,9 +21,9 @@
 #include <stdlib.h>
 
 #include "cleanup.h"
-#include "getcgi.h"
 #include "hash.h"
 #include "keydb.h"
+#include "keyindex.h"
 #include "ll.h"
 #include "stats.h"
 

@@ -26,50 +26,6 @@
 
 #include "getcgi.h"
 
-/**
- *	txt2html - Takes a string and converts it to HTML.
- *	@string: The string to HTMLize.
- *
- *	Takes a string and escapes any HTML entities.
- */
-char *txt2html(const char *string)
-{
-	static char buf[1024];
-	char *ptr = NULL;
-	char *nextptr = NULL;
-
-	memset(buf, 0, 1024);
-
-	ptr = strchr(string, '<');
-	if (ptr != NULL) {
-		nextptr = ptr + 1;
-		*ptr = 0;
-		strncpy(buf, string, 1023);
-		strncat(buf, "&lt;", 1023 - strlen(buf));
-		string = nextptr;
-	}
-
-	ptr = strchr(string, '>');
-	if (ptr != NULL) {
-		nextptr = ptr + 1;
-		*ptr = 0;
-		strncat(buf, string, 1023 - strlen(buf));
-		strncat(buf, "&gt;", 1023 - strlen(buf));
-		string = nextptr;
-	}
-	
-	/*
-	 * TODO: We need to while() this really as each entity may appear more
-	 * than once. We need to start with & and ; as we replace with those
-	 * throughout. Fuck it for the moment though; it's Easter and < & > are
-	 * the most common and tend to only appear once.
-	 */
-
-	strncat(buf, string, 1023 - strlen(buf));
-
-	return buf;
-}
-
 /*
  *	start_html - Start HTML output.
  *	@title: The title for the HTML.
