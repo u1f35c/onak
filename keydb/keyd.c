@@ -52,9 +52,7 @@
 /* Maximum number of clients we're prepared to accept at once */
 #define MAX_CLIENTS 16
 
-#ifdef HAVE_SYSTEMD
 static bool using_socket_activation = false;
-#endif
 
 static struct keyd_stats *stats;
 
@@ -682,7 +680,8 @@ int main(int argc, char *argv[])
 
 		dbctx = config.dbinit(config.backend, false);
 
-		logthing(LOGTHING_NOTICE, "Accepting connections.");
+		logthing(LOGTHING_NOTICE, "Accepting connections%s",
+			using_socket_activation ? " (via systemd)" : "");
 		while (!cleanup() && select(maxfd + 1, &rfds, NULL, NULL, NULL) != -1) {
 			/*
 			 * Deal with existing clients first; if we're at our
