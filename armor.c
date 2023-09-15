@@ -96,7 +96,7 @@ struct armor_context {
 	/** A running CRC24 of the data we've seen. */
 	long crc24;
 	/** The function to output a character. */
-	int (*putchar_func)(void *ctx, size_t count, void *c);
+	size_t (*putchar_func)(void *ctx, size_t count, void *c);
 	/** Context for putchar_func. */
 	void *ctx;
 };
@@ -203,7 +203,7 @@ static int armor_putchar_int(void *ctx, unsigned char c)
 }
 
 
-static int armor_putchar(void *ctx, size_t count, void *c)
+static size_t armor_putchar(void *ctx, size_t count, void *c)
 {
 	int i;
 
@@ -211,8 +211,8 @@ static int armor_putchar(void *ctx, size_t count, void *c)
 	for (i = 0; i < count; i++) {
 		armor_putchar_int(ctx, ((char *) c)[i]);
 	}
-	
-	return 0;
+
+	return count;
 }
 
 /**
@@ -228,7 +228,7 @@ struct dearmor_context {
 	/** A running CRC24 of the data we've seen. */
 	long crc24;
 	/** The function to get the next character. */
-	int (*getchar_func)(void *ctx, size_t count, void *c);
+	size_t (*getchar_func)(void *ctx, size_t count, void *c);
 	/** Context for getchar_func. */
 	void *ctx;
 };
@@ -309,7 +309,7 @@ static int dearmor_getchar(void *ctx, unsigned char *c)
 	return (tmpc == 64);
 }
 
-static int dearmor_getchar_c(void *ctx, size_t count, void *c)
+static size_t dearmor_getchar_c(void *ctx, size_t count, void *c)
 {
 	int i, rc = 0;
 
@@ -317,10 +317,10 @@ static int dearmor_getchar_c(void *ctx, size_t count, void *c)
 		rc = dearmor_getchar(ctx, &((unsigned char *) c)[i]);
 	}
 
-	return rc;
+	return (rc == 0) ? i : 0;
 }
 
-int armor_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
+int armor_openpgp_stream(size_t (*putchar_func)(void *ctx, size_t count,
 						void *c),
 				void *ctx,
 				struct openpgp_packet_list *packets)
@@ -348,7 +348,7 @@ int armor_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
 	return 0;
 }
 
-int dearmor_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
+int dearmor_openpgp_stream(size_t (*getchar_func)(void *ctx, size_t count,
 						void *c),
 				void *ctx,
 				struct openpgp_packet_list **packets)
@@ -363,7 +363,7 @@ int dearmor_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 	 * with :s in them, then a blank line, then the data.
 	 */
 	state = 1;
-	while (state != 4 && !getchar_func(ctx, 1, &curchar)) {
+	while (state != 4 && getchar_func(ctx, 1, &curchar) == 1) {
 		switch (state) {
 			case 0:
 				if (curchar == '\n') {

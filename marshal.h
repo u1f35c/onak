@@ -32,7 +32,7 @@
  *	a 32 bit size of the forthcoming data in network byte order and
  *	then the flattened byte representation of the key.
  */
-void marshal_publickey(int (*putchar_func)(void *ctx, size_t count,
+void marshal_publickey(size_t (*putchar_func)(void *ctx, size_t count,
 				void *c),
 				void *ctx,
 				const struct openpgp_publickey *key);
@@ -45,7 +45,7 @@ void marshal_publickey(int (*putchar_func)(void *ctx, size_t count,
  *	Returns an OpenPGP structure which is the unmarshalled result of
  *	the input byte stream - ie the inverse of marshal_publickey.
  */
-struct openpgp_publickey *unmarshal_publickey(int (*getchar_func)(void *ctx,
+struct openpgp_publickey *unmarshal_publickey(size_t (*getchar_func)(void *ctx,
 				size_t count,
 				void *c),
 				void *ctx);
@@ -60,7 +60,7 @@ struct openpgp_publickey *unmarshal_publickey(int (*getchar_func)(void *ctx,
  *	a 32 bit size of the forthcoming data (16 bytes) in network byte order
  *	and then the byte representation of the hash.
  */
-void marshal_skshash(int (*putchar_func)(void *ctx, size_t count,
+void marshal_skshash(size_t (*putchar_func)(void *ctx, size_t count,
 				void *c),
 				void *ctx,
 				const struct skshash *hash);
@@ -73,7 +73,7 @@ void marshal_skshash(int (*putchar_func)(void *ctx, size_t count,
  *	Returns an SKS hash structure which is the unmarshalled result of
  *	the input byte stream - ie the inverse of marshal_skshash.
  */
-struct skshash *unmarshal_skshash(int (*getchar_func)(void *ctx, size_t count,
+struct skshash *unmarshal_skshash(size_t (*getchar_func)(void *ctx, size_t count,
 				void *c),
 				void *ctx);
 
@@ -86,7 +86,7 @@ struct skshash *unmarshal_skshash(int (*getchar_func)(void *ctx, size_t count,
  *	Takes a string and marshals it to a byte stream - writes a 32 bit size
  *	of the forthcoming data in network byte order and then the string.
  */
-void marshal_string(int (*putchar_func)(void *ctx, size_t count,
+void marshal_string(size_t (*putchar_func)(void *ctx, size_t count,
 				void *c),
 				void *ctx,
 				const char *string);
@@ -99,7 +99,7 @@ void marshal_string(int (*putchar_func)(void *ctx, size_t count,
  *	Returns a string which is the unmarshalled result of the input byte
  *	stream - ie the inverse of marshal_string.
  */
-char *unmarshal_string(int (*getchar_func)(void *ctx, size_t count,
+char *unmarshal_string(size_t (*getchar_func)(void *ctx, size_t count,
 				void *c),
 				void *ctx);
 
@@ -116,10 +116,10 @@ char *unmarshal_string(int (*getchar_func)(void *ctx, size_t count,
  *	calls marshal_func for each element in the array to provide the
  *	marshalled contents.
  */
-void marshal_array(int (*putchar_func)(void *ctx, size_t count,
+void marshal_array(size_t (*putchar_func)(void *ctx, size_t count,
 				void *c),
 				void *ctx,
-				void (*marshal_func)(int
+				void (*marshal_func)(size_t
 					(*putchar_func)(void *ctx,
 						size_t count, void *c),
 					void *ctx, const void *item),
@@ -137,10 +137,10 @@ void marshal_array(int (*putchar_func)(void *ctx, size_t count,
  *	as determined by the supplied unmarshal_func function. ie the reverse
  *	of marshal_array.
  */
-void **unmarshal_array(int (*getchar_func)(void *ctx, size_t count,
+void **unmarshal_array(size_t (*getchar_func)(void *ctx, size_t count,
 				void *c),
 				void *ctx,
-				void *(*unmarshal_func)(int
+				void *(*unmarshal_func)(size_t
 					(*getchar_func)(void *ctx,
 						size_t count, void *c),
 					void *ctx),

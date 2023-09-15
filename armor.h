@@ -31,7 +31,7 @@
  * This function ASCII armors a list of OpenPGP packets and outputs it
  * using putchar_func.
  */
-int armor_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
+int armor_openpgp_stream(size_t (*putchar_func)(void *ctx, size_t count,
 						void *c),
 				void *ctx,
 				struct openpgp_packet_list *packets);
@@ -46,7 +46,7 @@ int armor_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
  * armored OpenPGP stream and outputs the data as a linked list of
  * packets.
  */
-int dearmor_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
+int dearmor_openpgp_stream(size_t (*getchar_func)(void *ctx, size_t count,
 					void *c),
 				void *ctx,
 				struct openpgp_packet_list **packets);

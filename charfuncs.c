@@ -29,20 +29,20 @@
  *	@count: The number of characters to get from the buffer.
  *	@c: Where to put the characters retrieved.
  */
-int buffer_fetchchar(void *ctx, size_t count, void *c)
+size_t buffer_fetchchar(void *ctx, size_t count, void *c)
 {
 	struct buffer_ctx *buf = NULL;
 	
 	buf = (struct buffer_ctx *) ctx;
 
 	if (buf->offset + count > buf->size) {
-		return 1;
+		count = buf->size - buf->offset;
 	}
-	
+
 	memcpy(c, &buf->buffer[buf->offset], count);
 	buf->offset += count;
 
-	return 0;
+	return count;
 }
 
 /*
@@ -55,7 +55,7 @@ int buffer_fetchchar(void *ctx, size_t count, void *c)
  *	fill it then we double the size of the current buffer and then add the
  *	rest.
  */
-int buffer_putchar(void *ctx, size_t count, void *c)
+size_t buffer_putchar(void *ctx, size_t count, void *c)
 {
 	struct buffer_ctx *buf = NULL;
 	size_t newsize = 0;
@@ -73,37 +73,41 @@ int buffer_putchar(void *ctx, size_t count, void *c)
 	memcpy(&buf->buffer[buf->offset], c, count);
 	buf->offset += count;
 	
-	return 1;
+	return count;
 }
 
 /*
  * Fetches a char from a file.
  */
-int file_fetchchar(void *fd, size_t count, void *c)
+size_t file_fetchchar(void *fd, size_t count, void *c)
 {
-	return !(read( *(int *) fd, c, count));
+	ssize_t ret = read( *(int *) fd, c, count);
+
+	return (ret > 0) ? ret : 0;
 }
 
 /*
  * Puts a char to a file.
  */
-int file_putchar(void *fd, size_t count, void *c)
+size_t file_putchar(void *fd, size_t count, void *c)
 {
-	return !(write( *(int *) fd, c, count));
+	size_t ret = write( *(int *) fd, c, count);
+
+	return (ret > 0) ? ret : 0;
 }
 
 /*
  * Gets a char from stdin.
  */
-int stdin_getchar(__unused void *ctx, size_t count, void *c)
+size_t stdin_getchar(__unused void *ctx, size_t count, void *c)
 {
-	return (fread(c, 1, count, stdin) != count);
+	return fread(c, 1, count, stdin);
 }
 
 /*
  * Puts a char to stdout.
  */
-int stdout_putchar(__unused void *ctx, size_t count, void *c)
+size_t stdout_putchar(__unused void *ctx, size_t count, void *c)
 {
-	return (fwrite(c, 1, count, stdout) != count);
+	return fwrite(c, 1, count, stdout);
 }

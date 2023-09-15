@@ -40,7 +40,7 @@ struct buffer_ctx {
  * @param count The number of characters to get from the buffer.
  * @param c Where to put the characters retrieved.
  */
-int buffer_fetchchar(void *ctx, size_t count, void *c);
+size_t buffer_fetchchar(void *ctx, size_t count, void *c);
 
 /**
  * @brief Puts a char to a buffer.
@@ -52,26 +52,26 @@ int buffer_fetchchar(void *ctx, size_t count, void *c);
  * fill it then we double the size of the current buffer and then add the
  * rest.
  */
-int buffer_putchar(void *ctx, size_t count, void *c);
+size_t buffer_putchar(void *ctx, size_t count, void *c);
 
 /**
  * @brief Fetches a char from a file.
  */
-int file_fetchchar(void *fd, size_t count, void *c);
+size_t file_fetchchar(void *fd, size_t count, void *c);
 
 /**
  * @brief Puts a char to a file.
  */
-int file_putchar(void *fd, size_t count, void *c);
+size_t file_putchar(void *fd, size_t count, void *c);
 
 /**
  * @brief Gets a char from stdin.
  */
-int stdin_getchar(void *ctx, size_t count, void *c);
+size_t stdin_getchar(void *ctx, size_t count, void *c);
 
 /**
  * @brief Puts a char to stdout.
  */
-int stdout_putchar(void *ctx, size_t count, void *c);
+size_t stdout_putchar(void *ctx, size_t count, void *c);
 
 #endif /* __CHARFUNCS_H__ */

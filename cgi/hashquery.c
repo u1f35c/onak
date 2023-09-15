@@ -74,7 +74,7 @@ int main(__unused int argc, __unused char *argv[])
 	}
 
 	hashes = (uint8_t **) unmarshal_array(buffer_fetchchar, &cgipostbuf,
-			(void * (*)(int (*)(void *, size_t,  void *), void *))
+			(void * (*)(size_t (*)(void *, size_t,  void *), void *))
 				unmarshal_skshash, &count);
 
 	free(cgipostbuf.buffer);
@@ -115,7 +115,7 @@ int main(__unused int argc, __unused char *argv[])
 
 	puts("Content-Type: pgp/keys\n");
 	marshal_array(stdout_putchar, NULL,
-			(void (*)(int (*)(void *, size_t,  void *),
+			(void (*)(size_t (*)(void *, size_t,  void *),
 					void *, const void *))
 				marshal_publickey, (void **) keys, found);
 	printf("\n");

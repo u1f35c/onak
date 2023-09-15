@@ -29,11 +29,9 @@
 #include "parsekey.h"
 #include "sendsync.h"
 
-int fd_putchar(void *ctx, size_t count, void *c)
+size_t fd_putchar(void *ctx, size_t count, void *c)
 {
-	fwrite(c, sizeof(char), count, ctx);
-
-	return 0;
+	return fwrite(c, sizeof(char), count, ctx);
 }
 
 /**

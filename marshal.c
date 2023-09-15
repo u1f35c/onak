@@ -27,7 +27,7 @@
 #include "mem.h"
 #include "parsekey.h"
 
-void marshal_publickey(int (*putchar_func)(void *ctx, size_t count,
+void marshal_publickey(size_t (*putchar_func)(void *ctx, size_t count,
 				void *c),
 				void *ctx,
 				const struct openpgp_publickey *key)
@@ -52,7 +52,7 @@ void marshal_publickey(int (*putchar_func)(void *ctx, size_t count,
 	free_packet_list(packets);
 }
 
-void marshal_skshash(int (*putchar_func)(void *ctx, size_t count,
+void marshal_skshash(size_t (*putchar_func)(void *ctx, size_t count,
 				void *c),
 				void *ctx,
 				const struct skshash *hash)
@@ -65,14 +65,14 @@ void marshal_skshash(int (*putchar_func)(void *ctx, size_t count,
 	putchar_func(ctx, sizeof(hash->hash), (void *) hash->hash);
 }
 
-struct skshash *unmarshal_skshash(int (*getchar_func)(void *ctx, size_t count,
+struct skshash *unmarshal_skshash(size_t (*getchar_func)(void *ctx, size_t count,
 				void *c),
 				void *ctx)
 {
 	uint32_t len;
 	struct skshash *hash;
 
-	if (getchar_func(ctx, sizeof(len), &len)) {
+	if (getchar_func(ctx, sizeof(len), &len) != sizeof(len)) {
 		return NULL;
 	}
 	len = ntohl(len);
@@ -80,7 +80,7 @@ struct skshash *unmarshal_skshash(int (*getchar_func)(void *ctx, size_t count,
 		return NULL;
 	}
 	hash = calloc(sizeof(struct skshash), 1);
-	if (getchar_func(ctx, len, hash->hash)) {
+	if (getchar_func(ctx, len, hash->hash) != len) {
 		free(hash);
 		return NULL;
 	}
@@ -88,7 +88,7 @@ struct skshash *unmarshal_skshash(int (*getchar_func)(void *ctx, size_t count,
 	return hash;
 }
 
-void marshal_string(int (*putchar_func)(void *ctx, size_t count,
+void marshal_string(size_t (*putchar_func)(void *ctx, size_t count,
 				void *c),
 				void *ctx,
 				const char *string)
@@ -102,19 +102,19 @@ void marshal_string(int (*putchar_func)(void *ctx, size_t count,
 	putchar_func(ctx, len, &string);
 }
 
-char *unmarshal_string(int (*getchar_func)(void *ctx, size_t count,
+char *unmarshal_string(size_t (*getchar_func)(void *ctx, size_t count,
 				void *c),
 				void *ctx)
 {
 	uint32_t len;
 	char *string;
 
-	if (getchar_func(ctx, sizeof(len), &len)) {
+	if (getchar_func(ctx, sizeof(len), &len) != sizeof(len)) {
 		return NULL;
 	}
 	len = ntohl(len);
 	string = malloc(len + 1);
-	if (getchar_func(ctx, len, string)) {
+	if (getchar_func(ctx, len, string) != len) {
 		free(string);
 		return NULL;
 	}
@@ -123,10 +123,10 @@ char *unmarshal_string(int (*getchar_func)(void *ctx, size_t count,
 	return string;
 }
 
-void marshal_array(int (*putchar_func)(void *ctx, size_t count,
+void marshal_array(size_t (*putchar_func)(void *ctx, size_t count,
 				void *c),
 				void *ctx,
-				void (*marshal_func)(int
+				void (*marshal_func)(size_t
 					(*putchar_func)(void *ctx,
 						size_t count, void *c),
 					void *ctx, const void *item),
@@ -145,10 +145,10 @@ void marshal_array(int (*putchar_func)(void *ctx, size_t count,
 	}
 }
 
-void **unmarshal_array(int (*getchar_func)(void *ctx, size_t count,
+void **unmarshal_array(size_t (*getchar_func)(void *ctx, size_t count,
 				void *c),
 				void *ctx,
-				void *(*unmarshal_func)(int
+				void *(*unmarshal_func)(size_t
 					(*getchar_func)(void *ctx,
 						size_t count, void *c),
 					void *ctx),
@@ -158,7 +158,7 @@ void **unmarshal_array(int (*getchar_func)(void *ctx, size_t count,
 	void **array;
 	int i;
 
-	if (getchar_func(ctx, sizeof(len), &len)) {
+	if (getchar_func(ctx, sizeof(len), &len) != sizeof(len)) {
 		return NULL;
 	}
 	*size = ntohl(len);

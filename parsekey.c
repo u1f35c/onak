@@ -182,7 +182,7 @@ int debug_packet(struct openpgp_packet *packet)
  *	packet stream and reads the packets into a linked list of packets
  *	ready for parsing as a public key or whatever.
  */
-onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
+onak_status_t read_openpgp_stream(size_t (*getchar_func)(void *ctx, size_t count,
 				void *c),
 				void *ctx,
 				struct openpgp_packet_list **packets,
@@ -204,7 +204,7 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 	}
 
 	while (rc == ONAK_E_OK && (maxnum == 0 || keys < maxnum) &&
-			!getchar_func(ctx, 1, &curchar)) {
+			(getchar_func(ctx, 1, &curchar) == 1)) {
 		if (curchar & 0x80) {
 			/*
 			 * New packet. Allocate memory for it.
@@ -231,14 +231,14 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 			 */
 			if (curpacket->packet->newformat) {
 				curpacket->packet->tag = (curchar & 0x3F);
-				if (getchar_func(ctx, 1, &curchar)) {
+				if (getchar_func(ctx, 1, &curchar) == 0) {
 					rc = ONAK_E_INVALID_PKT;
 					break;
 				}
 				curpacket->packet->length = curchar;
 				if (curpacket->packet->length > 191 &&
 					curpacket->packet->length < 224) {
-					rc = getchar_func(ctx, 1, &curchar);
+					rc = getchar_func(ctx, 1, &curchar) ? ONAK_E_OK : ONAK_E_IO_ERROR;
 					curpacket->packet->length -= 192;
 					curpacket->packet->length <<= 8;
 					curpacket->packet->length += curchar;
@@ -250,28 +250,28 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 					rc = ONAK_E_UNSUPPORTED_FEATURE;
 				} else if (curpacket->packet->length == 255) {
 					/*
-					 * 5 byte length; ie 255 followed by 3
+					 * 5 byte length; ie 255 followed by 4
 					 * bytes of MSB length.
 					 */
-					if (getchar_func(ctx, 1, &curchar)) {
+					if (getchar_func(ctx, 1, &curchar) != 1) {
 						rc = ONAK_E_INVALID_PKT;
 						break;
 					}
 					curpacket->packet->length = curchar;
 					curpacket->packet->length <<= 8;
-					if (getchar_func(ctx, 1, &curchar)) {
+					if (getchar_func(ctx, 1, &curchar) != 1) {
 						rc = ONAK_E_INVALID_PKT;
 						break;
 					}
 					curpacket->packet->length += curchar;
 					curpacket->packet->length <<= 8;
-					if (getchar_func(ctx, 1, &curchar)) {
+					if (getchar_func(ctx, 1, &curchar) != 1) {
 						rc = ONAK_E_INVALID_PKT;
 						break;
 					}
 					curpacket->packet->length += curchar;
 					curpacket->packet->length <<= 8;
-					if (getchar_func(ctx, 1, &curchar)) {
+					if (getchar_func(ctx, 1, &curchar) != 1) {
 						rc = ONAK_E_INVALID_PKT;
 						break;
 					}
@@ -281,45 +281,45 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 				curpacket->packet->tag = (curchar & 0x3C) >> 2;
 				switch (curchar & 3) {
 				case 0:
-					if (getchar_func(ctx, 1, &curchar)) {
+					if (getchar_func(ctx, 1, &curchar) != 1) {
 						rc = ONAK_E_INVALID_PKT;
 						break;
 					}
 					curpacket->packet->length = curchar;
 					break;
 				case 1:
-					if (getchar_func(ctx, 1, &curchar)) {
+					if (getchar_func(ctx, 1, &curchar) != 1) {
 						rc = ONAK_E_INVALID_PKT;
 						break;
 					}
 					curpacket->packet->length = curchar;
 					curpacket->packet->length <<= 8;
-					if (getchar_func(ctx, 1, &curchar)) {
+					if (getchar_func(ctx, 1, &curchar) != 1) {
 						rc = ONAK_E_INVALID_PKT;
 						break;
 					}
 					curpacket->packet->length += curchar;
 					break;
 				case 2:
-					if (getchar_func(ctx, 1, &curchar)) {
+					if (getchar_func(ctx, 1, &curchar) != 1) {
 						rc = ONAK_E_INVALID_PKT;
 						break;
 					}
 					curpacket->packet->length = 
 						((unsigned) curchar << 24);
-					if (getchar_func(ctx, 1, &curchar)) {
+					if (getchar_func(ctx, 1, &curchar) != 1) {
 						rc = ONAK_E_INVALID_PKT;
 						break;
 					}
 					curpacket->packet->length +=
 						(curchar << 16);
-					if (getchar_func(ctx, 1, &curchar)) {
+					if (getchar_func(ctx, 1, &curchar) != 1) {
 						rc = ONAK_E_INVALID_PKT;
 						break;
 					}
 					curpacket->packet->length +=
 						(curchar << 8);
-					if (getchar_func(ctx, 1, &curchar)) {
+					if (getchar_func(ctx, 1, &curchar) != 1) {
 						rc = ONAK_E_INVALID_PKT;
 						break;
 					}
@@ -346,7 +346,8 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
 				} else {
 					rc = getchar_func(ctx,
 						curpacket->packet->length,
-						curpacket->packet->data);
+						curpacket->packet->data) ?
+						ONAK_E_OK : ONAK_E_IO_ERROR;
 				}
 			}
 		} else {
@@ -422,7 +423,7 @@ onak_status_t read_openpgp_stream(int (*getchar_func)(void *ctx, size_t count,
  *	This function uses putchar_func to write characters to an OpenPGP
  *	packet stream from a linked list of packets.
  */
-onak_status_t write_openpgp_stream(int (*putchar_func)(void *ctx, size_t count,
+onak_status_t write_openpgp_stream(size_t (*putchar_func)(void *ctx, size_t count,
 						void *c),
 				void *ctx,
 				struct openpgp_packet_list *packets)

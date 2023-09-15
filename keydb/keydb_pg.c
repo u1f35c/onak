@@ -47,21 +47,28 @@ struct pg_fc_ctx {
 /**
  *	keydb_fetchchar - Fetches a char from a file.
  */
-static int keydb_fetchchar(void *_ctx, size_t count, void *c)
+static size_t keydb_fetchchar(void *_ctx, size_t count, void *c)
 {
+	int ret;
+
 	struct pg_fc_ctx *ctx = (struct pg_fc_ctx *) _ctx;
 
-	return (!lo_read(ctx->dbconn, ctx->fd, (char *) c, count));
+	ret = lo_read(ctx->dbconn, ctx->fd, (char *) c, count);
+
+	return (ret > 0) ? ret : 0;
 }
 
 /**
  *	keydb_putchar - Puts a char to a file.
  */
-static int keydb_putchar(void *_ctx, size_t count, void *c)
+static size_t keydb_putchar(void *_ctx, size_t count, void *c)
 {
 	struct pg_fc_ctx *ctx = (struct pg_fc_ctx *) _ctx;
+	int ret;
 
-	return !(lo_write(ctx->dbconn, ctx->fd, (char *) c, count));
+	ret = lo_write(ctx->dbconn, ctx->fd, (char *) c, count);
+
+	return (ret > 0) ? ret : 0;
 }
 
 /**
