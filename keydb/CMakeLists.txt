@@ -37,9 +37,7 @@ if (KEYD STREQUAL "ON")
 	target_compile_definitions(keydctl PRIVATE
 		CONFIGDIR="${CMAKE_INSTALL_FULL_SYSCONFDIR}")
 
-	pkg_check_modules(SYSTEMD libsystemd)
 	if (SYSTEMD_FOUND)
-		set(HAVE_SYSTEMD true)
 		target_include_directories(keyd SYSTEM PUBLIC
 			${SYSTEMD_INCLUDE_DIRS})
 		target_link_libraries(keyd ${SYSTEMD_LIBRARIES})

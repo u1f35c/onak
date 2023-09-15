@@ -93,6 +93,12 @@ if (GMP_FOUND)
 	CHECK_SYMBOL_EXISTS(nettle_get_secp_521r1 "nettle/ecc-curve.h" HAVE_NETTLE_GET_SECP_521R1)
 endif()
 
+# keyd will use this for socket activation, if it's available
+pkg_check_modules(SYSTEMD libsystemd)
+if (SYSTEMD_FOUND)
+	set(HAVE_SYSTEMD true)
+endif()
+
 # Build files that have substitutions in them
 include_directories(${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR})
 configure_file("${CMAKE_SOURCE_DIR}/build-config.h.in"
