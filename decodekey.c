@@ -94,11 +94,11 @@ onak_status_t parse_subpackets(unsigned char *data, size_t len,
 			if (creation != NULL) {
 				*creation = data[offset + packetlen - 4];
 				*creation <<= 8;
-				*creation = data[offset + packetlen - 3];
+				*creation += data[offset + packetlen - 3];
 				*creation <<= 8;
-				*creation = data[offset + packetlen - 2];
+				*creation += data[offset + packetlen - 2];
 				*creation <<= 8;
-				*creation = data[offset + packetlen - 1];
+				*creation += data[offset + packetlen - 1];
 			}
 			break;
 			/*
