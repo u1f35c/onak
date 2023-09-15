@@ -741,6 +741,7 @@ int main(int argc, char *argv[])
 
 	free(stats);
 
+	logthing(LOGTHING_NOTICE, "Exiting");
 	cleanuplogthing();
 	cleanupconfig();
 
