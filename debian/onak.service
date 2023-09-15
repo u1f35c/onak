@@ -4,7 +4,7 @@ Documentation=man:keyd
 
 [Service]
 User=onak
-RuntimeDirectory=/run/onak
+RuntimeDirectory=onak
 ExecStart=/usr/sbin/keyd -f
 ExecStop=/usr/bin/keydctl quit
 
