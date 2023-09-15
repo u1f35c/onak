@@ -21,6 +21,7 @@
 
 #include "cleanup.h"
 #include "log.h"
+#include "onak-conf.h"
 
 static bool should_cleanup = false;
 
@@ -72,6 +73,10 @@ void sig_cleanup(int signal)
  */
 void catchsignals(void)
 {
+	if (config.use_keyd) {
+		return;
+	}
+
 	logthing(LOGTHING_INFO, "Catching signals");
 
 	signal(SIGALRM, &sig_cleanup);
