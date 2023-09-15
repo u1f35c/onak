@@ -41,10 +41,18 @@ endif()
 # Pick up a git based version number for development builds
 find_package(Git)
 if (GIT_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
-	EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} describe --tags --dirty
-		OUTPUT_VARIABLE GIT_VERSION
-		OUTPUT_STRIP_TRAILING_WHITESPACE)
-	string(REPLACE "onak-" "" VERSION ${GIT_VERSION})
+	if (EXISTS "${CMAKE_SOURCE_DIR}/.git/refs/tags/onak-0.6.2")
+		EXECUTE_PROCESS(
+			COMMAND ${GIT_EXECUTABLE} describe --tags --dirty
+			OUTPUT_VARIABLE GIT_VERSION
+			OUTPUT_STRIP_TRAILING_WHITESPACE)
+		string(REPLACE "onak-" "" VERSION ${GIT_VERSION})
+	else()
+		EXECUTE_PROCESS(
+			COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+			OUTPUT_VARIABLE VERSION
+			OUTPUT_STRIP_TRAILING_WHITESPACE)
+	endif()
 else()
 	set(VERSION ${PROJECT_VERSION})
 endif()
