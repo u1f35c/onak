@@ -278,7 +278,7 @@ static onak_status_t onak_parse_key_material(struct openpgp_packet *pk,
 	return ret;
 }
 
-onak_status_t onak_check_hash_sig(struct openpgp_publickey *sigkey,
+onak_status_t onak_check_hash_sig(struct openpgp_packet *sigkey,
 		struct openpgp_packet *sig,
 		uint8_t *hash,
 		uint8_t hashtype)
@@ -291,7 +291,7 @@ onak_status_t onak_check_hash_sig(struct openpgp_publickey *sigkey,
 	int len, ofs;
 	mpz_t s;
 
-	ret = onak_parse_key_material(sigkey->publickey, &pubkey);
+	ret = onak_parse_key_material(sigkey, &pubkey);
 	if (ret != ONAK_E_OK) {
 		return ret;
 	}

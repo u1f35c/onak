@@ -183,7 +183,8 @@ int clean_sighashes(struct onak_dbctx *dbctx,
 
 			remove = true;
 			if (sigid == keyid) {
-				ret = onak_check_hash_sig(key, (*sigs)->packet,
+				ret = onak_check_hash_sig(key->publickey,
+						(*sigs)->packet,
 						hash, hashtype);
 
 				/* We have a valid self signature */
@@ -208,7 +209,7 @@ int clean_sighashes(struct onak_dbctx *dbctx,
 			for (curkey = sigkeys; curkey != NULL;
 					curkey = curkey->next) {
 
-				ret = onak_check_hash_sig(curkey,
+				ret = onak_check_hash_sig(curkey->publickey,
 						(*sigs)->packet,
 						hash, hashtype);
 

@@ -16,7 +16,7 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
  * @hash: Hash digest the signature is over
  * @hashtype: Type of hash (OPENPGP_HASH_*)
  */
-onak_status_t onak_check_hash_sig(struct openpgp_publickey *sigkey,
+onak_status_t onak_check_hash_sig(struct openpgp_packet *sigkey,
 		struct openpgp_packet *sig,
 		uint8_t *hash,
 		uint8_t hashtype);
