@@ -378,9 +378,8 @@ onak_status_t read_openpgp_stream(size_t (*getchar_func)(void *ctx, size_t count
 			case OPENPGP_PACKET_SIGNATURE:
 			case OPENPGP_PACKET_SECRETKEY:
 			case OPENPGP_PACKET_PUBLICKEY:
-				/* Must be v2 -> v5 */
-				if (curpacket->packet->data[0] < 2 ||
-					curpacket->packet->data[0] > 5) {
+				/* Must be v2 onwards */
+				if (curpacket->packet->data[0] < 2) {
 					rc = ONAK_E_INVALID_PKT;
 				}
 				break;
