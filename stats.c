@@ -19,6 +19,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "cleanup.h"
 #include "hash.h"
@@ -139,6 +140,7 @@ void dofindpath(struct onak_dbctx *dbctx,
 	int rec;
 	int pathnum;
 	char *uid;
+	char buf[1024];
 
 	/*
 	 * Make sure the keys we have and want are in the cache.
@@ -212,7 +214,8 @@ void dofindpath(struct onak_dbctx *dbctx,
 						curkey->keyid,
 						curkey->keyid,
 						curkey->keyid,
-						txt2html(uid),
+						html_escape(uid, strlen(uid),
+							buf, sizeof(buf)),
 						(curkey->keyid == want) ?
 						"" : " signs");
 				} else {

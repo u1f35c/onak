@@ -74,51 +74,82 @@ char pkalgo2char(uint8_t algo)
 }
 
 /**
- *	txt2html - Takes a string and converts it to HTML.
- *	@string: The string to HTMLize.
+ *	html_escape - Takes a string and converts it to HTML.
+ *	@src: The string to HTMLize.
+ *	@src_len: The length of the source string
+ *	@dst: A buffer to put the escaped string into
+ *	@dst_len: Length of the destination buffer (including a trailing NULL)
  *
- *	Takes a string and escapes any HTML entities.
+ *	Takes a string and escapes any HTML entities (<, >, &, ", '). Returns
+ *	dst.
  */
-const char *txt2html(const char *string)
+const char *html_escape(const char *src, size_t src_len,
+		char *dst, size_t dst_len)
 {
-	static char buf[1024];
-	char *ptr = NULL;
-	char *nextptr = NULL;
+	size_t in_pos, out_pos;
 
-	if (strlen(string) > 1000) {
-		return string;
+	dst_len--;
+
+	for (in_pos = 0, out_pos = 0;
+			in_pos < src_len && out_pos < (dst_len - 1);
+			in_pos++, out_pos++) {
+		switch (src[in_pos]) {
+		case '<':
+			if ((out_pos + 4) >= dst_len) {
+				break;
+			}
+			dst[out_pos++] = '&';
+			dst[out_pos++] = 'l';
+			dst[out_pos++] = 't';
+			dst[out_pos] = ';';
+			break;
+		case '>':
+			if ((out_pos + 4) >= dst_len) {
+				break;
+			}
+			dst[out_pos++] = '&';
+			dst[out_pos++] = 'g';
+			dst[out_pos++] = 't';
+			dst[out_pos] = ';';
+			break;
+		case '"':
+			if ((out_pos + 6) >= dst_len) {
+				break;
+			}
+			dst[out_pos++] = '&';
+			dst[out_pos++] = 'q';
+			dst[out_pos++] = 'u';
+			dst[out_pos++] = 'o';
+			dst[out_pos++] = 't';
+			dst[out_pos] = ';';
+			break;
+		case '\'':
+			if ((out_pos + 5) >= dst_len) {
+				break;
+			}
+			dst[out_pos++] = '&';
+			dst[out_pos++] = '#';
+			dst[out_pos++] = '3';
+			dst[out_pos++] = '9';
+			dst[out_pos] = ';';
+			break;
+		case '&':
+			if ((out_pos + 5) >= dst_len) {
+				break;
+			}
+			dst[out_pos++] = '&';
+			dst[out_pos++] = 'a';
+			dst[out_pos++] = 'm';
+			dst[out_pos++] = 'p';
+			dst[out_pos] = ';';
+			break;
+		default:
+			dst[out_pos] = src[in_pos];
+		}
 	}
+	dst[out_pos] = 0;
 
-	memset(buf, 0, 1024);
-
-	ptr = strchr(string, '<');
-	if (ptr != NULL) {
-		nextptr = ptr + 1;
-		*ptr = 0;
-		strncpy(buf, string, 1023);
-		strncat(buf, "&lt;", 1023 - strlen(buf));
-		string = nextptr;
-	}
-
-	ptr = strchr(string, '>');
-	if (ptr != NULL) {
-		nextptr = ptr + 1;
-		*ptr = 0;
-		strncat(buf, string, 1023 - strlen(buf));
-		strncat(buf, "&gt;", 1023 - strlen(buf));
-		string = nextptr;
-	}
-
-	/*
-	 * TODO: We need to while() this really as each entity may appear more
-	 * than once. We need to start with & and ; as we replace with those
-	 * throughout. Fuck it for the moment though; it's Easter and < & > are
-	 * the most common and tend to only appear once.
-	 */
-
-	strncat(buf, string, 1023 - strlen(buf));
-
-	return buf;
+	return dst;
 }
 
 /*
@@ -191,6 +222,7 @@ int list_sigs(struct onak_dbctx *dbctx,
 	char *uid = NULL;
 	uint64_t sigid = 0;
 	char *sig = NULL;
+	char buf[1024];
 
 	while (sigs != NULL) {
 		sigid = sig_keyid(sigs->packet);
@@ -214,7 +246,7 @@ int list_sigs(struct onak_dbctx *dbctx,
 				sigid,
 				sigid,
 				sigid,
-				txt2html(uid));
+				html_escape(uid, strlen(uid), buf, sizeof(buf)));
 		} else if (html && uid == NULL) {
 			printf("%s         0x%016" PRIX64 "             "
 				"[User id not found]\n",
@@ -250,8 +282,17 @@ int list_uids(struct onak_dbctx *dbctx,
 			snprintf(buf, 1023, "%.*s",
 				(int) uids->packet->length,
 				uids->packet->data);
-			printf("                                %s\n",
-				(html) ? txt2html(buf) : buf);
+			if (html) {
+				printf("                                %s\n",
+					html_escape((char *) uids->packet->data,
+						uids->packet->length,
+						buf,
+						sizeof(buf)));
+			} else {
+				printf("                                %.*s\n",
+					(int) uids->packet->length,
+					uids->packet->data);
+			}
 		} else if (uids->packet->tag == OPENPGP_PACKET_UAT) {
 			printf("                                ");
 			if (html) {
@@ -457,18 +498,22 @@ int key_index(struct onak_dbctx *dbctx,
 		curuid = keys->uids;
 		if (curuid != NULL &&
 				curuid->packet->tag == OPENPGP_PACKET_UID) {
-			snprintf(buf, 1023, "%.*s",
-				(int) curuid->packet->length,
-				curuid->packet->data);
 			if (html) {
 				printf("<a href=\"lookup?op=vindex&"
-					"search=0x%016" PRIX64 "\">",
-					keyid);
+					"search=0x%016" PRIX64 "\">"
+					"%s</a>%s\n",
+					keyid,
+					html_escape((char *) curuid->packet->data,
+						curuid->packet->length,
+						buf,
+						sizeof(buf)),
+					(keys->revoked) ? " *** REVOKED ***" : "");
+			} else {
+				printf("%.*s%s\n",
+					(int) curuid->packet->length,
+					curuid->packet->data,
+					(keys->revoked) ? " *** REVOKED ***" : "");
 			}
-			printf("%s%s%s\n", 
-				(html) ? txt2html(buf) : buf,
-				(html) ? "</a>" : "",
-				(keys->revoked) ? " *** REVOKED ***" : "");
 			if (skshash) {
 				display_skshash(keys, html);
 			}

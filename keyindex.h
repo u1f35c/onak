@@ -49,10 +49,15 @@ int key_index(struct onak_dbctx *dbctx,
 int mrkey_index(struct openpgp_publickey *keys);
 
 /**
- *	txt2html - Takes a string and converts it to HTML.
- *	@string: The string to HTMLize.
+ *	html_escape - Takes a string and converts it to HTML.
+ *	@src: The string to HTMLize.
+ *	@src_len: The length of the source string
+ *	@dst: A buffer to put the escaped string into
+ *	@dst_len: Length of the destination buffer (including a trailing NULL)
  *
- *	Takes a string and escapes any HTML entities.
+ *	Takes a string and escapes any HTML entities (<, >, &, ", '). Returns
+ *	dst.
  */
-const char *txt2html(const char *string);
+const char *html_escape(const char *src, size_t src_len,
+		char *dst, size_t dst_len);
 #endif
