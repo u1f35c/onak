@@ -218,6 +218,12 @@ int main(int argc, char *argv[])
 		usage();
 	} else if (!strcmp("dump", argv[optind])) {
 		dbctx = config.dbinit(config.backend, true);
+		if (dbctx == NULL) {
+			logthing(LOGTHING_ERROR,
+				"Failed to open key database.");
+			rc = EXIT_FAILURE;
+			goto err;
+		}
 		dumpstate.count = dumpstate.filenum = 0;
 		dumpstate.maxcount = 100000;
 		dumpstate.fd = -1;
@@ -245,6 +251,12 @@ int main(int argc, char *argv[])
 					result);
 
 			dbctx = config.dbinit(config.backend, false);
+			if (dbctx == NULL) {
+				logthing(LOGTHING_ERROR,
+					"Failed to open key database.");
+				rc = EXIT_FAILURE;
+				goto err;
+			}
 			result = cleankeys(dbctx, &keys,
 					config.clean_policies);
 			logthing(LOGTHING_INFO, "%d keys cleaned.",
@@ -287,6 +299,12 @@ int main(int argc, char *argv[])
 		}
 	} else if (!strcmp("clean", argv[optind])) {
 		dbctx = config.dbinit(config.backend, true);
+		if (dbctx == NULL) {
+			logthing(LOGTHING_ERROR,
+				"Failed to open key database.");
+			rc = EXIT_FAILURE;
+			goto err;
+		}
 		if (binary) {
 			result = read_openpgp_stream(stdin_getchar, NULL,
 				 &packets, 0);
@@ -373,6 +391,12 @@ int main(int argc, char *argv[])
 			}
 		}
 		dbctx = config.dbinit(config.backend, false);
+		if (dbctx == NULL) {
+			logthing(LOGTHING_ERROR,
+				"Failed to open key database.");
+			rc = EXIT_FAILURE;
+			goto err;
+		}
 		if (!strcmp("index", argv[optind])) {
 			find_keys(dbctx, search, keyid, &fingerprint, ishex,
 					isfp, dispfp, skshash,
@@ -487,6 +511,7 @@ int main(int argc, char *argv[])
 		usage();
 	}
 
+err:
 	cleanuplogthing();
 	cleanupconfig();
 	free(configfile);

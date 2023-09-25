@@ -180,6 +180,10 @@ int main(int argc, char *argv[])
 	initlogthing("gpgwww", config.logfile);
 	catchsignals();
 	dbctx = config.dbinit(config.backend, true);
+	if (dbctx == NULL) {
+		puts("Failed to open key database.");
+		goto err;
+	}
 	inithash();
 	logthing(LOGTHING_NOTICE, "Looking for path from 0x%016" PRIX64
 			" to 0x%016"
@@ -193,6 +197,8 @@ int main(int argc, char *argv[])
 	}
 	destroyhash();
 	dbctx->cleanupdb(dbctx);
+
+err:
 	cleanuplogthing();
 	cleanupconfig();
 

@@ -94,6 +94,10 @@ int main(__unused int argc, __unused char *argv[])
 	catchsignals();
 	dbctx = config.dbinit(config.backend, false);
 
+	if (dbctx == NULL) {
+		doerror("Failed to open key database.");
+	}
+
 	if (dbctx->fetch_key_skshash == NULL) {
 		dbctx->cleanupdb(dbctx);
 		doerror("Can't fetch by skshash with this backend.");

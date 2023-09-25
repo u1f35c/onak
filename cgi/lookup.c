@@ -228,6 +228,11 @@ int main(int argc, char *argv[])
 		initlogthing("lookup", config.logfile);
 		catchsignals();
 		dbctx = config.dbinit(config.backend, false);
+		if (dbctx == NULL) {
+			logthing(LOGTHING_ERROR,
+				"Failed to open key database.");
+			goto err;
+		}
 		switch (op) {
 		case OP_GET:
 		case OP_HGET:
@@ -305,6 +310,7 @@ int main(int argc, char *argv[])
 			puts("Unknown operation!");
 		}
 		dbctx->cleanupdb(dbctx);
+err:
 		cleanuplogthing();
 		cleanupconfig();
 	}

@@ -87,7 +87,12 @@ int main(int argc, char *argv[])
 			}
 			catchsignals();
 			dbctx = config.dbinit(config.backend, false);
-			
+			if (dbctx == NULL) {
+				logthing(LOGTHING_ERROR,
+					"Failed to open key database.");
+				goto err;
+			}
+
 			count = cleankeys(dbctx, &keys, config.clean_policies);
 			logthing(LOGTHING_INFO, "%d keys cleaned.",
 					count);
@@ -109,6 +114,7 @@ int main(int argc, char *argv[])
 			puts("No OpenPGP packets found in input.");
 			end_html();
 		}
+err:
 		cleanuplogthing();
 		cleanupconfig();
 	}
