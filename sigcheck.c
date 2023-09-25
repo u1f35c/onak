@@ -289,6 +289,7 @@ onak_status_t onak_check_hash_sig(struct openpgp_packet *sigkey,
 	uint8_t sigkeytype;
 	uint8_t edsig[64];
 	int len, ofs;
+	size_t count;
 	mpz_t s;
 
 	ret = onak_parse_key_material(sigkey, &pubkey);
@@ -361,8 +362,22 @@ onak_status_t onak_check_hash_sig(struct openpgp_packet *sigkey,
 		MPI_TO_MPZ(sig, dsasig.r);
 		if (ret == ONAK_E_OK)
 			MPI_TO_MPZ(sig, dsasig.s);
-		mpz_export(edsig, NULL, 1, 1, 0, 0, dsasig.r);
-		mpz_export(&edsig[32], NULL, 1, 1, 0, 0, dsasig.s);
+		mpz_export(edsig, &count, 1, 1, 0, 0, dsasig.r);
+		if (count < 32) {
+			memmove(&edsig[32 - count], edsig, count);
+			while (count < 32) {
+				count++;
+				edsig[32 - count] = 0;
+			}
+		}
+		mpz_export(&edsig[32], &count, 1, 1, 0, 0, dsasig.s);
+		if (count < 32) {
+			memmove(&edsig[32 - count], edsig, count);
+			while (count < 32) {
+				count++;
+				edsig[32 - count] = 0;
+			}
+		}
 		break;
 	case OPENPGP_PKALGO_RSA:
 	case OPENPGP_PKALGO_RSA_SIGN:
