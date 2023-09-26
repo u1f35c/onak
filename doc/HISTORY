@@ -374,3 +374,14 @@
 * Fix handling of other signature requirement
 * Fix deletion of keys with PostgreSQL backend
 * Add support for verifying v3 signature packets
+
+0.6.3 - 26th September 2023
+
+* Fix systemd detection + socket activation
+* Add CMake checking for Berkeley DB
+* Minor improvements to keyd logging
+* Fix decoding of signature creation time
+* Relax version check on parsing signature + key packets
+* Improve HTML escaping
+* Handle failed database initialisation more gracefully
+* Fix bug with EDDSA signatures with top 8+ bits unset
