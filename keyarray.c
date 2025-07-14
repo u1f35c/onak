@@ -174,7 +174,8 @@ bool array_load(struct keyarray *array, const char *file)
 				// Comment line, ignore
 			} else if (i == FINGERPRINT_V3_LEN ||
 					i == FINGERPRINT_V4_LEN ||
-					i == FINGERPRINT_V5_LEN) {
+					i == FINGERPRINT_V5_LEN ||
+					i == FINGERPRINT_V6_LEN) {
 				fp.length = i;
 				for (i = 0; i < fp.length; i++) {
 					fp.fp[i] = hex2bin(curline[i * 2]);

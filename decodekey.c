@@ -245,6 +245,42 @@ onak_status_t sig_info(struct openpgp_packet *packet, uint64_t *keyid,
 				}
 			}
 			break;
+		case 6:
+			if (keyid != NULL) {
+				*keyid = 0;
+			}
+			offset = 4;
+			length = (packet->data[offset] << 24) +
+				(packet->data[offset + 1] << 16) +
+				(packet->data[offset + 2] << 8) +
+				packet->data[offset + 3];
+			offset += 4;
+			res = parse_subpackets(&packet->data[offset],
+					length,
+					keyid, creation);
+			offset += length;
+			if (res != ONAK_E_OK) {
+				return res;
+			}
+			/*
+			 * Only look at the unhashed subpackets if we want the
+			 * keyid and it wasn't in the signed subpacket
+			 * section.
+			 */
+			if (keyid != NULL && *keyid == 0) {
+				length = (packet->data[offset] << 24) +
+					(packet->data[offset + 1] << 16) +
+					(packet->data[offset + 2] << 8) +
+					packet->data[offset + 3];
+				offset += 4;
+				res = parse_subpackets(&packet->data[offset],
+						length,
+						keyid, NULL);
+				if (res != ONAK_E_OK) {
+					return res;
+				}
+			}
+			break;
 		default:
 			break;
 		}

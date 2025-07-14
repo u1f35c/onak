@@ -175,7 +175,8 @@ unsigned int keylength(struct openpgp_packet *keydata)
 		break;
 	case 4:
 	case 5:
-		/* v5 has an additional 4 bytes of key length data */
+	case 6:
+		/* v5 + v6 have an additional 4 bytes of key length data */
 		keyofs = (keydata->data[0] == 4) ? 6 : 10;
 		switch (keydata->data[5]) {
 		case OPENPGP_PKALGO_EC:
@@ -355,6 +356,7 @@ int list_subkeys(struct onak_dbctx *dbctx,
 				break;
 			case 4:
 			case 5:
+			case 6:
 				type = subkeys->packet->data[5];
 				break;
 			default:
@@ -476,6 +478,7 @@ int key_index(struct onak_dbctx *dbctx,
 			break;
 		case 4:
 		case 5:
+		case 6:
 			type = keys->publickey->data[5];
 			break;
 		default:
@@ -598,6 +601,7 @@ int mrkey_index(struct openpgp_publickey *keys)
 			break;
 		case 4:
 		case 5:
+		case 6:
 			(void) get_fingerprint(keys->publickey, &fingerprint);
 
 			for (i = 0; i < fingerprint.length; i++) {

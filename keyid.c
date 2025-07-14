@@ -158,6 +158,25 @@ onak_status_t get_fingerprint(struct openpgp_packet *packet,
 		sha256_digest(&sha2_ctx, fingerprint->length, fingerprint->fp);
 
 		break;
+	case 6:
+		sha256_init(&sha2_ctx);
+		/* RFC 9580 5.5.4.3 */
+		c = 0x9B;
+		sha256_update(&sha2_ctx, sizeof(c), &c);
+		c = packet->length >> 24;
+		sha256_update(&sha2_ctx, sizeof(c), &c);
+		c = packet->length >> 16;
+		sha256_update(&sha2_ctx, sizeof(c), &c);
+		c = packet->length >> 8;
+		sha256_update(&sha2_ctx, sizeof(c), &c);
+		c = packet->length & 0xFF;
+		sha256_update(&sha2_ctx, sizeof(c), &c);
+		sha256_update(&sha2_ctx, packet->length,
+			packet->data);
+		fingerprint->length = 32;
+		sha256_digest(&sha2_ctx, fingerprint->length, fingerprint->fp);
+
+		break;
 #endif
 	default:
 		return ONAK_E_UNKNOWN_VER;
@@ -241,6 +260,7 @@ onak_status_t get_packetid(struct openpgp_packet *packet, uint64_t *keyid)
 		break;
 	case 4:
 	case 5:
+	case 6:
 		get_fingerprint(packet, &fingerprint);
 		*keyid = fingerprint2keyid(&fingerprint);
 		break;
