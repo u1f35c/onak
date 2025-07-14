@@ -48,6 +48,8 @@ char pkalgo2char(uint8_t algo)
 		typech = 'E';
 		break;
 	case OPENPGP_PKALGO_EC:
+	case OPENPGP_PKALGO_ED448:
+	case OPENPGP_PKALGO_ED25519:
 		typech = 'e';
 		break;
 	case OPENPGP_PKALGO_ELGAMAL_SIGN:
@@ -64,6 +66,10 @@ char pkalgo2char(uint8_t algo)
 		break;
 	case OPENPGP_PKALGO_RSA_SIGN:
 		typech = 's';
+		break;
+	case OPENPGP_PKALGO_X25519:
+	case OPENPGP_PKALGO_X448:
+		typech = 'x';
 		break;
 	default:
 		typech = '?';
@@ -201,6 +207,14 @@ unsigned int keylength(struct openpgp_packet *keydata)
 					"Unknown elliptic curve size");
 				length = 0;
 			}
+			break;
+		case OPENPGP_PKALGO_ED25519:
+		case OPENPGP_PKALGO_X25519:
+			length = 255;
+			break;
+		case OPENPGP_PKALGO_ED448:
+		case OPENPGP_PKALGO_X448:
+			length = 448;
 			break;
 		default:
 			length = (keydata->data[keyofs] << 8) +
