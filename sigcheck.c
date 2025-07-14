@@ -259,6 +259,10 @@ static onak_status_t onak_parse_key_material(struct openpgp_packet *pk,
 		if (ret == ONAK_E_OK)
 			MPI_TO_MPZ(pk, key->rsa.e);
 		break;
+	case OPENPGP_PKALGO_ED25519:
+		memcpy(key->ed25519, &pk->data[ofs], 32);
+		ofs += 32;
+		break;
 	default:
 		return ONAK_E_UNSUPPORTED_FEATURE;
 	}
@@ -407,6 +411,12 @@ onak_status_t onak_check_hash_sig(struct openpgp_packet *sigkey,
 			}
 		}
 		break;
+	case OPENPGP_PKALGO_ED25519:
+		if (sig->length < ofs + 64) {
+			ret = ONAK_E_INVALID_PKT;
+			goto out;
+		}
+		break;
 	case OPENPGP_PKALGO_RSA:
 	case OPENPGP_PKALGO_RSA_SIGN:
 		mpz_init(s);
@@ -504,6 +514,26 @@ onak_status_t onak_check_hash_sig(struct openpgp_packet *sigkey,
 	case KEYHASH(OPENPGP_PKALGO_EDDSA, OPENPGP_HASH_SHA512):
 		ret = ed25519_sha512_verify(pubkey.ed25519,
 				SHA512_DIGEST_SIZE, hash, edsig) ?
+			ONAK_E_OK : ONAK_E_BAD_SIGNATURE;
+		break;
+	case KEYHASH(OPENPGP_PKALGO_ED25519, OPENPGP_HASH_SHA224):
+		ret = ed25519_sha512_verify(pubkey.ed25519,
+				SHA224_DIGEST_SIZE, hash, &sig->data[ofs]) ?
+			ONAK_E_OK : ONAK_E_BAD_SIGNATURE;
+		break;
+	case KEYHASH(OPENPGP_PKALGO_ED25519, OPENPGP_HASH_SHA256):
+		ret = ed25519_sha512_verify(pubkey.ed25519,
+				SHA256_DIGEST_SIZE, hash, &sig->data[ofs]) ?
+			ONAK_E_OK : ONAK_E_BAD_SIGNATURE;
+		break;
+	case KEYHASH(OPENPGP_PKALGO_ED25519, OPENPGP_HASH_SHA384):
+		ret = ed25519_sha512_verify(pubkey.ed25519,
+				SHA384_DIGEST_SIZE, hash, &sig->data[ofs]) ?
+			ONAK_E_OK : ONAK_E_BAD_SIGNATURE;
+		break;
+	case KEYHASH(OPENPGP_PKALGO_ED25519, OPENPGP_HASH_SHA512):
+		ret = ed25519_sha512_verify(pubkey.ed25519,
+				SHA512_DIGEST_SIZE, hash, &sig->data[ofs]) ?
 			ONAK_E_OK : ONAK_E_BAD_SIGNATURE;
 		break;
 	case KEYHASH(OPENPGP_PKALGO_RSA, OPENPGP_HASH_MD5):
