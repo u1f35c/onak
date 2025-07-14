@@ -125,14 +125,14 @@ static onak_status_t onak_parse_key_material(struct openpgp_packet *pk,
 	key->type = 0;
 
 	/*
-	 * Shortest valid key is v4 Ed25519, which takes 51 bytes, so do a
+	 * Shortest valid key is v6 Ed25519, which takes 42 bytes, so do a
 	 * quick sanity check which will ensure we have enough data to check
-	 * the packet header and OID info.
+	 * the packet header and key info.
 	 */
-	if (pk->length < 51)
+	if (pk->length < 42)
 		return ONAK_E_INVALID_PKT;
 
-	if (pk->data[0] != 4 && pk->data[0] != 5)
+	if (pk->data[0] < 4 || pk->data[0] > 6)
 		return ONAK_E_UNSUPPORTED_FEATURE;
 
 	/*
@@ -319,7 +319,7 @@ onak_status_t onak_check_hash_sig(struct openpgp_packet *sigkey,
 		/* Skip to the signature material */
 		ofs = 19;
 		sigkeytype = sig->data[15];
-	} else if (sig->data[0] >= 4) {
+	} else if (sig->data[0] == 4 || sig->data[0] == 5) {
 		/* Skip the hashed data */
 		ofs = (sig->data[4] << 8) + sig->data[5] + 6;
 		if (sig->length < ofs + 2) {
@@ -334,6 +334,34 @@ onak_status_t onak_check_hash_sig(struct openpgp_packet *sigkey,
 		}
 		/* Skip the sig hash bytes */
 		ofs += 2;
+		sigkeytype = sig->data[2];
+	} else if (sig->data[0] == 6) {
+		/* Skip the hashed data */
+		ofs = (sig->data[4] << 24) +
+			(sig->data[5] << 16) +
+			(sig->data[6] << 8) +
+			sig->data[7] + 8;
+		if (sig->length < ofs + 4) {
+			ret = ONAK_E_INVALID_PKT;
+			goto out;
+		}
+		/* Skip the unhashed data */
+		ofs += (sig->data[ofs] << 24) +
+			(sig->data[ofs + 1] << 16) +
+			(sig->data[ofs + 2] << 8) +
+			sig->data[ofs + 3] + 4;
+		if (sig->length < ofs + 3) {
+			ret = ONAK_E_INVALID_PKT;
+			goto out;
+		}
+		/* Skip the sig hash bytes */
+		ofs += 2;
+		/* Skip the hash salt */
+		ofs += sig->data[ofs] + 1;
+		if (sig->length < ofs) {
+			ret = ONAK_E_INVALID_PKT;
+			goto out;
+		}
 		sigkeytype = sig->data[2];
 	} else {
 		ret = ONAK_E_UNSUPPORTED_FEATURE;
@@ -739,6 +767,79 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 		unhashedlen = (sig->data[siglen] << 8) +
 			sig->data[siglen + 1];
 		*sighash = &sig->data[siglen + unhashedlen + 2];
+		break;
+	case 6:
+		keyheader[0] = 0x9B;
+		keyheader[1] = 0;
+		keyheader[2] = 0;
+		keyheader[3] = key->publickey->length >> 8;
+		keyheader[4] = key->publickey->length & 0xFF;
+		hashdata.data[1] = keyheader;
+		hashdata.len[1] = 5;
+		hashdata.data[2] = key->publickey->data;
+		hashdata.len[2] = key->publickey->length;
+		hashdata.chunks = 3;
+
+		*hashtype = sig->data[3];
+
+		if (packet != NULL) {
+			if (packet->tag == OPENPGP_PACKET_PUBLICSUBKEY) {
+				packetheader[0] = 0x9B;
+				packetheader[1] = 0;
+				packetheader[2] = 0;
+				packetheader[3] = packet->length >> 8;
+				packetheader[4] = packet->length & 0xFF;
+				hashdata.data[hashdata.chunks] = packetheader;
+				hashdata.len[hashdata.chunks] = 5;
+				hashdata.chunks++;
+			} else if (packet->tag == OPENPGP_PACKET_UID ||
+					packet->tag == OPENPGP_PACKET_UAT) {
+				packetheader[0] = (packet->tag ==
+					OPENPGP_PACKET_UID) ?  0xB4 : 0xD1;
+				packetheader[1] = packet->length >> 24;
+				packetheader[2] = (packet->length >> 16) & 0xFF;
+				packetheader[3] = (packet->length >> 8) & 0xFF;
+				packetheader[4] = packet->length & 0xFF;
+				hashdata.data[hashdata.chunks] = packetheader;
+				hashdata.len[hashdata.chunks] = 5;
+				hashdata.chunks++;
+			}
+			hashdata.data[hashdata.chunks] = packet->data;
+			hashdata.len[hashdata.chunks] = packet->length;
+			hashdata.chunks++;
+		}
+
+		hashdata.data[hashdata.chunks] = sig->data;
+		hashdata.len[hashdata.chunks] = siglen = (sig->data[4] << 24) +
+			(sig->data[5] << 16) +
+			(sig->data[6] << 8) +
+			sig->data[7] + 8;
+		if (siglen > sig->length) {
+			/* Signature data exceed packet length, bogus */
+			return ONAK_E_INVALID_PKT;
+		}
+		hashdata.chunks++;
+
+		trailer[0] = 6;
+		trailer[1] = 0xFF;
+		trailer[2] = siglen >> 24;
+		trailer[3] = (siglen >> 16) & 0xFF;
+		trailer[4] = (siglen >> 8) & 0xFF;
+		trailer[5] = siglen & 0xFF;
+		hashdata.data[hashdata.chunks] = trailer;
+		hashdata.len[hashdata.chunks] = 6;
+		hashdata.chunks++;
+
+		unhashedlen = (sig->data[siglen] << 24) +
+			(sig->data[siglen + 1] << 16) +
+			(sig->data[siglen + 2] << 8) +
+			sig->data[siglen + 3];
+		*sighash = &sig->data[siglen + unhashedlen + 4];
+
+		/* Salt */
+		hashdata.len[0] = sig->data[siglen + unhashedlen + 6];
+		hashdata.data[0] = &sig->data[siglen + unhashedlen + 7];
+
 		break;
 	default:
 		return ONAK_E_UNSUPPORTED_FEATURE;
