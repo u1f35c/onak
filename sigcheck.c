@@ -601,23 +601,23 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 			size_t len;
 
 			keyid = 0;
-			res = parse_subpackets(&sig->data[4],
-						sig->length - 4, &len,
+			len = (sig->data[4] << 8) + sig->data[5];
+			res = parse_subpackets(&sig->data[6], len,
 						&keyid, NULL);
 			if (res != ONAK_E_OK) {
 				return res;
 			}
 			if (keyid == 0 &&
 					/* No unhashed data */
-					sig->data[4 + len] == 0 &&
-					sig->data[5 + len] == 0 &&
-					/* Dummy 0 checksum */
 					sig->data[6 + len] == 0 &&
 					sig->data[7 + len] == 0 &&
-					/* Dummy MPI of 1 */
+					/* Dummy 0 checksum */
 					sig->data[8 + len] == 0 &&
-					sig->data[9 + len] == 1 &&
-					sig->data[10 + len] == 1) {
+					sig->data[9 + len] == 0 &&
+					/* Dummy MPI of 1 */
+					sig->data[10 + len] == 0 &&
+					sig->data[11 + len] == 1 &&
+					sig->data[12 + len] == 1) {
 				return ONAK_E_UNSUPPORTED_FEATURE;
 			}
 		}

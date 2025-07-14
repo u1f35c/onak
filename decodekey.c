@@ -33,41 +33,25 @@
  *	parse_subpackets - Parse the subpackets of a Type 4 signature.
  *	@data: The subpacket data.
  *	@len: The amount of data available to read.
- *	@parselen: The amount of data that was actually parsed.
  *	@keyid: A pointer to where we should return the keyid.
  *	@creationtime: A pointer to where we should return the creation time.
  *
- *	This function parses the subkey data of a Type 4 signature and fills
- *	in the supplied variables. It also returns the length of the data
- *	processed. If the value of any piece of data is not desired a NULL
- *	can be passed instead of a pointer to a storage area for that value.
+ *	This function parses the subkey data of a Type 4+ signature and fills
+ *	in the supplied variables. If the value of any piece of data is not
+ *	desired a NULL can be passed instead of a pointer to a storage area for
+ *	that value.
  */
-onak_status_t parse_subpackets(unsigned char *data, size_t len,
-		size_t *parselen, uint64_t *keyid, time_t *creation)
+onak_status_t parse_subpackets(unsigned char *data, size_t length,
+		uint64_t *keyid, time_t *creation)
 {
 	int offset = 0;
-	int length = 0;
 	int packetlen = 0;
 	struct openpgp_fingerprint fp;
 	int i;
 
 	assert(data != NULL);
 
-	/* Make sure we actually have the 2 byte length field */
-	if (len < 2) {
-		return ONAK_E_INVALID_PKT;
-	}
-
-	length = (data[0] << 8) + data[1] + 2;
-
-	/* If the length is off the end of the data available, it's bogus */
-	if (len < length) {
-		return ONAK_E_INVALID_PKT;
-	}
-
-	*parselen = length;
-
-	offset = 2;
+	offset = 0;
 	while (offset < length) {
 		packetlen = data[offset++];
 		if (packetlen > 191 && packetlen < 255) {
@@ -194,7 +178,7 @@ onak_status_t parse_subpackets(unsigned char *data, size_t len,
 onak_status_t sig_info(struct openpgp_packet *packet, uint64_t *keyid,
 		time_t *creation)
 {
-	size_t length = 0;
+	size_t offset, length = 0;
 	onak_status_t res;
 
 	if (packet != NULL) {
@@ -233,9 +217,14 @@ onak_status_t sig_info(struct openpgp_packet *packet, uint64_t *keyid,
 			if (keyid != NULL) {
 				*keyid = 0;
 			}
-			res = parse_subpackets(&packet->data[4],
-					packet->length - 4,
-					&length, keyid, creation);
+			offset = 4;
+			length = (packet->data[offset] << 8) +
+				packet->data[offset + 1];
+			offset += 2;
+			res = parse_subpackets(&packet->data[offset],
+					length,
+					keyid, creation);
+			offset += length;
 			if (res != ONAK_E_OK) {
 				return res;
 			}
@@ -245,9 +234,12 @@ onak_status_t sig_info(struct openpgp_packet *packet, uint64_t *keyid,
 			 * section.
 			 */
 			if (keyid != NULL && *keyid == 0) {
-				res = parse_subpackets(&packet->data[length + 4],
-						packet->length - (4 + length),
-						&length, keyid, NULL);
+				length = (packet->data[offset] << 8) +
+					packet->data[offset + 1];
+				offset += 2;
+				res = parse_subpackets(&packet->data[offset],
+						length,
+						keyid, NULL);
 				if (res != ONAK_E_OK) {
 					return res;
 				}
