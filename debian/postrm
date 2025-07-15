@@ -10,6 +10,11 @@ if [ "$1" = "purge" ]; then
     fi
 
     rm -f /var/log/onak.log /var/log/onak.log.1 /var/log/onak.log.*.gz
+
+    # Clean up any key databases, if they exist
+    if [ -d /var/lib/onak -a ! -z "$(ls -A /var/lib/onak)" ]; then
+        rm -f /var/lib/onak/*
+    fi
 fi
 
 #DEBHELPER#
