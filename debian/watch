@@ -1,2 +1,2 @@
-version=3
-http://www.earth.li/projectpurple/files/        onak-(.*).tar.(?:gz|bz2|xz)
+version=4
+https://www.earth.li/projectpurple/files/        onak-(.*).tar.(?:gz|bz2|xz)

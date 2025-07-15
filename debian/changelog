@@ -2,6 +2,7 @@ onak (0.6.3-1+git) UNRELEASED; urgency=low
 
   * Development snapshot
   * Cleanup database files on package purge (Closes: #1053323)
+  * Update debian/watch to v4 + HTTPS
 
  -- Jonathan McDowell <noodles@earth.li>  Tue, 15 Jul 2025 10:21:10 +0100
 
