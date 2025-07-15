@@ -20,12 +20,12 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <inttypes.h>
+#include <poll.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
@@ -620,8 +620,8 @@ static void usage(void)
 
 int main(int argc, char *argv[])
 {
-	int fd = -1, maxfd, i, clients[MAX_CLIENTS];
-	fd_set rfds = { 0 }; /* Avoid scan-build false report for FD_SET */
+	int fd = -1, fdcount, i, curfd, clients[MAX_CLIENTS];
+	struct pollfd rfds[MAX_CLIENTS];
 	char sockname[100];
 	char *configfile = NULL;
 	bool foreground = false;
@@ -673,24 +673,25 @@ int main(int argc, char *argv[])
 	fd = sock_init(sockname);
 
 	if (fd != -1) {
-		FD_ZERO(&rfds);
-		FD_SET(fd, &rfds);
-		maxfd = fd;
+		memset(rfds, 0, sizeof(rfds));
+		rfds[0].fd = fd;
+		rfds[0].events = POLLIN;
+		fdcount = 1;
 		memset(clients, -1, sizeof (clients));
 
 		dbctx = config.dbinit(config.backend, false);
 
 		logthing(LOGTHING_NOTICE, "Accepting connections%s",
 			using_socket_activation ? " (via systemd)" : "");
-		while (!cleanup() && select(maxfd + 1, &rfds, NULL, NULL, NULL) != -1) {
+		while (!cleanup() && poll(rfds, fdcount, -1) != -1) {
 			/*
 			 * Deal with existing clients first; if we're at our
 			 * connection limit then processing them might free
 			 * things up and let us accept the next client below.
 			 */
+			curfd = 0;
 			for (i = 0; i < MAX_CLIENTS; i++) {
-				if (clients[i] != -1 &&
-						FD_ISSET(clients[i], &rfds)) {
+				if (clients[i] != -1 && (rfds[++curfd].revents & POLLIN)) {
 					logthing(LOGTHING_DEBUG,
 						"Handling connection for client %d.", i);
 					if (sock_do(dbctx, clients[i])) {
@@ -704,7 +705,7 @@ int main(int argc, char *argv[])
 			/*
 			 * Check if we have a new incoming connection to accept.
 			 */
-			if (FD_ISSET(fd, &rfds)) {
+			if (rfds[0].revents & POLLIN) {
 				for (i = 0; i < MAX_CLIENTS; i++) {
 					if (clients[i] == -1) {
 						break;
@@ -716,14 +717,16 @@ int main(int argc, char *argv[])
 					clients[i] = sock_accept(fd);
 				}
 			}
-			FD_ZERO(&rfds);
-			FD_SET(fd, &rfds);
-			maxfd = fd;
+
+			memset(rfds, 0, sizeof(rfds));
+			rfds[0].fd = fd;
+			rfds[0].events = POLLIN;
+			fdcount = 1;
 			for (i = 0; i < MAX_CLIENTS; i++) {
 				if (clients[i] != -1) {
-					FD_SET(clients[i], &rfds);
-					maxfd = (maxfd > clients[i]) ?
-							maxfd : clients[i];
+					rfds[fdcount].fd = clients[i];
+					rfds[fdcount].events = POLLIN;
+					fdcount++;
 				}
 			}
 		}
