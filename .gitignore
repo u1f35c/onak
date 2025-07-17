@@ -3,9 +3,9 @@ hashquery
 lookup
 onak
 gpgwww
-keyd
-keydctl
 maxpath
+onak-keyd
+onak-keydctl
 onak-mail.pl
 onak.ini
 sixdegrees

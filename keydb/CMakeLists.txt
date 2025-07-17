@@ -30,22 +30,22 @@ endif()
 if (KEYD STREQUAL "ON")
 	LIST(APPEND BACKENDS keyd)
 
-	add_executable(keyd keyd.c)
-	target_link_libraries(keyd libonak)
-	add_executable(keydctl keydctl.c ../onak-conf.c)
-	target_link_libraries(keydctl libonak)
-	target_compile_definitions(keydctl PRIVATE
+	add_executable(onak-keyd keyd.c)
+	target_link_libraries(onak-keyd libonak)
+	add_executable(onak-keydctl keydctl.c ../onak-conf.c)
+	target_link_libraries(onak-keydctl libonak)
+	target_compile_definitions(onak-keydctl PRIVATE
 		CONFIGDIR="${CMAKE_INSTALL_FULL_SYSCONFDIR}")
 
 	if (SYSTEMD_FOUND)
-		target_include_directories(keyd SYSTEM PUBLIC
+		target_include_directories(onak-keyd SYSTEM PUBLIC
 			${SYSTEMD_INCLUDE_DIRS})
-		target_link_libraries(keyd ${SYSTEMD_LIBRARIES})
+		target_link_libraries(onak-keyd ${SYSTEMD_LIBRARIES})
 	endif()
 
-	install(TARGETS keydctl RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-	install(TARGETS keyd RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR})
-	install(FILES keyd.8 keydctl.8
+	install(TARGETS onak-keydctl RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+	install(TARGETS onak-keyd RUNTIME DESTINATION ${CMAKE_INSTALL_SBINDIR})
+	install(FILES onak-keyd.8 onak-keydctl.8
 		DESTINATION ${CMAKE_INSTALL_MANDIR}/man8/)
 endif()
 
