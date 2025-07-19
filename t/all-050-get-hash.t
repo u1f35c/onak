@@ -13,7 +13,7 @@ cd ${WORKDIR}
 ${BUILDDIR}/onak -b -c $1 add < ${TESTSDIR}/../keys/noodles.key
 if ! ${BUILDDIR}/onak -c $1 hget 81929DAE08B8F80888DA524923B93067 2> /dev/null | \
 	grep -q -- '-----BEGIN PGP PUBLIC KEY BLOCK-----'; then
-	echo "* Did not correctly retrieve key by text"
+	echo "* Did not correctly retrieve key by SKS hash"
 	exit 1
 fi
 
