@@ -140,10 +140,10 @@ static int stats_key_cmp(struct stats_key *key, uint64_t *keyid)
 
 struct stats_key *findinhash(uint64_t keyid)
 {
-	int (*p)();
+	int (*p)(const void *, const void *);
 	struct ll *found;
 
-	p = stats_key_cmp;
+	p = (int (*)(const void *, const void *))stats_key_cmp;
 	if ((found = llfind(hashtable[keyid & HASHMASK], &keyid, p))==NULL) {
 		return NULL;
 	}
