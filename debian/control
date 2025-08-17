@@ -9,7 +9,7 @@ Build-Depends: cmake,
 	libsystemd-dev (>= 214) [linux-any] | libsystemd-daemon-dev [linux-any],
 	nettle-dev,
 	pkgconf
-Standards-Version: 4.6.1
+Standards-Version: 4.7.2
 Homepage: https://www.earth.li/projectpurple/progs/onak.html
 Vcs-Browser: https://the.earth.li/gitweb/?p=onak.git;a=summary
 Vcs-Git: https://the.earth.li/git/onak.git

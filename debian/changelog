@@ -7,6 +7,7 @@ onak (0.6.3-1+git) UNRELEASED; urgency=low
   * Add skeleton autopkgtests
   * Update pkg-config -> pkgconf
   * Switch debian/copyright to DEP-5
+  * Bump Debian Standards-Version to 4.7.2
 
  -- Jonathan McDowell <noodles@earth.li>  Tue, 15 Jul 2025 10:21:10 +0100
 
