@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1...3.31 FATAL_ERROR)
-project(onak VERSION 0.6.3 LANGUAGES C)
+project(onak VERSION 0.6.4 LANGUAGES C)
 
 include(CheckSymbolExists)
 include(FindPkgConfig)

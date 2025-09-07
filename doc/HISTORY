@@ -385,3 +385,9 @@
 * Improve HTML escaping
 * Handle failed database initialisation more gracefully
 * Fix bug with EDDSA signatures with top 8+ bits unset
+
+0.6.3 - 7th September 2025
+
+* Fix building with CMake 4.0
+* Fixes for building with GCC 15
+* Rename keyd(ctl) to onak-keyd(ctl)

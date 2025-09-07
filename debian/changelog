@@ -1,6 +1,6 @@
-onak (0.6.3-1+git) UNRELEASED; urgency=low
+onak (0.6.4-1) unstable; urgency=low
 
-  * Development snapshot
+  * New upstream release
   * Cleanup database files on package purge (Closes: #1053323)
   * Update debian/watch to v4 + HTTPS
   * Drop debian/NEWS
