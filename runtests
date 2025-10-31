@@ -38,7 +38,12 @@ for t in keydb/libkeydb_*.so; do
 			-e "s;DB;${backend};" \
 			${TESTSDIR}/test-in.ini > ${WORKDIR}/test.ini
 		touch ${WORKDIR}/blacklist
-		for t in ${TESTSDIR}/$backend-*.t ${TESTSDIR}/all-*.t; do
+		if [ "${backend}" = "dummy" ]; then
+			TESTS="${TESTSDIR}/$backend-*.t"
+		else
+			TESTS="${TESTSDIR}/$backend-*.t ${TESTSDIR}/all-*.t"
+		fi
+		for t in ${TESTS}; do
 			total=`expr $total + 1`
 			mkdir ${WORKDIR}/db/
 			if ! $t ${WORKDIR}/test.ini $backend; then

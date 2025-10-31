@@ -1,7 +1,7 @@
 # Key database backends
 
 # These have no dependencies and can always be compiled
-set(BACKENDS "file" "fs" "keyring" "stacked")
+set(BACKENDS "dummy" "file" "fs" "keyring" "stacked")
 
 # DB4 backend (add check for existence)
 find_package(BDB)

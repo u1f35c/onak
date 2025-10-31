@@ -45,6 +45,8 @@ struct onak_dbctx {
  * Start a transaction. Intended to be used if we're about to perform many
  * operations on the database to help speed it all up, or if we want
  * something to only succeed if all relevant operations are successful.
+ *
+ * @return Boolean indicating if we started the transaction successfully.
  */
 	bool (*starttrans)(struct onak_dbctx *);
 
@@ -61,6 +63,7 @@ struct onak_dbctx {
  * @param fpsize Number of bytes in the fingerprint (16 for v3, 20 for v4)
  * @param publickey A pointer to a structure to return the key in.
  * @param intrans  If we're already in a transaction.
+ * @return Number of keys returned.
  *
  * This function returns a public key from whatever storage mechanism we
  * are using. This only searches for the fingerprint of the primary key
@@ -76,6 +79,7 @@ struct onak_dbctx {
  * @param keyid The keyid to fetch.
  * @param publickey A pointer to a structure to return the key in.
  * @param intrans  If we're already in a transaction.
+ * @return Number of keys returned.
  *
  * This function returns a public key from whatever storage mechanism we
  * are using. It may return multiple keys in the case where there are
@@ -92,6 +96,7 @@ struct onak_dbctx {
  * @param fpsize Number of bytes in the fingerprint (16 for v3, 20 for v4)
  * @param publickey A pointer to a structure to return the key in.
  * @param intrans  If we're already in a transaction.
+ * @return Number of keys returned.
  *
  * This function returns a public key from whatever storage mechanism we
  * are using. Although the fingerprint should be unique this function may
@@ -107,6 +112,7 @@ struct onak_dbctx {
  * @brief Tries to find the keys that contain the supplied text.
  * @param search The text to search for.
  * @param publickey A pointer to a structure to return the key in.
+ * @return Number of keys returned.
  *
  * This function searches for the supplied text and returns the keys that
  * contain it. It is likely it will return multiple keys.
@@ -118,6 +124,7 @@ struct onak_dbctx {
  * @brief Tries to find the keys from an SKS hash
  * @param hash The hash to search for.
  * @param publickey A pointer to a structure to return the key in.
+ * @return Number of keys returned.
  *
  * This function looks for the key that is referenced by the supplied
  * SKS hash and returns it.
@@ -190,7 +197,7 @@ struct onak_dbctx {
  * @param keyid The keyid to get the sigs for.
  * @param revoked Is the key revoked?
  *
- * This function gets the list of signatures on a key. Used for key 
+ * This function gets the list of signatures on a key. Used for key
  * indexing and doing stats bits. If revoked is non-NULL then if the key
  * is revoked it's set to true.
  */
@@ -202,7 +209,7 @@ struct onak_dbctx {
  * @param keyid The key we want the signatures for.
  *
  * This function gets the signatures on a key. It's the same as the
- * getkeysigs function above except we use the hash module to cache the
+ * getkeysigs function above except we use the hash module to cache them.
  */
 	struct ll * (*cached_getkeysigs)(struct onak_dbctx *,
 			uint64_t keyid);
