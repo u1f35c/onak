@@ -1489,9 +1489,10 @@ struct onak_dbctx *keydb_db4_init(struct onak_db_config *dbcfg, bool readonly)
 			privctx->numdbs = atoi(buf);
 		}
 		fclose(numdb);
-	} else if (!readonly) {
+	} else if (errno != ENOENT) {
 		logthing(LOGTHING_ERROR, "Couldn't open num_keydb: %s",
 				strerror(errno));
+	} else if (!readonly) {
 		numdb = fopen(buf, "w");
 		if (numdb != NULL) {
 			fprintf(numdb, "%d", privctx->numdbs);
