@@ -20,6 +20,9 @@ option(KEYD
 	"Enable the key daemon to handle communication with the key database"
 	ON)
 
+# Export our compile commands to help LSPs
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 TEST_BIG_ENDIAN(WORDS_BIGENDIAN)
 
