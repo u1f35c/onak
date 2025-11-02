@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (optind < argc) {
-		keyid = strtoll(argv[optind], NULL, 16);
+		keyid = strtoull(argv[optind], NULL, 16);
 	}
 
 	readconfig(configfile);
