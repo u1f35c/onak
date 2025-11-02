@@ -43,7 +43,10 @@ void findmaxpath(struct onak_dbctx *dbctx, unsigned long max)
 	 * My (noodles@earth.li, RSA) key is in the strongly connected set of
 	 * keys, so we use it as a suitable starting seed.
 	 */
-	dbctx->cached_getkeysigs(dbctx, 0x94FA372B2DA8B985);
+	if (dbctx->cached_getkeysigs(dbctx, 0x94FA372B2DA8B985) == NULL) {
+		printf("Couldn't find starting key.\n");
+		return;
+	}
 
 	/*
 	 * Loop through the hash examining each key present and finding the
@@ -75,6 +78,12 @@ void findmaxpath(struct onak_dbctx *dbctx, unsigned long max)
 			curkey=curkey->next;
 		}
 	}
+
+	if (from == NULL || to == NULL) {
+		printf("No path found?\n");
+		return;
+	}
+
 	printf("Max path is from %" PRIX64 " to %" PRIX64 " (%ld steps)\n",
 			from->keyid,
 			to->keyid,
