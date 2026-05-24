@@ -329,7 +329,17 @@ int list_uids(struct onak_dbctx *dbctx,
 			 * currently asserts about themselves. op=vindex
 			 * (verbose=true) still shows every UAT, since its
 			 * purpose is the full key state including history.
+			 *
+			 * imgindx is captured *before* the skip and always
+			 * incremented, because op=photo's getphoto() iterates
+			 * over every UAT in the key (revoked or not) and
+			 * counts them with the same stride. Leaving skipped
+			 * UATs out of the count would desync the HTML idx=N
+			 * we emit from the index getphoto() looks up — making
+			 * the browser fetch the wrong (typically: revoked)
+			 * photo blob for what is shown as the valid UAT.
 			 */
+			int this_idx = imgindx++;
 			if (!verbose && signedpacket_is_revoked(uids)) {
 				uids = uids->next;
 				continue;
@@ -340,8 +350,7 @@ int list_uids(struct onak_dbctx *dbctx,
 					"0x%016" PRIX64 "&idx=%d\" alt=\""
 					"[photo id]\">\n",
 					keyid,
-					imgindx);
-				imgindx++;
+					this_idx);
 			} else {
 				printf("[photo id]\n");
 			}
