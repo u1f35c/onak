@@ -1,0 +1,56 @@
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<link rel="icon" href="/favicon.ico" type="image/x-icon">
+<link rel="stylesheet" href="css/milligram.min.css">
+<title>Public Key Server Commands</title>
+</head>
+
+<body>
+<div class="container">
+
+  <h1><a href="https://the.earth.li">Onak</a> Public Key Server</h1>
+
+  <h2>Search PGP keys</h2>
+
+  <form action="/pks/lookup" method="GET">
+    <label for="index">Index:</label>
+    <input type="radio" name="op" value="index" id="index" checked>
+
+    <label for="verbose">Verbose:</label>
+    <input type="radio" name="op" value="vindex" id="verbose">
+
+    <label for="search" class="display-block">Search String</label>
+    <input type="text" name="search" id="search">
+
+    <input type="checkbox" name="fingerprint" id="fingerprints">
+    <label for="fingerprints">Show fingerprints</label><br>
+
+    <input type="checkbox" name="exact" id="exact">
+    <label for="exact">Exact matchs</label><br>
+
+    <input class="button-clear" type="reset" value="Reset">
+    <input class="button-primary" type="submit" value="Search">
+  </form>
+
+  <h2>Add a new key to the server</h2>
+
+    <p><code>$ gpg --armor --export &lt;email&gt;</code></p>
+
+    <form action="/pks/add" method="POST">
+      <label for="keytext">Your armored public PGP key</label>
+      <textarea name="keytext" id="keytext" placeholder="-----BEGIN PGP PUBLIC KEY BLOCK-----
+...
+...
+...
+-----END PGP PUBLIC KEY BLOCK----- "></textarea>
+      <input class="button-clear" type="reset" value="Reset">
+      <input class="button-primary" type="submit" value="Send">
+    </form>
+
+  <h2>Contact</h2>
+
+  <a href="mailto:your@mail">your@mail</a>
+
+</div>
+</body>
