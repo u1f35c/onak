@@ -270,6 +270,34 @@ int list_sigs(struct onak_dbctx *dbctx,
 	return 0;
 }
 
+/*
+ * Returns true if the given signed packet (a UID or a UAT) carries a
+ * v4/v5 certification revocation signature (sigtype 0x30) — i.e. the
+ * signed packet has been revoked. Doesn't try to authenticate which key
+ * issued the revocation (the same heuristic the rest of keyindex.c
+ * applies); enough for the display-time filtering done by op=index.
+ */
+static bool signedpacket_is_revoked(struct openpgp_signedpacket_list *sp)
+{
+	struct openpgp_packet_list *sigs;
+
+	if (sp == NULL) {
+		return false;
+	}
+	for (sigs = sp->sigs; sigs != NULL; sigs = sigs->next) {
+		if (sigs->packet == NULL || sigs->packet->data == NULL ||
+				sigs->packet->length < 2) {
+			continue;
+		}
+		if ((sigs->packet->data[0] == 4 ||
+				sigs->packet->data[0] == 5) &&
+				sigs->packet->data[1] == 0x30) {
+			return true;
+		}
+	}
+	return false;
+}
+
 int list_uids(struct onak_dbctx *dbctx,
 		uint64_t keyid, struct openpgp_signedpacket_list *uids,
 		bool verbose, bool html)
@@ -294,6 +322,18 @@ int list_uids(struct onak_dbctx *dbctx,
 					uids->packet->data);
 			}
 		} else if (uids->packet->tag == OPENPGP_PACKET_UAT) {
+			/*
+			 * In op=index mode (verbose=false), revoked UATs are
+			 * skipped: a photo whose owner has revoked it clutters
+			 * the listing and isn't part of what the user
+			 * currently asserts about themselves. op=vindex
+			 * (verbose=true) still shows every UAT, since its
+			 * purpose is the full key state including history.
+			 */
+			if (!verbose && signedpacket_is_revoked(uids)) {
+				uids = uids->next;
+				continue;
+			}
 			printf("                                ");
 			if (html) {
 				printf("<img src=\"lookup?op=photo&search="
