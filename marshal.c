@@ -162,7 +162,7 @@ void **unmarshal_array(size_t (*getchar_func)(void *ctx, size_t count,
 		return NULL;
 	}
 	*size = ntohl(len);
-	array = malloc(*size * sizeof(void *));
+	array = calloc(*size, sizeof(void *));
 	for (i = 0; i < *size; i++) {
 		array[i] = unmarshal_func(getchar_func, ctx);
 	}
