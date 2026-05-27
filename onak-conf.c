@@ -518,7 +518,7 @@ void writeconfig(const char *configfile)
 #define WRITE_IF_NOT_NULL(c, s) if (c != NULL) { \
 	fprintf(conffile, s "=%s\n", c); \
 }
-#define WRITE_BOOL(c, s) fprintf(conffile, s "=%s\n", s ? "true" : "false");
+#define WRITE_BOOL(c, s) fprintf(conffile, s "=%s\n", c ? "true" : "false");
 
 	fprintf(conffile, "[main]\n");
 	WRITE_IF_NOT_NULL(config.backend->name, "backend");
