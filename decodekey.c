@@ -221,11 +221,11 @@ onak_status_t sig_info(struct openpgp_packet *packet, uint64_t *keyid,
 			if (creation != NULL) {
 				*creation = packet->data[3];
 				*creation <<= 8;
-				*creation = packet->data[4];
+				*creation += packet->data[4];
 				*creation <<= 8;
-				*creation = packet->data[5];
+				*creation += packet->data[5];
 				*creation <<= 8;
-				*creation = packet->data[6];
+				*creation += packet->data[6];
 			}
 			break;
 		case 4:
