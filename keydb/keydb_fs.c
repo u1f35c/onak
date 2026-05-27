@@ -567,7 +567,7 @@ static int fs_fetch_key_text(struct onak_dbctx *dbctx,
 	/* Now add the keys... */
 	wl = keylist;
 	while (wl) {
-		logthing(LOGTHING_DEBUG, "Adding key: %s", wl->object);
+		logthing(LOGTHING_DEBUG, "Adding key: %s", (char *) wl->object);
 		addedkeys +=
 		    fs_fetch_key_id(dbctx,
 			      strtoull(wl->object, NULL, 16), publickey,

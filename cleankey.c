@@ -333,7 +333,7 @@ int clean_large_packets(struct openpgp_publickey *key)
 
 		if (drop) {
 			logthing(LOGTHING_INFO,
-					"Dropping large (%d) packet, type %d",
+					"Dropping large (%zu) packet, type %d",
 					(*curuid)->packet->length,
 					(*curuid)->packet->tag);
 			/* Remove the entire large signed packet list */

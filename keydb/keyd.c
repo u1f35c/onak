@@ -125,7 +125,7 @@ static bool keyd_write_key(int fd, struct openpgp_publickey *key)
 				&storebuf,
 				packets);
 	logthing(LOGTHING_TRACE,
-				"Sending %d bytes.",
+				"Sending %zd bytes.",
 				storebuf.offset);
 	written = write(fd, &storebuf.offset,
 			sizeof(storebuf.offset));
@@ -266,7 +266,7 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 	 */
 	bytes = read(fd, &cmd, sizeof(cmd));
 
-	logthing(LOGTHING_DEBUG, "Read %d bytes, command: %d", bytes, cmd);
+	logthing(LOGTHING_DEBUG, "Read %zd bytes, command: %d", bytes, cmd);
 
 	if (bytes != sizeof(cmd)) {
 		ret = 1;
@@ -441,7 +441,7 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 			if (ret == 0) {
 				bytes = read(fd, &storebuf.size,
 					sizeof(storebuf.size));
-				logthing(LOGTHING_TRACE, "Reading %d bytes.",
+				logthing(LOGTHING_TRACE, "Reading %zu bytes.",
 					storebuf.size);
 				if (bytes != sizeof(storebuf.size)) {
 					ret = 1;
@@ -456,7 +456,7 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 						&storebuf.buffer[count],
 						storebuf.size - count);
 					logthing(LOGTHING_TRACE,
-							"Read %d bytes.",
+							"Read %zd bytes.",
 							bytes);
 					count += bytes;
 				}

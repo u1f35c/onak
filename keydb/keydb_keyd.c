@@ -119,13 +119,13 @@ static int keyd_fetch_key(struct onak_dbctx *dbctx,
 			keybuf.buffer = malloc(keybuf.size);
 			bytes = count = 0;
 			logthing(LOGTHING_TRACE,
-					"Getting %d bytes of key data.",
+					"Getting %zu bytes of key data.",
 					keybuf.size);
 			while (bytes >= 0 && count < keybuf.size) {
 				bytes = read(keyd_fd, &keybuf.buffer[count],
 						keybuf.size - count);
 				logthing(LOGTHING_TRACE,
-						"Read %d bytes.", bytes);
+						"Read %zd bytes.", bytes);
 				count += bytes;
 			}
 			read_openpgp_stream(buffer_fetchchar, &keybuf,
@@ -168,13 +168,13 @@ static int keyd_fetch_key_fp(struct onak_dbctx *dbctx,
 			keybuf.buffer = malloc(keybuf.size);
 			bytes = count = 0;
 			logthing(LOGTHING_TRACE,
-					"Getting %d bytes of key data.",
+					"Getting %zu bytes of key data.",
 					keybuf.size);
 			while (bytes >= 0 && count < keybuf.size) {
 				bytes = read(keyd_fd, &keybuf.buffer[count],
 						keybuf.size - count);
 				logthing(LOGTHING_TRACE,
-						"Read %d bytes.", bytes);
+						"Read %zd bytes.", bytes);
 				count += bytes;
 			}
 			read_openpgp_stream(buffer_fetchchar, &keybuf,
@@ -210,13 +210,13 @@ static int keyd_fetch_key_id(struct onak_dbctx *dbctx,
 			keybuf.buffer = malloc(keybuf.size);
 			bytes = count = 0;
 			logthing(LOGTHING_TRACE,
-					"Getting %d bytes of key data.",
+					"Getting %zu bytes of key data.",
 					keybuf.size);
 			while (bytes >= 0 && count < keybuf.size) {
 				bytes = read(keyd_fd, &keybuf.buffer[count],
 						keybuf.size - count);
 				logthing(LOGTHING_TRACE,
-						"Read %d bytes.", bytes);
+						"Read %zd bytes.", bytes);
 				count += bytes;
 			}
 			read_openpgp_stream(buffer_fetchchar, &keybuf,
@@ -303,7 +303,7 @@ static int keyd_store_key(struct onak_dbctx *dbctx,
 		publickey->next = next;
 
 		write_openpgp_stream(buffer_putchar, &keybuf, packets);
-		logthing(LOGTHING_TRACE, "Sending %d bytes.", keybuf.offset);
+		logthing(LOGTHING_TRACE, "Sending %zu bytes.", keybuf.offset);
 		write(keyd_fd, &keybuf.offset, sizeof(keybuf.offset));
 		write(keyd_fd, keybuf.buffer, keybuf.offset);
 
@@ -345,13 +345,13 @@ static int keyd_fetch_key_text(struct onak_dbctx *dbctx,
 			keybuf.buffer = malloc(keybuf.size);
 			bytes = count = 0;
 			logthing(LOGTHING_TRACE,
-					"Getting %d bytes of key data.",
+					"Getting %zu bytes of key data.",
 					keybuf.size);
 			while (bytes >= 0 && count < keybuf.size) {
 				bytes = read(keyd_fd, &keybuf.buffer[count],
 						keybuf.size - count);
 				logthing(LOGTHING_TRACE,
-						"Read %d bytes.", bytes);
+						"Read %zd bytes.", bytes);
 				count += bytes;
 			}
 			read_openpgp_stream(buffer_fetchchar, &keybuf,
@@ -386,13 +386,13 @@ static int keyd_fetch_key_skshash(struct onak_dbctx *dbctx,
 			keybuf.buffer = malloc(keybuf.size);
 			bytes = count = 0;
 			logthing(LOGTHING_TRACE,
-					"Getting %d bytes of key data.",
+					"Getting %zu bytes of key data.",
 					keybuf.size);
 			while (bytes >= 0 && count < keybuf.size) {
 				bytes = read(keyd_fd, &keybuf.buffer[count],
 						keybuf.size - count);
 				logthing(LOGTHING_TRACE,
-						"Read %d bytes.", bytes);
+						"Read %zd bytes.", bytes);
 				count += bytes;
 			}
 			read_openpgp_stream(buffer_fetchchar, &keybuf,
@@ -439,13 +439,13 @@ static int keyd_iterate_keys(struct onak_dbctx *dbctx,
 			keybuf.buffer = malloc(keybuf.size);
 			bytes = count = 0;
 			logthing(LOGTHING_TRACE,
-					"Getting %d bytes of key data.",
+					"Getting %zu bytes of key data.",
 					keybuf.size);
 			while (bytes >= 0 && count < keybuf.size) {
 				bytes = read(keyd_fd, &keybuf.buffer[count],
 						keybuf.size - count);
 				logthing(LOGTHING_TRACE,
-						"Read %d bytes.", bytes);
+						"Read %zd bytes.", bytes);
 				count += bytes;
 			}
 			read_openpgp_stream(buffer_fetchchar, &keybuf,
@@ -579,7 +579,7 @@ struct onak_dbctx *keydb_keyd_init(struct onak_db_config *dbcfg,
 			if (count != sizeof(reply) || reply != sizeof(reply)) {
 				logthing(LOGTHING_CRITICAL,
 					"Error! Unexpected keyd version "
-					"length: %d != %d",
+					"length: %u != %zu",
 					reply, sizeof(reply));
 				exit(EXIT_FAILURE);
 			}
@@ -588,7 +588,7 @@ struct onak_dbctx *keydb_keyd_init(struct onak_db_config *dbcfg,
 			if (count != sizeof(reply)) {
 				logthing(LOGTHING_CRITICAL,
 					"Error! Unexpected keyd version "
-					"length: %d != %d",
+					"length: %zd != %zu",
 					count, sizeof(reply));
 				exit(EXIT_FAILURE);
 			}
