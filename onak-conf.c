@@ -245,11 +245,11 @@ static bool parseconfigline(char *line)
 			} else if (!strcmp(name, "location")) {
 				backend->location = strdup(value);
 			} else if (!strcmp(name, "hostname")) {
-				backend->location = strdup(value);
+				backend->hostname = strdup(value);
 			} else if (!strcmp(name, "username")) {
-				backend->location = strdup(value);
+				backend->username = strdup(value);
 			} else if (!strcmp(name, "password")) {
-				backend->location = strdup(value);
+				backend->password = strdup(value);
 			}
 
 #define MATCH(s, n) !strcmp(section, s) && !strcmp(name, n)
