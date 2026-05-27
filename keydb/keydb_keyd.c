@@ -366,8 +366,6 @@ static int keyd_fetch_key_text(struct onak_dbctx *dbctx,
 	}
 
 	return (count > 0) ? 1 : 0;
-
-	return 0;
 }
 
 static int keyd_fetch_key_skshash(struct onak_dbctx *dbctx,
