@@ -55,7 +55,7 @@ static void stacked_endtrans(struct onak_dbctx *dbctx)
 	struct onak_dbctx *backend =
 			(struct onak_dbctx *) privctx->backends->object;
 
-	backend->starttrans(backend);
+	backend->endtrans(backend);
 }
 
 static int stacked_store_key(struct onak_dbctx *dbctx,
