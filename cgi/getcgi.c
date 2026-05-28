@@ -75,20 +75,22 @@ char x2c(const char *what)
 }
 
 /* Reduce any %xx escape sequences to the characters they represent */
-void unescape_url(char *url) 
+void unescape_url(char *url)
 {
-	register int i,j;
+	int i, j, left;
 
-	for(i=0,j=0; url[j]; ++i,++j) {
-		if((url[i] = url[j]) == '%') {
-			url[i]=x2c(&url[j+1]);
-			j+=2;
+	left = strlen(url);
+
+	for (i=0, j=0; url[j]; ++i, ++j, --left) {
+		if (((url[i] = url[j]) == '%') && (left >= 2)) {
+			url[i] = x2c(&url[j + 1]);
+			j += 2;
+			left -= 2;
 		}
 	}
-	
+
 	url[i] = '\0';
 }
-
 
 /* Read the CGI input and place all name/val pairs into list.        */
 /* Returns list containing name1, value1, name2, value2, ... , NULL  */
