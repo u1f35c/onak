@@ -124,7 +124,7 @@ static int file_store_key(struct onak_dbctx *dbctx,
 	}
 	snprintf(keyfile, 1023, "%s/0x%" PRIX64, db_dir,
 			keyid & 0xFFFFFFFF);
-	fd = open(keyfile, O_WRONLY | O_CREAT, 0664); // | O_EXLOCK);
+	fd = open(keyfile, O_WRONLY | O_CREAT | O_TRUNC, 0664); // | O_EXLOCK);
 
 	if (fd > -1) {
 		next = publickey -> next;
