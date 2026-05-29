@@ -56,6 +56,7 @@ onak_status_t onak_read_openpgp_file(const char *file,
 	/* Peek at the first byte in the file */
 	ret = read(fd, &c, 1);
 	if (ret != 1) {
+		close(fd);
 		return ONAK_E_IO_ERROR;
 	}
 	lseek(fd, 0, SEEK_SET);
@@ -71,6 +72,8 @@ onak_status_t onak_read_openpgp_file(const char *file,
 	} else {
 		res = dearmor_openpgp_stream(file_fetchchar, &fd, packets);
 	}
+
+	close(fd);
 
 	return res;
 }
