@@ -372,10 +372,10 @@ onak_status_t onak_check_hash_sig(struct openpgp_packet *sigkey,
 		}
 		mpz_export(&edsig[32], &count, 1, 1, 0, 0, dsasig.s);
 		if (count < 32) {
-			memmove(&edsig[32 - count], edsig, count);
+			memmove(&edsig[64 - count], &edsig[32], count);
 			while (count < 32) {
 				count++;
-				edsig[32 - count] = 0;
+				edsig[64 - count] = 0;
 			}
 		}
 		break;
