@@ -87,7 +87,8 @@ struct ll *lladdend(struct ll *curll, void *object);
  *
  * Trawls through the list looking for the object. If it's found then it
  * is removed from the list. Only one occurance is searched for. Returns
- * a pointer to the head of the new list.
+ * a pointer to the head of the new list. Note does *not* free the removed
+ * object itself.
  */
 struct ll *lldel(struct ll *curll, void *object,
 	int (*objectcmp) (const void *object1, const void *object2));

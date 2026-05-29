@@ -79,7 +79,7 @@ struct ll *lldel(struct ll *curll, void *object,
 		cur = cur->next;
 		free(old);
 		return cur;
-	} 
+	}
 	while (cur->next != NULL) {
 		if (!(*objectcmp)(cur->next->object, object)) {
 			old = cur->next;
@@ -87,6 +87,7 @@ struct ll *lldel(struct ll *curll, void *object,
 			free(old);
 			break;
 		}
+		cur = cur->next;
 	}
 	return curll;
 }
