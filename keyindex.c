@@ -291,7 +291,8 @@ static bool signedpacket_is_revoked(struct openpgp_signedpacket_list *sp)
 		}
 		if ((sigs->packet->data[0] == 4 ||
 				sigs->packet->data[0] == 5) &&
-				sigs->packet->data[1] == 0x30) {
+				sigs->packet->data[1] ==
+					OPENPGP_SIGTYPE_CERT_REV) {
 			return true;
 		}
 	}
@@ -330,30 +331,30 @@ int list_uids(struct onak_dbctx *dbctx,
 			 * (verbose=true) still shows every UAT, since its
 			 * purpose is the full key state including history.
 			 *
-			 * imgindx is captured *before* the skip and always
-			 * incremented, because op=photo's getphoto() iterates
-			 * over every UAT in the key (revoked or not) and
-			 * counts them with the same stride. Leaving skipped
-			 * UATs out of the count would desync the HTML idx=N
-			 * we emit from the index getphoto() looks up — making
+			 * imgindx is incremented for every UAT (revoked or
+			 * not), because op=photo's getphoto() iterates over
+			 * them all with the same stride. Leaving skipped UATs
+			 * out of the count would desync the HTML idx=N we
+			 * emit from the index getphoto() looks up — making
 			 * the browser fetch the wrong (typically: revoked)
 			 * photo blob for what is shown as the valid UAT.
 			 */
-			int this_idx = imgindx++;
 			if (!verbose && signedpacket_is_revoked(uids)) {
-				uids = uids->next;
-				continue;
-			}
-			printf("                                ");
-			if (html) {
-				printf("<img src=\"lookup?op=photo&search="
-					"0x%016" PRIX64 "&idx=%d\" alt=\""
-					"[photo id]\">\n",
-					keyid,
-					this_idx);
+				/* skip in op=index ; nothing to print */
 			} else {
-				printf("[photo id]\n");
+				printf("                                ");
+				if (html) {
+					printf("<img src=\"lookup?op=photo&"
+						"search=0x%016" PRIX64
+						"&idx=%d\" alt=\""
+						"[photo id]\">\n",
+						keyid,
+						imgindx);
+				} else {
+					printf("[photo id]\n");
+				}
 			}
+			imgindx++;
 		}
 		if (verbose) {
 			list_sigs(dbctx, uids->sigs, html);
