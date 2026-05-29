@@ -2,14 +2,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <link rel="icon" href="/favicon.ico" type="image/x-icon">
-<link rel="stylesheet" href="css/milligram.min.css">
+<!-- Milligram CSS via the Debian package libjs-milligram (Suggests).
+     The /javascript/ alias is provided by the javascript-common package. -->
+<link rel="stylesheet" href="/javascript/milligram/milligram.css">
+<style>
+  form label    { display: inline-block; }
+  .container    { max-width: 60rem; }
+  #keytext      { min-height: 12rem; }
+  .display-block{ display: block; }
+</style>
 <title>Public Key Server Commands</title>
 </head>
 
 <body>
 <div class="container">
 
-  <h1><a href="https://the.earth.li">Onak</a> Public Key Server</h1>
+  <h1><a href="https://github.com/u1f35c/onak">Onak</a> Public Key Server</h1>
 
   <h2>Search PGP keys</h2>
 
