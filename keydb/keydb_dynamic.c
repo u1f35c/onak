@@ -284,7 +284,7 @@ struct onak_dbctx *keydb_dynamic_init(struct onak_db_config *dbcfg,
 		exit(EXIT_FAILURE);
 	}
 
-	initname = malloc(strlen(config.db_backend)
+	initname = malloc(strlen(type)
 			+ strlen("keydb_")
 			+ strlen("_init")
 			+ 1);
