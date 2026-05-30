@@ -460,17 +460,23 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 							bytes);
 					count += bytes;
 				}
-				read_openpgp_stream(buffer_fetchchar,
-						&storebuf,
-						&packets,
-						0);
-				parse_keys(packets, &key);
-				dbctx->store_key(dbctx, key, false,
-					(cmd == KEYD_CMD_UPDATE));
-				free_packet_list(packets);
-				packets = NULL;
-				free_publickey(key);
-				key = NULL;
+
+				if (bytes < 0) {
+					ret = 1;
+				} else {
+					read_openpgp_stream(buffer_fetchchar,
+							&storebuf,
+							&packets,
+							0);
+					parse_keys(packets, &key);
+					dbctx->store_key(dbctx, key, false,
+						(cmd == KEYD_CMD_UPDATE));
+					free_packet_list(packets);
+					packets = NULL;
+					free_publickey(key);
+					key = NULL;
+				}
+
 				free(storebuf.buffer);
 				storebuf.buffer = NULL;
 				storebuf.size = storebuf.offset = 0;
