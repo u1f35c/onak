@@ -174,8 +174,8 @@ static bool parseoldconfigline(char *line)
 					config.use_keyd);
 	} else if (!strncmp("sock_dir ", line, 9)) {
 		config.sock_dir = strdup(&line[9]);
-	} else if (!strncmp("check_sighash ", line, 9)) {
-		if (parsebool(&line[9], config.clean_policies &
+	} else if (!strncmp("check_sighash ", line, 14)) {
+		if (parsebool(&line[14], config.clean_policies &
 					ONAK_CLEAN_CHECK_SIGHASH)) {
 			config.clean_policies |=
 				ONAK_CLEAN_CHECK_SIGHASH;
