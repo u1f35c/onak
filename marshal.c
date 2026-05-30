@@ -99,7 +99,7 @@ void marshal_string(size_t (*putchar_func)(void *ctx, size_t count,
 	nlen = htonl(len);
 
 	putchar_func(ctx, sizeof(nlen), &nlen);
-	putchar_func(ctx, len, &string);
+	putchar_func(ctx, len, (void *) string);
 }
 
 char *unmarshal_string(size_t (*getchar_func)(void *ctx, size_t count,
