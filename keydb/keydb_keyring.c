@@ -218,6 +218,7 @@ static int keyring_iterate_keys(struct onak_dbctx *dbctx,
 	count = 0;
 	for (i = 0; i < privctx->count; i++) {
 		if (keyring_fetch_key_idx(privctx, i, &key)) {
+			count++;
 			iterfunc(ctx, key);
 			free_publickey(key);
 			key = NULL;
