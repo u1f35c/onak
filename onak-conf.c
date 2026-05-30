@@ -405,7 +405,7 @@ void readconfig(const char *configfile) {
 			conffile = fopen(conf, "r");
 			if (conffile == NULL) {
 				/* Conveniently .ini is shorter than .conf */
-				snprintf(conf, len, "%s/onak.ini", dir);
+				snprintf(conf, len, "%s/.config/onak.ini", dir);
 				conffile = fopen(conf, "r");
 			} else {
 				oldstyle = true;
