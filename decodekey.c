@@ -45,16 +45,16 @@
 onak_status_t parse_subpackets(unsigned char *data, size_t len,
 		size_t *parselen, uint64_t *keyid, time_t *creation)
 {
-	int offset = 0;
-	int length = 0;
-	int packetlen = 0;
+	unsigned int offset = 0;
+	unsigned int length = 0;
+	unsigned int packetlen = 0;
 	struct openpgp_fingerprint fp;
-	int i;
+	unsigned int i;
 
 	assert(data != NULL);
 
-	/* Make sure we actually have the 2 byte length field */
-	if (len < 2) {
+	/* Make sure we actually have the 2 byte length field, and some data */
+	if (len < 4) {
 		return ONAK_E_INVALID_PKT;
 	}
 
@@ -68,12 +68,16 @@ onak_status_t parse_subpackets(unsigned char *data, size_t len,
 	*parselen = length;
 
 	offset = 2;
-	while (offset < length) {
+	/* We always need at least 3 bytes - length, type, data */
+	while ((offset + 2) < length) {
 		packetlen = data[offset++];
 		if (packetlen > 191 && packetlen < 255) {
 			packetlen = ((packetlen - 192) << 8) +
 					data[offset++] + 192;
 		} else if (packetlen == 255) {
+			if ((offset + 5) > length) {
+				return ONAK_E_INVALID_PKT;
+			}
 			packetlen = data[offset++];
 			packetlen <<= 8;
 			packetlen |= data[offset++];
@@ -88,6 +92,9 @@ onak_status_t parse_subpackets(unsigned char *data, size_t len,
 		}
 		switch (data[offset] & 0x7F) {
 		case OPENPGP_SIGSUB_CREATION:
+			if (packetlen < 5) {
+				return ONAK_E_INVALID_PKT;
+			}
 			/*
 			 * Signature creation time.
 			 */
@@ -106,6 +113,9 @@ onak_status_t parse_subpackets(unsigned char *data, size_t len,
 			 */
 			break;
 		case OPENPGP_SIGSUB_ISSUER:
+			if (packetlen < 9) {
+				return ONAK_E_INVALID_PKT;
+			}
 			if (keyid != NULL) {
 				*keyid = data[offset+packetlen - 8];
 				*keyid <<= 8;

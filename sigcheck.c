@@ -551,9 +551,17 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 	*sighash = NULL;
 	memset(&hashdata, 0, sizeof(hashdata));
 
+	/* All signatures need at least 10 bytes of data */
+	if (sig->length < 10) {
+		return ONAK_E_INVALID_PKT;
+	}
+
 	switch (sig->data[0]) {
 	case 2:
 	case 3:
+		if (sig->length < 19) {
+			return ONAK_E_INVALID_PKT;
+		}
 		keyheader[0] = 0x99;
 		keyheader[1] = key->publickey->length >> 8;
 		keyheader[2] = key->publickey->length & 0xFF;
@@ -607,6 +615,9 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 			if (res != ONAK_E_OK) {
 				return res;
 			}
+			if (sig->length < 11 + len) {
+				return ONAK_E_INVALID_PKT;
+			}
 			if (keyid == 0 &&
 					/* No unhashed data */
 					sig->data[4 + len] == 0 &&
@@ -651,7 +662,7 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 
 		hashdata.data[hashdata.chunks] = sig->data;
 		hashdata.len[hashdata.chunks] = siglen = (sig->data[4] << 8) +
-			sig->data[5] + 6;;
+			sig->data[5] + 6;
 		if (siglen > sig->length) {
 			/* Signature data exceed packet length, bogus */
 			return ONAK_E_INVALID_PKT;
@@ -670,6 +681,11 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 
 		unhashedlen = (sig->data[siglen] << 8) +
 			sig->data[siglen + 1];
+
+		if ((unhashedlen + siglen + 4) > sig->length) {
+			return ONAK_E_INVALID_PKT;
+		}
+
 		*sighash = &sig->data[siglen + unhashedlen + 2];
 		break;
 	case 5:
@@ -738,6 +754,9 @@ onak_status_t calculate_packet_sighash(struct openpgp_publickey *key,
 
 		unhashedlen = (sig->data[siglen] << 8) +
 			sig->data[siglen + 1];
+		if ((unhashedlen + siglen + 4) > sig->length) {
+			return ONAK_E_INVALID_PKT;
+		}
 		*sighash = &sig->data[siglen + unhashedlen + 2];
 		break;
 	default:
