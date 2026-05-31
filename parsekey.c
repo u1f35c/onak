@@ -344,10 +344,10 @@ onak_status_t read_openpgp_stream(size_t (*getchar_func)(void *ctx, size_t count
 				if (curpacket->packet->data == NULL) {
 					rc = ONAK_E_NOMEM;
 				} else {
-					rc = getchar_func(ctx,
+					size_t res = getchar_func(ctx,
 						curpacket->packet->length,
-						curpacket->packet->data) ?
-						ONAK_E_OK : ONAK_E_IO_ERROR;
+						curpacket->packet->data);
+					rc = (res == curpacket->packet->length) ? ONAK_E_OK : ONAK_E_IO_ERROR;
 				}
 			}
 		} else {
