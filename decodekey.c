@@ -87,7 +87,7 @@ onak_status_t parse_subpackets(unsigned char *data, size_t len,
 			packetlen |= data[offset++];
 		}
 		/* Check the supplied length is within the remaining data */
-		if (packetlen == 0 || (packetlen + offset) > length) {
+		if (packetlen == 0 || packetlen > (length - offset)) {
 			return ONAK_E_INVALID_PKT;
 		}
 		switch (data[offset] & 0x7F) {
