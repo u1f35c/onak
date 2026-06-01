@@ -362,6 +362,17 @@ onak_status_t onak_check_hash_sig(struct openpgp_packet *sigkey,
 		MPI_TO_MPZ(sig, dsasig.r);
 		if (ret == ONAK_E_OK)
 			MPI_TO_MPZ(sig, dsasig.s);
+
+		if (ret != ONAK_E_OK)
+			break;
+
+		if (mpz_sizeinbase(dsasig.r, 2) > 32 * 8 ||
+			mpz_sizeinbase(dsasig.s, 2) > 32 * 8)
+			ret = ONAK_E_INVALID_PARAM;
+
+		if (ret != ONAK_E_OK)
+			break;
+
 		mpz_export(edsig, &count, 1, 1, 0, 0, dsasig.r);
 		if (count < 32) {
 			memmove(&edsig[32 - count], edsig, count);
