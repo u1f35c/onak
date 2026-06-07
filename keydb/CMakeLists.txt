@@ -54,7 +54,7 @@ if (DBTYPE STREQUAL "dynamic")
 		add_library(keydb_${BACKEND} SHARED keydb_${BACKEND}.c)
 		target_include_directories(keydb_${BACKEND} SYSTEM PUBLIC
 			${BACKEND_${BACKEND}_INC})
-		target_link_libraries(keydb_${BACKEND} libonak
+		target_link_libraries(keydb_${BACKEND}
 			${BACKEND_${BACKEND}_LIBS})
 		install(TARGETS keydb_${BACKEND} LIBRARY DESTINATION
 			${CMAKE_INSTALL_LIBDIR}/onak/backends/)

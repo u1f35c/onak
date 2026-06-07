@@ -118,14 +118,19 @@ install(PROGRAMS ${CMAKE_BINARY_DIR}/onak-mail.pl
 	DESTINATION ${CMAKE_INSTALL_LIBDIR}/onak/)
 install(FILES onak-mail.pl.8 DESTINATION ${CMAKE_INSTALL_MANDIR}/man8/)
 
+# If we're using the dynamic backend make sure we export the bits of libonak
+# those might need from our main binaries
+if (DBTYPE STREQUAL "dynamic")
+	LIST(APPEND LIBONAK_LIBRARIES "dl")
+	set(CMAKE_EXE_LINKER_FLAGS "-Wl,-export-dynamic -T ${CMAKE_SOURCE_DIR}/libonak.ld")
+endif()
+
 # Key database backends
 add_subdirectory(keydb)
 
 # Now we have the DB type confirmed we can tidy up the libonak options
 
-if (DBTYPE STREQUAL "dynamic")
-	LIST(APPEND LIBONAK_LIBRARIES "dl")
-else()
+if (NOT DBTYPE STREQUAL "dynamic")
 	list (FIND BACKENDS ${DBTYPE} _index)
 	if (${_index} LESS 0)
 		message(FATAL_ERROR "${DBTYPE} is not a supported DB backend.")

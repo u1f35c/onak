@@ -274,7 +274,7 @@ struct onak_dbctx *keydb_dynamic_init(struct onak_db_config *dbcfg,
 
 	logthing(LOGTHING_INFO, "Loading dynamic backend: %s", soname);
 
-	privctx->backend_handle = dlopen(soname, RTLD_LAZY);
+	privctx->backend_handle = dlopen(soname, RTLD_NOW);
 	if (privctx->backend_handle == NULL) {
 		logthing(LOGTHING_CRITICAL,
 				"Failed to open handle to library '%s': %s",
