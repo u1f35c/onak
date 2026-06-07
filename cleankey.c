@@ -50,7 +50,7 @@ int dedupuids(struct openpgp_publickey *key)
 		dup = find_signed_packet(curuid->next, curuid->packet);
 		while (dup != NULL) {
 			logthing(LOGTHING_INFO, "Found duplicate uid: %.*s",
-					curuid->packet->length,
+					(int) curuid->packet->length,
 					curuid->packet->data);
 			merged++;
 			merge_packet_sigs(curuid, dup);
