@@ -20,6 +20,7 @@
 
 #include "keystructs.h"
 #include "onak.h"
+#include "openpgp.h"
 #include "photoid.h"
 
 /**
@@ -49,8 +50,12 @@ onak_status_t getphoto(struct openpgp_publickey *key, int index,
 	curuid = key->uids;
 	i = 0;
 	while (*photo == NULL && curuid != NULL && i <= index) {
-		if (curuid->packet->tag == 17) {
+		if (curuid->packet->tag == OPENPGP_PACKET_UAT) {
 			if (i == index) {
+				if (curuid->packet->length < 17) {
+					return ONAK_E_INVALID_PKT;
+				}
+
 				j = 0;
 				*length = curuid->packet->data[j++];
 				if (*length < 192) {
@@ -69,9 +74,34 @@ onak_status_t getphoto(struct openpgp_publickey *key, int index,
 					*length <<= 8;
 					*length += curuid->packet->data[j++];
 				}
-				j++;
+
+				if (*length < 17) {
+					return ONAK_E_INVALID_PKT;
+				}
+				if ((curuid->packet->length - j) < *length) {
+					return ONAK_E_INVALID_PKT;
+				}
+
+				/* Check it's an image attribute */
+				if (curuid->packet->data[j++] != 1) {
+					return ONAK_E_INVALID_PKT;
+				}
+
+				/*
+				 * Should be a 16 byte (little endian) length,
+				 * version 1, and subtype 1 (JPEG)
+				 */
+				if (curuid->packet->data[j] != 0x10 ||
+						curuid->packet->data[j + 1] != 0 ||
+						curuid->packet->data[j + 2] != 1 ||
+						curuid->packet->data[j + 3] != 1) {
+					return ONAK_E_INVALID_PKT;
+				}
+				/* 4 bytes of header, 12 bytes reserved */
+				j += 16;
 				*length -= 17;
-				*photo = &(curuid->packet->data[j+16]);
+
+				*photo = &(curuid->packet->data[j]);
 			} else {
 				i++;
 			}
