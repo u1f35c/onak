@@ -171,6 +171,10 @@ target_link_libraries(splitkeys libonak)
 add_executable(stripkey stripkey.c)
 target_link_libraries(stripkey libonak)
 
+# Testing binary e.g. for AFL++/valgrind
+add_executable(onak-test onak-test.c)
+target_link_libraries(onak-test libonak)
+
 install(TARGETS onak splitkeys RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES onak.1 splitkeys.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1/)
 
