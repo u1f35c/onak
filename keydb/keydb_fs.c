@@ -225,7 +225,7 @@ static uint64_t fs_getfullkeyid(struct onak_dbctx *dbctx, uint64_t keyid)
 				ret = strtoull(de->d_name, NULL, 16);
 			}
 		} while (de && de->d_name[0] == '.');
-		closedir(d);	
+		closedir(d);
 	}
 
 	if (ret == 0) {
@@ -357,7 +357,7 @@ static int fs_store_key(struct onak_dbctx *dbctx,
 			wl = wl->next;
 		}
 		llfree(wordlist, free);
-		
+
 		subkeyids = keysubkeys(publickey);
 		i = 0;
 		while (subkeyids != NULL && subkeyids[i].length != 0) {

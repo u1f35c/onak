@@ -68,8 +68,8 @@ void findmaxpath(struct onak_dbctx *dbctx, unsigned long max)
 				to = tmp;
 				distance = to->colour;
 				printf("Current max path (#%ld) is from %"
-						PRIX64 " to %" PRIX64 
-						" (%ld steps)\n", 
+						PRIX64 " to %" PRIX64
+						" (%ld steps)\n",
 						loop,
 						from->keyid,
 						to->keyid,
@@ -124,6 +124,6 @@ int main(int argc, char *argv[])
 	}
 	cleanuplogthing();
 	cleanupconfig();
-	
+
 	return EXIT_SUCCESS;
 }

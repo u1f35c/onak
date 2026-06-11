@@ -75,7 +75,7 @@ unsigned long findpath(struct onak_dbctx *dbctx,
 	struct ll *nextkeys = NULL;
 	long curdegree = 0;
 	unsigned long count = 0;
-	
+
 	curdegree = 1;
 	keys = lladd(NULL, want);
 	oldkeys = keys;
@@ -158,7 +158,7 @@ void dofindpath(struct onak_dbctx *dbctx,
 	}
 
 	pathnum = 0;
-	
+
 	while ((!cleanup()) && (pathnum < count)) {
 		/*
 		 * Fill the tree info up.
@@ -284,12 +284,12 @@ struct stats_key *furthestkey(struct onak_dbctx *dbctx, struct stats_key *have)
 				 */
 				count++;
 				max = (struct stats_key *)sigs->object;
-				((struct stats_key *)sigs->object)->colour = 
+				((struct stats_key *)sigs->object)->colour =
 					curdegree;
-				((struct stats_key *)sigs->object)->parent = 
+				((struct stats_key *)sigs->object)->parent =
 					((struct stats_key *)
 					 curll->object)->keyid;
-				
+
 				nextll=lladd(nextll, sigs->object);
 			}
 			sigs=sigs->next;

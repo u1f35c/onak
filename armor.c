@@ -186,7 +186,7 @@ static int armor_putchar_int(void *ctx, unsigned char c)
 	}
 	state->curoctet %= 3;
 	state->lastoctet = c;
-	
+
 	state->crc24 ^= c << 16;
 	for (i = 0; i < 8; i++) {
 		state->crc24 <<= 1;
@@ -267,7 +267,7 @@ static int dearmor_getchar(void *ctx, unsigned char *c)
 
 	state = (struct dearmor_context *) ctx;
 	*c = 0;
-	
+
 	tmpc = 65;
 	while (tmpc == 65) {
 		state->getchar_func(state->ctx, 1, &tmpc);
@@ -292,11 +292,11 @@ static int dearmor_getchar(void *ctx, unsigned char *c)
 			*c = ((state->lastoctet & 3) << 6) + tmpc;
 			break;
 		}
-	
+
 		state->curoctet %= 3;
 		state->lastoctet = tmpc;
 		state->count++;
-		
+
 		state->crc24 ^= *c << 16;
 		for (i = 0; i < 8; i++) {
 			state->crc24 <<= 1;

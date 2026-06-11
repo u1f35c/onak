@@ -82,7 +82,7 @@ static bool pg_starttrans(struct onak_dbctx *dbctx)
 {
 	PGconn *dbconn = (PGconn *) dbctx->priv;
 	PGresult *result = NULL;
-	
+
 	result = PQexec(dbconn, "BEGIN");
 	PQclear(result);
 
@@ -136,7 +136,7 @@ static int pg_fetch_key_id(struct onak_dbctx *dbctx,
 		result = PQexec(dbconn, "BEGIN");
 		PQclear(result);
 	}
-	
+
 	if (keyid > 0xFFFFFFFF) {
 		snprintf(statement, 1023,
 			"SELECT keydata FROM onak_keys WHERE keyid = '%"
@@ -279,7 +279,7 @@ static int pg_delete_key(struct onak_dbctx *dbctx,
 	}
 
 	keyid = fingerprint2keyid(fp);
-	
+
 	snprintf(statement, 1023,
 			"SELECT keydata FROM onak_keys WHERE keyid = '%"
 			PRIX64 "'",
@@ -388,7 +388,7 @@ static int pg_store_key(struct onak_dbctx *dbctx,
 	publickey->next = NULL;
 	flatten_publickey(publickey, &packets, &list_end);
 	publickey->next = next;
-		
+
 	key_oid = lo_creat(dbconn, INV_READ | INV_WRITE);
 	if (key_oid == 0) {
 		logthing(LOGTHING_ERROR, "Can't create key OID");
@@ -401,9 +401,9 @@ static int pg_store_key(struct onak_dbctx *dbctx,
 	free_packet_list(packets);
 	packets = NULL;
 
-	snprintf(statement, 1023, 
+	snprintf(statement, 1023,
 			"INSERT INTO onak_keys (keyid, keydata) VALUES "
-			"('%" PRIX64 "', '%d')", 
+			"('%" PRIX64 "', '%d')",
 			keyid,
 			key_oid);
 	result = PQexec(dbconn, statement);
@@ -456,7 +456,7 @@ static int pg_store_key(struct onak_dbctx *dbctx,
 	}
 
 	for (curuid = publickey->uids; curuid != NULL; curuid = curuid->next) {
-		for (packets = curuid->sigs; packets != NULL; 
+		for (packets = curuid->sigs; packets != NULL;
 				packets = packets->next) {
 			snprintf(statement, 1023,
 				"INSERT INTO onak_sigs (signer, signee) "
@@ -472,7 +472,7 @@ static int pg_store_key(struct onak_dbctx *dbctx,
 		result = PQexec(dbconn, "COMMIT");
 		PQclear(result);
 	}
-	
+
 	return 0;
 }
 
@@ -520,7 +520,7 @@ static char *pg_keyid2uid(struct onak_dbctx *dbctx, uint64_t keyid)
  *	@keyid: The keyid to get the sigs for.
  *	@revoked: If the key is revoked.
  *
- *	This function gets the list of signatures on a key. Used for key 
+ *	This function gets the list of signatures on a key. Used for key
  *	indexing and doing stats bits.
  */
 static struct ll *pg_getkeysigs(struct onak_dbctx *dbctx,
@@ -583,7 +583,7 @@ static struct ll *pg_getkeysigs(struct onak_dbctx *dbctx,
 	if (revoked != NULL) {
 		*revoked = false;
 	}
-	
+
 	return sigs;
 }
 
@@ -632,7 +632,7 @@ static int pg_iterate_keys(struct onak_dbctx *dbctx,
 				lo_close(dbconn, fcctx.fd);
 
 				iterfunc(ctx, key);
-					
+
 				free_publickey(key);
 				key = NULL;
 				free_packet_list(packets);

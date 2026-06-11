@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
 
   if( argc > 1 )
      my_key = strtoull( argv[1], NULL, 16 );
-   
+
   /* expect a stream of openpgp packets on stdin comprising some keys */
   /* strip each key of everything but its pubkey component, uids and
    * selfsigs and revsigs on those selfsigs */
@@ -55,9 +55,9 @@ int main(int argc, char** argv) {
     uint64_t keyid;
     get_keyid( key, &keyid );
     for( uid = key->uids; uid; uid = uid->next ) {
-      REPEATTHISUID: 
-      for( sig = uid->sigs, prevsig = NULL; 
-           sig; 
+      REPEATTHISUID:
+      for( sig = uid->sigs, prevsig = NULL;
+           sig;
            prevsig = sig, sig = sig->next ) {
         uint64_t thissig = sig_keyid( sig->packet );
         if( thissig != keyid && thissig != my_key ) {

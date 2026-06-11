@@ -59,9 +59,9 @@ unsigned long countdegree(struct onak_dbctx *dbctx,
 				/* We've never seen it. Count it, mark it and
 					explore its subtree */
 				count++;
-				((struct stats_key *)sigll->object)->colour = 
+				((struct stats_key *)sigll->object)->colour =
 					curdegree;
-				((struct stats_key *)sigll->object)->parent = 
+				((struct stats_key *)sigll->object)->parent =
 					((struct stats_key *)
 					 curll->object)->keyid;
 				nextll=lladd(nextll, sigll->object);

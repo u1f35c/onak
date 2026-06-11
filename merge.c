@@ -217,7 +217,7 @@ int merge_packet_sigs(struct openpgp_signedpacket_list *old,
 		 * potentially merging/replacing it depending on the subpackets
 		 * really. For now this stops us adding the same one twice
 		 * however.
-		 */ 
+		 */
 		if (find_signature(old->sigs, curpacket->packet)) {
 			/*
 			 * We already have this sig, remove it from the
@@ -269,7 +269,7 @@ int merge_signed_packets(struct openpgp_signedpacket_list **old,
 		newelem = find_signed_packet(*new, curelem->packet);
 		if (newelem != NULL) {
 			merge_packet_sigs(curelem, newelem);
-			
+
 			/*
 			 * If there are no sigs left on the new signed packet
 			 * then remove it from the list.
@@ -321,7 +321,7 @@ int merge_signed_packets(struct openpgp_signedpacket_list **old,
 int merge_keys(struct openpgp_publickey *a, struct openpgp_publickey *b)
 {
 	int rc = 0; /* Return code */
-	struct openpgp_packet_list	*curpacket = NULL; 
+	struct openpgp_packet_list	*curpacket = NULL;
 	struct openpgp_packet_list	*lastpacket = NULL;
 	struct openpgp_packet_list	*nextpacket = NULL;
 	uint64_t keya, keyb;
@@ -384,7 +384,7 @@ int merge_keys(struct openpgp_publickey *a, struct openpgp_publickey *b)
 		 * Merge uids (signed list).
 		 * Merge subkeys (signed list).
 		 */
-		merge_signed_packets(&a->uids, &a->last_uid, 
+		merge_signed_packets(&a->uids, &a->last_uid,
 				&b->uids, &b->last_uid);
 		merge_signed_packets(&a->subkeys, &a->last_subkey,
 				&b->subkeys, &b->last_subkey);

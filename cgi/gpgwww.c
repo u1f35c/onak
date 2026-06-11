@@ -83,7 +83,7 @@ int getkeyspath(struct onak_dbctx *dbctx,
 	if ((keyinfob = findinhash(want)) == NULL) {
 		return 1;
 	}
-	
+
 	while ((!cleanup()) && (pathlen < count)) {
 		/*
 		 * Fill the tree info up.
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 
 
 	op = parsecgistuff(cgiparams, &from, &to);
-	
+
 	if (op != OP_GET) {
 		start_html("Experimental PGP key path finder results");
 	} else {

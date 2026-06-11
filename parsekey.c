@@ -305,7 +305,7 @@ onak_status_t read_openpgp_stream(size_t (*getchar_func)(void *ctx, size_t count
 						rc = ONAK_E_INVALID_PKT;
 						break;
 					}
-					curpacket->packet->length = 
+					curpacket->packet->length =
 						((unsigned) curchar << 24);
 					if (getchar_func(ctx, 1, &curchar) != 1) {
 						rc = ONAK_E_INVALID_PKT;
@@ -452,19 +452,19 @@ onak_status_t write_openpgp_stream(size_t (*putchar_func)(void *ctx, size_t coun
 				packets->packet->length < 0xFFFFFFFF) {
 				curchar = 255;
 				putchar_func(ctx, 1, &curchar);
-				
+
 				curchar = (packets->packet->length >> 24);
 				curchar &= 0xFF;
 				putchar_func(ctx, 1, &curchar);
-				
+
 				curchar = (packets->packet->length >> 16);
 				curchar &= 0xFF;
 				putchar_func(ctx, 1, &curchar);
-				
+
 				curchar = (packets->packet->length >> 8);
 				curchar &= 0xFF;
 				putchar_func(ctx, 1, &curchar);
-				
+
 				curchar = packets->packet->length;
 				curchar &= 0xFF;
 				putchar_func(ctx, 1, &curchar);
@@ -549,7 +549,7 @@ int flatten_publickey(struct openpgp_publickey *key,
 				packet_dup(tmpsignedlist->packet));
 			for (tmplist = tmpsignedlist->sigs; tmplist != NULL;
 					tmplist = tmplist->next) {
-				ADD_PACKET_TO_LIST((*list_end), 
+				ADD_PACKET_TO_LIST((*list_end),
 					packet_dup(tmplist->packet));
 			}
 		}
@@ -564,7 +564,7 @@ int flatten_publickey(struct openpgp_publickey *key,
 				packet_dup(tmpsignedlist->packet));
 			for (tmplist = tmpsignedlist->sigs; tmplist != NULL;
 					tmplist = tmplist->next) {
-				ADD_PACKET_TO_LIST((*list_end), 
+				ADD_PACKET_TO_LIST((*list_end),
 					packet_dup(tmplist->packet));
 			}
 		}

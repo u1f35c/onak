@@ -201,7 +201,7 @@ int logthing(loglevels loglevel, const char *format, ...)
 		} else {
 			logfile = stderr;
 		}
-	
+
 		va_start(ap, format);
 		vflog(logfile, format, ap);
 		va_end(ap);

@@ -23,7 +23,7 @@ my %config;
 sub readoldconfig {
 	open(CONFIG, "@CMAKE_INSTALL_FULL_SYSCONFDIR@/onak.conf") or
 		die "Can't read config file: $!";
-	
+
 	while (<CONFIG>) {
 		if (/^#/ or /^$/) {
 			# Ignore; comment line.
@@ -129,24 +129,24 @@ sub processmail($$$$$) {
 	my $replyto = shift;
 	my $seenby = shift;
 	my $body = shift;
-	
+
 	# HELP, ADD, INCREMENTAL, VERBOSE INDEX <keyid>, INDEX <keyid>,
 	# GET <keyid>, LAST <days>
-	
+
 	if ($subject =~ /^(INCREMENTAL|ADD)$/i) {
 		my $site;
 		my $count;
 		my $i;
 		my @newupdate = submitupdate($body);
 		my @time;
-	
+
 		$count = 0;
 		foreach $i (@{$config{'syncsites'}}) {
 			if (! defined($seenby->{$i})) {
 				$count++;
 			}
 		}
-	
+
 		open (LOG, ">>$config{'logfile'}");
 		@time = localtime(time);
 		print LOG "[";
@@ -170,7 +170,7 @@ sub processmail($$$$$) {
 				"with ", $count, " other keyservers.\n";
 			close MAIL;
 		}
-	
+
 		if ((! defined($newupdate[0])) || $newupdate[0] eq '') {
 			open (LOG, ">>$config{'logfile'}");
 			print LOG "[";
@@ -181,7 +181,7 @@ sub processmail($$$$$) {
 			close LOG;
 			$count = 0;
 		}
-	
+
 		if ($count > 0) {
 			open(MAIL, "|$config{mta}");
 			print MAIL "From: $config{adminemail}\n";
@@ -210,12 +210,12 @@ sub processmail($$$$$) {
 		}
 	} elsif ($subject =~ /^(VERBOSE )?INDEX (.*)$/i) {
 		my (@indexdata, $command);
-	
+
 		$command = "index";
 		if (defined($1)) {
 			$command = "vindex";
 		}
-	
+
 		my $pid = open3(\*INDEXIN, \*INDEXOUT, \*INDEXERR,
 			$config{'pks_bin_dir'}."/onak", $command, "$2");
 		close INDEXIN;
@@ -223,7 +223,7 @@ sub processmail($$$$$) {
 		close INDEXOUT;
 		close INDEXERR;
 		waitpid $pid, 0;
-	
+
 		open(MAIL, "|$config{mta}");
 		print MAIL "From: $config{adminemail}\n";
 		print MAIL "To: $replyto\n";

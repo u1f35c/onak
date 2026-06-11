@@ -271,7 +271,7 @@ static int sock_do(struct onak_dbctx *dbctx, int fd)
 	if (bytes != sizeof(cmd)) {
 		ret = 1;
 	}
-	
+
 	if (ret == 0) {
 		if (cmd < KEYD_CMD_LAST) {
 			stats->command_stats[cmd]++;

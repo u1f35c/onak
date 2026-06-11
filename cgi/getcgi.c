@@ -61,7 +61,7 @@ void end_html(void)
 
 
 /* Convert a two-char hex string into the char it represents */
-char x2c(const char *what) 
+char x2c(const char *what)
 {
 	register char digit;
 
@@ -70,7 +70,7 @@ char x2c(const char *what)
 	digit *= 16;
 	digit += (what[1] >= 'A' ? ((what[1] & 0xdf) - 'A')+10 :
 					(what[1] - '0'));
-	
+
 	return(digit);
 }
 
@@ -94,7 +94,7 @@ void unescape_url(char *url)
 
 /* Read the CGI input and place all name/val pairs into list.        */
 /* Returns list containing name1, value1, name2, value2, ... , NULL  */
-char **getcgivars(int argc, char *argv[]) 
+char **getcgivars(int argc, char *argv[])
 {
 	int i;
 	char *request_method, *env;
@@ -108,7 +108,7 @@ char **getcgivars(int argc, char *argv[])
 	/* (really should produce HTML error messages, instead of exit()ing) */
 
 	request_method = getenv("REQUEST_METHOD");
-	
+
 	if (request_method == NULL) {
 		if (argc > 1) {
 			cgiinput = strdup(argv[1]);
@@ -148,9 +148,9 @@ char **getcgivars(int argc, char *argv[])
 			printf("Couldn't read CGI input from STDIN.\n");
 			exit(1);
 		}
-		
+
 		cgiinput[content_length]='\0';
-		
+
 	} else {
 		printf("getcgivars(): unsupported REQUEST_METHOD\n");
 		exit(1);
@@ -181,9 +181,9 @@ char **getcgivars(int argc, char *argv[])
 	pairlist[paircount]=0;		/* terminate the list with NULL */
 
 	/* Then, from the list of pairs, extract the names and values */
-	
+
 	cgivars= malloc((paircount*2+1)*sizeof(char *));
-	
+
 	for (i=0; i<paircount; i++) {
 		if ((eqpos=strchr(pairlist[i], '='))!=NULL) {
 			*eqpos='\0';
@@ -195,7 +195,7 @@ char **getcgivars(int argc, char *argv[])
 	}
 
 	cgivars[paircount*2]=NULL;	/* terminate the list with NULL */
-    
+
 	/* Free anything that needs to be freed */
 	free(cgiinput);
 	for (i=0; pairlist[i]; i++) free(pairlist[i]);

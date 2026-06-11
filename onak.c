@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
 
 	while ((optchar = getopt(argc, argv, "bc:efsuv")) != -1 ) {
 		switch (optchar) {
-		case 'b': 
+		case 'b':
 			binary = true;
 			break;
 		case 'c':
@@ -195,16 +195,16 @@ int main(int argc, char *argv[])
 		case 'e':
 			exact = true;
 			break;
-		case 'f': 
+		case 'f':
 			dispfp = true;
 			break;
-		case 's': 
+		case 's':
 			skshash = true;
 			break;
-		case 'u': 
+		case 'u':
 			update = true;
 			break;
-		case 'v': 
+		case 'v':
 			setlogthreshold(LOGTHING_INFO);
 			break;
 		}
@@ -347,7 +347,7 @@ int main(int argc, char *argv[])
 			rc = 1;
 			logthing(LOGTHING_NOTICE, "No keys read.");
 		}
-		
+
 		if (keys != NULL) {
 			free_publickey(keys);
 			keys = NULL;

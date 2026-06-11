@@ -252,7 +252,7 @@ int main(int argc, char *argv[])
 					&publickey);
 			}
 			if (result) {
-				logthing(LOGTHING_NOTICE, 
+				logthing(LOGTHING_NOTICE,
 					"Found %d key(s) for search %s",
 					result,
 					search);
@@ -324,6 +324,6 @@ err:
 		free(search);
 		search = NULL;
 	}
-	
+
 	return (EXIT_SUCCESS);
 }

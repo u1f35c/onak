@@ -525,7 +525,7 @@ int key_index(struct onak_dbctx *dbctx,
 			}
 			curuid = curuid->next;
 		} else {
-			printf("%s\n", 
+			printf("%s\n",
 				(keys->revoked) ? "*** REVOKED ***": "");
 			if (fingerprint) {
 				display_fingerprint(keys);
@@ -603,10 +603,10 @@ int mrkey_index(struct openpgp_publickey *keys)
 			length,
 			created_time,
 			(keys->revoked) ? "r" : "");
-	
+
 		for (curuid = keys->uids; curuid != NULL;
 			 curuid = curuid->next) {
-		
+
 			if (curuid->packet->tag == OPENPGP_PACKET_UID) {
 				printf("uid:");
 				for (i = 0; i < (int) curuid->packet->length;

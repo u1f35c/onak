@@ -55,7 +55,7 @@ void readkeys(const char *filename)
 	}
 	/* read a line */
 	fgets(curline, 1023, keyfile);
-	while (!feof(keyfile)) {	
+	while (!feof(keyfile)) {
 		if (curline[0]=='P') {
 			++pub;
 			++keys;
@@ -231,7 +231,7 @@ unsigned long countdegree(struct stats_key *have, int sigs, int maxdegree)
 					explore its subtree */
 				count++;
 				((struct stats_key *)sigll->object)->colour=curdegree;
-				((struct stats_key *)sigll->object)->parent = 
+				((struct stats_key *)sigll->object)->parent =
 					((struct stats_key *)
 					 curll->object)->keyid;
 				nextll=lladd(nextll, sigll->object);

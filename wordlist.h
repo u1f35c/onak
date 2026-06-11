@@ -37,7 +37,7 @@
 struct ll *makewordlist(struct ll *wordlist, char *word);
 
 /**
- *	makewordlistfromkey - Takes a public key and splits it into a set of 
+ *	makewordlistfromkey - Takes a public key and splits it into a set of
  *                     unique words.
  *	@wordlist: The current word list.
  *	@key: The key to return the words from.

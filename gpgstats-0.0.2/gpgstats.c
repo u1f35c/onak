@@ -50,7 +50,7 @@ void printtrees(int minsize)
 
 	curtree=trees;
 	total=0;
-	while (curtree!=NULL) {	
+	while (curtree!=NULL) {
 		curkey=curtree->object;
 		++total;
 		count=0;
@@ -95,7 +95,7 @@ void showkeysigs(uint64_t keyid, bool sigs)
 	}
 
 	printf("\t%s a total of %ld keys.\n", sigs ? "Signed by" : "Signs",
-						count); 
+						count);
 }
 
 void memstats()
@@ -160,7 +160,7 @@ void showmostsigns(int sigs)
 			curkey=curkey->next;
 		}
 	}
-	
+
 	for (count=0; count<10; count++) {
 		if (signs[count].k != NULL) {
 			printf("0x%08lX (%s) %s %ld keys.\n",

@@ -131,7 +131,7 @@ static int file_store_key(struct onak_dbctx *dbctx,
 		publickey -> next = NULL;
 		flatten_publickey(publickey, &packets, &list_end);
 		publickey -> next = next;
-		
+
 		write_openpgp_stream(file_putchar, &fd, packets);
 		close(fd);
 		free_packet_list(packets);
@@ -227,7 +227,7 @@ static int file_iterate_keys(struct onak_dbctx *dbctx,
 				numkeys++;
 			}
 		}
-		
+
 		closedir(dir);
 		dir = NULL;
 	}

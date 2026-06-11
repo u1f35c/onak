@@ -32,7 +32,7 @@
 size_t buffer_fetchchar(void *ctx, size_t count, void *c)
 {
 	struct buffer_ctx *buf = NULL;
-	
+
 	buf = (struct buffer_ctx *) ctx;
 
 	if (buf->offset + count > buf->size) {
@@ -59,7 +59,7 @@ size_t buffer_putchar(void *ctx, size_t count, void *c)
 {
 	struct buffer_ctx *buf = NULL;
 	size_t newsize = 0;
-	
+
 	buf = (struct buffer_ctx *) ctx;
 
 	for (newsize = buf->size; newsize < (buf->offset + count);
@@ -72,7 +72,7 @@ size_t buffer_putchar(void *ctx, size_t count, void *c)
 
 	memcpy(&buf->buffer[buf->offset], c, count);
 	buf->offset += count;
-	
+
 	return count;
 }
 

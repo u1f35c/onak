@@ -3,7 +3,7 @@
 # sig2dot v0.8 (c) Darxus@ChaosReigns.com, released under the GPL
 # Download from: http://www.chaosreigns.com/debian-keyring
 #
-# Parses the (gpg) debian-keyring 
+# Parses the (gpg) debian-keyring
 # (http://www.debian.org/Packages/unstable/misc/debian-keyring.html) to a format
 # suitable for use by dot or neato (package name graphviz,
 # http://www.research.att.com/sw/tools/graphviz/) like so:
@@ -24,7 +24,7 @@ while ($line = <STDIN>)
 
     if ($type eq "pub")
     {
-      $owner = $name; 
+      $owner = $name;
     }
 
     if ($type eq "sig" and $name ne $owner and $name ne '[User id not found')

@@ -306,7 +306,7 @@ int spsize(struct openpgp_signedpacket_list *list)
  *	@key: The key to get the uids of.
  *	@primary: A pointer to store the primary UID in.
  *
- *	keyuids takes a public key structure and builds an array of the UIDs 
+ *	keyuids takes a public key structure and builds an array of the UIDs
  *	on the key. It also attempts to work out the primary UID and returns a
  *	separate pointer to that particular element of the array.
  */
@@ -316,14 +316,14 @@ char **keyuids(struct openpgp_publickey *key, char **primary)
 	char buf[1024];
 	char **uids = NULL;
 	int count = 0;
-        
-        if (primary != NULL) {
-        	*primary = NULL;
+
+	if (primary != NULL) {
+		*primary = NULL;
 	}
 
 	if (key != NULL && key->uids != NULL) {
 		uids = malloc((spsize(key->uids) + 1) * sizeof (char *));
-	
+
 		curuid = key->uids;
 		while (curuid != NULL) {
 			buf[0] = 0;

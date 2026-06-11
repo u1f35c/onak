@@ -79,7 +79,7 @@ char *generic_keyid2uid(struct onak_dbctx *dbctx, uint64_t keyid)
  *	@keyid: The keyid to get the sigs for.
  *	@revoked: Is the key revoked?
  *
- *	This function gets the list of signatures on a key. Used for key 
+ *	This function gets the list of signatures on a key. Used for key
  *	indexing and doing stats bits. If revoked is non-NULL then if the key
  *	is revoked it's set to true.
  */
@@ -92,7 +92,7 @@ struct ll *generic_getkeysigs(struct onak_dbctx *dbctx,
 	struct openpgp_publickey *publickey = NULL;
 
 	dbctx->fetch_key_id(dbctx, keyid, &publickey, false);
-	
+
 	if (publickey != NULL) {
 		for (uids = publickey->uids; uids != NULL; uids = uids->next) {
 			for (cursig = uids->sigs; cursig != NULL;
@@ -115,7 +115,7 @@ struct ll *generic_getkeysigs(struct onak_dbctx *dbctx,
 /**
  *	cached_getkeysigs - Gets the signatures on a key.
  *	@keyid: The key we want the signatures for.
- *	
+ *
  *	This function gets the signatures on a key. It's the same as the
  *	getkeysigs function above except we use the hash module to cache the
  *	data so if we need it again it's already loaded.

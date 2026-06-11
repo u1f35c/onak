@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 				free_publickey(keys);
 				keys = NULL;
 			}
-			
+
 			dbctx->cleanupdb(dbctx);
 		} else {
 			puts("No OpenPGP packets found in input.");

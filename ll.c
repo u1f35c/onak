@@ -59,7 +59,7 @@ struct ll *lladdend(struct ll *curll, void *object)
 	} else {
 		curll = new;
 	}
-	
+
 	return curll;
 }
 

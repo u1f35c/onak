@@ -13,7 +13,7 @@
 
 int main(int argc, char *argv[])
 {
-	struct openpgp_packet_list *packets = NULL; 
+	struct openpgp_packet_list *packets = NULL;
 /*
 	, *newpackets = NULL;
 	struct openpgp_packet_list *list_end = NULL;

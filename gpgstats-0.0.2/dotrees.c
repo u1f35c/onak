@@ -90,7 +90,7 @@ void readkeys(const char *filename)
 	}
 	/* read a line */
 	fgets(curline, 1023, keyfile);
-	while (!feof(keyfile)) {	
+	while (!feof(keyfile)) {
 		if (curline[0]=='P') {
 			++pub;
 			++keys;
@@ -242,7 +242,7 @@ void printtrees(int minsize)
 
 	curtree=trees;
 	total=0;
-	while (curtree!=NULL) {	
+	while (curtree!=NULL) {
 		curkey=curtree->object;
 		++total;
 		count=0;

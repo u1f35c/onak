@@ -35,8 +35,8 @@ void start_html(const char *title);
  */
 void end_html(void);
 
-char x2c(const char *what); 
-void unescape_url(char *url); 
+char x2c(const char *what);
+void unescape_url(char *url);
 char **getcgivars(int argc, char *argv[]);
 
 /**
@@ -48,4 +48,4 @@ char **getcgivars(int argc, char *argv[]);
  */
 void cleanupcgi(char **cgivars);
 
-#endif /* __GETCGI_H_ */ 
+#endif /* __GETCGI_H_ */

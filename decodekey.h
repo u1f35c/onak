@@ -62,7 +62,7 @@ uint64_t sig_keyid(struct openpgp_packet *packet);
  *	@key: The key to get the uids of.
  *	@primary: A pointer to store the primary UID in.
  *
- *	keyuids takes a public key structure and builds an array of the UIDs 
+ *	keyuids takes a public key structure and builds an array of the UIDs
  *	on the key. It also attempts to work out the primary UID and returns a
  *	separate pointer to that particular element of the array.
  */

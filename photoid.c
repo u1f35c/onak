@@ -46,7 +46,7 @@ onak_status_t getphoto(struct openpgp_publickey *key, int index,
 		return ONAK_E_INVALID_PARAM;
 
 	*photo = NULL;
-	
+
 	curuid = key->uids;
 	i = 0;
 	while (*photo == NULL && curuid != NULL && i <= index) {
