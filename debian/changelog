@@ -1,3 +1,9 @@
+onak (0.6.5-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Jonathan McDowell <noodles@earth.li>  Sat, 27 Jun 2026 14:52:15 +0100
+
 onak (0.6.4-1) unstable; urgency=low
 
   * New upstream release

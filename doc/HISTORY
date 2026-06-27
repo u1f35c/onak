@@ -391,3 +391,19 @@
 * Fix building with CMake 4.0
 * Fixes for building with GCC 15
 * Rename keyd(ctl) to onak-keyd(ctl)
+
+0.6.5 - 27th June 2026
+
+* Lots of fixes/improvements around length checking
+* Added extra basic tests for maxpaths/sixdegrees/CGI
+* Correctly end transactions in the stacked backend
+* Ensure the file backend avoids stale key data on updates
+* Fix decoding of v2/3 signature creation times
+* Fix EdDSA signature parsing when r < 249 bits long
+* Fix migration of bools from old to new config style
+* Fix parsing of new config details for DB parameters
+* Fix problems with linking + dynamic backends
+* Fix RSA-SHA2-384 signature checking
+* Fix sixdegrees parsing of keyids with high bit set
+* Handle failures in maxpath more gracefully
+* Make new style config path match old path
