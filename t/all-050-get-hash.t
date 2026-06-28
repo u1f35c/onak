@@ -11,9 +11,19 @@ fi
 
 cd ${WORKDIR}
 ${BUILDDIR}/onak -b -c $1 add < ${TESTSDIR}/../keys/noodles.key
-if ! ${BUILDDIR}/onak -c $1 hget 81929DAE08B8F80888DA524923B93067 2> /dev/null | \
+# Discover the SKS hash of the cleaned, deduped key as actually stored,
+# rather than assuming the hash of the wire form: cleankeys() collapses
+# multiple signatures from the same issuer per (version, sigtype) before
+# storage, so the on-disk hash differs from the submitted one.
+HASH=$(${BUILDDIR}/onak -c $1 -s index 0x94FA372B2DA8B985 2>/dev/null | \
+	sed -n 's/.*Key hash = //p')
+if [ -z "$HASH" ]; then
+	echo "* Failed to discover SKS hash of stored key"
+	exit 1
+fi
+if ! ${BUILDDIR}/onak -c $1 hget "$HASH" 2> /dev/null | \
 	grep -q -- '-----BEGIN PGP PUBLIC KEY BLOCK-----'; then
-	echo "* Did not correctly retrieve key by SKS hash"
+	echo "* Did not correctly retrieve key by SKS hash $HASH"
 	exit 1
 fi
 

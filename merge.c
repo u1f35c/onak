@@ -25,9 +25,11 @@
 #include "keyid.h"
 #include "keystructs.h"
 #include "ll.h"
+#include "log.h"
 #include "mem.h"
 #include "merge.h"
 #include "onak.h"
+#include "openpgp.h"
 
 /**
  *	compare_packets - Check to see if 2 OpenPGP packets are the same.
@@ -54,6 +56,159 @@ int compare_packets(struct openpgp_packet *a, struct openpgp_packet *b)
 	}
 
 	return ret;
+}
+
+/*
+ * Extract the sigtype byte from a signature packet.
+ *   v3 layout: version(1) + hashed_len(1) + sigtype(1) + ...
+ *   v4+ layout: version(1) + sigtype(1) + pubkey_algo(1) + hash_algo(1) + ...
+ * Returns 0xFF for an unrecognised version, which will never match a
+ * real revocation or certification sigtype.
+ */
+static uint8_t sig_sigtype(struct openpgp_packet *p)
+{
+	if (p == NULL || p->length < 3) {
+		return 0xFF;
+	}
+	if (p->data[0] == 3) {
+		return p->data[2];
+	}
+	if (p->data[0] == 4 || p->data[0] == 5) {
+		return p->data[1];
+	}
+	return 0xFF;
+}
+
+static bool sig_is_revocation(uint8_t sigtype)
+{
+	return sigtype == OPENPGP_SIGTYPE_KEY_REV ||
+		sigtype == OPENPGP_SIGTYPE_SUBKEY_REV ||
+		sigtype == OPENPGP_SIGTYPE_CERT_REV;
+}
+
+bool signatures_match_signer(struct openpgp_packet *a,
+		struct openpgp_packet *b)
+{
+	uint64_t a_keyid, b_keyid;
+
+	if (a == NULL || b == NULL ||
+			a->tag != OPENPGP_PACKET_SIGNATURE ||
+			b->tag != OPENPGP_PACKET_SIGNATURE) {
+		return false;
+	}
+	if (a->data[0] != b->data[0]) {
+		return false;
+	}
+	if (sig_sigtype(a) != sig_sigtype(b)) {
+		return false;
+	}
+	sig_info(a, &a_keyid, NULL);
+	sig_info(b, &b_keyid, NULL);
+	if (a_keyid == 0 || b_keyid == 0) {
+		return false;
+	}
+	return a_keyid == b_keyid;
+}
+
+/*
+ * Drop @victim from a singly-linked openpgp_packet_list rooted at
+ * @head, updating @tail if it pointed at the dropped node. @prev_link
+ * is the address of the pointer that currently refers to @victim
+ * (either &head or &(previous_node)->next).
+ */
+static void drop_sig(struct openpgp_packet_list **prev_link,
+		struct openpgp_packet_list *victim,
+		struct openpgp_packet_list **tail)
+{
+	*prev_link = victim->next;
+	if (tail != NULL && *tail == victim) {
+		/*
+		 * Tail removed; the caller will refresh *tail by walking
+		 * the list once we're done, so just clear it for now.
+		 */
+		*tail = NULL;
+	}
+	victim->next = NULL;
+	free_packet_list(victim);
+}
+
+int dedupe_sigs(struct openpgp_packet_list **sigs,
+		struct openpgp_packet_list **last_sig)
+{
+	struct openpgp_packet_list **outer = sigs;
+	struct openpgp_packet_list **inner;
+	struct openpgp_packet_list *tail;
+	time_t outer_t, inner_t;
+	uint8_t st;
+	int dropped = 0;
+	bool drop_outer;
+	bool tail_dirty = false;
+
+	if (sigs == NULL) {
+		return 0;
+	}
+
+	while (*outer != NULL) {
+		drop_outer = false;
+		inner = &(*outer)->next;
+		while (*inner != NULL && !drop_outer) {
+			if (!signatures_match_signer((*outer)->packet,
+					(*inner)->packet)) {
+				inner = &(*inner)->next;
+				continue;
+			}
+			st = sig_sigtype((*outer)->packet);
+			if (sig_is_revocation(st)) {
+				/* First-seen revocation wins, drop inner. */
+				if (last_sig != NULL && *last_sig == *inner) {
+					tail_dirty = true;
+				}
+				drop_sig(inner, *inner, last_sig);
+				dropped++;
+			} else {
+				sig_info((*outer)->packet, NULL, &outer_t);
+				sig_info((*inner)->packet, NULL, &inner_t);
+				if (inner_t > outer_t) {
+					/* Inner is newer, drop outer. */
+					drop_outer = true;
+				} else {
+					if (last_sig != NULL &&
+							*last_sig == *inner) {
+						tail_dirty = true;
+					}
+					drop_sig(inner, *inner, last_sig);
+					dropped++;
+				}
+			}
+		}
+		if (drop_outer) {
+			if (last_sig != NULL && *last_sig == *outer) {
+				tail_dirty = true;
+			}
+			drop_sig(outer, *outer, last_sig);
+			dropped++;
+		} else {
+			outer = &(*outer)->next;
+		}
+	}
+
+	if (last_sig != NULL && tail_dirty) {
+		tail = *sigs;
+		if (tail != NULL) {
+			while (tail->next != NULL) {
+				tail = tail->next;
+			}
+		}
+		*last_sig = tail;
+	}
+
+	if (dropped > 0) {
+		logthing(LOGTHING_INFO,
+			"dedupe_sigs: collapsed %d duplicate "
+			"per-signer signature(s).", dropped);
+	}
+
+	return dropped;
 }
 
 /**
@@ -244,6 +399,16 @@ int merge_packet_sigs(struct openpgp_signedpacket_list *old,
 	 * old->sigs.
 	 */
 	packet_list_add(&old->sigs, &old->last_sig, new->sigs);
+
+	/*
+	 * After the merge we may have ended up with several signatures from
+	 * the same issuer that differ only by Signature Creation Time. The
+	 * OpenPGP standard says the most recent assertion from a given issuer
+	 * takes precedence, so collapse them here. Revocation signatures are
+	 * collapsed to a single representative as well so a forged keyid that
+	 * sprays the same revocation many times cannot bloat the list.
+	 */
+	dedupe_sigs(&old->sigs, &old->last_sig);
 
 	return 0;
 }

@@ -81,4 +81,40 @@ struct openpgp_signedpacket_list *find_signed_packet(
 int merge_packet_sigs(struct openpgp_signedpacket_list *old,
 			struct openpgp_signedpacket_list *new);
 
+/**
+ *	signatures_match_signer - Same (version, sigtype, issuer)?
+ *	@a: First signature packet.
+ *	@b: Second signature packet.
+ *
+ *	Returns true when @a and @b are both signature packets and share the
+ *	same version, the same sigtype, and the same issuer keyid, regardless
+ *	of their Signature Creation Time. Used to recognise multiple
+ *	signatures from the same issuer that target the same packet.
+ */
+bool signatures_match_signer(struct openpgp_packet *a,
+		struct openpgp_packet *b);
+
+/**
+ *	dedupe_sigs - Collapse multiple signatures from the same issuer.
+ *	@sigs: head of the signature list (may be rewired).
+ *	@last_sig: tail of the same list (recomputed if non-NULL).
+ *
+ *	Walks the list and, for each (version, sigtype, issuer) triple,
+ *	keeps a single representative:
+ *
+ *	  - For certification signatures (anything but key/subkey/cert
+ *	    revocations) the survivor is the one with the larger Signature
+ *	    Creation Time. This matches the OpenPGP rule that the most
+ *	    recent assertion from a given issuer takes precedence.
+ *
+ *	  - For revocation signatures (sigtype 0x20, 0x28, 0x30) the first
+ *	    encountered representative wins and any further match is
+ *	    dropped. This collapses the trivial sigspam case where the
+ *	    same forged keyid is replayed many times.
+ *
+ *	Returns the number of packets dropped.
+ */
+int dedupe_sigs(struct openpgp_packet_list **sigs,
+		struct openpgp_packet_list **last_sig);
+
 #endif

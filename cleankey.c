@@ -389,6 +389,29 @@ int cleankeys(struct onak_dbctx *dbctx, struct openpgp_publickey **keys,
 		}
 		count += dedupuids(*curkey);
 		count += dedupsubkeys(*curkey);
+		/*
+		 * A freshly parsed key can already carry several signatures
+		 * from the same issuer (or a forged keyid repeated many
+		 * times) on the same packet. Collapse them per (version,
+		 * sigtype, issuer) on every sig list of the key. The same
+		 * dedupe runs at the tail of merge_packet_sigs, so this
+		 * pass covers the first-import case where no merge with
+		 * existing storage takes place.
+		 */
+		count += dedupe_sigs(&(*curkey)->sigs, &(*curkey)->last_sig);
+		{
+			struct openpgp_signedpacket_list *sp;
+
+			for (sp = (*curkey)->uids; sp != NULL; sp = sp->next) {
+				count += dedupe_sigs(&sp->sigs,
+						&sp->last_sig);
+			}
+			for (sp = (*curkey)->subkeys; sp != NULL;
+					sp = sp->next) {
+				count += dedupe_sigs(&sp->sigs,
+						&sp->last_sig);
+			}
+		}
 		if (policies & (ONAK_CLEAN_CHECK_SIGHASH |
 					ONAK_CLEAN_VERIFY_SIGNATURES)) {
 
