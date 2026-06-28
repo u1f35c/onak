@@ -22,6 +22,13 @@ max_reply_keys=128
 ; Check the size of packets, dropping overly large UIDs / signature packets
 ; as per draft-dkg-openpgp-abuse-resistant-keystore 4.1
 ;check_packet_size=false
+; Cap the number of UIDs / UAT packets per key, dropping any beyond the
+; hardcoded limits (currently 32 UIDs and 4 UATs). This defends against
+; keys carrying an absurd number of identity packets; the surviving ones
+; are those that appear first in the key, which after a merge are the
+; older entries already known to this server.
+cap_uids_per_key=true
+cap_uats_per_key=true
 ; Verify signature hashes - verify that the hash a signature claims to be
 ; over matches the hash of the data. Does not actually verify the signature.
 check_sighash=true
