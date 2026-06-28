@@ -305,6 +305,63 @@ int clean_key_signatures(struct onak_dbctx *dbctx,
 #define UAT_LIMIT	0xFFFF
 #define UID_LIMIT	1024
 #define PACKET_LIMIT	8383		/* Fits in 2 byte packet length */
+
+/*
+ * Cap the number of UIDs / UATs we accept on a key. Defends against
+ * keys carrying an absurd number of (potentially forged) packets — the
+ * 2019 SKS-style poisoning vector. We keep the first N of each kind in
+ * the packet list and drop the rest; pairing this with the merge.c
+ * append-at-tail behaviour means surviving packets are the older ones
+ * we already had, and a flood arriving in a subsequent merge is
+ * truncated to the cap.
+ */
+#define MAX_UIDS_PER_KEY	32
+#define MAX_UATS_PER_KEY	4
+
+static int cap_packet_type(struct openpgp_publickey *key,
+		int tag, unsigned int max)
+{
+	struct openpgp_signedpacket_list **curuid;
+	struct openpgp_signedpacket_list *tmp;
+	unsigned int                      count = 0;
+	int                               dropped = 0;
+
+	log_assert(key != NULL);
+	curuid = &key->uids;
+	while (*curuid != NULL) {
+		if ((*curuid)->packet->tag == tag) {
+			if (count < max) {
+				count++;
+				curuid = &(*curuid)->next;
+			} else {
+				logthing(LOGTHING_INFO,
+					"Dropping packet of type %d "
+					"beyond cap %u",
+					tag, max);
+				tmp = *curuid;
+				*curuid = (*curuid)->next;
+				tmp->next = NULL;
+				free_signedpacket_list(tmp);
+				dropped++;
+			}
+		} else {
+			curuid = &(*curuid)->next;
+		}
+	}
+
+	return dropped;
+}
+
+int cap_uids_per_key(struct openpgp_publickey *key)
+{
+	return cap_packet_type(key, OPENPGP_PACKET_UID, MAX_UIDS_PER_KEY);
+}
+
+int cap_uats_per_key(struct openpgp_publickey *key)
+{
+	return cap_packet_type(key, OPENPGP_PACKET_UAT, MAX_UATS_PER_KEY);
+}
+
 int clean_large_packets(struct openpgp_publickey *key)
 {
 	struct openpgp_signedpacket_list **curuid = NULL;
@@ -389,6 +446,12 @@ int cleankeys(struct onak_dbctx *dbctx, struct openpgp_publickey **keys,
 		}
 		count += dedupuids(*curkey);
 		count += dedupsubkeys(*curkey);
+		if (policies & ONAK_CLEAN_CAP_UIDS) {
+			count += cap_uids_per_key(*curkey);
+		}
+		if (policies & ONAK_CLEAN_CAP_UATS) {
+			count += cap_uats_per_key(*curkey);
+		}
 		if (policies & (ONAK_CLEAN_CHECK_SIGHASH |
 					ONAK_CLEAN_VERIFY_SIGNATURES)) {
 

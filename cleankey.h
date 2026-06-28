@@ -28,6 +28,8 @@
 #define ONAK_CLEAN_UPDATE_ONLY		(1 << 3)
 #define ONAK_CLEAN_VERIFY_SIGNATURES	(1 << 4)
 #define ONAK_CLEAN_NEED_OTHER_SIG	(1 << 5)
+#define ONAK_CLEAN_CAP_UIDS		(1 << 6)
+#define ONAK_CLEAN_CAP_UATS		(1 << 7)
 #define ONAK_CLEAN_ALL			(uint64_t) -1
 
 /**

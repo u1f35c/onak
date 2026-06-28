@@ -58,7 +58,8 @@ struct onak_config config = {
 	.dbinit = NULL,
 #endif
 
-	.clean_policies = ONAK_CLEAN_DROP_V3_KEYS | ONAK_CLEAN_CHECK_SIGHASH,
+	.clean_policies = ONAK_CLEAN_DROP_V3_KEYS | ONAK_CLEAN_CHECK_SIGHASH |
+			ONAK_CLEAN_CAP_UIDS | ONAK_CLEAN_CAP_UATS,
 
 	.bin_dir = NULL,
 	.mail_dir = NULL,
@@ -313,6 +314,24 @@ static bool parseconfigline(char *line)
 				config.clean_policies &=
 					~ONAK_CLEAN_LARGE_PACKETS;
 			}
+		} else if (MATCH("verification", "cap_uids_per_key")) {
+			if (parsebool(value, config.clean_policies &
+					ONAK_CLEAN_CAP_UIDS)) {
+				config.clean_policies |=
+					ONAK_CLEAN_CAP_UIDS;
+			} else {
+				config.clean_policies &=
+					~ONAK_CLEAN_CAP_UIDS;
+			}
+		} else if (MATCH("verification", "cap_uats_per_key")) {
+			if (parsebool(value, config.clean_policies &
+					ONAK_CLEAN_CAP_UATS)) {
+				config.clean_policies |=
+					ONAK_CLEAN_CAP_UATS;
+			} else {
+				config.clean_policies &=
+					~ONAK_CLEAN_CAP_UATS;
+			}
 		} else if (MATCH("verification", "require_other_sig")) {
 #if HAVE_CRYPTO
 			if (parsebool(value, config.clean_policies &
@@ -533,6 +552,10 @@ void writeconfig(const char *configfile)
 	fprintf(conffile, "[verification]\n");
 	WRITE_BOOL(config.clean_policies & ONAK_CLEAN_CHECK_SIGHASH,
 			"check_sighash");
+	WRITE_BOOL(config.clean_policies & ONAK_CLEAN_CAP_UIDS,
+			"cap_uids_per_key");
+	WRITE_BOOL(config.clean_policies & ONAK_CLEAN_CAP_UATS,
+			"cap_uats_per_key");
 	fprintf(conffile, "\n");
 
 	fprintf(conffile, "[mail]\n");
