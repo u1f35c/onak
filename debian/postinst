@@ -17,7 +17,7 @@ if [ "$1" = "configure" ]; then
     fi
 
     # Add the onak user
-    adduser --system --home /var/lib/onak --no-create-home --disabled-login onak
+    systemd-sysusers ${DPKG_ROOT:+--root="$DPKG_ROOT"} onak.conf
 
     # Take ownership of the database and spool directory
     chown onak /var/lib/onak
