@@ -35,9 +35,22 @@ Verbose; increase loglevel.
 .B add
 Read OpenPGP keys from stdin and add them to the keyserver database.
 .TP
+.B aged \fI[AGE]\fR
+List the fingerprint of every key whose declared expiration is in the past
+or whose creation time is older than \fIAGE\fR. \fIAGE\fR accepts the forms
+\fI25y\fR, \fI180d\fR, \fI12h\fR, \fI3600s\fR; a bare integer is interpreted
+as years. When \fIAGE\fR is omitted only the expired-by-declaration set is
+returned.
+.TP
 .B clean
 Read OpenPGP keys from stdin, run the key cleaning routines against them and
 dump to stdout.
+.TP
+.B clean-aged \fI[AGE]\fR
+Delete from the backend the keys matched by the \fBaged\fR predicate.
+Requires a backend that implements both \fIiterate_keys\fR and
+\fIdelete_key\fR; on other backends the operation completes but matches
+nothing.
 .TP
 .B dumpconfig
 Dump the running config in new .ini format to stdout, or the provided file.
@@ -50,6 +63,11 @@ Delete a given key from the keyserver.
 .TP
 .B dump
 Dump all the keys from the keyserver.
+.TP
+.B dump-aged \fI[AGE]\fR
+Emit on stdout, as an OpenPGP stream, every key matched by the \fBaged\fR
+predicate. ASCII armored by default; pass \fB-b\fR for a raw binary stream.
+Useful to populate an archival keyring before pruning the live one.
 .TP
 .B get
 Retrieves the requested key from the keyserver.
@@ -69,6 +87,10 @@ List all keys in the keyserver that contain the word \fInoodles\fR.
 .TP
 .B onak clean < dirty.key > clean.key
 Clean up one or more PGP keys. Currently this will just dedupe UIDs.
+.TP
+.B onak dump-aged 25 > archive.asc && onak clean-aged 25
+Move every key older than 25 years out of the live database into an
+archival file.
 .TP
 .B gpg --export | onak -b add
 Export all keys on your gnupg keyring and import them into the keyserver.

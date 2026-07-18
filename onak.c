@@ -29,6 +29,7 @@
 
 #include "build-config.h"
 
+#include "aged.h"
 #include "armor.h"
 #include "charfuncs.h"
 #include "cleankey.h"
@@ -142,12 +143,20 @@ void usage(void) {
 	puts("\tCommands:\n");
 	puts("\tadd      - read armored OpenPGP keys from stdin and add to the"
 		" keyserver");
+	puts("\taged       - list fingerprints of expired keys, plus those"
+		" older\n\t             than the optional age (e.g. 25y)");
 	puts("\tclean    - read armored OpenPGP keys from stdin, run the"
 		" cleaning\n\t       	   routines against them and dump to"
 		" stdout");
+	puts("\tclean-aged - delete from the backend the keys matched by"
+		" 'aged'\n\t             (requires a backend that supports"
+		" delete_key)");
 	puts("\tdelete   - delete a given key from the keyserver");
 	puts("\tdump     - dump all the keys from the keyserver to a file or"
 		" files\n\t           starting keydump*");
+	puts("\tdump-aged  - emit the keys matched by 'aged' as an OpenPGP"
+		" stream\n\t             (ASCII armored by default; pass -b"
+		" for binary)");
 	puts("\tget      - retrieves the key requested from the keyserver");
 	puts("\tgetphoto - retrieves the first photoid on the given key and"
 		" dumps to\n\t           stdout");
@@ -360,6 +369,40 @@ int main(int argc, char *argv[])
 			/* Dump config to stdout */
 			writeconfig(NULL);
 		}
+	} else if (!strcmp("aged", argv[optind]) ||
+			!strcmp("dump-aged", argv[optind]) ||
+			!strcmp("clean-aged", argv[optind])) {
+		time_t max_age = 0;
+		bool clean = !strcmp("clean-aged", argv[optind]);
+		bool dump = !strcmp("dump-aged", argv[optind]);
+
+		if ((argc - optind) >= 2) {
+			max_age = parse_age_string(argv[optind + 1]);
+			if (max_age == 0) {
+				printf("Could not parse age '%s'. "
+					"Use forms like 25y, 180d, 12h.\n",
+					argv[optind + 1]);
+				rc = EXIT_FAILURE;
+				goto err;
+			}
+		}
+		dbctx = config.dbinit(config.backend, !clean);
+		if (dbctx == NULL) {
+			logthing(LOGTHING_ERROR,
+				"Failed to open key database.");
+			rc = EXIT_FAILURE;
+			goto err;
+		}
+		if (dump) {
+			result = onak_cmd_dump_aged(dbctx, max_age, binary);
+		} else if (clean) {
+			result = onak_cmd_clean_aged(dbctx, max_age);
+		} else {
+			result = onak_cmd_aged(dbctx, max_age);
+		}
+		logthing(LOGTHING_INFO, "Aged operation matched %d key(s).",
+			result);
+		dbctx->cleanupdb(dbctx);
 	} else if ((argc - optind) == 2) {
 		search = argv[optind+1];
 		if (search != NULL && strlen(search) == 42 &&
